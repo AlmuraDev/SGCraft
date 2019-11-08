@@ -36,6 +36,7 @@ jar {
             'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
             'MixinConfigs': 'mixins.sgcraft.json',
             'FMLCorePluginContainsFMLMod': 'true',
+            'FMLCorePlugin': 'gcewing.sg.SGCraftCore',
             'ForceLoadAsMod': true
     )
     classifier = 'original'
@@ -81,6 +82,7 @@ minecraft {
     mappings = 'snapshot_20180808'
     useDepAts = true
     makeObfSourceJar = false
+    coreMod = 'gcewing.sg.SGCraftCore'
 }
 
 sourceSets.main {
