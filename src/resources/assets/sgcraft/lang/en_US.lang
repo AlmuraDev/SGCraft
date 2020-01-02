@@ -161,3 +161,7 @@ sgcraft.gui.gdo.label.remoteGateControl=Remote Gate Control
 sgcraft.gui.zpmConsole.label.availablePower=Available Power
 
 item.sgcraft:pegasus_upgrade.name=Pegasus Type Upgrade Crystal
+
+item.sgcraft:admin_upgrade.name=Admin Upgrade Crystal
+message.sgcraft:adminUpgradeSuccess=Admin Upgrade has been installed!
+message.sgcraft:adminUpgradeFail=Admin Upgrade already installed.

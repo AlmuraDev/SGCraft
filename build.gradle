@@ -87,6 +87,7 @@ sourceSets.main {
     compileClasspath += files("lib")
     java.srcDirs "src/base", "src/mod"
     resources.srcDirs "src/resources"
+    output.resourcesDir = output.classesDir
 }
 
 processResources {

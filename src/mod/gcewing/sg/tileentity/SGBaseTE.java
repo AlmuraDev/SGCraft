@@ -262,6 +262,9 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
     public boolean allowRedstoneInput = true;
     public boolean canPlayerBreakGate = false;
 
+    public boolean takesBlastDamage;
+    public boolean requiresAdminToBreak;
+
     // Access Control Lists
     private List<PlayerAccessData> playerAccessData;
     private List<GateAccessData> gateAccessData;
@@ -296,7 +299,11 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         this.useDHDFuelSource = cfg.getBoolean("dhd", "useDHDFuelSource", this.useDHDFuelSource);
         this.allowRedstoneOutput = cfg.getBoolean("stargate", "allowRedstoneOutput", this.allowRedstoneOutput);
         this.allowRedstoneInput = cfg.getBoolean("iris", "allowRedstoneInput", this.allowRedstoneInput);
+
         this.canPlayerBreakGate = cfg.getBoolean("stargate", "canPlayerBreakGate", this.canPlayerBreakGate);
+
+        this.takesBlastDamage = cfg.getBoolean("stargate","takesBlastDamage",this.takesBlastDamage);
+        this.requiresAdminToBreak = cfg.getBoolean("stargate","requiresAdminToBreak",this.requiresAdminToBreak);
     }
 
     public static void configure(BaseConfiguration cfg) {
@@ -333,6 +340,9 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         cfg.getBoolean("stargate", "allowRedstoneOutput", true);
         cfg.getBoolean("iris", "allowRedstoneInput", true);
         cfg.getBoolean("stargate", "canPlayerBreakGate", false);
+
+        cfg.getBoolean("stargate","takesBlastDamage",true);
+        cfg.getBoolean("stargate","requiresAdminToBreak", false);
 
         // Global static config values
         minutesOpenPerFuelItem = cfg.getInteger("stargate", "minutesOpenPerFuelItem", minutesOpenPerFuelItem);
@@ -646,6 +656,20 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         } else {
             this.canPlayerBreakGate = cfg.getBoolean("stargate", "canPlayerBreakGate", this.canPlayerBreakGate);
         }
+
+        if(nbt.hasKey("takesBlastDamage") && !SGCraft.forceSGBaseTEUpdate) {
+            this.takesBlastDamage = nbt.getBoolean("takesBlastDamage");
+        }
+        else {
+            this.takesBlastDamage = cfg.getBoolean("stargate","takesBlastDamage", this.takesBlastDamage);
+        }
+
+        if(nbt.hasKey("requiresAdminToBreak") && !SGCraft.forceSGBaseTEUpdate) {
+            this.requiresAdminToBreak = nbt.getBoolean("requiresAdminToBreak");
+        }
+        else {
+            this.requiresAdminToBreak = cfg.getBoolean("stargate","requiresAdminToBreak", this.requiresAdminToBreak);
+        }
     }
 
     protected String getStringOrNull(NBTTagCompound nbt, String name) {
@@ -735,6 +759,9 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         nbt.setBoolean("allowRedstoneOutput", this.allowRedstoneOutput);
         nbt.setBoolean("allowRedstoneInput", this.allowRedstoneInput);
         nbt.setBoolean("canPlayerBreakGate", this.canPlayerBreakGate);
+
+        nbt.setBoolean("takesBlastDamage",this.takesBlastDamage);
+        nbt.setBoolean("requiresAdminToBreak",this.requiresAdminToBreak);
 
         return nbt;
     }
@@ -2780,6 +2807,24 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
             this.ringRotationSpeed = 6.0D; //Set rotation speed to 6 as per configurator default
             stack.shrink(1);
             markChanged();
+        }
+
+        return EnumActionResult.SUCCESS;
+    }
+
+    public EnumActionResult applyAdminUpgrade(ItemStack stack, EntityPlayer player)
+    {
+        if(!getWorld().isRemote) {
+            if (!(requiresAdminToBreak && !takesBlastDamage && !canPlayerBreakGate)) {
+                takesBlastDamage = false;
+                canPlayerBreakGate = false;
+                requiresAdminToBreak = true;
+                stack.shrink(1);
+                markChanged();
+                sendBasicMsg(player,"adminUpgradeSuccess");
+                return EnumActionResult.SUCCESS;
+            }
+            sendErrorMsg(player,"adminUpgradeFail");
         }
 
         return EnumActionResult.SUCCESS;

@@ -159,3 +159,7 @@ sgcraft.gui.gdo.label.remoteGateControl=Entfernte Iriskontrolle
 sgcraft.gui.zpmConsole.label.availablePower=Verfügbare Energie
 
 item.sgcraft:pegasus_upgrade.name=Pegasus Typ Erweiterungskristall
+
+item.sgcraft:admin_upgrade.name=Admin Erweiterungskristall
+message.sgcraft:adminUpgradeSuccess=Admin Erweiterung erfolgreich Installiert!
+message.sgcraft:adminUpgradeFail=Admin Erweiterung ist berreits installiert.

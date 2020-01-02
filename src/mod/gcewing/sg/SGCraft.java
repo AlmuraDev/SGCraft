@@ -47,10 +47,7 @@ import gcewing.sg.generator.FeatureUnderDesertPyramid;
 import gcewing.sg.generator.GeneratorAddressRegistry;
 import gcewing.sg.interfaces.IIntegration;
 import gcewing.sg.interfaces.SoundSource;
-import gcewing.sg.item.SGChevronUpgradeItem;
-import gcewing.sg.item.SGIrisUpgradeItem;
-import gcewing.sg.item.SGPegasusUpgradeItem;
-import gcewing.sg.item.SGRingItem;
+import gcewing.sg.item.*;
 import gcewing.sg.network.GuiNetworkHandler;
 import gcewing.sg.network.SGChannel;
 import gcewing.sg.generator.NaquadahOreWorldGen;
@@ -125,6 +122,7 @@ public class SGCraft extends BaseMod<SGCraftClient> {
 
     public static Item naquadah, naquadahIngot, sgCoreCrystal, sgControllerCrystal, sgChevronUpgrade, sgIrisUpgrade, sgIrisBlade, pegasus_upgrade;
     public static Item tollan_phase_shift_device;
+    public static Item admin_upgrade;
 
     public static Block ic2PowerUnit;
     public static Item ic2Capacitor;
@@ -311,6 +309,8 @@ public class SGCraft extends BaseMod<SGCraftClient> {
         tollan_phase_shift_device = newItem("tollan_phase_shift_device");
 
         pegasus_upgrade = addItem(new SGPegasusUpgradeItem(), "pegasus_upgrade");
+
+        admin_upgrade = addItem(new SGAdminUpgradeItem(), "admin_upgrade");
 
         if (isModLoaded("malisiscore")) {
             new GuiNetworkHandler(Info.modID+"-GUI");
