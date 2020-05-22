@@ -89,7 +89,7 @@ public class PddNetworkHandler extends SGChannel {
             if (setting == 1) { // Connect / Dial / Double Click
                 if (!localGate.isConnected()) {
                     if (localGate.allowGateAccess(player.getName()) || isPermissionsAdmin) {
-                        localGate.connect(destination, player, false);
+                        localGate.connect(destination, player, false, false);
                     }
                 }
             }

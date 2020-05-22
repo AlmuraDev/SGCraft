@@ -101,7 +101,7 @@ public class OCInterfaceTE extends SGInterfaceTE
     
     @Callback
     public Object[] energyToDial(Context ctx, Arguments args) {
-        try {return new Object[]{ciEnergyToDial(args.checkString(0))};}
+        try {return new Object[]{ciEnergyToDial(args.checkString(0), true)};}
         catch (Exception e) {return failure(e);}
     }
     
@@ -119,7 +119,7 @@ public class OCInterfaceTE extends SGInterfaceTE
     
     @Callback
     public Object[] dial(Context ctx, Arguments args) {
-        try {ciDial(args.checkString(0)); return success;}
+        try {ciDial(args.checkString(0), true); return success;}
         catch (Exception e) {return failure(e);}
     }
     

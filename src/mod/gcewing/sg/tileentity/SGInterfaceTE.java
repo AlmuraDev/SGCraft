@@ -83,11 +83,11 @@ public class SGInterfaceTE extends BaseTileEntity {
         return te != null ? te.availableEnergy() : 0;
     }
     
-    public double ciEnergyToDial(String address) {
+    public double ciEnergyToDial(String address, boolean pending) {
         SGBaseTE te = requireBaseTE();
         try {
             address = SGAddressing.normalizeAddress(address);
-            SGBaseTE dte = SGAddressing.findAddressedStargate(address, te.getWorld());
+            SGBaseTE dte = SGAddressing.findAddressedStargate(address, te.getWorld(), pending);
             if (dte == null)
                 throw new IllegalArgumentException("unknownAddress");
             double distanceFactor = dte.distanceFactorForCoordDifference(te, dte);
@@ -116,7 +116,7 @@ public class SGInterfaceTE extends BaseTileEntity {
         }
     }
     
-    public void ciDial(String address) {
+    public void ciDial(String address, boolean pending) {
         SGBaseTE te = requireBaseTE();
 //         try {
 //             address = SGAddressing.normalizedRelativeAddress(address, te.getHomeAddress());
@@ -126,7 +126,7 @@ public class SGInterfaceTE extends BaseTileEntity {
 //         }
         address = SGAddressing.normalizeAddress(address);
         //System.out.printf("SGBaseTE.ciDial: dialling symbols %s\n", address);
-        String error = te.connect(address, null, true);
+        String error = te.connect(address, null, true, pending);
         if (error != null)
             throw new IllegalArgumentException(error);
     }

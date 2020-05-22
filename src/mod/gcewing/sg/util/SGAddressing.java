@@ -26,6 +26,7 @@
 
 package gcewing.sg.util;
 
+import gcewing.sg.BaseTileEntity;
 import gcewing.sg.BaseUtils;
 import gcewing.sg.tileentity.SGBaseTE;
 import net.minecraft.world.World;
@@ -181,7 +182,7 @@ public class SGAddressing {
         return longToSymbols(c, numCoordSymbols) + intToSymbols(d, numDimensionSymbols);
     }
     
-    public static SGBaseTE findAddressedStargate(String address, World fromWorld) throws AddressingError {
+    public static SGBaseTE findAddressedStargate(String address, World fromWorld, boolean pending) throws AddressingError {
         if (debugAddressing)
             System.out.printf("SGAddressing.findAddressedStargate: %s\n", address);
         validateAddress(address);
@@ -205,32 +206,34 @@ public class SGAddressing {
                 System.out.printf("SGAddressing.findAddressedStargate: d = %s dimension = %s\n",
                     d, dm);
             if (dm != null)
-                te = getBaseTE(chunkX, chunkZ, dm);
+                te = getBaseTE(chunkX, chunkZ, dm, pending);
             if (te == null) {
                 // Try old interpretation of dimension symbols
                 int dimOld = minDirectDimension + hash(d, qdOld, mdOld);
                 if (debugAddressing)
                     System.out.printf("SGAddressing.findAddressedStargate: Trying dimension = %s\n",
                         dimOld);
-                te = getBaseTE(chunkX, chunkZ, dimOld);
+                te = getBaseTE(chunkX, chunkZ, dimOld, pending);
             }
         }
         else {
             // Relative address
             int dimension = fromWorld.provider.getDimension();
-            te = getBaseTE(chunkX, chunkZ, dimension);
+            te = getBaseTE(chunkX, chunkZ, dimension, pending);
         }
         return te;
     }
     
-    protected static SGBaseTE getBaseTE(int chunkX, int chunkZ, int dimension) {
+    protected static SGBaseTE getBaseTE(int chunkX, int chunkZ, int dimension, boolean pending) {
         World toWorld = getWorld(dimension);
         if (toWorld != null) {
             Chunk chunk = toWorld.getChunk(chunkX, chunkZ);
             if (chunk != null)
                 for (Object te : chunk.getTileEntityMap().values()) {
-                    if (te instanceof SGBaseTE)
-                        return (SGBaseTE)te;
+                    if (te instanceof SGBaseTE) {
+                        ((SGBaseTE) te).isPending = pending;
+                        return (SGBaseTE) te;
+                    }
                 }
         }
         return null;

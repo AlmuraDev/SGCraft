@@ -36,7 +36,7 @@ public class CCSGPeripheral implements IPeripheral {
         
         new SGMethod("energyToDial", 1) {
             Object[] call(SGInterfaceTE te, Object[] args) {
-                return new Object[] {te.ciEnergyToDial((String)args[0])};
+                return new Object[] {te.ciEnergyToDial((String)args[0], false)};
             }
         },
         
@@ -54,7 +54,7 @@ public class CCSGPeripheral implements IPeripheral {
         
         new SGMethod("dial", 1) {
             Object[] call(SGInterfaceTE te, Object[] args) {
-                te.ciDial((String)args[0]);
+                te.ciDial((String)args[0], false);
                 return null;
             }
         },
