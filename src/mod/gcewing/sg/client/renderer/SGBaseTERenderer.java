@@ -277,55 +277,69 @@ public class SGBaseTERenderer extends BaseTileEntityRenderer {
         
         selectTile(TextureIndex.CHEVRON);
         
+        // Each face needs its own normal; otherwise it inherits whatever the ring
+        // last set, and chevrons on one side of the gate come out brighter.
+        double sl = Math.hypot(x2 - x1, y2 - y1);
+        double snx = -(y2 - y1) / sl, sny = (x2 - x1) / sl;
+
         // Face 1
+        glNormal3d(0, 0, 1);
         vertex(x2, y2, z1, 0, 2);
         vertex(x1, y1, z1, 0, 16);
         vertex(x1+w1, y1-w1, z1, 4, 12);
         vertex(x2, y2-w2, z1, 4, 2);
         
         // Side 1
+        glNormal3d(snx, sny, 0);
         vertex(x2, y2, z1, 0, 0);
         vertex(x2, y2, z2, 0, 4);
         vertex(x1, y1, z2, 16, 4);
         vertex(x1, y1, z1, 16, 0);
         
         // End 1
+        glNormal3d(1, 0, 0);
         vertex(x2, y2, z1, 16, 0);
         vertex(x2, y2-w2, z1, 12, 0);
         vertex(x2, y2-w2, z2, 12, 4);
         vertex(x2, y2, z2, 16, 4);
         
         // Face 2
+        glNormal3d(0, 0, 1);
         vertex(x1+w1, y1-w1, z1, 4, 12);
         vertex(x1, y1, z1, 0, 16);
         vertex(x1, -y1, z1, 16, 16);
         vertex(x1+w1, -y1+w1, z1, 12, 12);
         
         // Side 2
+        glNormal3d(-1, 0, 0);
         vertex(x1, y1, z1, 0, 0);
         vertex(x1, y1, z2, 0, 4);
         vertex(x1, -y1, z2, 16, 4);
         vertex(x1, -y1, z1, 16, 0);
         
         // Face 3
+        glNormal3d(0, 0, 1);
         vertex(x2, -y2+w2, z1, 12, 0);
         vertex(x1+w1, -y1+w1, z1, 12, 12);
         vertex(x1, -y1, z1, 16, 16);
         vertex(x2, -y2, z1, 16, 0);
         
         // Side 3
+        glNormal3d(snx, -sny, 0);
         vertex(x1, -y1, z1, 0, 0);
         vertex(x1, -y1, z2, 0, 4);
         vertex(x2, -y2, z2, 16, 4);
         vertex(x2, -y2, z1, 16, 0);
         
         // End 3
+        glNormal3d(1, 0, 0);
         vertex(x2, -y2, z1, 0, 0);
         vertex(x2, -y2, z2, 0, 4);
         vertex(x2, -y2+w2, z2, 4, 4);
         vertex(x2, -y2+w2, z1, 4, 0);
         
         // Back
+        glNormal3d(0, 0, -1);
         vertex(x2, -y2, z2, 0, 0);
         vertex(x1, -y1, z2, 0, 16);
         vertex(x1, y1, z2, 16, 16);
@@ -342,22 +356,29 @@ public class SGBaseTERenderer extends BaseTileEntityRenderer {
         }
         glBegin(GL_QUADS);
 
+        // The top of the light texture is its brightest band. Only engaged chevrons use it;
+        // idle ones use the dark lower part so they don't look lit.
+        double fv = engaged ? 4 : 8; // outer edge of face 4
+        double ev = engaged ? 0 : 8; // end 4
+
         // Face 4
-        vertex(x2, y2-w2, z1, 0, 4);
+        glNormal3d(0, 0, 1);
+        vertex(x2, y2-w2, z1, 0, fv);
         vertex(x1+w1, y1-w1, z1, 4, 16);
         vertex(x1+w1, 0, z1, 8, 16);
-        vertex(x2, 0, z1, 8, 4);
+        vertex(x2, 0, z1, 8, fv);
         
-        vertex(x2, 0, z1, 8, 4);
+        vertex(x2, 0, z1, 8, fv);
         vertex(x1+w1, 0, z1, 8, 16);
         vertex(x1+w1, -y1+w1, z1,  12, 16);
-        vertex(x2, -y2+w2, z1, 16, 4);
+        vertex(x2, -y2+w2, z1, 16, fv);
         
         // End 4
-        vertex(x2, y2-w2, z2, 0, 0);
-        vertex(x2, y2-w2, z1, 0, 4);
-        vertex(x2, -y2+w2, z1, 16, 4);
-        vertex(x2, -y2+w2, z2, 16, 0);
+        glNormal3d(1, 0, 0);
+        vertex(x2, y2-w2, z2, 0, ev);
+        vertex(x2, y2-w2, z1, 0, ev + 4);
+        vertex(x2, -y2+w2, z1, 16, ev + 4);
+        vertex(x2, -y2+w2, z2, 16, ev);
         
         glColor3f(1, 1, 1);
         glEnd();
