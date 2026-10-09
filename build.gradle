@@ -66,7 +66,6 @@ compile 'org.spongepowered:configurate-yaml:3.7'
     compile "li.cil.oc:OpenComputers:MC1.12.1-1.7.1.52"
     compile "net.industrial-craft:industrialcraft-2:2.8.220-ex112:api"
     deobfCompile "dan200.computercraft:ComputerCraft:1.80pr1-build4"
-    deobfCompile "cofh:RedstoneFlux:1.12-2.1.0.6:universal"
 
     //deobfCompile "codechicken:CodeChickenLib:1.12.2-3.2.3.358:universal"
     //deobfCompile "cofh:CoFHCore:1.12.2-4.6.3.27:universal"
@@ -74,9 +73,25 @@ compile 'org.spongepowered:configurate-yaml:3.7'
     //deobfCompile "cofh:ThermalExpansion:1.12.2-5.5.3.41:universal"
     //deobfCompile "cofh:ThermalFoundation:1.12.2-2.6.2.26:universal"
     //deobfCompile "cofh:ThermalDynamics:1.12.2-2.5.5.21:universal"
-    deobfCompile ('com.almuradev:malisiscore:1.12.2-6.5.3-SNAPSHOT-dev') {
+    // Compile-only: MalisisCore is a coremod that also contains a mod, and Forge only loads the mod
+    // part from the mods folder, so the dev client gets it from run/mods (see copyDevMods)
+    deobfProvided ('com.almuradev:malisiscore:1.12.2-6.5.3-SNAPSHOT-dev') {
         transitive = false
     }
+}
+
+task copyDevMods(type: Copy) {
+    from 'lib/malisiscore-1.12.2-6.5.3-SNAPSHOT-dev.jar'
+    into 'run/mods'
+}
+
+tasks.matching { it.name in ['runClient', 'runServer'] }.all {
+    dependsOn copyDevMods
+}
+
+// Minecraft 1.12 needs Guava 21; SpongeForge's Guice would otherwise pull in 27.1 and crash the dev client
+configurations.all {
+    resolutionStrategy.force 'com.google.guava:guava:21.0'
 }
 
 deobfMcMCP { failOnAtError = false }
