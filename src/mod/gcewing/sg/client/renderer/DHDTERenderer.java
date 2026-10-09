@@ -69,11 +69,7 @@ public class DHDTERenderer extends BaseTileEntityRenderer {
         if (gte == null) {
             textures[buttonTextureIndex] = milkywayButtonTextures[i];
         } else {
-            if (gte.gateType == 2) {
-                textures[buttonTextureIndex] = pegasusButtonTextures[i];
-            } else {
-                textures[buttonTextureIndex] = milkywayButtonTextures[i];
-            }
+            textures[buttonTextureIndex] = gte.getGateType().select(milkywayButtonTextures, pegasusButtonTextures)[i];
         }
         model.render(t.translate(0, -0.5, 0), target, textures);
     }

@@ -7,6 +7,7 @@
 package gcewing.sg.client.gui;
 
 import gcewing.sg.tileentity.DHDTE;
+import gcewing.sg.util.GateType;
 import gcewing.sg.util.SGAddressing;
 import gcewing.sg.tileentity.SGBaseTE;
 import gcewing.sg.SGCraft;
@@ -188,11 +189,7 @@ public class DHDScreen extends SGScreen {
     private void dial() {
         SGBaseTE te = getStargateTE();
         if (te != null) {
-            if (te.gateType == 1) {
-                buttonSound(SGBaseTE.m_dhdDialSound);
-            } else {
-                buttonSound(SGBaseTE.p_dhdDialSound);
-            }
+            buttonSound(te.getGateType().select(SGBaseTE.m_dhdDialSound, SGBaseTE.p_dhdDialSound));
             sendConnectOrDisconnect(te, te.state == SGState.Idle ? getEnteredAddress() : "");
 
         }
@@ -219,11 +216,7 @@ public class DHDScreen extends SGScreen {
     
     private void chevron(char c) {
         if (stargateIsIdle()) {
-            if (this.cte.getLinkedStargateTE().gateType == 1) {
-                buttonSound(SGBaseTE.m_dhdPressSound);
-            } else {
-                buttonSound(SGBaseTE.p_dhdPressSound);
-            }
+            buttonSound(this.cte.getLinkedStargateTE().getGateType().select(SGBaseTE.m_dhdPressSound, SGBaseTE.p_dhdPressSound));
             String a = getEnteredAddress();
             int n = a.length();
             if (n < this.addressLength) {
@@ -266,21 +259,18 @@ public class DHDScreen extends SGScreen {
     private void drawButton() {
         SGBaseTE te = getStargateTE();
         boolean connected = te != null && te.isActive();
-        if (te.gateType == 2) {
-            bindTexture(SGCraft.mod.resourceLocation("textures/gui/pegasus_dhd_centre.png"), 128, 64);
-        } else {
-            bindTexture(SGCraft.mod.resourceLocation("textures/gui/milkyway_dhd_centre.png"), 128, 64);
-        }
+        GateType type = te.getGateType();
+        bindTexture(SGCraft.mod.resourceLocation("textures/gui/" + type.assetName + "_dhd_centre.png"), 128, 64);
         if (te == null || !te.isMerged)
             setColor(0.2, 0.2, 0.2); // grey
         else if (connected)
-            if (te.gateType == 2) {
+            if (type == GateType.PEGASUS) {
                 setColor(0.0, 0.45, 1.0);
             } else {
                 setColor(1.0, 0.5, 0.0);
             }
         else
-            if (te.gateType == 2) {
+            if (type == GateType.PEGASUS) {
                 setColor(0.0, 0.45, 0.8);
             } else {
                 setColor(0.5, 0.25, 0.0);

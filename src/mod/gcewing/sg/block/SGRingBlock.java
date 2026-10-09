@@ -12,6 +12,7 @@ import gcewing.sg.block.SGBaseBlock;
 import gcewing.sg.block.SGBlock;
 import gcewing.sg.tileentity.SGBaseTE;
 import gcewing.sg.tileentity.SGRingTE;
+import gcewing.sg.util.GateShape;
 import net.minecraft.block.*;
 import net.minecraft.block.material.*;
 import net.minecraft.block.properties.*;
@@ -139,6 +140,11 @@ public class SGRingBlock extends SGBlock<SGRingTE> {
         return te != null && te.isMerged;
     }
     
+    // Shape of the gates this block can be part of, used to search for their base blocks
+    public GateShape getShape() {
+        return GateShape.STANDARD;
+    }
+
     public void mergeWith(World world, BlockPos pos, BlockPos basePos) {
         SGRingTE te = getTileEntity(world, pos);
         te.isMerged = true;
@@ -176,9 +182,11 @@ public class SGRingBlock extends SGBlock<SGRingTE> {
         if (SGBaseBlock.debugMerge)
             System.out.printf("SGRingBlock.updateBaseBlocks: merged = %s, base = %s\n",
                 te.isMerged, te.basePos);
-        for (int i = -5; i <= 5; i++)
-            for (int j = -4; j <= 0; j++)
-                for (int k = -5; k <= 5; k++) {
+        GateShape shape = getShape();
+        int r = shape.searchRadius();
+        for (int i = -r; i <= r; i++)
+            for (int j = -shape.searchHeight(); j <= 0; j++)
+                for (int k = -r; k <= r; k++) {
                     BlockPos bp = pos.add(i, j, k);
                     Block block = world.getBlockState(bp).getBlock();
                     if (block instanceof SGBaseBlock) {

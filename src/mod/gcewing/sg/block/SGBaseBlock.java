@@ -13,6 +13,7 @@ import gcewing.sg.BaseConfiguration;
 import gcewing.sg.BaseOrientation;
 import gcewing.sg.tileentity.SGBaseTE;
 import gcewing.sg.SGCraft;
+import gcewing.sg.util.GateShape;
 import gcewing.sg.util.SGState;
 import gcewing.sg.Trans3;
 import gcewing.sg.Vector3;
@@ -39,14 +40,6 @@ public class SGBaseBlock extends SGBlock<SGBaseTE> {
     static boolean fieryExplosion = true;
     static boolean smokyExplosion = true;
     static boolean debug = false;
-
-    static int pattern[][] = {
-        {2, 1, 2, 1, 2},
-        {1, 0, 0, 0, 1},
-        {2, 0, 0, 0, 2},
-        {1, 0, 0, 0, 1},
-        {2, 1, 0, 1, 2},
-    };
 
     protected static String[] textures = {"stargateblock", "stargatering", "stargatebase_front"};
     protected static ModelSpec model = new ModelSpec("block/sg_base_block.smeg", textures);
@@ -83,6 +76,10 @@ public class SGBaseBlock extends SGBlock<SGBaseTE> {
         return model;
     }
     
+    public GateShape getShape() {
+        return GateShape.STANDARD;
+    }
+
     @Override
     public SGBaseTE getBaseTE(IBlockAccess world, BlockPos pos) {
         return getTileEntity(world, pos);
@@ -200,14 +197,15 @@ public class SGBaseBlock extends SGBlock<SGBaseTE> {
 
     public void checkForVerticalMerge(World world, BlockPos pos) {
         if (!isMerged(world, pos)) {
+            GateShape shape = getShape();
             Trans3 t = localToGlobalTransformation(world, pos);
-            for (int i = -2; i <= 2; i++) {
-                for (int j = 0; j <= 4; j++) {
+            for (int i = -shape.halfWidth; i <= shape.halfWidth; i++) {
+                for (int j = 0; j < shape.height; j++) {
                     if (!(i == 0 && j == 0)) {
                         BlockPos rp = t.p(i, j, 0).blockPos();
                         int type = getRingBlockType(world, rp);
-                        int pat = pattern[4 - j][2 + i];
-                        if (pat != 0 && type != pat) {
+                        int pat = shape.cellAt(i, j);
+                        if (pat != GateShape.EMPTY && type != pat) {
                             return;
                         }
                     }
@@ -218,8 +216,8 @@ public class SGBaseBlock extends SGBlock<SGBaseTE> {
             te.setMerged(true);
             te.gateOrientation = 1;
             BaseBlockUtils.markBlockForUpdate(world, pos);
-            for (int i = -2; i <= 2; i++)
-                for (int j = 0; j <= 4; j++)
+            for (int i = -shape.halfWidth; i <= shape.halfWidth; i++)
+                for (int j = 0; j < shape.height; j++)
                     if (!(i == 0 && j == 0)) {
                         BlockPos rp = t.p(i, j, 0).blockPos();
                         Block block = world.getBlockState(rp).getBlock();
@@ -234,14 +232,15 @@ public class SGBaseBlock extends SGBlock<SGBaseTE> {
     public void checkForHorizontalMerge(World world, BlockPos pos) {
         boolean debugThisMerge = true;
         if (!isMerged(world, pos)) {
+            GateShape shape = getShape();
             Trans3 t = localToGlobalTransformation(world, pos);
-            for (int x = -2; x <= 2; x++) {
-                for (int z = -4; z <= 0; z++) {
+            for (int x = -shape.halfWidth; x <= shape.halfWidth; x++) {
+                for (int z = -(shape.height - 1); z <= 0; z++) {
                     if (!(x == 0 && z == 0)) {
                         BlockPos rp = t.p(x, 0, z).blockPos();
                         int type = getRingBlockType(world, rp);
-                        int pat = pattern[4 + z][2 + x];
-                        if (pat != 0 && type != pat) {
+                        int pat = shape.cellAt(x, -z);
+                        if (pat != GateShape.EMPTY && type != pat) {
                             return;
                         }
                     }
@@ -253,8 +252,8 @@ public class SGBaseBlock extends SGBlock<SGBaseTE> {
             te.gateOrientation = 2;
             BaseBlockUtils.markBlockForUpdate(world, pos);
 
-            for (int x = -2; x <= 2; x++) {
-                for (int z = -4; z <= 0; z++) {
+            for (int x = -shape.halfWidth; x <= shape.halfWidth; x++) {
+                for (int z = -(shape.height - 1); z <= 0; z++) {
                     if (!(x == 0 && z == 0)) {
                         BlockPos rp = t.p(x, 0, z).blockPos();
                         Block block = world.getBlockState(rp).getBlock();
@@ -269,16 +268,16 @@ public class SGBaseBlock extends SGBlock<SGBaseTE> {
         }
     }
     
-    int getRingBlockType(World world, BlockPos pos) {
+    protected int getRingBlockType(World world, BlockPos pos) {
         IBlockState state = world.getBlockState(pos);
         Block block = state.getBlock();
         if (block == Blocks.AIR)
-            return 0;
+            return GateShape.EMPTY;
         if (block == SGCraft.sgRingBlock) {
             if (!SGCraft.sgRingBlock.isMerged(world, pos)) {
                 switch (state.getValue(SGRingBlock.VARIANT)) {
-                    case 0: return 1;
-                    case 1: return 2;
+                    case 0: return GateShape.RING;
+                    case 1: return GateShape.CHEVRON;
                 }
             }
         }
@@ -324,7 +323,7 @@ public class SGBaseBlock extends SGBlock<SGBaseTE> {
             unmergeRing(world, pos);
         }
         if (goBang && explosionRadius > 0)
-            explode(world, new Vector3(pos).add(0.5, 2.5, 0.5), explosionRadius);
+            explode(world, new Vector3(pos).add(0.5, 0.5 + getShape().centreY, 0.5), explosionRadius);
     }
     
     void explode(World world, Vector3 p, double s) {
@@ -332,9 +331,11 @@ public class SGBaseBlock extends SGBlock<SGBaseTE> {
     }
     
     void unmergeRing(World world, BlockPos pos) {
-        for (int i = -5; i <= 5; i++)
-            for (int j = 0; j <= 4; j++)
-                for (int k = -5; k <= 5; k++)
+        GateShape shape = getShape();
+        int r = shape.searchRadius();
+        for (int i = -r; i <= r; i++)
+            for (int j = 0; j <= shape.searchHeight(); j++)
+                for (int k = -r; k <= r; k++)
                     unmergeRingBlock(world, pos, pos.add(i, j, k));
     }
     

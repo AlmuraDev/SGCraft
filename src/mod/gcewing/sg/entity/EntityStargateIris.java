@@ -9,6 +9,7 @@ package gcewing.sg.entity;
 import gcewing.sg.BaseBlockUtils;
 import gcewing.sg.tileentity.SGBaseTE;
 import gcewing.sg.Trans3;
+import gcewing.sg.util.GateShape;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.buffer.ByteBufOutputStream;
@@ -33,12 +34,13 @@ public class EntityStargateIris extends Entity implements IEntityAdditionalSpawn
 
     public EntityStargateIris(SGBaseTE te) {
         this(te.getWorld());
-        double radius = 2;
+        GateShape shape = te.getShape();
+        double radius = shape.ringInnerRadius;
         double thickness = SGBaseTE.irisThickness;
         AxisAlignedBB localBox;
         if (te.gateOrientation == 1) { // Vertical
             double cx = 0;
-            double cy = 2;
+            double cy = shape.centreY;
             double cz = SGBaseTE.irisZPosition;
             double hx = radius;
             double hy = radius;
@@ -47,7 +49,7 @@ public class EntityStargateIris extends Entity implements IEntityAdditionalSpawn
         } else {
             double cx = 0;
             double cy = SGBaseTE.irisZPosition;
-            double cz = -2;
+            double cz = -shape.centreY;
             double hx = radius;
             double hy = thickness;
             double hz = radius;

@@ -12,6 +12,7 @@ import gcewing.sg.BaseTileEntityRenderer;
 import gcewing.sg.block.SGBaseBlock;
 import gcewing.sg.tileentity.SGBaseTE;
 import gcewing.sg.SGCraft;
+import gcewing.sg.util.GateShape;
 import gcewing.sg.util.SGState;
 import gcewing.sg.Vector3;
 import net.minecraft.block.Block;
@@ -29,18 +30,12 @@ import static org.lwjgl.opengl.GL12.GL_RESCALE_NORMAL;
 
 public class SGBaseTERenderer extends BaseTileEntityRenderer {
 
+    // Ring and event horizon sizes come from the gate's GateShape
     final static int numRingSegments = 32;
-    final static double ringInnerRadius = 2.0;
-    final static double ringMidRadius = 2.25;
-    final static double ringOuterRadius = 2.5;
-    final static double ringDepth = 0.5;
     final static double ringOverlap = 1/64.0;
     final static double ringZOffset = 0.0001;
-    final static double chevronInnerRadius = 2.25;
-    final static double chevronOuterRadius = ringOuterRadius + 1/16.0;
-    final static double chevronWidth = (chevronOuterRadius - chevronInnerRadius) * 1.5;
+    final static double chevronOuterOverhang = 1/16.0;
     final static double chevronDepth = 0.125;
-    final static double chevronBorderWidth = chevronWidth / 6;
     final static double chevronMotionDistance = 1/8.0;
     
     final static int textureTilesWide = 32;
@@ -51,11 +46,7 @@ public class SGBaseTERenderer extends BaseTileEntityRenderer {
     final static double ringSymbolTextureLength = 512.0; //27 * 8;
     final static double ringSymbolTextureHeight = 16.0; //12;
     final static double ringSymbolSegmentWidth = ringSymbolTextureLength / numRingSegments;
-    
-    public final static int ehGridRadialSize = 5;
-    public final static int ehGridPolarSize = numRingSegments;
-    public final static double ehBandWidth = ringInnerRadius / ehGridRadialSize;
-    
+
     final static double numIrisBlades = 12;
     
     static int chevronEngagementSequences[][] = {
@@ -93,45 +84,48 @@ public class SGBaseTERenderer extends BaseTileEntityRenderer {
             glEnable(GL_RESCALE_NORMAL);
             glColor4f(1.0F, 1.0F, 1.0F, 1.0F);
 
+            // Distance from the base block to the centre of the ring
+            double c = gate.getShape().centreY;
+
             if (gate.gateOrientation == 1) {
-                glTranslated(x + 0.5, y + 2.5, z + 0.5); // Vertical, facing SOUTH
+                glTranslated(x + 0.5, y + 0.5 + c, z + 0.5); // Vertical, facing SOUTH
             }
 
             if (gate.gateOrientation == 2) {
                 if (gate.facingDirectionOfBase == 0) { // North
-                    glTranslated(x + 0.5, y + 0.25, z + -1.5);
+                    glTranslated(x + 0.5, y + 0.25, z + 0.5 - c);
                     glRotatef(180, 0, 180, 180); // Horizontal, Face Up
                 }
                 if (gate.facingDirectionOfBase == 1) { // West
-                    glTranslated(x + -1.5, y + 0.25, z + 0.5);
+                    glTranslated(x + 0.5 - c, y + 0.25, z + 0.5);
                     glRotatef(180, 180, 180, 0); // Horizontal, Face Up
                 }
                 if (gate.facingDirectionOfBase == 2) { // South
-                    glTranslated(x + 0.5, y + 0.25, z + 2.5);
+                    glTranslated(x + 0.5, y + 0.25, z + 0.5 + c);
                     glRotatef(180, 0, -180, 180); // Horizontal, Face Up
                 }
                 if (gate.facingDirectionOfBase == 3) { // East
-                    glTranslated(x + 2.5, y + 0.25, z + 0.5);
+                    glTranslated(x + 0.5 + c, y + 0.25, z + 0.5);
                     glRotatef(180, 180, -180, 0); // Horizontal, Face Up
                 }
             }
 
             if (gate.gateOrientation == 3) {
                 if (gate.facingDirectionOfBase == 0) { // North
-                    glTranslated(x + 0.5, y + 0.25, z + -1.5);
+                    glTranslated(x + 0.5, y + 0.25, z + 0.5 - c);
                     glRotatef(180, 0, -180, 180); // Horizontal, Face Down
                 }
                 if (gate.facingDirectionOfBase == 1) { // West
-                    glTranslated(x + -1.5, y + 0.25, z + 0.5);
+                    glTranslated(x + 0.5 - c, y + 0.25, z + 0.5);
                     glRotatef(180, 180, -180, 0); // Horizontal, Face Down
 
                 }
                 if (gate.facingDirectionOfBase == 2) { // South
-                    glTranslated(x + 0.5, y + 0.25, z + 2.5);
+                    glTranslated(x + 0.5, y + 0.25, z + 0.5 + c);
                     glRotatef(180, 0, 180, 180); // Horizontal, Face Down
                 }
                 if (gate.facingDirectionOfBase == 3) { // East
-                    glTranslated(x + 2.5, y + 0.25, z + 0.5);
+                    glTranslated(x + 0.5 + c, y + 0.25, z + 0.5);
                     glRotatef(180, 180, 180, 0); // Horizontal, Face Down
                 }
             }
@@ -144,16 +138,13 @@ public class SGBaseTERenderer extends BaseTileEntityRenderer {
 
     void renderStargate(SGBaseTE gate, float partialTicks) {
         BaseGLUtils.glMultMatrix(gate.localToGlobalTransformation(Vector3.zero));
-        if (gate.gateType <= 1) {
-            bindTexture(SGCraft.mod.resourceLocation("textures/tileentity/milkyway/stargate.png"));
-        } else {
-            bindTexture(SGCraft.mod.resourceLocation("textures/tileentity/pegasus/stargate.png"));
-        }
+        bindTexture(SGCraft.mod.resourceLocation("textures/tileentity/" + gate.getGateType().assetName + "/stargate.png"));
 
+        GateShape shape = gate.getShape();
         glNormal3f(0, 1, 0);
-        renderRing(ringMidRadius - ringOverlap, ringOuterRadius, RingType.Outer, ringZOffset);
-        renderInnerRing(gate, partialTicks);
-        renderChevrons(gate);
+        renderRing(shape.ringMidRadius - ringOverlap, shape.ringOuterRadius, shape.ringDepth, RingType.Outer, ringZOffset);
+        renderInnerRing(gate, shape, partialTicks);
+        renderChevrons(gate, shape);
         if (gate.hasIrisUpgrade)
             renderIris(gate, partialTicks);
         if (gate.isConnected() && gate.state != SGState.SyncAwait) {
@@ -161,16 +152,16 @@ public class SGBaseTERenderer extends BaseTileEntityRenderer {
         }
     }
     
-    void renderInnerRing(SGBaseTE te, float partialTicks) {
+    void renderInnerRing(SGBaseTE te, GateShape shape, float partialTicks) {
         glPushMatrix();
         glRotatef((float)(te.interpolatedRingAngle(partialTicks) + SGBaseTE.ringSymbolAngle / 2), 0, 0, 1);
-        renderRing(ringInnerRadius, ringMidRadius, RingType.Inner, 0);
+        renderRing(shape.ringInnerRadius, shape.ringMidRadius, shape.ringDepth, RingType.Inner, 0);
 
         glPopMatrix();
     }
-        
-    void renderRing(double r1, double r2, RingType type, double dz) {
-        double z = ringDepth / 2 + dz;
+
+    void renderRing(double r1, double r2, double depth, RingType type, double dz) {
+        double z = depth / 2 + dz;
         double u = 0, du = 0, dv = 0;
         glBegin(GL_QUADS);
         for (int i = 0; i < numRingSegments; i++) {
@@ -222,7 +213,7 @@ public class SGBaseTERenderer extends BaseTileEntityRenderer {
         glEnd();
     }
     
-    void renderChevrons(SGBaseTE te) {
+    void renderChevrons(SGBaseTE te, GateShape shape) {
         int numChevrons = te.getNumChevrons();
         int i0 = numChevrons > 7 ? 0 : 1;
         int k = 0;
@@ -245,12 +236,12 @@ public class SGBaseTERenderer extends BaseTileEntityRenderer {
         for (int i = i0; i < i0 + numChevrons; i++) {
             int j = chevronEngagementSequences[k][i];
             boolean engaged = te.chevronIsEngaged(j);
-            renderChevronAtPosition(te, i, a, engaged);
+            renderChevronAtPosition(te, shape, i, a, engaged);
         }
     }
 
     // Render a chevron at the given position (0 to 8, with 4 being top dead centre)
-    void renderChevronAtPosition(SGBaseTE gate, int i, float a, boolean engaged) {
+    void renderChevronAtPosition(SGBaseTE gate, GateShape shape, int i, float a, boolean engaged) {
         glPushMatrix();
 
         if (gate.gateOrientation == 1) {
@@ -265,16 +256,17 @@ public class SGBaseTERenderer extends BaseTileEntityRenderer {
             glRotatef(90 - (i - 4) * a, 0, 0, 1);
         }
 
-        chevron(engaged);
+        chevron(shape, engaged);
         glPopMatrix();
     }
-    
-    void chevron(boolean engaged) {
-        double r1 = chevronInnerRadius;
-        double r2 = chevronOuterRadius;
-        double z2 = ringDepth / 2;
+
+    void chevron(GateShape shape, boolean engaged) {
+        double r1 = shape.ringMidRadius;
+        double r2 = shape.ringOuterRadius + chevronOuterOverhang;
+        double chevronWidth = (r2 - r1) * 1.5;
+        double z2 = shape.ringDepth / 2;
         double z1 = z2 + chevronDepth;
-        double w1 = chevronBorderWidth;
+        double w1 = chevronWidth / 6;
         double w2 = w1 * 1.25;
         double x1 = r1, y1 = chevronWidth / 4;
         double x2 = r2, y2 = chevronWidth / 2;
@@ -392,21 +384,22 @@ public class SGBaseTERenderer extends BaseTileEntityRenderer {
         setLightingDisabled(true);
         glDisable(GL_CULL_FACE);
         glNormal3d(0, 0, 1);
+        GateShape shape = te.getShape();
         double grid[][] = te.getEventHorizonGrid()[0];
-        double rclip = 2.5 * (te.irisIsClosed() ?  te.getIrisAperture(partialTicks) : 1.0);
-        for (int i = 1; i < ehGridRadialSize; i++) {
+        double rclip = shape.ehClipRadius * (te.irisIsClosed() ?  te.getIrisAperture(partialTicks) : 1.0);
+        for (int i = 1; i < shape.ehGridRadialSize; i++) {
             glBegin(GL_QUAD_STRIP);
-            for (int j = 0; j <= ehGridPolarSize; j++) {
-                ehVertex(grid, i, j, rclip);
-                ehVertex(grid, i+1, j, rclip);
+            for (int j = 0; j <= shape.ehGridPolarSize; j++) {
+                ehVertex(shape, grid, i, j, rclip);
+                ehVertex(shape, grid, i+1, j, rclip);
             }
             glEnd();
         }
         glBegin(GL_TRIANGLE_FAN);
         glTexCoord2d(0, 0);
         glVertex3d(0, 0, ehClip(grid[1][0], 0, rclip));
-        for (int j = 0; j <= ehGridPolarSize; j++)
-            ehVertex(grid, 1, j, rclip);
+        for (int j = 0; j <= shape.ehGridPolarSize; j++)
+            ehVertex(shape, grid, 1, j, rclip);
         glEnd();
         glDepthMask(true);
         glEnable(GL_CULL_FACE);
@@ -414,10 +407,10 @@ public class SGBaseTERenderer extends BaseTileEntityRenderer {
         setLightingDisabled(false);
     }
     
-    void ehVertex(double[][] grid, int i, int j, double rclip) {
-        double r = i * ehBandWidth;
-        double x = r * c[j];
-        double y = r * s[j];
+    void ehVertex(GateShape shape, double[][] grid, int i, int j, double rclip) {
+        double r = i * shape.ehBandWidth;
+        double x = r * shape.ehCos[j];
+        double y = r * shape.ehSin[j];
         double z = ehClip(grid[j+1][i], r, rclip);
         glTexCoord2d(x, y);
         glVertex3d(x, y, z);
@@ -430,11 +423,7 @@ public class SGBaseTERenderer extends BaseTileEntityRenderer {
     }       
     
     void renderIris(SGBaseTE te, double t) {
-        if (te.gateType <= 1) {
-            bindTexture(SGCraft.mod.resourceLocation("textures/tileentity/milkyway/iris.png"));
-        } else {
-            bindTexture(SGCraft.mod.resourceLocation("textures/tileentity/pegasus/iris.png"));
-        }
+        bindTexture(SGCraft.mod.resourceLocation("textures/tileentity/" + te.getGateType().assetName + "/iris.png"));
         double a = 0.8 * te.getIrisAperture(t);
         for (int i = 0; i < numIrisBlades; i++) {
             glPushMatrix();
