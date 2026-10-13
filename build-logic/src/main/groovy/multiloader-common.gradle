@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
     id 'maven-publish'
+    id 'net.neoforged.licenser'
 }
 
 base {
@@ -80,4 +81,10 @@ publishing {
             url System.getenv('local_maven_url')
         }
     }
+}
+
+// Every source file carries the MIT header; `gradlew updateLicenses` adds it, `gradlew check` fails without it
+license {
+    header = rootProject.file('HEADER.txt')
+    include '**/*.java'
 }
