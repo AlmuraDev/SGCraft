@@ -1,0 +1,13 @@
+plugins {
+    id 'multiloader-shared'
+    id 'net.neoforged.moddev'
+}
+
+neoForge {
+    neoFormVersion = neo_form_version
+}
+
+// Add-ons build against this project's jar, so it gets its own published name
+base {
+    archivesName = "${mod_id}-api-${minecraft_version}"
+}

@@ -1,9 +1,17 @@
 # Credits
 
+## Original author
+
+SGCraft was created by **gcewing**, who wrote the original mod for Minecraft 1.7 to 1.10: the gates, the DHD,
+dialling, gate addressing and the rendering that every later version grew from. The original code is under the
+MIT licence, and gcewing's copyright stays in [LICENSE](LICENSE). Classes in this remake that carry over gcewing's
+design say so in their header.
+
 ## Gate models
 
 SGCraft's gates are built from measurements of these models. The data measured from each one
 (the files listed under it) is under that model's licence, as given on its page, not SGCraft's.
+The paths are where the data lives in the 1.12 mod on `master`; they move as each gate is ported.
 
 ### Milky Way Stargate | Stargate SG-1
 

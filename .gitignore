@@ -1,16 +1,25 @@
-.gradle/
-.idea/
-*.iml
-lib/*
-!lib/README.txt
-build/
-classes/
-run/
+# eclipse
+bin
+*.launch
+.settings
+.metadata
 .classpath
-.metadata/
 .project
-.settings/
-SGCraft_Client.launch
-SGCraft_Server.launch
-bin/
-test.sh
+
+# idea
+out
+*.ipr
+*.iws
+*.iml
+.idea/*
+!.idea/scopes
+
+# gradle
+build
+.gradle
+
+# other
+eclipse
+run
+runs
+

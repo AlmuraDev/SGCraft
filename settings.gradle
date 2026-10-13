@@ -1,0 +1,31 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = 'Fabric'
+                    url = uri('https://maven.fabricmc.net')
+                }
+            }
+            filter {
+                includeGroupAndSubgroups('net.fabricmc')
+            }
+        }
+    }
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
+}
+
+rootProject.name = 'SGCraft'
+includeBuild('build-logic')
+// The Stargate API that add-ons build against
+include('api')
+// The mod itself, written against vanilla Minecraft only
+include('common')
+// Thin layers that load common on each mod loader
+include('fabric')
+include('neoforge')

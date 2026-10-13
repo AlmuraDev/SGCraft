@@ -1,0 +1,12 @@
+plugins {
+    id 'multiloader-shared'
+    id 'net.neoforged.moddev'
+}
+
+neoForge {
+    neoFormVersion = neo_form_version
+}
+
+dependencies {
+    compileOnly(project(':api'))
+}

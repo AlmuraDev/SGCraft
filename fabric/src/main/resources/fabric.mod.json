@@ -1,0 +1,31 @@
+{
+    "schemaVersion": 1,
+    "id": "${mod_id}",
+    "version": "${version}",
+    "name": "${mod_name}",
+    "description": "${description}",
+    "authors": [
+        "${mod_author}"
+    ],
+    "contributors": [
+        "gcewing (original author)"
+    ],
+    "contact": {
+        "homepage": "https://github.com/AlmuraDev/SGCraft",
+        "sources": "https://github.com/AlmuraDev/SGCraft",
+        "issues": "https://github.com/AlmuraDev/SGCraft/issues"
+    },
+    "license": "${license}",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "com.almuradev.sgcraft.fabric.SGCraftFabric"
+        ]
+    },
+    "depends": {
+        "fabricloader": ">=${fabric_loader_version}",
+        "fabric-api": "*",
+        "minecraft": "~${minecraft_version}",
+        "java": ">=${java_version}"
+    }
+}
