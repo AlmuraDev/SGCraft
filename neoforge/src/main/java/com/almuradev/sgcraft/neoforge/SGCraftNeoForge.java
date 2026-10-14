@@ -25,6 +25,15 @@
 
 package com.almuradev.sgcraft.neoforge;
 
+import com.almuradev.sgcraft.command.SGCommands;
+import com.almuradev.sgcraft.mod.SGBuiltIns;
+import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.sound.SGSounds;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import com.almuradev.sgcraft.SGCraft;
 import com.almuradev.sgcraft.api.SGCraftRegistries;
 import com.almuradev.sgcraft.block.SGBlocks;
@@ -50,6 +59,11 @@ public final class SGCraftNeoForge {
         SGCraft.init();
         modBus.addListener(SGCraftNeoForge::createRegistries);
         modBus.addListener(SGCraftNeoForge::register);
+        NeoForge.EVENT_BUS.addListener((final ServerStartingEvent event) -> SGServer.starting(event.getServer()));
+        NeoForge.EVENT_BUS.addListener((final ServerTickEvent.Post event) -> SGServer.tick(event.getServer()));
+        NeoForge.EVENT_BUS.addListener((final ServerStoppedEvent event) -> SGServer.stopped(event.getServer()));
+        NeoForge.EVENT_BUS.addListener((final RegisterCommandsEvent event) ->
+                SGCommands.register(event.getDispatcher()));
     }
 
     private static void createRegistries(final NewRegistryEvent event) {
@@ -67,6 +81,9 @@ public final class SGCraftNeoForge {
         event.register(Registries.ITEM, helper -> SGItems.register(helper::register));
         event.register(Registries.BLOCK_ENTITY_TYPE, helper -> SGBlockEntityTypes.register(helper::register));
         event.register(SGCraftRegistries.GATE_TYPE, helper -> SGGateTypes.register(helper::register));
+        event.register(Registries.SOUND_EVENT, helper -> SGSounds.register(helper::register));
+        event.register(SGCraftRegistries.ADDRESS_REACH, helper -> SGBuiltIns.registerReaches(helper::register));
+        event.register(SGCraftRegistries.GATE_PROPERTY, helper -> SGBuiltIns.registerProperties(helper::register));
         event.register(Registries.CREATIVE_MODE_TAB, helper -> helper.register(SGItems.tabKey(), CreativeModeTab.builder()
                 .title(SGItems.tabTitle())
                 .icon(() -> new ItemStack(SGItems.STARGATE_CHEVRON))

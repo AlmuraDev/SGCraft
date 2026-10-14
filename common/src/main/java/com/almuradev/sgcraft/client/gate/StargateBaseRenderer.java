@@ -28,13 +28,19 @@ package com.almuradev.sgcraft.client.gate;
 import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.api.gate.GateTypes;
 import com.almuradev.sgcraft.block.entity.StargateBaseBlockEntity;
+import com.almuradev.sgcraft.SGCraft;
+import com.almuradev.sgcraft.gate.ChevronOrder;
+import com.almuradev.sgcraft.gate.EventHorizon;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.SubmitNodeCollector;
+import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -61,6 +67,8 @@ public final class StargateBaseRenderer implements BlockEntityRenderer<StargateB
     private static final double GATE_HALF_WIDTH = 3.0;
     private static final double GATE_HEIGHT = 5.0;
 
+    private static final Identifier HORIZON = SGCraft.id("textures/gate/event_horizon.png");
+
     private static final Map<ResourceKey<GateType>, GateTypeRenderer> RENDERERS = Map.of(
             GateTypes.MILKY_WAY, new MilkyWayGateRenderer(),
             GateTypes.PEGASUS, new PegasusGateRenderer(),
@@ -82,6 +90,23 @@ public final class StargateBaseRenderer implements BlockEntityRenderer<StargateB
         state.formed = gate.isFormed();
         state.gateType = gate.gateType();
         state.facing = gate.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
+        state.chevrons = gate.chevrons();
+        state.view = gate.dialView();
+        state.locked = ChevronOrder.locked(gate.chevrons(), state.view.symbols().size(), state.view.engaged());
+        state.time = gate.getLevel() != null ? gate.getLevel().getGameTime() + partialTicks : 0;
+        final EventHorizon horizon = gate.horizon();
+        if (horizon == null) {
+            state.horizon = null;
+        } else {
+            if (state.horizon == null) {
+                state.horizon = new double[EventHorizon.SPOKES + 1][EventHorizon.RINGS + 1];
+            }
+            for (int j = 0; j <= EventHorizon.SPOKES; j++) {
+                for (int i = 0; i <= EventHorizon.RINGS; i++) {
+                    state.horizon[j][i] = horizon.offset(j, i, partialTicks);
+                }
+            }
+        }
         // The base is solid, so it has no light of its own; the gate is lit as the middle of its ring is
         if (gate.getLevel() != null) {
             state.lightCoords = LightCoordsUtil.getLightCoords(gate.getLevel(), gate.getBlockPos().above(2));
@@ -100,7 +125,49 @@ public final class StargateBaseRenderer implements BlockEntityRenderer<StargateB
         poseStack.rotateDegrees(Axis.YP, -state.facing.toYRot());
         poseStack.translate(0.0, StargateBaseRenderer.CENTRE_HEIGHT, 0.0);
         renderer.submit(state, poseStack, collector);
+        if (state.horizon != null) {
+            StargateBaseRenderer.submitHorizon(state.horizon, poseStack, collector);
+        }
         poseStack.popPose();
+    }
+
+    // The open wormhole's surface, solid so nothing shows through it, on both faces, its texture repeating every
+    // block
+    private static void submitHorizon(final double[][] horizon, final PoseStack poseStack,
+            final SubmitNodeCollector collector) {
+        collector.submitCustomGeometry(poseStack, RenderTypes.beaconBeam(StargateBaseRenderer.HORIZON, false),
+                (pose, buffer) -> {
+                    for (int j = 0; j < EventHorizon.SPOKES; j++) {
+                        for (int i = 0; i < EventHorizon.RINGS; i++) {
+                            // The innermost band closes to a point at the centre
+                            final double[][] quad = {
+                                    StargateBaseRenderer.point(horizon, j, i),
+                                    StargateBaseRenderer.point(horizon, j + 1, i),
+                                    StargateBaseRenderer.point(horizon, j + 1, i + 1),
+                                    StargateBaseRenderer.point(horizon, j, i + 1)};
+                            StargateBaseRenderer.horizonQuad(pose, buffer, quad, false);
+                            StargateBaseRenderer.horizonQuad(pose, buffer, quad, true);
+                        }
+                    }
+                });
+    }
+
+    private static double[] point(final double[][] horizon, final int spoke, final int ring) {
+        final double angle = 2 * Math.PI * spoke / EventHorizon.SPOKES;
+        final double radius = ring * EventHorizon.BAND;
+        return new double[] {radius * Math.cos(angle), radius * Math.sin(angle),
+                horizon[spoke % EventHorizon.SPOKES][ring]};
+    }
+
+    private static void horizonQuad(final PoseStack.Pose pose, final VertexConsumer buffer, final double[][] quad,
+            final boolean back) {
+        for (int k = 0; k < 4; k++) {
+            final double[] p = quad[back ? 3 - k : k];
+            buffer.addVertex(pose, (float) p[0], (float) p[1], (float) p[2])
+                    .setColor(-1)
+                    .setUv((float) p[0], (float) p[1])
+                    .setLight(LightCoordsUtil.FULL_BRIGHT);
+        }
     }
 
     @Override

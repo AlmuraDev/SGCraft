@@ -25,8 +25,11 @@
 
 package com.almuradev.sgcraft.client.gate;
 
+import com.almuradev.sgcraft.gate.ChevronOrder;
+import com.almuradev.sgcraft.gate.DialView;
 import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.api.gate.GateTypes;
+import org.jspecify.annotations.Nullable;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
@@ -40,4 +43,11 @@ public final class StargateBaseRenderState extends BlockEntityRenderState {
     public ResourceKey<GateType> gateType = GateTypes.MILKY_WAY;
     public Direction facing = Direction.NORTH;
     public int chevrons = 7;
+    // Whether each chevron position's chevron is locked; see ChevronOrder
+    public boolean[] locked = new boolean[ChevronOrder.POSITIONS];
+    // What the gate is doing, and the time to draw it at, in ticks with the partial tick
+    public DialView view = DialView.IDLE;
+    public double time;
+    // How far forward of the gate each point of the open wormhole's surface is, by spoke and ring; null while closed
+    public double @Nullable [][] horizon;
 }

@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.block;
 
 import com.almuradev.sgcraft.api.gate.GateType;
+import com.almuradev.sgcraft.block.entity.SGBlockEntityTypes;
 import com.almuradev.sgcraft.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.gate.GateFormation;
 import net.minecraft.core.BlockPos;
@@ -40,6 +41,8 @@ import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -115,6 +118,20 @@ public final class StargateBaseBlock extends HorizontalDirectionalBlock implemen
     }
 
     @Override
+    public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(final Level level, final BlockState state,
+            final BlockEntityType<T> type) {
+        if (type != SGBlockEntityTypes.STARGATE_BASE) {
+            return null;
+        }
+        if (level.isClientSide()) {
+            return (tickLevel, pos, tickState, entity) -> StargateBaseBlockEntity.clientTick(tickLevel, pos,
+                    (StargateBaseBlockEntity) entity);
+        }
+        return (tickLevel, pos, tickState, entity) -> StargateBaseBlockEntity.serverTick((ServerLevel) tickLevel, pos,
+                (StargateBaseBlockEntity) entity);
+    }
+
+    @Override
     protected void onPlace(final BlockState state, final Level level, final BlockPos pos, final BlockState oldState,
             final boolean movedByPiston) {
         super.onPlace(state, level, pos, oldState, movedByPiston);
@@ -128,5 +145,8 @@ public final class StargateBaseBlock extends HorizontalDirectionalBlock implemen
             final boolean movedByPiston) {
         super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
         GateFormation.releaseRing(level, pos, state.getValue(HorizontalDirectionalBlock.FACING));
+        if (state.getValue(StargateBaseBlock.FORMED)) {
+            GateFormation.unregister(level, pos);
+        }
     }
 }

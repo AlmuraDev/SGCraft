@@ -25,6 +25,15 @@
 
 package com.almuradev.sgcraft.fabric;
 
+import com.almuradev.sgcraft.api.address.AddressReach;
+import com.almuradev.sgcraft.api.gate.GateProperty;
+import com.almuradev.sgcraft.command.SGCommands;
+import com.almuradev.sgcraft.mod.SGBuiltIns;
+import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.sound.SGSounds;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import com.almuradev.sgcraft.SGCraft;
 import com.almuradev.sgcraft.api.SGCraftRegistries;
 import com.almuradev.sgcraft.api.gate.GateType;
@@ -59,7 +68,15 @@ public final class SGCraftFabric implements ModInitializer {
         @SuppressWarnings("unchecked")
         final Registry<GateType> gateTypes = (Registry<GateType>) created.get(SGCraftRegistries.GATE_TYPE);
         SGGateTypes.register((key, type) -> Registry.register(gateTypes, key, type));
+        @SuppressWarnings("unchecked")
+        final Registry<AddressReach> reaches = (Registry<AddressReach>) created.get(SGCraftRegistries.ADDRESS_REACH);
+        SGBuiltIns.registerReaches((key, reach) -> Registry.register(reaches, key, reach));
+        @SuppressWarnings("unchecked")
+        final Registry<GateProperty<?>> properties =
+                (Registry<GateProperty<?>>) created.get(SGCraftRegistries.GATE_PROPERTY);
+        SGBuiltIns.registerProperties((key, property) -> Registry.register(properties, key, property));
         SGBlocks.register((key, block) -> Registry.register(BuiltInRegistries.BLOCK, key, block));
+        SGSounds.register((key, sound) -> Registry.register(BuiltInRegistries.SOUND_EVENT, key, sound));
         SGItems.register((key, item) -> Registry.register(BuiltInRegistries.ITEM, key, item));
         SGBlockEntityTypes.register((key, type) -> Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, type));
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, SGItems.tabKey(), FabricCreativeModeTab.builder()
@@ -67,5 +84,10 @@ public final class SGCraftFabric implements ModInitializer {
                 .icon(() -> new ItemStack(SGItems.STARGATE_CHEVRON))
                 .displayItems((parameters, output) -> SGItems.tabItems().forEach(output::accept))
                 .build());
+        ServerLifecycleEvents.SERVER_STARTING.register(SGServer::starting);
+        ServerTickEvents.END_SERVER_TICK.register(SGServer::tick);
+        ServerLifecycleEvents.SERVER_STOPPED.register(SGServer::stopped);
+        CommandRegistrationCallback.EVENT.register((dispatcher, registries, environment) ->
+                SGCommands.register(dispatcher));
     }
 }

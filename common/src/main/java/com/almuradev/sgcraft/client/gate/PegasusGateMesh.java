@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.client.gate;
 
+import com.almuradev.sgcraft.gate.ChevronOrder;
 import com.almuradev.sgcraft.SGCraft;
 
 import java.io.InputStream;
@@ -130,9 +131,12 @@ public final class PegasusGateMesh {
         return this.screensFor(chevrons)[0];
     }
 
-    /** @return the glyphs standing out of the screens, for a gate with the given number of chevrons */
-    public synchronized float[] glyphs(final int chevrons) {
-        return this.screensFor(chevrons)[1];
+    /**
+     * @param screen a screen, as {@link #screenAngles(int)} orders them
+     * @return the glyph standing out of that screen, for a gate with the given number of chevrons
+     */
+    public synchronized float[] glyph(final int chevrons, final int screen) {
+        return this.screensFor(chevrons)[1 + screen];
     }
 
     private float[][] screensFor(final int chevrons) {
@@ -151,8 +155,9 @@ public final class PegasusGateMesh {
         final List<double[]> tris = this.model.group("screen");
         final List<double[]> normals = this.model.cornerNormals("screen");
         final GateGeometry.Builder screens = new GateGeometry.Builder();
-        final GateGeometry.Builder glyphs = new GateGeometry.Builder();
+        final float[][] built = new float[1 + angles.length][];
         for (int s = 0; s < angles.length; s++) {
+            final GateGeometry.Builder glyphs = new GateGeometry.Builder();
             final double turn = Math.toRadians(angles[s] - 90);
             final double offsetU = (s * 0.37) % 1;
             final double offsetV = (s * 0.61) % 1;
@@ -178,14 +183,16 @@ public final class PegasusGateMesh {
                     this.corner(glyphs, t, glyphNormals.get(i), v, turn, t[5 * v + 3], t[5 * v + 4]);
                 }
             }
+            built[1 + s] = glyphs.build();
         }
-        return new float[][] {screens.build(), glyphs.build()};
+        built[0] = screens.build();
+        return built;
     }
 
     // The screens' places round the ring: the gaps between the chevrons, each split into screens about a glyph apart,
     // so they line up with the chevrons. Angles (degrees) rise anticlockwise round the ring.
-    private static double[] screenAngles(final int chevrons) {
-        final int first = chevrons > 7 ? 0 : 1;
+    public static double[] screenAngles(final int chevrons) {
+        final int first = ChevronOrder.first(chevrons);
         final double[] at = new double[chevrons];
         for (int k = 0; k < chevrons; k++) {
             at[k] = ((90 - (first + k - 4) * StargateBaseRenderer.CHEVRON_SPACING) % 360 + 360) % 360;

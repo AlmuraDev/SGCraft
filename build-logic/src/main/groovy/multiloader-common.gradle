@@ -86,7 +86,11 @@ publishing {
 // Every source file carries the MIT header; `gradlew updateLicenses` adds it, `gradlew check` fails without it.
 // Files that carry on gcewing's work carry his copyright too: list each one here as it is ported.
 def gcewingFiles = [
+        '**/com/almuradev/sgcraft/gate/ChevronOrder.java',
+        '**/com/almuradev/sgcraft/gate/DialStyle.java',
+        '**/com/almuradev/sgcraft/gate/EventHorizon.java',
         '**/com/almuradev/sgcraft/gate/GateFormation.java',
+        '**/com/almuradev/sgcraft/mod/SGConnection.java',
 ]
 license {
     header = rootProject.file('HEADER.txt')

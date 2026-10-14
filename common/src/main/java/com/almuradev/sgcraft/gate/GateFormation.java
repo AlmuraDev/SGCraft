@@ -27,6 +27,8 @@
 
 package com.almuradev.sgcraft.gate;
 
+import com.almuradev.sgcraft.mod.SGServer;
+import net.minecraft.core.GlobalPos;
 import com.almuradev.sgcraft.block.RingBlock;
 import com.almuradev.sgcraft.block.StargateBaseBlock;
 import com.almuradev.sgcraft.block.entity.StargateBaseBlockEntity;
@@ -88,6 +90,7 @@ public final class GateFormation {
         level.setBlock(basePos, baseState.setValue(StargateBaseBlock.FORMED, true), Block.UPDATE_ALL);
         base.setGateType(((StargateBaseBlock) baseState.getBlock()).gateType());
         base.setFormed(true);
+        GateFormation.register(level, basePos, base, facing);
         return true;
     }
 
@@ -104,6 +107,7 @@ public final class GateFormation {
                     && GateFormation.isInRing(basePos, baseState.getValue(HorizontalDirectionalBlock.FACING), ringPos)) {
                 level.setBlock(basePos, baseState.setValue(StargateBaseBlock.FORMED, false), Block.UPDATE_ALL);
                 base.setFormed(false);
+                GateFormation.unregister(level, basePos);
                 GateFormation.releaseRing(level, basePos, baseState.getValue(HorizontalDirectionalBlock.FACING));
             }
         });
@@ -117,6 +121,23 @@ public final class GateFormation {
                 level.setBlock(ringPos, ringState.setValue(RingBlock.MERGED, false), Block.UPDATE_ALL);
             }
         });
+    }
+
+    /** Records a formed gate with the server's gates, so it can be found and dialled. */
+    public static void register(final ServerLevel level, final BlockPos basePos, final StargateBaseBlockEntity base,
+            final Direction facing) {
+        SGServer.current().ifPresent(server -> server.stargates().formed(GlobalPos.of(level.dimension(), basePos),
+                base.gateType(), facing, base.chevrons()));
+    }
+
+    /** Forgets a gate that is no longer formed. */
+    public static void unregister(final ServerLevel level, final BlockPos basePos) {
+        SGServer.current().ifPresent(server -> server.stargates().broken(GlobalPos.of(level.dimension(), basePos)));
+    }
+
+    /** @return whether {@code pos} is the base or one of the ring blocks of a gate whose base faced {@code facing} */
+    public static boolean isPartOfGate(final BlockPos basePos, final Direction facing, final BlockPos pos) {
+        return pos.equals(basePos) || GateFormation.isInRing(basePos, facing, pos);
     }
 
     private static boolean ringMatches(final ServerLevel level, final BlockPos basePos, final Direction facing) {

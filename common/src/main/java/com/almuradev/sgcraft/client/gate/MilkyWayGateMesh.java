@@ -58,10 +58,12 @@ public final class MilkyWayGateMesh {
 
     private final List<float[]> lists;
     private final int moves;
+    private final double[][] offsets;
 
-    private MilkyWayGateMesh(final List<float[]> lists, final int moves) {
+    private MilkyWayGateMesh(final List<float[]> lists, final int moves, final double[][] offsets) {
         this.lists = lists;
         this.moves = moves;
+        this.offsets = offsets;
     }
 
     /** @return the mesh, or null if the model couldn't be loaded */
@@ -84,6 +86,11 @@ public final class MilkyWayGateMesh {
     /** @return how many ways the corners of the top chevron move as it locks a symbol */
     public int moves() {
         return this.moves;
+    }
+
+    /** @return how far, in blocks, the corners moving the given way go when the top chevron locks */
+    public double[] offset(final int move) {
+        return this.offsets[move];
     }
 
     /** @return the triangles of one of the rings' parts */
@@ -121,7 +128,12 @@ public final class MilkyWayGateMesh {
             final boolean light = i >= MilkyWayGateModel.CHEVRON + moves;
             lists.add(MilkyWayGateMesh.flatten(tris.get(i), scale, light));
         }
-        return new MilkyWayGateMesh(lists, moves);
+        final double[][] offsets = new double[moves][];
+        for (int m = 0; m < moves; m++) {
+            final double[] move = model.move(m);
+            offsets[m] = new double[] {move[0] * scale, move[1] * scale, move[2] * scale};
+        }
+        return new MilkyWayGateMesh(lists, moves, offsets);
     }
 
     // The triangles scaled into blocks, each corner given texture coordinates: a light's glass laid over the whole

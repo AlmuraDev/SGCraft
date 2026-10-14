@@ -40,3 +40,9 @@ The paths are where the data lives in this remake, under `common/src/main/resour
   `chevron_paint.png` in `textures/gate/universe`), measured from it by the tools in `tools/universe` of the
   1.12 mod. `glyphs_cut.png` and `chevron_lights_cut.png` are made from `glyphs.png` and
   `chevron_lights.png` and share their licence.
+
+## Sounds and the event horizon
+
+The gates' sounds (`sounds`) and the event horizon's texture (`textures/gate/event_horizon.png`) come from the
+1.12 mod as they were, along with the timings, the order chevrons lock in and the wave simulation of the
+wormhole's surface, which gcewing designed.

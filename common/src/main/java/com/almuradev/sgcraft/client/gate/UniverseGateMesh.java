@@ -27,6 +27,8 @@ package com.almuradev.sgcraft.client.gate;
 
 import com.almuradev.sgcraft.SGCraft;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -82,6 +84,7 @@ public final class UniverseGateMesh {
     private final float[][] overlays = new float[2][];
     private final float[] panels;
     private final float[] symbols;
+    private final float[][] symbol = new float[UniverseGateMesh.SYMBOLS][];
 
     private UniverseGateMesh(final UniverseGateModel model) {
         this.scale = UniverseGateMesh.RING_OUTER_RADIUS / UniverseGateModel.OUTER_RADIUS;
@@ -108,7 +111,12 @@ public final class UniverseGateMesh {
             this.chevrons[m] = this.metal(parts.get(UniverseGateModel.PARTS + m));
         }
         this.panels = this.buildPanels();
-        this.symbols = this.buildSymbols();
+        final GateGeometry.Builder all = new GateGeometry.Builder();
+        for (int s = 0; s < UniverseGateMesh.SYMBOLS; s++) {
+            this.symbol[s] = this.buildSymbol(s);
+            this.addSymbol(all, s);
+        }
+        this.symbols = all.build();
         this.overlays[UniverseGateMesh.PAINT] = this.chevronSurface(model);
         this.overlays[UniverseGateMesh.LIGHTS] = this.chevronSurface(model);
     }
@@ -145,6 +153,11 @@ public final class UniverseGateMesh {
 
     public float[] symbols() {
         return this.symbols;
+    }
+
+    /** @return one symbol's cell of the glyph sheet, or null if the gate carries no such symbol */
+    public float @Nullable [] symbol(final int symbol) {
+        return symbol >= 0 && symbol < UniverseGateMesh.SYMBOLS ? this.symbol[symbol] : null;
     }
 
     /** @return one of the overlays on a chevron at the top of the gate, on both its faces */
@@ -202,9 +215,14 @@ public final class UniverseGateMesh {
         return out.build();
     }
 
-    // Each symbol's cell of the glyph sheet, a little in front of its panel, on the front only
-    private float[] buildSymbols() {
+    private float[] buildSymbol(final int symbol) {
         final GateGeometry.Builder out = new GateGeometry.Builder();
+        this.addSymbol(out, symbol);
+        return out.build();
+    }
+
+    // A symbol's cell of the glyph sheet, a little in front of its panel, on the front only
+    private void addSymbol(final GateGeometry.Builder out, final int symbol) {
         final double cell = 1.0 / 6;
         final double r0 = UniverseGateMesh.GLYPH_INNER;
         final double r1 = UniverseGateMesh.GLYPH_OUTER;
@@ -212,26 +230,23 @@ public final class UniverseGateMesh {
         final double z0 = UniverseGateModel.faceZ(r0) + lift;
         final double z1 = UniverseGateModel.faceZ(r1) + lift;
         final int pieces = 6;
-        for (int symbol = 0; symbol < UniverseGateMesh.SYMBOLS; symbol++) {
-            final double centre = UniverseGateMesh.symbolAngle(symbol);
-            final double u0 = symbol % 6 * cell;
-            final double v0 = symbol / 6 * cell;
-            for (int i = 0; i < pieces; i++) {
-                // Left to right across the symbol: anticlockwise to clockwise
-                final double fa = (double) i / pieces;
-                final double fb = (double) (i + 1) / pieces;
-                final double aa = Math.toRadians(centre + UniverseGateMesh.GLYPH_HALF * (1 - 2 * fa));
-                final double ab = Math.toRadians(centre + UniverseGateMesh.GLYPH_HALF * (1 - 2 * fb));
-                final double ua = u0 + cell * fa;
-                final double ub = u0 + cell * fb;
-                this.quad(out, new double[][] {
-                        {r0 * Math.cos(aa), r0 * Math.sin(aa), z0, ua, v0 + cell},
-                        {r0 * Math.cos(ab), r0 * Math.sin(ab), z0, ub, v0 + cell},
-                        {r1 * Math.cos(ab), r1 * Math.sin(ab), z1, ub, v0},
-                        {r1 * Math.cos(aa), r1 * Math.sin(aa), z1, ua, v0}});
-            }
+        final double centre = UniverseGateMesh.symbolAngle(symbol);
+        final double u0 = symbol % 6 * cell;
+        final double v0 = symbol / 6 * cell;
+        for (int i = 0; i < pieces; i++) {
+            // Left to right across the symbol: anticlockwise to clockwise
+            final double fa = (double) i / pieces;
+            final double fb = (double) (i + 1) / pieces;
+            final double aa = Math.toRadians(centre + UniverseGateMesh.GLYPH_HALF * (1 - 2 * fa));
+            final double ab = Math.toRadians(centre + UniverseGateMesh.GLYPH_HALF * (1 - 2 * fb));
+            final double ua = u0 + cell * fa;
+            final double ub = u0 + cell * fb;
+            this.quad(out, new double[][] {
+                    {r0 * Math.cos(aa), r0 * Math.sin(aa), z0, ua, v0 + cell},
+                    {r0 * Math.cos(ab), r0 * Math.sin(ab), z0, ub, v0 + cell},
+                    {r1 * Math.cos(ab), r1 * Math.sin(ab), z1, ub, v0},
+                    {r1 * Math.cos(aa), r1 * Math.sin(aa), z1, ua, v0}});
         }
-        return out.build();
     }
 
     // A quad facing forwards, corners {x, y, z, u, v} anticlockwise seen from in front
