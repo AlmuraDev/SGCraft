@@ -34,9 +34,10 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * The triangles of a Pegasus gate, built from {@link PegasusGateModel} at the size of a standard gate. The ring and the
- * chevron are the same for every gate; the screens and their glyphs sit between the chevrons, so they are built for
- * each number of chevrons a gate has.
+ * The triangles of a Pegasus gate, built from {@link PegasusGateModel} at the size of a standard gate. The ring is
+ * {@link PegasusGateModel#CHEVRONS} identical sections, so only one is kept, to be drawn turned round the ring; the
+ * chevron is kept once too. The screens and their glyphs sit between the chevrons, so they are built for each number
+ * of chevrons a gate has.
  */
 public final class PegasusGateMesh {
 
@@ -64,6 +65,7 @@ public final class PegasusGateMesh {
     private final PegasusGateModel glyphs;
     private final double scale;
     private final float[][] ring = new float[4][];
+    private final float[] separators;
     private final float[][] chevron = new float[4][];
     private final Map<Integer, float[][]> screensByChevrons = new HashMap<>();
 
@@ -71,14 +73,14 @@ public final class PegasusGateMesh {
         this.model = model;
         this.glyphs = glyphs;
         this.scale = PegasusGateMesh.RING_OUTER_RADIUS / model.outerRadius();
-        this.ring[PegasusGateMesh.FRONT] = this.copies("front", PegasusGateModel.CHEVRONS, PegasusGateModel.SECTION_ANGLE);
-        this.ring[PegasusGateMesh.BACK] = this.copies("back", PegasusGateModel.CHEVRONS, PegasusGateModel.SECTION_ANGLE);
-        this.ring[PegasusGateMesh.OUTER] = this.copies("outer", PegasusGateModel.CHEVRONS, PegasusGateModel.SECTION_ANGLE);
+        this.ring[PegasusGateMesh.FRONT] = this.copies("front", 1, 0);
+        this.ring[PegasusGateMesh.BACK] = this.copies("back", 1, 0);
+        this.ring[PegasusGateMesh.OUTER] = this.copies("outer", 1, 0);
         final GateGeometry.Builder metal = new GateGeometry.Builder();
-        this.addCopies(metal, model, "rim", PegasusGateModel.CHEVRONS, PegasusGateModel.SECTION_ANGLE);
-        this.addCopies(metal, model, "wall", PegasusGateModel.CHEVRONS, PegasusGateModel.SECTION_ANGLE);
-        this.addCopies(metal, model, "separator", PegasusGateModel.SCREENS, PegasusGateModel.SCREEN_ANGLE);
+        this.addCopies(metal, model, "rim", 1, 0);
+        this.addCopies(metal, model, "wall", 1, 0);
         this.ring[PegasusGateMesh.METAL] = metal.build();
+        this.separators = this.copies("separator", PegasusGateModel.SCREENS, PegasusGateModel.SCREEN_ANGLE);
         this.chevron[PegasusGateMesh.CHEVRON_METAL] = this.copies("chevron", 1, 0);
         this.chevron[PegasusGateMesh.CHEVRON_DARK] = this.copies("chevron_dark", 1, 0);
         this.chevron[PegasusGateMesh.LIGHT_BLOCK] = this.lightBlock();
@@ -88,7 +90,8 @@ public final class PegasusGateMesh {
     /** @return the mesh, or null if the model couldn't be loaded */
     public static synchronized PegasusGateMesh get() {
         if (PegasusGateMesh.instance == null && !PegasusGateMesh.failed) {
-            try (InputStream gate = PegasusGateMesh.class.getResourceAsStream("/assets/sgcraft/models/gate/pegasus_gate.txt");
+            try (InputStream gate = PegasusGateMesh.class.getResourceAsStream(
+                    "/assets/sgcraft/models/gate/pegasus_gate.txt");
                  InputStream glyphs = PegasusGateMesh.class.getResourceAsStream(
                          "/assets/sgcraft/models/gate/pegasus_glyphs.txt")) {
                 if (gate == null || glyphs == null) {
@@ -104,9 +107,17 @@ public final class PegasusGateMesh {
         return PegasusGateMesh.instance;
     }
 
-    /** @return the triangles of one of the ring's parts */
+    /**
+     * @return the triangles of one of the ring's parts, for one of its sections; the others are the
+     *     same, turned {@link PegasusGateModel#SECTION_ANGLE} degrees apart
+     */
     public float[] ring(final int part) {
         return this.ring[part];
+    }
+
+    /** @return the metal between the screens, all round the ring */
+    public float[] separators() {
+        return this.separators;
     }
 
     /** @return the triangles of one of the top chevron's parts */
@@ -134,7 +145,8 @@ public final class PegasusGateMesh {
         final double half = PegasusGateModel.SCREEN_ANGLE / 2;
         final double in = this.model.screenInner();
         final double out = this.model.screenOuter();
-        final double across = Math.toRadians(PegasusGateModel.SCREEN_ANGLE) * (in + out) / 2 / PegasusGateMesh.CRYSTAL_SIZE;
+        final double across = Math.toRadians(PegasusGateModel.SCREEN_ANGLE) * (in + out) / 2
+                / PegasusGateMesh.CRYSTAL_SIZE;
         final double down = (out - in) / PegasusGateMesh.CRYSTAL_SIZE;
         final List<double[]> tris = this.model.group("screen");
         final List<double[]> normals = this.model.cornerNormals("screen");

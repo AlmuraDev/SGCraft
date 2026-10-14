@@ -29,7 +29,6 @@ import com.almuradev.sgcraft.SGCraft;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 
@@ -68,9 +67,16 @@ public final class PegasusGateRenderer implements GateTypeRenderer {
         }
         final int light = state.lightCoords;
         final int white = ARGB.white(1.0F);
-        for (int part = PegasusGateMesh.FRONT; part <= PegasusGateMesh.METAL; part++) {
-            PegasusGateRenderer.draw(collector, poseStack, PegasusGateRenderer.RING[part], mesh.ring(part), white, light);
+        for (int section = 0; section < PegasusGateModel.CHEVRONS; section++) {
+            poseStack.pushPose();
+            poseStack.rotateDegrees(Axis.ZP, (float) (section * PegasusGateModel.SECTION_ANGLE));
+            for (int part = PegasusGateMesh.FRONT; part <= PegasusGateMesh.METAL; part++) {
+                PegasusGateRenderer.draw(collector, poseStack, PegasusGateRenderer.RING[part], mesh.ring(part), white,
+                        light);
+            }
+            poseStack.popPose();
         }
+        PegasusGateRenderer.draw(collector, poseStack, PegasusGateRenderer.METAL, mesh.separators(), white, light);
         PegasusGateRenderer.draw(collector, poseStack, PegasusGateRenderer.CRYSTAL, mesh.screens(state.chevrons), white,
                 light);
         PegasusGateRenderer.draw(collector, poseStack, PegasusGateRenderer.STAR, mesh.glyphs(state.chevrons),
@@ -94,10 +100,10 @@ public final class PegasusGateRenderer implements GateTypeRenderer {
         }
     }
 
+    // Its triangles are kept on the GPU, so each part is only a draw
     private static void draw(final SubmitNodeCollector collector, final PoseStack poseStack, final Identifier texture,
             final float[] triangles, final int color, final int light) {
-        collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(texture),
-                (pose, buffer) -> GateGeometry.emit(pose, buffer, triangles, color, light));
+        GateFeatureRenderer.submit(collector, poseStack.last(), texture, GateMesh.of(triangles), color, light);
     }
 
     private static Identifier texture(final String name) {

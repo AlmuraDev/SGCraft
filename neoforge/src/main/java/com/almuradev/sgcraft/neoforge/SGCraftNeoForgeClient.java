@@ -27,14 +27,16 @@ package com.almuradev.sgcraft.neoforge;
 
 import com.almuradev.sgcraft.SGCraft;
 import com.almuradev.sgcraft.block.entity.SGBlockEntityTypes;
+import com.almuradev.sgcraft.client.gate.GateFeatureRenderer;
 import com.almuradev.sgcraft.client.gate.StargateBaseRenderer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterFeatureRenderersEvent;
 
 /**
- * Sets up the client: the gate renderer.
+ * Sets up the client: the gate renderer, and the renderer that draws gates' parts.
  */
 @EventBusSubscriber(modid = SGCraft.MOD_ID, value = Dist.CLIENT)
 public final class SGCraftNeoForgeClient {
@@ -45,5 +47,10 @@ public final class SGCraftNeoForgeClient {
     @SubscribeEvent
     public static void registerRenderers(final EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(SGBlockEntityTypes.STARGATE_BASE, StargateBaseRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void registerFeatureRenderers(final RegisterFeatureRenderersEvent event) {
+        event.register(GateFeatureRenderer.TYPE, new GateFeatureRenderer());
     }
 }

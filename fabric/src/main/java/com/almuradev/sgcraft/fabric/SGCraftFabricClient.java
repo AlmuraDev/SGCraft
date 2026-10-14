@@ -26,17 +26,20 @@
 package com.almuradev.sgcraft.fabric;
 
 import com.almuradev.sgcraft.block.entity.SGBlockEntityTypes;
+import com.almuradev.sgcraft.client.gate.GateFeatureRenderer;
 import com.almuradev.sgcraft.client.gate.StargateBaseRenderer;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.FeatureRendererRegistry;
 
 /**
- * Sets up the client: the gate renderer.
+ * Sets up the client: the gate renderer, and the renderer that draws gates' parts.
  */
 public final class SGCraftFabricClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.STARGATE_BASE, StargateBaseRenderer::new);
+        FeatureRendererRegistry.register(GateFeatureRenderer.TYPE, GateFeatureRenderer::new);
     }
 }
