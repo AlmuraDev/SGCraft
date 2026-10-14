@@ -28,6 +28,7 @@ package com.almuradev.sgcraft.block;
 import com.almuradev.sgcraft.gate.GateFormation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
@@ -69,6 +70,22 @@ public final class RingBlock extends Block {
         // Merged blocks are drawn as part of the gate, so they mustn't hide the faces of blocks beside them or block
         // their light
         return state.getValue(RingBlock.MERGED) ? Shapes.empty() : super.getOcclusionShape(state);
+    }
+
+    @Override
+    protected boolean propagatesSkylightDown(final BlockState state) {
+        return state.getValue(RingBlock.MERGED) || super.propagatesSkylightDown(state);
+    }
+
+    @Override
+    protected int getLightDampening(final BlockState state) {
+        return state.getValue(RingBlock.MERGED) ? 0 : super.getLightDampening(state);
+    }
+
+    @Override
+    protected float getShadeBrightness(final BlockState state, final BlockGetter level, final BlockPos pos) {
+        // Unmerged, a full block shades the corners of blocks beside it; merged, it isn't there to see
+        return state.getValue(RingBlock.MERGED) ? 1.0F : super.getShadeBrightness(state, level, pos);
     }
 
     @Override

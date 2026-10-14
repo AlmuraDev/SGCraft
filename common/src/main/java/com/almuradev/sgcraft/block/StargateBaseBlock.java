@@ -31,6 +31,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -73,6 +74,22 @@ public final class StargateBaseBlock extends HorizontalDirectionalBlock implemen
     @Override
     protected VoxelShape getOcclusionShape(final BlockState state) {
         return state.getValue(StargateBaseBlock.FORMED) ? Shapes.empty() : super.getOcclusionShape(state);
+    }
+
+    @Override
+    protected boolean propagatesSkylightDown(final BlockState state) {
+        return state.getValue(StargateBaseBlock.FORMED) || super.propagatesSkylightDown(state);
+    }
+
+    @Override
+    protected int getLightDampening(final BlockState state) {
+        return state.getValue(StargateBaseBlock.FORMED) ? 0 : super.getLightDampening(state);
+    }
+
+    @Override
+    protected float getShadeBrightness(final BlockState state, final BlockGetter level, final BlockPos pos) {
+        // Unmerged, a full block shades the corners of blocks beside it; merged, it isn't there to see
+        return state.getValue(StargateBaseBlock.FORMED) ? 1.0F : super.getShadeBrightness(state, level, pos);
     }
 
     @Override
