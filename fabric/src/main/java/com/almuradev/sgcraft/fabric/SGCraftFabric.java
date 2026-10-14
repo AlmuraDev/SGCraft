@@ -26,12 +26,27 @@
 package com.almuradev.sgcraft.fabric;
 
 import com.almuradev.sgcraft.SGCraft;
+import com.almuradev.sgcraft.block.SGBlocks;
+import com.almuradev.sgcraft.block.entity.SGBlockEntityTypes;
+import com.almuradev.sgcraft.item.SGItems;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.item.ItemStack;
 
 public final class SGCraftFabric implements ModInitializer {
 
     @Override
     public void onInitialize() {
         SGCraft.init();
+        SGBlocks.register((key, block) -> Registry.register(BuiltInRegistries.BLOCK, key, block));
+        SGItems.register((key, item) -> Registry.register(BuiltInRegistries.ITEM, key, item));
+        SGBlockEntityTypes.register((key, type) -> Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, type));
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, SGItems.tabKey(), FabricCreativeModeTab.builder()
+                .title(SGItems.tabTitle())
+                .icon(() -> new ItemStack(SGItems.STARGATE_CHEVRON))
+                .displayItems((parameters, output) -> SGItems.tabItems().forEach(output::accept))
+                .build());
     }
 }

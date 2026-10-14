@@ -83,8 +83,19 @@ publishing {
     }
 }
 
-// Every source file carries the MIT header; `gradlew updateLicenses` adds it, `gradlew check` fails without it
+// Every source file carries the MIT header; `gradlew updateLicenses` adds it, `gradlew check` fails without it.
+// Files that carry on gcewing's work carry his copyright too: list each one here as it is ported.
+def gcewingFiles = [
+        '**/com/almuradev/sgcraft/gate/GateFormation.java',
+]
 license {
     header = rootProject.file('HEADER.txt')
     include '**/*.java'
+    gcewingFiles.each { pattern ->
+        // The licenser keeps what the closure returns, so it returns the properties it set
+        matching(pattern) { properties ->
+            properties.header = rootProject.file('HEADER-gcewing.txt')
+            properties
+        }
+    }
 }

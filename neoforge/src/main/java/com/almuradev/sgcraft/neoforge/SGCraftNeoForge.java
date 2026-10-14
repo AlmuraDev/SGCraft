@@ -26,13 +26,33 @@
 package com.almuradev.sgcraft.neoforge;
 
 import com.almuradev.sgcraft.SGCraft;
+import com.almuradev.sgcraft.block.SGBlocks;
+import com.almuradev.sgcraft.block.entity.SGBlockEntityTypes;
+import com.almuradev.sgcraft.item.SGItems;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.registries.RegisterEvent;
 
 @Mod(SGCraft.MOD_ID)
 public final class SGCraftNeoForge {
 
     public SGCraftNeoForge(final IEventBus modBus) {
         SGCraft.init();
+        modBus.addListener(SGCraftNeoForge::register);
+    }
+
+    // NeoForge fires this once per registry, blocks before items and block entity types
+    private static void register(final RegisterEvent event) {
+        event.register(Registries.BLOCK, helper -> SGBlocks.register(helper::register));
+        event.register(Registries.ITEM, helper -> SGItems.register(helper::register));
+        event.register(Registries.BLOCK_ENTITY_TYPE, helper -> SGBlockEntityTypes.register(helper::register));
+        event.register(Registries.CREATIVE_MODE_TAB, helper -> helper.register(SGItems.tabKey(), CreativeModeTab.builder()
+                .title(SGItems.tabTitle())
+                .icon(() -> new ItemStack(SGItems.STARGATE_CHEVRON))
+                .displayItems((parameters, output) -> SGItems.tabItems().forEach(output::accept))
+                .build()));
     }
 }

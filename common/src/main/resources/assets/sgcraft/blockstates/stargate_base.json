@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "sgcraft:block/stargate_base"
+    },
+    "facing=east": {
+      "model": "sgcraft:block/stargate_base",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "sgcraft:block/stargate_base",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "sgcraft:block/stargate_base",
+      "y": 270
+    }
+  }
+}

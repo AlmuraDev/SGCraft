@@ -43,7 +43,7 @@ import java.util.Optional;
  * their block entity, their entity or a record type they define.</p>
  *
  * <p>A cause is immutable. Two causes are equal when they hold equal objects in the same order, and
- * {@link #hashCode()} must agree with that. An implementation may wrap a cause from another system instead of
+ * {@link Object#hashCode()} must agree with that. An implementation may wrap a cause from another system instead of
  * copying it.</p>
  *
  * <p>The design follows the {@code Cause} of SpongeAPI, by SpongePowered and its contributors, MIT licensed:

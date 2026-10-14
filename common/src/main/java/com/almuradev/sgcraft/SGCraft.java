@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft;
 
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,12 +36,20 @@ public final class SGCraft {
 
     public static final String MOD_ID = "sgcraft";
     public static final String MOD_NAME = "SGCraft";
-    public static final Logger LOG = LoggerFactory.getLogger(MOD_NAME);
+    public static final Logger LOG = LoggerFactory.getLogger(SGCraft.MOD_NAME);
 
     private SGCraft() {
     }
 
+    /**
+     * @param path a name in the mod's namespace
+     * @return {@code sgcraft:<path>}
+     */
+    public static Identifier id(final String path) {
+        return Identifier.fromNamespaceAndPath(SGCraft.MOD_ID, path);
+    }
+
     public static void init() {
-        LOG.info("Starting {} on {}", MOD_NAME, Platform.get().loaderName());
+        SGCraft.LOG.info("Starting {} on {}", SGCraft.MOD_NAME, Platform.get().loaderName());
     }
 }

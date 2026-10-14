@@ -1,3 +1,6 @@
 {
-  "itemGroup.sgcraft": "SGCraft"
+  "itemGroup.sgcraft": "SGCraft",
+  "block.sgcraft.stargate_ring": "Stargate Ring Block",
+  "block.sgcraft.stargate_chevron": "Stargate Chevron Block",
+  "block.sgcraft.stargate_base": "Stargate Base"
 }
