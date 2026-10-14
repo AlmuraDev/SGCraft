@@ -86,6 +86,7 @@ public final class GateFormation {
             final BlockState ringState = level.getBlockState(ringPos);
             level.setBlock(ringPos, ringState.setValue(RingBlock.MERGED, true), Block.UPDATE_ALL);
         });
+        level.setBlock(basePos, baseState.setValue(StargateBaseBlock.FORMED, true), Block.UPDATE_ALL);
         base.setFormed(true);
         return true;
     }
@@ -101,6 +102,7 @@ public final class GateFormation {
             final BlockState baseState = level.getBlockState(basePos);
             if (level.getBlockEntity(basePos) instanceof StargateBaseBlockEntity base && base.isFormed()
                     && GateFormation.isInRing(basePos, baseState.getValue(HorizontalDirectionalBlock.FACING), ringPos)) {
+                level.setBlock(basePos, baseState.setValue(StargateBaseBlock.FORMED, false), Block.UPDATE_ALL);
                 base.setFormed(false);
                 GateFormation.releaseRing(level, basePos, baseState.getValue(HorizontalDirectionalBlock.FACING));
             }

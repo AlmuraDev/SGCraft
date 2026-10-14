@@ -1,17 +1,32 @@
 {
   "variants": {
-    "facing=north": {
+    "facing=north,formed=false": {
       "model": "sgcraft:block/stargate_base"
     },
-    "facing=east": {
+    "facing=north,formed=true": {
+      "model": "sgcraft:block/stargate_base"
+    },
+    "facing=east,formed=false": {
       "model": "sgcraft:block/stargate_base",
       "y": 90
     },
-    "facing=south": {
+    "facing=east,formed=true": {
+      "model": "sgcraft:block/stargate_base",
+      "y": 90
+    },
+    "facing=south,formed=false": {
       "model": "sgcraft:block/stargate_base",
       "y": 180
     },
-    "facing=west": {
+    "facing=south,formed=true": {
+      "model": "sgcraft:block/stargate_base",
+      "y": 180
+    },
+    "facing=west,formed=false": {
+      "model": "sgcraft:block/stargate_base",
+      "y": 270
+    },
+    "facing=west,formed=true": {
       "model": "sgcraft:block/stargate_base",
       "y": 270
     }

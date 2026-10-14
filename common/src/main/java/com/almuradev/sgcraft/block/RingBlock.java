@@ -30,6 +30,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
@@ -53,6 +54,12 @@ public final class RingBlock extends Block {
     /** @return whether this is a chevron block rather than a plain ring segment */
     public boolean isChevron() {
         return this.chevron;
+    }
+
+    @Override
+    protected RenderShape getRenderShape(final BlockState state) {
+        // A formed gate is drawn whole by its base's renderer
+        return state.getValue(RingBlock.MERGED) ? RenderShape.INVISIBLE : RenderShape.MODEL;
     }
 
     @Override

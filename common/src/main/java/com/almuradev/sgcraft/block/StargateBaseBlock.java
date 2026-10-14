@@ -35,9 +35,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -46,15 +48,24 @@ import org.jspecify.annotations.Nullable;
  */
 public final class StargateBaseBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
+    /** Whether the base is part of a formed gate, which its renderer then draws whole. */
+    public static final BooleanProperty FORMED = BooleanProperty.create("formed");
+
     public StargateBaseBlock(final Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(HorizontalDirectionalBlock.FACING,
-                Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH)
+                .setValue(StargateBaseBlock.FORMED, false));
     }
 
     @Override
     protected void createBlockStateDefinition(final StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(HorizontalDirectionalBlock.FACING);
+        builder.add(HorizontalDirectionalBlock.FACING, StargateBaseBlock.FORMED);
+    }
+
+    @Override
+    protected RenderShape getRenderShape(final BlockState state) {
+        return state.getValue(StargateBaseBlock.FORMED) ? RenderShape.INVISIBLE : RenderShape.MODEL;
     }
 
     @Override

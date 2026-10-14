@@ -20,6 +20,9 @@
     "entrypoints": {
         "main": [
             "com.almuradev.sgcraft.fabric.SGCraftFabric"
+        ],
+        "client": [
+            "com.almuradev.sgcraft.fabric.SGCraftFabricClient"
         ]
     },
     "depends": {
