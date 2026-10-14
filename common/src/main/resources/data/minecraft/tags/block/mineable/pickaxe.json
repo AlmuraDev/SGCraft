@@ -3,6 +3,8 @@
   "values": [
     "sgcraft:stargate_ring",
     "sgcraft:stargate_chevron",
-    "sgcraft:stargate_base"
+    "sgcraft:stargate_base",
+    "sgcraft:stargate_base_pegasus",
+    "sgcraft:stargate_base_universe"
   ]
 }

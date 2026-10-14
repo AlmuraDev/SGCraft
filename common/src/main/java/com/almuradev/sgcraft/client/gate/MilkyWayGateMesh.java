@@ -36,7 +36,7 @@ import java.util.List;
  * kept: the rings' parts ({@link MilkyWayGateModel#BODY} to {@link MilkyWayGateModel#GLYPHS}), then each piece of
  * the chevron, one list for each way its corners move.
  *
- * <p>Each triangle is 18 floats: three corners of x, y, z, u, v, then the normal x, y, z.</p>
+ * <p>Triangles are in the layout {@link GateGeometry} gives.</p>
  */
 public final class MilkyWayGateMesh {
 
@@ -127,9 +127,8 @@ public final class MilkyWayGateMesh {
     // The triangles scaled into blocks, each corner given texture coordinates: a light's glass laid over the whole
     // chevron, or a metal laid flat on whichever of the gate's planes the triangle faces most
     private static float[] flatten(final List<double[]> tris, final double scale, final boolean light) {
-        final float[] out = new float[tris.size() * 18];
+        final GateGeometry.Builder out = new GateGeometry.Builder();
         final double k = 1 / MilkyWayGateMesh.METAL_REPEAT;
-        int o = 0;
         for (final double[] t : tris) {
             final double ax = Math.abs(t[9]);
             final double ay = Math.abs(t[10]);
@@ -153,16 +152,9 @@ public final class MilkyWayGateMesh {
                     u = x * k;
                     w = z * k;
                 }
-                out[o++] = (float) (x * scale);
-                out[o++] = (float) (y * scale);
-                out[o++] = (float) (z * scale);
-                out[o++] = (float) u;
-                out[o++] = (float) w;
+                out.corner(x * scale, y * scale, z * scale, u, w, t[9], t[10], t[11]);
             }
-            out[o++] = (float) t[9];
-            out[o++] = (float) t[10];
-            out[o++] = (float) t[11];
         }
-        return out;
+        return out.build();
     }
 }

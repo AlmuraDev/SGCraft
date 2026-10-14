@@ -2,5 +2,10 @@
   "itemGroup.sgcraft": "SGCraft",
   "block.sgcraft.stargate_ring": "Stargate Ring Block",
   "block.sgcraft.stargate_chevron": "Stargate Chevron Block",
-  "block.sgcraft.stargate_base": "Stargate Base"
+  "block.sgcraft.stargate_base": "Milky Way Stargate Base",
+  "block.sgcraft.stargate_base_pegasus": "Pegasus Stargate Base",
+  "block.sgcraft.stargate_base_universe": "Universe Stargate Base",
+  "gate_type.sgcraft.milky_way": "Milky Way",
+  "gate_type.sgcraft.pegasus": "Pegasus",
+  "gate_type.sgcraft.universe": "Universe"
 }

@@ -1,0 +1,34 @@
+{
+  "variants": {
+    "facing=north,formed=false": {
+      "model": "sgcraft:block/stargate_base_pegasus"
+    },
+    "facing=north,formed=true": {
+      "model": "sgcraft:block/stargate_base_pegasus"
+    },
+    "facing=east,formed=false": {
+      "model": "sgcraft:block/stargate_base_pegasus",
+      "y": 90
+    },
+    "facing=east,formed=true": {
+      "model": "sgcraft:block/stargate_base_pegasus",
+      "y": 90
+    },
+    "facing=south,formed=false": {
+      "model": "sgcraft:block/stargate_base_pegasus",
+      "y": 180
+    },
+    "facing=south,formed=true": {
+      "model": "sgcraft:block/stargate_base_pegasus",
+      "y": 180
+    },
+    "facing=west,formed=false": {
+      "model": "sgcraft:block/stargate_base_pegasus",
+      "y": 270
+    },
+    "facing=west,formed=true": {
+      "model": "sgcraft:block/stargate_base_pegasus",
+      "y": 270
+    }
+  }
+}

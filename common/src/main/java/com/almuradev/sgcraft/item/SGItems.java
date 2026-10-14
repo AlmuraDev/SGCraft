@@ -50,6 +50,8 @@ public final class SGItems {
     public static BlockItem STARGATE_RING;
     public static BlockItem STARGATE_CHEVRON;
     public static BlockItem STARGATE_BASE;
+    public static BlockItem STARGATE_BASE_PEGASUS;
+    public static BlockItem STARGATE_BASE_UNIVERSE;
 
     private SGItems() {
     }
@@ -58,6 +60,8 @@ public final class SGItems {
         SGItems.STARGATE_RING = SGItems.registerBlock(sink, SGBlocks.STARGATE_RING);
         SGItems.STARGATE_CHEVRON = SGItems.registerBlock(sink, SGBlocks.STARGATE_CHEVRON);
         SGItems.STARGATE_BASE = SGItems.registerBlock(sink, SGBlocks.STARGATE_BASE);
+        SGItems.STARGATE_BASE_PEGASUS = SGItems.registerBlock(sink, SGBlocks.STARGATE_BASE_PEGASUS);
+        SGItems.STARGATE_BASE_UNIVERSE = SGItems.registerBlock(sink, SGBlocks.STARGATE_BASE_UNIVERSE);
     }
 
     /** @return the items to show in the mod's creative tab, in order */

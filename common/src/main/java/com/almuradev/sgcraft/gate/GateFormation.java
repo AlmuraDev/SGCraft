@@ -28,7 +28,6 @@
 package com.almuradev.sgcraft.gate;
 
 import com.almuradev.sgcraft.block.RingBlock;
-import com.almuradev.sgcraft.block.SGBlocks;
 import com.almuradev.sgcraft.block.StargateBaseBlock;
 import com.almuradev.sgcraft.block.entity.StargateBaseBlockEntity;
 import net.minecraft.core.BlockPos;
@@ -87,6 +86,7 @@ public final class GateFormation {
             level.setBlock(ringPos, ringState.setValue(RingBlock.MERGED, true), Block.UPDATE_ALL);
         });
         level.setBlock(basePos, baseState.setValue(StargateBaseBlock.FORMED, true), Block.UPDATE_ALL);
+        base.setGateType(((StargateBaseBlock) baseState.getBlock()).gateType());
         base.setFormed(true);
         return true;
     }
@@ -175,7 +175,7 @@ public final class GateFormation {
             for (int dz = -reach; dz <= reach; dz++) {
                 for (int dy = -(GateFormation.HEIGHT - 1); dy <= 0; dy++) {
                     final BlockPos candidate = pos.offset(dx, dy, dz);
-                    if (level.getBlockState(candidate).is(SGBlocks.STARGATE_BASE)) {
+                    if (level.getBlockState(candidate).getBlock() instanceof StargateBaseBlock) {
                         action.accept(candidate);
                     }
                 }

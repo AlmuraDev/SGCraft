@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.block;
 
 import com.almuradev.sgcraft.SGCraft;
+import com.almuradev.sgcraft.api.gate.GateTypes;
 import com.almuradev.sgcraft.registry.RegistrySink;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -44,6 +45,8 @@ public final class SGBlocks {
     public static RingBlock STARGATE_RING;
     public static RingBlock STARGATE_CHEVRON;
     public static StargateBaseBlock STARGATE_BASE;
+    public static StargateBaseBlock STARGATE_BASE_PEGASUS;
+    public static StargateBaseBlock STARGATE_BASE_UNIVERSE;
 
     private SGBlocks() {
     }
@@ -52,7 +55,12 @@ public final class SGBlocks {
         SGBlocks.STARGATE_RING = SGBlocks.register(sink, "stargate_ring", properties -> new RingBlock(properties, false));
         SGBlocks.STARGATE_CHEVRON = SGBlocks.register(sink, "stargate_chevron",
                 properties -> new RingBlock(properties, true));
-        SGBlocks.STARGATE_BASE = SGBlocks.register(sink, "stargate_base", StargateBaseBlock::new);
+        SGBlocks.STARGATE_BASE = SGBlocks.register(sink, "stargate_base",
+                properties -> new StargateBaseBlock(properties, GateTypes.MILKY_WAY));
+        SGBlocks.STARGATE_BASE_PEGASUS = SGBlocks.register(sink, "stargate_base_pegasus",
+                properties -> new StargateBaseBlock(properties, GateTypes.PEGASUS));
+        SGBlocks.STARGATE_BASE_UNIVERSE = SGBlocks.register(sink, "stargate_base_universe",
+                properties -> new StargateBaseBlock(properties, GateTypes.UNIVERSE));
     }
 
     private static <B extends Block> B register(final RegistrySink<Block> sink, final String name,

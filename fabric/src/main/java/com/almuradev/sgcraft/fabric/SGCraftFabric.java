@@ -26,13 +26,22 @@
 package com.almuradev.sgcraft.fabric;
 
 import com.almuradev.sgcraft.SGCraft;
+import com.almuradev.sgcraft.api.SGCraftRegistries;
+import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.block.SGBlocks;
 import com.almuradev.sgcraft.block.entity.SGBlockEntityTypes;
+import com.almuradev.sgcraft.gate.SGGateTypes;
 import com.almuradev.sgcraft.item.SGItems;
+import com.almuradev.sgcraft.registry.SGRegistries;
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceKey;
+
+import java.util.HashMap;
+import java.util.Map;
 import net.minecraft.world.item.ItemStack;
 
 public final class SGCraftFabric implements ModInitializer {
@@ -40,6 +49,16 @@ public final class SGCraftFabric implements ModInitializer {
     @Override
     public void onInitialize() {
         SGCraft.init();
+        final Map<ResourceKey<?>, Registry<?>> created = new HashMap<>();
+        SGRegistries.createAll(new SGRegistries.Creator() {
+            @Override
+            public <T> void create(final ResourceKey<Registry<T>> key) {
+                created.put(key, FabricRegistryBuilder.create(key).buildAndRegister());
+            }
+        });
+        @SuppressWarnings("unchecked")
+        final Registry<GateType> gateTypes = (Registry<GateType>) created.get(SGCraftRegistries.GATE_TYPE);
+        SGGateTypes.register((key, type) -> Registry.register(gateTypes, key, type));
         SGBlocks.register((key, block) -> Registry.register(BuiltInRegistries.BLOCK, key, block));
         SGItems.register((key, item) -> Registry.register(BuiltInRegistries.ITEM, key, item));
         SGBlockEntityTypes.register((key, type) -> Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, type));

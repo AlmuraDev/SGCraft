@@ -25,12 +25,17 @@
 
 package com.almuradev.sgcraft.block.entity;
 
+import com.almuradev.sgcraft.api.SGCraftRegistries;
+import com.almuradev.sgcraft.api.gate.GateType;
+import com.almuradev.sgcraft.api.gate.GateTypes;
+import com.almuradev.sgcraft.block.StargateBaseBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
@@ -42,9 +47,27 @@ import net.minecraft.world.level.storage.ValueOutput;
 public final class StargateBaseBlockEntity extends BlockEntity {
 
     private boolean formed;
+    private ResourceKey<GateType> gateType;
 
     public StargateBaseBlockEntity(final BlockPos pos, final BlockState state) {
         super(SGBlockEntityTypes.STARGATE_BASE, pos, state);
+        this.gateType = state.getBlock() instanceof StargateBaseBlock base ? base.gateType() : GateTypes.MILKY_WAY;
+    }
+
+    /** @return the gate's type */
+    public ResourceKey<GateType> gateType() {
+        return this.gateType;
+    }
+
+    public void setGateType(final ResourceKey<GateType> gateType) {
+        if (this.gateType.equals(gateType)) {
+            return;
+        }
+        this.gateType = gateType;
+        this.setChanged();
+        if (this.level != null) {
+            this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        }
     }
 
     /** @return whether the ring round this base is complete and merged into a gate */
@@ -67,12 +90,14 @@ public final class StargateBaseBlockEntity extends BlockEntity {
     protected void loadAdditional(final ValueInput input) {
         super.loadAdditional(input);
         this.formed = input.getBooleanOr("formed", false);
+        input.read("gate_type", ResourceKey.codec(SGCraftRegistries.GATE_TYPE)).ifPresent(type -> this.gateType = type);
     }
 
     @Override
     protected void saveAdditional(final ValueOutput output) {
         super.saveAdditional(output);
         output.putBoolean("formed", this.formed);
+        output.store("gate_type", ResourceKey.codec(SGCraftRegistries.GATE_TYPE), this.gateType);
     }
 
     @Override

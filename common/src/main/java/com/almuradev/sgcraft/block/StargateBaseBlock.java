@@ -25,10 +25,12 @@
 
 package com.almuradev.sgcraft.block;
 
+import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.gate.GateFormation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -47,18 +49,27 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The base of a gate: the block at the bottom centre of the ring, which holds the gate's state once it forms. It
- * faces the player who placed it, and the gate it forms faces the same way.
+ * faces the player who placed it, and the gate it forms faces the same way. Each type of gate has its own base, which
+ * gives the gate its type when it forms.
  */
 public final class StargateBaseBlock extends HorizontalDirectionalBlock implements EntityBlock {
 
     /** Whether the base is part of a formed gate, which its renderer then draws whole. */
     public static final BooleanProperty FORMED = BooleanProperty.create("formed");
 
-    public StargateBaseBlock(final Properties properties) {
+    private final ResourceKey<GateType> gateType;
+
+    public StargateBaseBlock(final Properties properties, final ResourceKey<GateType> gateType) {
         super(properties);
+        this.gateType = gateType;
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH)
                 .setValue(StargateBaseBlock.FORMED, false));
+    }
+
+    /** @return the type of the gates this base forms */
+    public ResourceKey<GateType> gateType() {
+        return this.gateType;
     }
 
     @Override

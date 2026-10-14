@@ -26,22 +26,39 @@
 package com.almuradev.sgcraft.neoforge;
 
 import com.almuradev.sgcraft.SGCraft;
+import com.almuradev.sgcraft.api.SGCraftRegistries;
 import com.almuradev.sgcraft.block.SGBlocks;
 import com.almuradev.sgcraft.block.entity.SGBlockEntityTypes;
+import com.almuradev.sgcraft.gate.SGGateTypes;
 import com.almuradev.sgcraft.item.SGItems;
+import com.almuradev.sgcraft.registry.SGRegistries;
+import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.registries.NewRegistryEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
+import net.neoforged.neoforge.registries.RegistryBuilder;
 
 @Mod(SGCraft.MOD_ID)
 public final class SGCraftNeoForge {
 
     public SGCraftNeoForge(final IEventBus modBus) {
         SGCraft.init();
+        modBus.addListener(SGCraftNeoForge::createRegistries);
         modBus.addListener(SGCraftNeoForge::register);
+    }
+
+    private static void createRegistries(final NewRegistryEvent event) {
+        SGRegistries.createAll(new SGRegistries.Creator() {
+            @Override
+            public <T> void create(final ResourceKey<Registry<T>> key) {
+                event.create(new RegistryBuilder<>(key));
+            }
+        });
     }
 
     // NeoForge fires this once per registry, blocks before items and block entity types
@@ -49,6 +66,7 @@ public final class SGCraftNeoForge {
         event.register(Registries.BLOCK, helper -> SGBlocks.register(helper::register));
         event.register(Registries.ITEM, helper -> SGItems.register(helper::register));
         event.register(Registries.BLOCK_ENTITY_TYPE, helper -> SGBlockEntityTypes.register(helper::register));
+        event.register(SGCraftRegistries.GATE_TYPE, helper -> SGGateTypes.register(helper::register));
         event.register(Registries.CREATIVE_MODE_TAB, helper -> helper.register(SGItems.tabKey(), CreativeModeTab.builder()
                 .title(SGItems.tabTitle())
                 .icon(() -> new ItemStack(SGItems.STARGATE_CHEVRON))

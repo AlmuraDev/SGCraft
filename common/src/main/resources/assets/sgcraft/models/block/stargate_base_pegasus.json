@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable_with_bottom",
+  "textures": {
+    "top": "sgcraft:block/stargateblock",
+    "bottom": "sgcraft:block/stargateblock",
+    "side": "sgcraft:block/stargatering",
+    "front": "sgcraft:block/stargatebase_front_pegasus"
+  }
+}

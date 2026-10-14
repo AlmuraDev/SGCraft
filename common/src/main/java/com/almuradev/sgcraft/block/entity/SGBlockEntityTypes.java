@@ -47,7 +47,7 @@ public final class SGBlockEntityTypes {
 
     public static void register(final RegistrySink<BlockEntityType<?>> sink) {
         SGBlockEntityTypes.STARGATE_BASE = new BlockEntityType<>(StargateBaseBlockEntity::new,
-                Set.of(SGBlocks.STARGATE_BASE));
+                Set.of(SGBlocks.STARGATE_BASE, SGBlocks.STARGATE_BASE_PEGASUS, SGBlocks.STARGATE_BASE_UNIVERSE));
         sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("stargate_base")),
                 SGBlockEntityTypes.STARGATE_BASE);
     }

@@ -25,8 +25,11 @@
 
 package com.almuradev.sgcraft.client.gate;
 
+import com.almuradev.sgcraft.api.gate.GateType;
+import com.almuradev.sgcraft.api.gate.GateTypes;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceKey;
 
 /**
  * What the gate renderer needs to know about a gate for one frame.
@@ -34,6 +37,7 @@ import net.minecraft.core.Direction;
 public final class StargateBaseRenderState extends BlockEntityRenderState {
 
     public boolean formed;
+    public ResourceKey<GateType> gateType = GateTypes.MILKY_WAY;
     public Direction facing = Direction.NORTH;
     public int chevrons = 7;
 }

@@ -25,58 +25,46 @@
 
 package com.almuradev.sgcraft.client.gate;
 
-import com.almuradev.sgcraft.SGCraft;
+import com.almuradev.sgcraft.api.gate.GateType;
+import com.almuradev.sgcraft.api.gate.GateTypes;
 import com.almuradev.sgcraft.block.entity.StargateBaseBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.feature.ModelFeatureRenderer;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.client.renderer.state.level.CameraRenderState;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.resources.Identifier;
-import net.minecraft.util.ARGB;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Map;
+
 /**
- * Draws a formed gate from its base: a Milky Way gate, as on the show, at rest.
+ * Draws a formed gate from its base, by its type's {@link GateTypeRenderer}.
  *
  * <p>The gate is drawn in its own frame: its centre two blocks above the middle of the base, x to its right as seen
  * from in front, y up, and its front towards +z, turned to face the way the base does.</p>
  */
 public final class StargateBaseRenderer implements BlockEntityRenderer<StargateBaseBlockEntity, StargateBaseRenderState> {
 
+    /** The angle between neighbouring chevrons, in degrees. */
+    public static final float CHEVRON_SPACING = 40.0F;
+
     // How far above the middle of the base the ring's centre is, in blocks
     private static final double CENTRE_HEIGHT = 2.0;
     // How far the gate reaches to either side of its base, and how tall it is, in blocks
     private static final double GATE_HALF_WIDTH = 3.0;
     private static final double GATE_HEIGHT = 5.0;
-    // The angle between neighbouring chevrons, in degrees
-    private static final float CHEVRON_SPACING = 360.0F / MilkyWayGateModel.CHEVRONS;
-    // How bright an unlit chevron light is, as a fraction of full colour
-    private static final float UNLIT_LIGHT = 0.3F;
 
-    private static final Identifier[] METALS = {
-            StargateBaseRenderer.texture("ring"),
-            StargateBaseRenderer.texture("detail"),
-            StargateBaseRenderer.texture("symbols"),
-            StargateBaseRenderer.texture("glyphs"),
-    };
-    private static final Identifier CHEVRON = StargateBaseRenderer.texture("chevron");
-    // The glass of each way a chevron's lights move: the slatted lights beside the V slide down with it, and the
-    // triangle above rises
-    private static final Identifier[] LIGHT_GLASS = {
-            StargateBaseRenderer.texture("light"),
-            StargateBaseRenderer.texture("slats"),
-            StargateBaseRenderer.texture("light"),
-    };
+    private static final Map<ResourceKey<GateType>, GateTypeRenderer> RENDERERS = Map.of(
+            GateTypes.MILKY_WAY, new MilkyWayGateRenderer(),
+            GateTypes.PEGASUS, new PegasusGateRenderer(),
+            GateTypes.UNIVERSE, new UniverseGateRenderer());
 
     public StargateBaseRenderer(final BlockEntityRendererProvider.Context context) {
     }
@@ -92,6 +80,7 @@ public final class StargateBaseRenderer implements BlockEntityRenderer<StargateB
             final ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderer.super.extractRenderState(gate, state, partialTicks, cameraPosition, breakProgress);
         state.formed = gate.isFormed();
+        state.gateType = gate.gateType();
         state.facing = gate.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
         // The base is solid, so it has no light of its own; the gate is lit as the middle of its ring is
         if (gate.getLevel() != null) {
@@ -102,28 +91,15 @@ public final class StargateBaseRenderer implements BlockEntityRenderer<StargateB
     @Override
     public void submit(final StargateBaseRenderState state, final PoseStack poseStack,
             final SubmitNodeCollector collector, final CameraRenderState camera) {
-        final MilkyWayGateMesh mesh = MilkyWayGateMesh.get();
-        if (!state.formed || mesh == null) {
+        final GateTypeRenderer renderer = StargateBaseRenderer.RENDERERS.get(state.gateType);
+        if (!state.formed || renderer == null) {
             return;
         }
-        final int light = state.lightCoords;
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.rotateDegrees(Axis.YP, -state.facing.toYRot());
         poseStack.translate(0.0, StargateBaseRenderer.CENTRE_HEIGHT, 0.0);
-        for (int part = MilkyWayGateModel.BODY; part <= MilkyWayGateModel.GLYPHS; part++) {
-            final float[] triangles = mesh.part(part);
-            collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(StargateBaseRenderer.METALS[part]),
-                    (pose, buffer) -> StargateBaseRenderer.emit(pose, buffer, triangles, ARGB.white(1.0F), light));
-        }
-        final int first = state.chevrons > 7 ? 0 : 1;
-        for (int i = first; i < first + state.chevrons; i++) {
-            poseStack.pushPose();
-            // Position 4 is the top chevron, where the model's chevron is
-            poseStack.rotateDegrees(Axis.ZP, (4 - i) * StargateBaseRenderer.CHEVRON_SPACING);
-            StargateBaseRenderer.submitChevron(mesh, poseStack, collector, light);
-            poseStack.popPose();
-        }
+        renderer.submit(state, poseStack, collector);
         poseStack.popPose();
     }
 
@@ -146,50 +122,5 @@ public final class StargateBaseRenderer implements BlockEntityRenderer<StargateB
     @Override
     public int getViewDistance() {
         return 128;
-    }
-
-    // A chevron at the top of the gate, its lights unlit
-    private static void submitChevron(final MilkyWayGateMesh mesh, final PoseStack poseStack,
-            final SubmitNodeCollector collector, final int light) {
-        final int metal = ARGB.white(1.0F);
-        final int unlit = ARGB.colorFromFloat(1.0F, StargateBaseRenderer.UNLIT_LIGHT, StargateBaseRenderer.UNLIT_LIGHT,
-                StargateBaseRenderer.UNLIT_LIGHT);
-        for (int m = 0; m < mesh.moves(); m++) {
-            final float[] triangles = mesh.chevron(MilkyWayGateModel.METAL, m);
-            collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(StargateBaseRenderer.CHEVRON),
-                    (pose, buffer) -> StargateBaseRenderer.emit(pose, buffer, triangles, metal, light));
-        }
-        for (int piece = MilkyWayGateModel.LIGHTS; piece <= MilkyWayGateModel.LOWER_LIGHT; piece++) {
-            for (int m = 0; m < mesh.moves(); m++) {
-                final float[] triangles = mesh.chevron(piece, m);
-                final Identifier glass = StargateBaseRenderer.LIGHT_GLASS[
-                        Math.min(m, StargateBaseRenderer.LIGHT_GLASS.length - 1)];
-                collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(glass),
-                        (pose, buffer) -> StargateBaseRenderer.emit(pose, buffer, triangles, unlit, light));
-            }
-        }
-    }
-
-    // Each triangle as a quad with its last corner repeated, since entity render types draw quads
-    private static void emit(final PoseStack.Pose pose, final VertexConsumer buffer, final float[] triangles,
-            final int color, final int light) {
-        for (int t = 0; t < triangles.length; t += 18) {
-            final float nx = triangles[t + 15];
-            final float ny = triangles[t + 16];
-            final float nz = triangles[t + 17];
-            for (int corner = 0; corner < 4; corner++) {
-                final int c = t + 5 * Math.min(corner, 2);
-                buffer.addVertex(pose, triangles[c], triangles[c + 1], triangles[c + 2])
-                        .setColor(color)
-                        .setUv(triangles[c + 3], triangles[c + 4])
-                        .setOverlay(OverlayTexture.NO_OVERLAY)
-                        .setLight(light)
-                        .setNormal(pose, nx, ny, nz);
-            }
-        }
-    }
-
-    private static Identifier texture(final String name) {
-        return SGCraft.id("textures/gate/milkyway/" + name + ".png");
     }
 }
