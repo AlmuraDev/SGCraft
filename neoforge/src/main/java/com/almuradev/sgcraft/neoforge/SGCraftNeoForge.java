@@ -32,7 +32,7 @@ import net.neoforged.fml.common.Mod;
 @Mod(SGCraft.MOD_ID)
 public final class SGCraftNeoForge {
 
-    public SGCraftNeoForge(IEventBus modBus) {
+    public SGCraftNeoForge(final IEventBus modBus) {
         SGCraft.init();
     }
 }
