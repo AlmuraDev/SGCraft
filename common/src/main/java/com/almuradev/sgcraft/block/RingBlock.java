@@ -34,6 +34,8 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * A block of a gate's ring, either a plain segment or a chevron. Once a gate forms, its ring blocks are merged into
@@ -60,6 +62,13 @@ public final class RingBlock extends Block {
     protected RenderShape getRenderShape(final BlockState state) {
         // A formed gate is drawn whole by its base's renderer
         return state.getValue(RingBlock.MERGED) ? RenderShape.INVISIBLE : RenderShape.MODEL;
+    }
+
+    @Override
+    protected VoxelShape getOcclusionShape(final BlockState state) {
+        // Merged blocks are drawn as part of the gate, so they mustn't hide the faces of blocks beside them or block
+        // their light
+        return state.getValue(RingBlock.MERGED) ? Shapes.empty() : super.getOcclusionShape(state);
     }
 
     @Override

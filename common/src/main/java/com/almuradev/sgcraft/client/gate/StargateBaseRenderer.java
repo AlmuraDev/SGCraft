@@ -41,6 +41,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
@@ -54,6 +55,9 @@ public final class StargateBaseRenderer implements BlockEntityRenderer<StargateB
 
     // How far above the middle of the base the ring's centre is, in blocks
     private static final double CENTRE_HEIGHT = 2.0;
+    // How far the gate reaches to either side of its base, and how tall it is, in blocks
+    private static final double GATE_HALF_WIDTH = 3.0;
+    private static final double GATE_HEIGHT = 5.0;
     // The angle between neighbouring chevrons, in degrees
     private static final float CHEVRON_SPACING = 360.0F / MilkyWayGateModel.CHEVRONS;
     // How bright an unlit chevron light is, as a fraction of full colour
@@ -127,6 +131,16 @@ public final class StargateBaseRenderer implements BlockEntityRenderer<StargateB
     public boolean shouldRenderOffScreen() {
         // The gate reaches well beyond its base, so it stays drawn while the base is off screen
         return true;
+    }
+
+    /**
+     * The space the whole gate can take up, whichever way it faces, so it isn't culled while any of it is in view.
+     * NeoForge culls block entities by this box; it isn't part of the vanilla interface, so there is no
+     * {@code @Override}.
+     */
+    public AABB getRenderBoundingBox(final StargateBaseBlockEntity gate) {
+        return new AABB(gate.getBlockPos()).inflate(StargateBaseRenderer.GATE_HALF_WIDTH, 0.0,
+                StargateBaseRenderer.GATE_HALF_WIDTH).expandTowards(0.0, StargateBaseRenderer.GATE_HEIGHT - 1, 0.0);
     }
 
     @Override

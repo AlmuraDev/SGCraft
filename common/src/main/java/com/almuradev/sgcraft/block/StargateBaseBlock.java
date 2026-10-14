@@ -40,6 +40,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -66,6 +68,11 @@ public final class StargateBaseBlock extends HorizontalDirectionalBlock implemen
     @Override
     protected RenderShape getRenderShape(final BlockState state) {
         return state.getValue(StargateBaseBlock.FORMED) ? RenderShape.INVISIBLE : RenderShape.MODEL;
+    }
+
+    @Override
+    protected VoxelShape getOcclusionShape(final BlockState state) {
+        return state.getValue(StargateBaseBlock.FORMED) ? Shapes.empty() : super.getOcclusionShape(state);
     }
 
     @Override
