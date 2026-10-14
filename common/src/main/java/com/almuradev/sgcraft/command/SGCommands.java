@@ -79,6 +79,9 @@ public final class SGCommands {
 
     // How far away the nearest gate can be for the commands that use it
     private static final int NEAR_BLOCKS = 32;
+    // What goes on the end of an address to dial it quickly, locking every chevron at once
+    private static final String QUICK_FLAG = "--quick";
+    private static final String QUICK_SHORT = "-q";
 
     private static final SimpleCommandExceptionType NO_GATE_NEAR = new SimpleCommandExceptionType(
             SGCommands.text("no_gate_near", "There is no gate within %s blocks", SGCommands.NEAR_BLOCKS));
@@ -98,8 +101,7 @@ public final class SGCommands {
                         .executes(context -> SGCommands.address(context.getSource(), SGCommands.nearest(context))))
                 .then(Commands.literal("info")
                         .executes(context -> SGCommands.info(context.getSource(), SGCommands.nearest(context))))
-                .then(SGCommands.dial(SGCommands::nearest, DialMode.STANDARD))
-                .then(SGCommands.dial(SGCommands::nearest, DialMode.QUICK))
+                .then(SGCommands.dial(SGCommands::nearest))
                 .then(Commands.literal("disconnect")
                         .executes(context -> SGCommands.disconnect(context.getSource(), SGCommands.nearest(context))))
                 .then(Commands.literal("list")
@@ -124,8 +126,7 @@ public final class SGCommands {
                                 .then(Commands.literal("info")
                                         .executes(context -> SGCommands.info(context.getSource(),
                                                 SGCommands.at(context))))
-                                .then(SGCommands.dial(SGCommands::at, DialMode.STANDARD))
-                                .then(SGCommands.dial(SGCommands::at, DialMode.QUICK))
+                                .then(SGCommands.dial(SGCommands::at))
                                 .then(Commands.literal("disconnect")
                                         .executes(context -> SGCommands.disconnect(context.getSource(),
                                                 SGCommands.at(context))))
@@ -138,12 +139,37 @@ public final class SGCommands {
         Stargate find(CommandContext<CommandSourceStack> context) throws CommandSyntaxException;
     }
 
-    // dial, or quickdial to lock every chevron at once
-    private static ArgumentBuilder<CommandSourceStack, ?> dial(final GateFinder finder, final DialMode mode) {
-        return Commands.literal(mode == DialMode.QUICK ? "quickdial" : "dial")
+    // dial <address> [--quick | -q]; the address is free text, as @ isn't allowed in a plain word, so the flag is
+    // read from its end
+    private static ArgumentBuilder<CommandSourceStack, ?> dial(final GateFinder finder) {
+        return Commands.literal("dial")
                 .then(Commands.argument("address", StringArgumentType.greedyString())
-                        .executes(context -> SGCommands.dial(context.getSource(), finder.find(context),
-                                StringArgumentType.getString(context, "address"), mode)));
+                        .suggests((context, builder) -> {
+                            final String typed = builder.getRemaining();
+                            if (!typed.isBlank() && !SGCommands.quick(typed).quick()) {
+                                builder.suggest(typed.stripTrailing() + " " + SGCommands.QUICK_FLAG);
+                            }
+                            return builder.buildFuture();
+                        })
+                        .executes(context -> {
+                            final DialText text = SGCommands.quick(StringArgumentType.getString(context, "address"));
+                            return SGCommands.dial(context.getSource(), finder.find(context), text.address(),
+                                    text.quick() ? DialMode.QUICK : DialMode.STANDARD);
+                        }));
+    }
+
+    private record DialText(String address, boolean quick) {
+    }
+
+    // An address with --quick or -q on its end, which locks every chevron at once
+    private static DialText quick(final String text) {
+        final String trimmed = text.strip();
+        for (final String flag : new String[] {SGCommands.QUICK_FLAG, SGCommands.QUICK_SHORT}) {
+            if (trimmed.endsWith(" " + flag) || trimmed.equals(flag)) {
+                return new DialText(trimmed.substring(0, trimmed.length() - flag.length()).strip(), true);
+            }
+        }
+        return new DialText(trimmed, false);
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> chevrons(final GateFinder finder) {
