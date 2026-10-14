@@ -29,7 +29,6 @@ import com.almuradev.sgcraft.SGCraft;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.SubmitNodeCollector;
-import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 
@@ -66,9 +65,8 @@ public final class MilkyWayGateRenderer implements GateTypeRenderer {
         final int light = state.lightCoords;
         final int white = ARGB.white(1.0F);
         for (int part = MilkyWayGateModel.BODY; part <= MilkyWayGateModel.GLYPHS; part++) {
-            final float[] triangles = mesh.part(part);
-            collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(MilkyWayGateRenderer.METALS[part]),
-                    (pose, buffer) -> GateGeometry.emit(pose, buffer, triangles, white, light));
+            MilkyWayGateRenderer.draw(collector, poseStack, MilkyWayGateRenderer.METALS[part], mesh.part(part), white,
+                    light);
         }
         final int first = state.chevrons > 7 ? 0 : 1;
         for (int i = first; i < first + state.chevrons; i++) {
@@ -87,19 +85,22 @@ public final class MilkyWayGateRenderer implements GateTypeRenderer {
         final int unlit = ARGB.colorFromFloat(1.0F, MilkyWayGateRenderer.UNLIT_LIGHT, MilkyWayGateRenderer.UNLIT_LIGHT,
                 MilkyWayGateRenderer.UNLIT_LIGHT);
         for (int m = 0; m < mesh.moves(); m++) {
-            final float[] triangles = mesh.chevron(MilkyWayGateModel.METAL, m);
-            collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(MilkyWayGateRenderer.CHEVRON),
-                    (pose, buffer) -> GateGeometry.emit(pose, buffer, triangles, metal, light));
+            MilkyWayGateRenderer.draw(collector, poseStack, MilkyWayGateRenderer.CHEVRON,
+                    mesh.chevron(MilkyWayGateModel.METAL, m), metal, light);
         }
         for (int piece = MilkyWayGateModel.LIGHTS; piece <= MilkyWayGateModel.LOWER_LIGHT; piece++) {
             for (int m = 0; m < mesh.moves(); m++) {
-                final float[] triangles = mesh.chevron(piece, m);
                 final Identifier glass = MilkyWayGateRenderer.LIGHT_GLASS[
                         Math.min(m, MilkyWayGateRenderer.LIGHT_GLASS.length - 1)];
-                collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(glass),
-                        (pose, buffer) -> GateGeometry.emit(pose, buffer, triangles, unlit, light));
+                MilkyWayGateRenderer.draw(collector, poseStack, glass, mesh.chevron(piece, m), unlit, light);
             }
         }
+    }
+
+    // Its triangles are kept on the GPU, so each part is only a draw
+    private static void draw(final SubmitNodeCollector collector, final PoseStack poseStack, final Identifier texture,
+            final float[] triangles, final int color, final int light) {
+        GateFeatureRenderer.submit(collector, poseStack.last(), texture, GateMesh.of(triangles), color, light);
     }
 
     private static Identifier texture(final String name) {

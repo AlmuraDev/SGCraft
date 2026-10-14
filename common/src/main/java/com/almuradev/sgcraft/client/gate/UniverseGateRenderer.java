@@ -92,13 +92,14 @@ public final class UniverseGateRenderer implements GateTypeRenderer {
         }
     }
 
+    // Its triangles are kept on the GPU, so each part is only a draw
     private static void solid(final SubmitNodeCollector collector, final PoseStack poseStack, final Identifier texture,
             final float[] triangles, final int color, final int light) {
-        collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(texture),
-                (pose, buffer) -> GateGeometry.emit(pose, buffer, triangles, color, light));
+        GateFeatureRenderer.submit(collector, poseStack.last(), texture, GateMesh.of(triangles), color, light);
     }
 
-    // Blended over what is beneath it by the texture's alpha and the colour's
+    // Blended over what is beneath it by the texture's alpha and the colour's. These are few triangles, sent each
+    // frame with the level's translucent geometry, so they blend as it does
     private static void overlay(final SubmitNodeCollector collector, final PoseStack poseStack,
             final Identifier texture, final float[] triangles, final int color, final int light) {
         collector.submitCustomGeometry(poseStack, RenderTypes.entityTranslucent(texture),
