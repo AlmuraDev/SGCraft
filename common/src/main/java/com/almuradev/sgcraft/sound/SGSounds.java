@@ -37,6 +37,10 @@ import net.minecraft.sounds.SoundEvent;
  */
 public final class SGSounds {
 
+    // How far away a gate can be heard, in blocks. Sounds fade evenly to nothing at this distance, so a gate is at half
+    // volume 18 blocks away
+    private static final float RANGE = 36.0F;
+
     public static final SoundEvent MILKY_WAY_ROLL = SGSounds.create("milkyway.gate_roll");
     public static final SoundEvent MILKY_WAY_CHEVRON_OUTGOING = SGSounds.create("milkyway.chevron_outgoing");
     public static final SoundEvent MILKY_WAY_CHEVRON_INCOMING = SGSounds.create("milkyway.chevron_incoming");
@@ -62,7 +66,7 @@ public final class SGSounds {
     }
 
     private static SoundEvent create(final String name) {
-        return SoundEvent.createVariableRangeEvent(SGCraft.id(name));
+        return SoundEvent.createFixedRangeEvent(SGCraft.id(name), SGSounds.RANGE);
     }
 
     public static void register(final RegistrySink<SoundEvent> sink) {

@@ -26,10 +26,14 @@
 package com.almuradev.sgcraft.mod;
 
 import com.almuradev.sgcraft.SGCraft;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.server.MinecraftServer;
 import org.jspecify.annotations.Nullable;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * What SGCraft keeps while a server runs. Each loader calls {@link #starting}, {@link #tick} and {@link #stopped}
@@ -37,11 +41,16 @@ import java.util.Optional;
  */
 public final class SGServer {
 
+    /** Who stands for the server's console, as the owner of a selection. */
+    public static final UUID CONSOLE = new UUID(0, 0);
+
     private static @Nullable SGServer current;
 
     private final MinecraftServer server;
     private final SGAddressing addressing;
     private final SGStargates stargates;
+    // The gate each player, or the console, has selected for commands, until the server stops
+    private final Map<UUID, GlobalPos> selections = new HashMap<>();
 
     private SGServer(final MinecraftServer server) {
         this.server = server;
@@ -98,5 +107,19 @@ public final class SGServer {
 
     public SGStargates stargates() {
         return this.stargates;
+    }
+
+    /** @return the gate someone has selected for commands */
+    public Optional<GlobalPos> selection(final UUID who) {
+        return Optional.ofNullable(this.selections.get(who));
+    }
+
+    public void select(final UUID who, final GlobalPos gate) {
+        this.selections.put(who, gate);
+    }
+
+    /** @return the gate they had selected */
+    public Optional<GlobalPos> deselect(final UUID who) {
+        return Optional.ofNullable(this.selections.remove(who));
     }
 }
