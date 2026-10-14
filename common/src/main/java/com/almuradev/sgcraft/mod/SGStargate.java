@@ -34,6 +34,7 @@ import com.almuradev.sgcraft.api.address.Address;
 import com.almuradev.sgcraft.api.address.AddressTarget;
 import com.almuradev.sgcraft.api.energy.GateEnergy;
 import com.almuradev.sgcraft.api.gate.Connection;
+import com.almuradev.sgcraft.api.gate.DialMode;
 import com.almuradev.sgcraft.api.gate.DialResult;
 import com.almuradev.sgcraft.api.gate.FixtureBuffer;
 import com.almuradev.sgcraft.api.gate.GateProperties;
@@ -47,6 +48,7 @@ import com.almuradev.sgcraft.api.gate.PlacementMode;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.gate.DialStyle;
+import com.almuradev.sgcraft.gate.GateFrame;
 import com.almuradev.sgcraft.gate.DialView;
 import com.almuradev.sgcraft.sound.SGSounds;
 import net.minecraft.core.BlockPos;
@@ -93,6 +95,20 @@ public final class SGStargate implements Stargate {
 
     MinecraftServer server() {
         return this.stargates.server();
+    }
+
+    GateStore store() {
+        return this.stargates.store();
+    }
+
+    /** @return the gate's world, if it is loaded */
+    @Nullable ServerLevel level() {
+        return this.stargates.server().getLevel(this.position.dimension());
+    }
+
+    /** @return the gate's own frame, which its horizon and travel are measured in */
+    GateFrame frame() {
+        return new GateFrame(this.position.pos(), this.record().map(GateRecord::facing).orElse(Direction.NORTH));
     }
 
     /** @return the key of the gate's type */
@@ -178,7 +194,7 @@ public final class SGStargate implements Stargate {
     }
 
     @Override
-    public CompletionStage<DialResult> dial(final Address address, final Cause cause) {
+    public CompletionStage<DialResult> dial(final Address address, final DialMode mode, final Cause cause) {
         if (!this.exists()) {
             return CompletableFuture.completedFuture(DialResult.GATE_GONE);
         }
@@ -205,7 +221,7 @@ public final class SGStargate implements Stargate {
         final SGConnection connection = new SGConnection(this, gate.get(), address,
                 this.stargates.addressing().addressOf(this.position, gate.get().position.dimension()),
                 this.get(GateProperties.OPEN_TICKS).orElse(0));
-        this.stargates.connect(connection);
+        this.stargates.connect(connection, mode);
         return connection.result();
     }
 

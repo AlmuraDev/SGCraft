@@ -90,6 +90,8 @@ def gcewingFiles = [
         '**/com/almuradev/sgcraft/gate/DialStyle.java',
         '**/com/almuradev/sgcraft/gate/EventHorizon.java',
         '**/com/almuradev/sgcraft/gate/GateFormation.java',
+        '**/com/almuradev/sgcraft/gate/GateFrame.java',
+        '**/com/almuradev/sgcraft/mod/GateTravel.java',
         '**/com/almuradev/sgcraft/mod/SGConnection.java',
 ]
 license {

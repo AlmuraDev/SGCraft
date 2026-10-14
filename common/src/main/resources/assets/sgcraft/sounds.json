@@ -16,5 +16,8 @@
   "pegasus.gate_open": {"sounds": ["sgcraft:pegasus/gate_open_long"]},
   "pegasus.dial_fail": {"sounds": ["sgcraft:pegasus/dial_fail"]},
   "event_horizon": {"sounds": ["sgcraft:event_horizon"]},
-  "gate_close": {"sounds": ["sgcraft:gate_close"]}
+  "gate_close": {"sounds": ["sgcraft:gate_close"]},
+  "teleport": {"sounds": [
+    "sgcraft:teleport1", "sgcraft:teleport2", "sgcraft:teleport3", "sgcraft:teleport4",
+    "sgcraft:teleport5", "sgcraft:teleport6", "sgcraft:teleport7", "sgcraft:teleport8"]}
 }

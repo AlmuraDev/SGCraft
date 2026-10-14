@@ -105,7 +105,19 @@ public interface Stargate {
      * @param cause why the gate is dialling
      * @return the result, once known
      */
-    CompletionStage<DialResult> dial(final Address address, final Cause cause);
+    default CompletionStage<DialResult> dial(final Address address, final Cause cause) {
+        return this.dial(address, DialMode.STANDARD, cause);
+    }
+
+    /**
+     * Dials an address in the given mode. Otherwise this is the same as {@link #dial(Address, Cause)}.
+     *
+     * @param address the address to dial
+     * @param mode how to dial it
+     * @param cause why the gate is dialling
+     * @return the result, once known
+     */
+    CompletionStage<DialResult> dial(final Address address, final DialMode mode, final Cause cause);
 
     /**
      * Dials the gate {@link Stargates#mostAppropriate(GlobalPos, Cause)} chooses for {@code target}, using the

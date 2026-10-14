@@ -68,6 +68,7 @@ public final class SGServer {
 
     public static void starting(final MinecraftServer server) {
         SGServer.current = new SGServer(server);
+        SGServer.current.stargates.restore();
         SGCraft.LOG.info("{} knows of {} gates", SGCraft.MOD_NAME,
                 SGServer.current.stargates.store().gates().size());
     }

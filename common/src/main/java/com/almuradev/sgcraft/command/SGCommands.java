@@ -31,6 +31,7 @@ import com.almuradev.sgcraft.api.SGCraftApi;
 import com.almuradev.sgcraft.api.SGCraftRegistries;
 import com.almuradev.sgcraft.api.address.Address;
 import com.almuradev.sgcraft.api.address.Addressing;
+import com.almuradev.sgcraft.api.gate.DialMode;
 import com.almuradev.sgcraft.api.gate.DialResult;
 import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.api.gate.Stargate;
@@ -97,7 +98,8 @@ public final class SGCommands {
                         .executes(context -> SGCommands.address(context.getSource(), SGCommands.nearest(context))))
                 .then(Commands.literal("info")
                         .executes(context -> SGCommands.info(context.getSource(), SGCommands.nearest(context))))
-                .then(SGCommands.dial(SGCommands::nearest))
+                .then(SGCommands.dial(SGCommands::nearest, DialMode.STANDARD))
+                .then(SGCommands.dial(SGCommands::nearest, DialMode.QUICK))
                 .then(Commands.literal("disconnect")
                         .executes(context -> SGCommands.disconnect(context.getSource(), SGCommands.nearest(context))))
                 .then(Commands.literal("list")
@@ -122,7 +124,8 @@ public final class SGCommands {
                                 .then(Commands.literal("info")
                                         .executes(context -> SGCommands.info(context.getSource(),
                                                 SGCommands.at(context))))
-                                .then(SGCommands.dial(SGCommands::at))
+                                .then(SGCommands.dial(SGCommands::at, DialMode.STANDARD))
+                                .then(SGCommands.dial(SGCommands::at, DialMode.QUICK))
                                 .then(Commands.literal("disconnect")
                                         .executes(context -> SGCommands.disconnect(context.getSource(),
                                                 SGCommands.at(context))))
@@ -135,11 +138,12 @@ public final class SGCommands {
         Stargate find(CommandContext<CommandSourceStack> context) throws CommandSyntaxException;
     }
 
-    private static ArgumentBuilder<CommandSourceStack, ?> dial(final GateFinder finder) {
-        return Commands.literal("dial")
+    // dial, or quickdial to lock every chevron at once
+    private static ArgumentBuilder<CommandSourceStack, ?> dial(final GateFinder finder, final DialMode mode) {
+        return Commands.literal(mode == DialMode.QUICK ? "quickdial" : "dial")
                 .then(Commands.argument("address", StringArgumentType.greedyString())
                         .executes(context -> SGCommands.dial(context.getSource(), finder.find(context),
-                                StringArgumentType.getString(context, "address"))));
+                                StringArgumentType.getString(context, "address"), mode)));
     }
 
     private static ArgumentBuilder<CommandSourceStack, ?> chevrons(final GateFinder finder) {
@@ -205,13 +209,13 @@ public final class SGCommands {
         return 1;
     }
 
-    private static int dial(final CommandSourceStack source, final Stargate gate, final String text)
-            throws CommandSyntaxException {
+    private static int dial(final CommandSourceStack source, final Stargate gate, final String text,
+            final DialMode mode) throws CommandSyntaxException {
         final Address address = Address.parse(text).orElseThrow(SGCommands.NOT_AN_ADDRESS::create);
         final Cause cause = SGCommands.cause(source);
         source.sendSuccess(() -> SGCommands.text("dial.start", "Dialling %s from the gate at %s",
                 SGCommands.copyable(address), SGCommands.position(gate)), false);
-        gate.dial(address, cause).whenComplete((result, error) -> {
+        gate.dial(address, mode, cause).whenComplete((result, error) -> {
             if (error != null) {
                 source.sendFailure(SGCommands.text("dial.error", "Dialling failed: %s", String.valueOf(error)));
             } else if (result == DialResult.CONNECTED) {

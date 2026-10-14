@@ -7,5 +7,9 @@
   "block.sgcraft.stargate_base_universe": "Universe Stargate Base",
   "gate_type.sgcraft.milky_way": "Milky Way",
   "gate_type.sgcraft.pegasus": "Pegasus",
-  "gate_type.sgcraft.universe": "Universe"
+  "gate_type.sgcraft.universe": "Universe",
+  "death.attack.sgcraft.transient": "%1$s was torn apart by an event horizon",
+  "death.attack.sgcraft.transient.player": "%1$s was torn apart by an event horizon whilst fighting %2$s",
+  "message.sgcraft.access_denied": "You aren't allowed to travel through this gate",
+  "message.sgcraft.reverse_wormhole": "You can't travel backwards through a one way wormhole"
 }

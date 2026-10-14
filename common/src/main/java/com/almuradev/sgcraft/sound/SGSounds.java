@@ -49,12 +49,13 @@ public final class SGSounds {
     public static final SoundEvent PEGASUS_FAIL = SGSounds.create("pegasus.dial_fail");
     public static final SoundEvent EVENT_HORIZON = SGSounds.create("event_horizon");
     public static final SoundEvent CLOSE = SGSounds.create("gate_close");
+    public static final SoundEvent TELEPORT = SGSounds.create("teleport");
 
     private static final SoundEvent[] ALL = {
             SGSounds.MILKY_WAY_ROLL, SGSounds.MILKY_WAY_CHEVRON_OUTGOING, SGSounds.MILKY_WAY_CHEVRON_INCOMING,
             SGSounds.MILKY_WAY_OPEN, SGSounds.MILKY_WAY_FAIL, SGSounds.PEGASUS_ROLL, SGSounds.PEGASUS_CHEVRON_OUTGOING,
             SGSounds.PEGASUS_CHEVRON_INCOMING, SGSounds.PEGASUS_OPEN, SGSounds.PEGASUS_FAIL, SGSounds.EVENT_HORIZON,
-            SGSounds.CLOSE,
+            SGSounds.CLOSE, SGSounds.TELEPORT,
     };
 
     private SGSounds() {

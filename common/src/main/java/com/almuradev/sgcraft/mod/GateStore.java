@@ -66,7 +66,9 @@ public final class GateStore extends SavedData {
                     .forGetter(store -> List.copyOf(store.gates.values())),
             Codec.unboundedMap(ResourceKey.codec(Registries.DIMENSION), GateStore.SYMBOL_CODEC)
                     .optionalFieldOf("world_symbols", Map.of())
-                    .forGetter(store -> store.worldSymbols)
+                    .forGetter(store -> store.worldSymbols),
+            CompoundTag.CODEC.listOf().optionalFieldOf("connections", List.of())
+                    .forGetter(store -> List.copyOf(store.connections.values()))
     ).apply(instance, GateStore::new));
 
     public static final SavedDataType<GateStore> TYPE =
@@ -74,13 +76,34 @@ public final class GateStore extends SavedData {
 
     private final Map<GlobalPos, GateRecord> gates = new LinkedHashMap<>();
     private final Map<ResourceKey<Level>, Symbol> worldSymbols = new LinkedHashMap<>();
+    // Each connection under way, by its dialling gate, as the connection saves itself
+    private final Map<GlobalPos, CompoundTag> connections = new LinkedHashMap<>();
 
     private GateStore() {
     }
 
-    private GateStore(final List<GateRecord> gates, final Map<ResourceKey<Level>, Symbol> worldSymbols) {
+    private GateStore(final List<GateRecord> gates, final Map<ResourceKey<Level>, Symbol> worldSymbols,
+            final List<CompoundTag> connections) {
         gates.forEach(gate -> this.gates.put(gate.position(), gate));
         this.worldSymbols.putAll(worldSymbols);
+        connections.forEach(tag -> tag.read("dialler", GlobalPos.CODEC)
+                .ifPresent(dialler -> this.connections.put(dialler, tag)));
+    }
+
+    /** @return each connection under way when last saved, as it saved itself */
+    public Collection<CompoundTag> connections() {
+        return List.copyOf(this.connections.values());
+    }
+
+    public void putConnection(final GlobalPos dialler, final CompoundTag connection) {
+        this.connections.put(dialler, connection);
+        this.setDirty();
+    }
+
+    public void removeConnection(final GlobalPos dialler) {
+        if (this.connections.remove(dialler) != null) {
+            this.setDirty();
+        }
     }
 
     public Collection<GateRecord> gates() {

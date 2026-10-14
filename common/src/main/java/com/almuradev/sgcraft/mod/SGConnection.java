@@ -30,13 +30,17 @@ package com.almuradev.sgcraft.mod;
 import com.almuradev.sgcraft.api.address.Address;
 import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.api.gate.Connection;
+import com.almuradev.sgcraft.api.gate.DialMode;
 import com.almuradev.sgcraft.api.gate.DialResult;
+import com.almuradev.sgcraft.api.gate.GateProperties;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.gate.ChevronOrder;
 import com.almuradev.sgcraft.gate.DialPhase;
 import com.almuradev.sgcraft.gate.DialStyle;
 import com.almuradev.sgcraft.gate.DialView;
 import com.almuradev.sgcraft.sound.SGSounds;
+import net.minecraft.core.GlobalPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 
 import java.util.Optional;
@@ -70,9 +74,12 @@ public final class SGConnection implements Connection {
     private final DialStyle style;
     private final int[] positions;
     private final CompletableFuture<DialResult> result = new CompletableFuture<>();
+    private final GateTravel diallerTravel;
+    private final GateTravel targetTravel;
     private DialPhase phase = DialPhase.DIALLING;
     // Ticks left in the current phase; the phase ends on the tick after this reaches 0, as in the original
     private int timeout;
+    private int phaseTicks;
     private int elapsed;
     private int symbol;
     private int engaged;
@@ -94,6 +101,8 @@ public final class SGConnection implements Connection {
         this.openTicks = openTicks;
         this.style = DialStyle.of(dialler.typeKey());
         this.positions = ChevronOrder.positions(dialler.chevrons(), address.size());
+        this.diallerTravel = new GateTravel(dialler);
+        this.targetTravel = new GateTravel(target);
     }
 
     private static String characters(final Address address) {
@@ -110,9 +119,19 @@ public final class SGConnection implements Connection {
         return this.dialler.server().overworld().getGameTime();
     }
 
-    void start() {
+    void start(final DialMode mode) {
         this.dialler.keepLoaded();
         this.target.keepLoaded();
+        if (mode == DialMode.QUICK) {
+            // Every chevron locks at once, with no ring moving, as the original's "chevrons lock on dial" did
+            this.engaged = this.address.size();
+            this.lockTick = this.now();
+            this.fillStart = this.now();
+            this.fillEnd = this.now();
+            this.target.play(SGSounds.chevron(DialStyle.of(this.target.typeKey()), false));
+            this.enter(DialPhase.SYNC_AWAIT, SGConnection.SYNC_AWAIT_TICKS);
+            return;
+        }
         this.scheduleFill();
         this.startSymbol();
     }
@@ -144,9 +163,11 @@ public final class SGConnection implements Connection {
     private void enter(final DialPhase phase, final int ticks) {
         this.phase = phase;
         this.timeout = ticks;
+        this.phaseTicks = ticks;
         this.elapsed = 0;
         this.phaseStart = this.now();
         this.sync();
+        this.dialler.store().putConnection(this.dialler.position(), this.save());
     }
 
     /** @return whether the connection is over and can be forgotten */
@@ -157,6 +178,11 @@ public final class SGConnection implements Connection {
         }
         if (this.phase == DialPhase.CONNECTED) {
             this.ticksOpen++;
+            this.travel();
+        }
+        if (this.phase == DialPhase.TRANSIENT) {
+            this.diallerTravel.kawoosh();
+            this.targetTravel.kawoosh();
         }
         if (this.phase == DialPhase.ESTABLISHING && this.elapsed == (this.style == DialStyle.PEGASUS ? 0
                 : SGConnection.MILKY_WAY_OPEN_SOUND_TICKS)) {
@@ -205,6 +231,8 @@ public final class SGConnection implements Connection {
     void close() {
         switch (this.phase) {
             case TRANSIENT, CONNECTED -> {
+                this.diallerTravel.clear();
+                this.targetTravel.clear();
                 this.enter(DialPhase.DISCONNECTING, SGConnection.DISCONNECTING_TICKS);
                 this.dialler.play(SGSounds.CLOSE);
                 this.target.play(SGSounds.CLOSE);
@@ -234,8 +262,18 @@ public final class SGConnection implements Connection {
         return this.phase;
     }
 
+    // Travellers go from the dialling gate; from the dialled gate too unless travel is one way, which it is unless
+    // the dialling gate says otherwise
+    private void travel() {
+        final boolean oneWay = this.dialler.get(GateProperties.ONE_WAY_TRAVEL).orElse(true);
+        final boolean reverseKills = this.dialler.get(GateProperties.REVERSE_TRAVEL_KILLS).orElse(false);
+        this.diallerTravel.tick(this.target, true, false);
+        this.targetTravel.tick(this.dialler, !oneWay, reverseKills);
+    }
+
     private void finish() {
         this.phase = DialPhase.IDLE;
+        this.dialler.store().removeConnection(this.dialler.position());
         this.dialler.leave(this);
         this.target.leave(this);
     }
@@ -254,6 +292,78 @@ public final class SGConnection implements Connection {
 
     MinecraftServer server() {
         return this.dialler.server();
+    }
+
+    /** @return the connection as it is saved: where it is in its dial, by game time, so it can carry on */
+    CompoundTag save() {
+        final CompoundTag tag = new CompoundTag();
+        tag.store("dialler", GlobalPos.CODEC, this.dialler.position());
+        tag.store("target", GlobalPos.CODEC, this.target.position());
+        tag.store("address", Address.CODEC, this.address);
+        tag.putString("home_address", this.homeAddress);
+        tag.putInt("open_ticks", this.openTicks);
+        tag.putString("phase", this.phase.name());
+        tag.putLong("phase_start", this.phaseStart);
+        tag.putInt("phase_ticks", this.phaseTicks);
+        tag.putInt("symbol", this.symbol);
+        tag.putInt("engaged", this.engaged);
+        tag.putFloat("ring_angle", this.ringAngle);
+        tag.putFloat("move_from", this.move.from());
+        tag.putFloat("move_to", this.move.to());
+        tag.putInt("move_ticks", this.move.ticks());
+        tag.putLong("lock_tick", this.lockTick);
+        tag.putLong("fill_start", this.fillStart);
+        tag.putLong("fill_end", this.fillEnd);
+        return tag;
+    }
+
+    /**
+     * A connection saved under way, carrying on from where it was: the time it had left in its step is what it has
+     * left now, as game time stops while the server does.
+     *
+     * @return the connection, or empty if either gate is gone or the save can't be read
+     */
+    static Optional<SGConnection> restore(final SGStargates stargates, final CompoundTag tag) {
+        final Optional<SGStargate> dialler = tag.read("dialler", GlobalPos.CODEC).flatMap(stargates::gate);
+        final Optional<SGStargate> target = tag.read("target", GlobalPos.CODEC).flatMap(stargates::gate);
+        final Optional<Address> address = tag.read("address", Address.CODEC);
+        final Optional<DialPhase> phase = tag.getString("phase").flatMap(name -> {
+            try {
+                return Optional.of(DialPhase.valueOf(name));
+            } catch (final IllegalArgumentException e) {
+                return Optional.empty();
+            }
+        });
+        if (dialler.isEmpty() || target.isEmpty() || address.isEmpty() || phase.isEmpty()
+                || phase.get() == DialPhase.IDLE) {
+            return Optional.empty();
+        }
+        final SGConnection connection = new SGConnection(dialler.get(), target.get(), address.get(),
+                Address.parse(tag.getStringOr("home_address", "")), tag.getIntOr("open_ticks", 0));
+        connection.phase = phase.get();
+        connection.phaseStart = tag.getLongOr("phase_start", connection.now());
+        connection.phaseTicks = tag.getIntOr("phase_ticks", 0);
+        connection.elapsed = (int) Math.max(0, Math.min(Integer.MAX_VALUE, connection.now() - connection.phaseStart));
+        connection.timeout = Math.max(0, connection.phaseTicks - connection.elapsed);
+        connection.symbol = tag.getIntOr("symbol", 0);
+        connection.engaged = tag.getIntOr("engaged", 0);
+        connection.ringAngle = tag.getFloatOr("ring_angle", 0);
+        connection.move = new DialStyle.Move(tag.getFloatOr("move_from", 0), tag.getFloatOr("move_to", 0),
+                tag.getIntOr("move_ticks", 0));
+        connection.lockTick = tag.getLongOr("lock_tick", 0);
+        connection.fillStart = tag.getLongOr("fill_start", 0);
+        connection.fillEnd = tag.getLongOr("fill_end", 0);
+        if (connection.phase == DialPhase.CONNECTED) {
+            connection.ticksOpen = connection.elapsed;
+        }
+        return Optional.of(connection);
+    }
+
+    /** Picks up a restored connection: both gates show where it is, and their chunks stay loaded. */
+    void resume() {
+        this.dialler.keepLoaded();
+        this.target.keepLoaded();
+        this.sync();
     }
 
     @Override

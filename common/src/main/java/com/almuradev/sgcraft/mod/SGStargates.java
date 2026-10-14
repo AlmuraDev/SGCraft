@@ -30,6 +30,7 @@ import com.almuradev.sgcraft.api.Cause;
 import com.almuradev.sgcraft.api.SGCraftRegistries;
 import com.almuradev.sgcraft.api.address.Address;
 import com.almuradev.sgcraft.api.address.AddressTarget;
+import com.almuradev.sgcraft.api.gate.DialMode;
 import com.almuradev.sgcraft.api.gate.GatePlacement;
 import com.almuradev.sgcraft.api.gate.GateProperty;
 import com.almuradev.sgcraft.api.gate.GateType;
@@ -113,9 +114,9 @@ public final class SGStargates implements Stargates {
         this.store().remove(position);
     }
 
-    void connect(final SGConnection connection) {
+    void connect(final SGConnection connection, final DialMode mode) {
         this.connections.add(connection);
-        connection.start();
+        connection.start(mode);
     }
 
     /** Moves every connection on by a tick. */
@@ -123,10 +124,25 @@ public final class SGStargates implements Stargates {
         this.connections.removeIf(SGConnection::tick);
     }
 
-    /** Ends every connection, as the server stops. */
+    /**
+     * Forgets the connections as the server stops. They are saved as they go, so they carry on when it starts again.
+     */
     public void stop() {
-        new ArrayList<>(this.connections).forEach(SGConnection::gone);
         this.connections.clear();
+    }
+
+    /** Carries on the connections that were under way when the server last stopped. */
+    public void restore() {
+        final GateStore store = this.store();
+        for (final CompoundTag tag : store.connections()) {
+            final Optional<SGConnection> connection = SGConnection.restore(this, tag);
+            if (connection.isEmpty()) {
+                tag.read("dialler", GlobalPos.CODEC).ifPresent(store::removeConnection);
+                continue;
+            }
+            this.connections.add(connection.get());
+            connection.get().resume();
+        }
     }
 
     Optional<SGStargate> inCell(final AddressTarget target) {
