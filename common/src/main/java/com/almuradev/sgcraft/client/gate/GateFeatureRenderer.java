@@ -48,6 +48,7 @@ import net.minecraft.client.renderer.oit.OitStage;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
+import net.minecraft.util.LightCoordsUtil;
 import org.joml.Matrix4f;
 import org.jspecify.annotations.Nullable;
 import org.lwjgl.system.MemoryUtil;
@@ -69,11 +70,12 @@ public final class GateFeatureRenderer implements FeatureRenderer<GateFeatureRen
     /** The kind of submit this renderer draws. */
     public static final FeatureRendererType<Submit> TYPE = FeatureRendererType.create("SGCraft gate");
 
-    // A part's placement (camera relative), its tint, and the light it's lit by: a mat4, a vec4 and an ivec2,
-    // rounded up to a multiple of 16 bytes
+    // A part's placement (camera relative), its tint, the light it's lit by, and whether it shines with its own: a
+    // mat4, a vec4, an ivec2 and an int, rounded up to a multiple of 16 bytes
     private static final int CONSTANTS_SIZE = 96;
     private static final int TINT_OFFSET = 64;
     private static final int LIGHT_OFFSET = 80;
+    private static final int EMISSIVE_OFFSET = 88;
 
     private static final RenderPipeline PIPELINE = RenderPipeline.builder()
             .withLocation(SGCraft.id("pipeline/gate"))
@@ -104,14 +106,29 @@ public final class GateFeatureRenderer implements FeatureRenderer<GateFeatureRen
      * Submits a part of a gate, to be drawn with the level's solid features.
      *
      * @param pose where the part goes, as block entities are placed: relative to the camera, not turned with it
-     * @param color the colour the part is tinted, as ARGB
+     * @param color the color the part is tinted, as ARGB
      * @param light the packed light the part is lit by
      */
     public static void submit(final SubmitNodeCollector collector, final PoseStack.Pose pose, final Identifier texture,
             final GateMesh mesh, final int color, final int light) {
         if (mesh.buffer() != null) {
             ClientPlatform.get().submitSolid(collector,
-                    new Submit(new Matrix4f(pose.pose()), texture, mesh, color, light));
+                    new Submit(new Matrix4f(pose.pose()), texture, mesh, color, light, false));
+        }
+    }
+
+    /**
+     * Submits a part of a gate that shines with its own light, such as a lit chevron: drawn as bright as its color
+     * whatever light it stands in, and without the shading of the faces turned from the level's light.
+     *
+     * @param pose where the part goes, as block entities are placed: relative to the camera, not turned with it
+     * @param color the color the part shines, as ARGB
+     */
+    public static void submitEmissive(final SubmitNodeCollector collector, final PoseStack.Pose pose,
+            final Identifier texture, final GateMesh mesh, final int color) {
+        if (mesh.buffer() != null) {
+            ClientPlatform.get().submitSolid(collector,
+                    new Submit(new Matrix4f(pose.pose()), texture, mesh, color, LightCoordsUtil.FULL_BRIGHT, true));
         }
     }
 
@@ -136,6 +153,8 @@ public final class GateFeatureRenderer implements FeatureRenderer<GateFeatureRen
                 return;
             }
         }
+        // The glows drawn over gates use a shader of their own, which mustn't be compiled once their pass is open
+        GateGlow.prepare();
         if (this.transforms == null) {
             this.transforms = RenderSystem.getDynamicUniforms().writeTransform(RenderSystem.getModelViewMatrixCopy());
         }
@@ -187,7 +206,8 @@ public final class GateFeatureRenderer implements FeatureRenderer<GateFeatureRen
                 .putFloat(GateFeatureRenderer.TINT_OFFSET + 8, ARGB.blueFloat(color))
                 .putFloat(GateFeatureRenderer.TINT_OFFSET + 12, ARGB.alphaFloat(color))
                 .putInt(GateFeatureRenderer.LIGHT_OFFSET, submit.light & 0xFFFF)
-                .putInt(GateFeatureRenderer.LIGHT_OFFSET + 4, submit.light >>> 16 & 0xFFFF);
+                .putInt(GateFeatureRenderer.LIGHT_OFFSET + 4, submit.light >>> 16 & 0xFFFF)
+                .putInt(GateFeatureRenderer.EMISSIVE_OFFSET, submit.emissive ? 1 : 0);
         this.constants.clear();
         renderPass.pushConstants(this.constants);
     }
@@ -197,8 +217,11 @@ public final class GateFeatureRenderer implements FeatureRenderer<GateFeatureRen
         MemoryUtil.memFree(this.constants);
     }
 
-    /** A part of a gate to draw: its placement relative to the camera, its texture, its mesh, tint and light. */
-    public record Submit(Matrix4f model, Identifier texture, GateMesh mesh, int color, int light)
+    /**
+     * A part of a gate to draw: its placement relative to the camera, its texture, its mesh, tint and light, and
+     * whether it shines with its own light.
+     */
+    public record Submit(Matrix4f model, Identifier texture, GateMesh mesh, int color, int light, boolean emissive)
             implements SubmitNode {
 
         @Override

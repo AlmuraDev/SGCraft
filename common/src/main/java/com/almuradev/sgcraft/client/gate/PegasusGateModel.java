@@ -37,7 +37,7 @@ import java.util.Map;
 
 /**
  * The shape of a Pegasus (Atlantis) gate, as on the show, as groups of triangles, read from
- * {@code pegasus_gate.txt} (and its glyphs from {@code pegasus_glyphs.txt}). It is in metres, the front towards +z,
+ * {@code pegasus_gate.txt} (and its glyphs from {@code pegasus_glyphs.txt}). It is in meters, the front towards +z,
  * its chevrons at 90 degrees and every 40 degrees round from there. The fixed ring's faces and edges are given for
  * the ninth of it round the top chevron, the inner ring's screens and the dividers between them for the one at the
  * top, and the chevron for the top one; the rest is those, turned.
@@ -95,7 +95,7 @@ public final class PegasusGateModel {
         return model;
     }
 
-    /** @return how far the ring's outer edge is from its centre, in metres */
+    /** @return how far the ring's outer edge is from its center, in meters */
     public double outerRadius() {
         return this.outerRadius;
     }

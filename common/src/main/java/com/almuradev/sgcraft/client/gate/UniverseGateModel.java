@@ -38,7 +38,7 @@ import java.util.Map;
 
 /**
  * The shape of a Universe (Destiny) gate, as on the show, as triangles, read from {@code universe_gate.txt}. It is in
- * its own units: the ring's outer edge is {@link #OUTER_RADIUS} from its centre and its faces are either side of
+ * its own units: the ring's outer edge is {@link #OUTER_RADIUS} from its center and its faces are either side of
  * z = 0. Its chevrons are at 90 degrees and every 40 degrees round from there, clockwise.
  *
  * <p>The ring itself is a body turned from one profile ({@link #PROFILE}). Everything standing out of it (the frames
@@ -71,7 +71,7 @@ public final class UniverseGateModel {
     static final int FACE_FROM = 3;
     static final int FACE_TO = 20;
 
-    // A ninth of the gate's raised faces and their sides, in a frame where the chevron's centre is along x:
+    // A ninth of the gate's raised faces and their sides, in a frame where the chevron's center is along x:
     // {part, ax, ay, az, bx, ..., nx, ny, nz}
     private final List<double[]> section = new ArrayList<>();
     private List<double[]> chevronSurface;
@@ -111,7 +111,7 @@ public final class UniverseGateModel {
                 face.points = new double[n][];
                 for (int i = 0; i < n; i++) {
                     // The faces were measured on the side of the model without the symbols, which is the gate's back;
-                    // the front is them seen from the other side, mirrored across the chevron's centre
+                    // the front is them seen from the other side, mirrored across the chevron's center
                     final double d = -Double.parseDouble(f[1 + 3 * i]);
                     final double r = Double.parseDouble(f[2 + 3 * i]);
                     final double a = Math.toRadians(-d);
@@ -155,7 +155,7 @@ public final class UniverseGateModel {
         }
     }
 
-    /** @return the forward faces of one chevron, as triangles {ax, ay, az, bx, ..., cz} with its centre along x */
+    /** @return the forward faces of one chevron, as triangles {ax, ay, az, bx, ..., cz} with its center along x */
     public List<double[]> chevronSurface() {
         if (this.chevronSurface == null) {
             this.chevronSurface = new ArrayList<>();
@@ -196,7 +196,7 @@ public final class UniverseGateModel {
 
     private static final class Face {
         private int part;
-        // Each corner: x, y, z, then degrees from the chevron's centre and radius
+        // Each corner: x, y, z, then degrees from the chevron's center and radius
         private double[][] points;
     }
 

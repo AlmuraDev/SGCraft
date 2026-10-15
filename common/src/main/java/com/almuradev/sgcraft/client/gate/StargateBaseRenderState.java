@@ -25,14 +25,19 @@
 
 package com.almuradev.sgcraft.client.gate;
 
-import com.almuradev.sgcraft.gate.ChevronOrder;
-import com.almuradev.sgcraft.gate.DialView;
 import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.api.gate.GateTypes;
-import org.jspecify.annotations.Nullable;
+import com.almuradev.sgcraft.block.entity.StargateBaseBlockEntity;
+import com.almuradev.sgcraft.gate.ChevronOrder;
+import com.almuradev.sgcraft.gate.ChevronSpacing;
+import com.almuradev.sgcraft.gate.DialView;
+import com.almuradev.sgcraft.gate.GateShape;
+import net.minecraft.client.renderer.block.MovingBlockRenderState;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceKey;
+import org.jspecify.annotations.Nullable;
 
 /**
  * What the gate renderer needs to know about a gate for one frame.
@@ -40,6 +45,8 @@ import net.minecraft.resources.ResourceKey;
 public final class StargateBaseRenderState extends BlockEntityRenderState {
 
     public boolean formed;
+    // How big the gate is, which its drawing is scaled to
+    public GateShape shape = GateShape.STANDARD;
     public ResourceKey<GateType> gateType = GateTypes.MILKY_WAY;
     public Direction facing = Direction.NORTH;
     public int chevrons = 7;
@@ -50,4 +57,18 @@ public final class StargateBaseRenderState extends BlockEntityRenderState {
     public double time;
     // How far forward of the gate each point of the open wormhole's surface is, by spoke and ring; null while closed
     public double @Nullable [][] horizon;
+    // How far open the iris is, from 0 shut to 1 open; 1 when there is no iris
+    public float irisAperture = 1;
+    // Whether the open wormhole's surface lets a little show through
+    public boolean transparent = true;
+    // How far apart the chevrons stand, in degrees, which camouflage over the bottom row's corners can draw closer
+    public double spacing = ChevronSpacing.STANDARD;
+    // The camouflage over the bottom row, from left to right as seen from in front, and where each is from the base;
+    // a slot is null when it has none
+    public final @Nullable MovingBlockRenderState[] camouflage =
+            new MovingBlockRenderState[StargateBaseBlockEntity.CAMOUFLAGE_SLOTS];
+    public final BlockPos[] camouflageOffsets = new BlockPos[StargateBaseBlockEntity.CAMOUFLAGE_SLOTS];
+    // The colored glows round the gate's lit parts, and over its open horizon, filled again each frame
+    public final GateGlow.Glows glows = new GateGlow.Glows();
+    public final GateGlow.Glows horizonGlow = new GateGlow.Glows();
 }

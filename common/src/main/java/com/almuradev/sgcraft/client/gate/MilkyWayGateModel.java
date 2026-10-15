@@ -37,7 +37,7 @@ import java.util.Set;
 
 /**
  * The shape of a Milky Way (SG-1) gate, as on the show, as triangles, read from {@code milkyway_gate.txt}. It is in
- * metres: the ring's outer edge is {@link #OUTER_RADIUS} from its centre, its faces either side of z = 0, the front
+ * meters: the ring's outer edge is {@link #OUTER_RADIUS} from its center, its faces either side of z = 0, the front
  * towards +z. Its chevrons are at 90 degrees and every 40 degrees round from there.
  *
  * <p>It is three things, each drawn on its own: the fixed ring, the symbol ring turning in a channel round the front

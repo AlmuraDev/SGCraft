@@ -40,15 +40,15 @@ import java.util.List;
  */
 public final class MilkyWayGateMesh {
 
-    /** How far a standard gate's ring reaches from its centre, in blocks. */
+    /** How far a standard gate's ring reaches from its center, in blocks. */
     public static final double RING_OUTER_RADIUS = 2.5;
 
     // How many steps round the gate its rings are turned in
     private static final int STEPS = 180;
-    // The metals repeat across the gate every this many metres of the model
+    // The metals repeat across the gate every this many meters of the model
     private static final double METAL_REPEAT = 1.2;
-    // A chevron's lights are laid over the whole chevron, from LIGHT_HALF metres either side of its middle, and from
-    // LIGHT_TOP down to LIGHT_BOTTOM from the gate's centre
+    // A chevron's lights are laid over the whole chevron, from LIGHT_HALF meters either side of its middle, and from
+    // LIGHT_TOP down to LIGHT_BOTTOM from the gate's center
     private static final double LIGHT_HALF = 0.54;
     private static final double LIGHT_TOP = 6.09;
     private static final double LIGHT_BOTTOM = 5.45;

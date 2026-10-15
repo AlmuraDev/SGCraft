@@ -29,11 +29,20 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 
 /**
- * Draws one type of gate, in the gate's frame: its centre at the origin, x to its right as seen from in front, y up,
+ * Draws one type of gate, in the gate's frame: its center at the origin, x to its right as seen from in front, y up,
  * and its front towards +z, at the size of a standard gate.
  */
-@FunctionalInterface
 public interface GateTypeRenderer {
 
+    /**
+     * Draws the gate, and adds the glows of its lit parts to {@code state.glows}, which it submits; see
+     * {@link GateGlow}.
+     */
     void submit(final StargateBaseRenderState state, final PoseStack poseStack, final SubmitNodeCollector collector);
+
+    /**
+     * @return the color of the light this type of gate gives off, as ARGB: the glow round its lit parts and over its
+     *     open horizon is this color
+     */
+    int glowColor();
 }

@@ -25,11 +25,16 @@
 
 package com.almuradev.sgcraft.client.gate;
 
+import com.almuradev.sgcraft.gate.ChevronSpacing;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Triangles of a gate, kept as flat arrays and drawn through an entity render type.
@@ -47,7 +52,7 @@ public final class GateGeometry {
     /**
      * Draws triangles, each as a quad with its last corner repeated, since entity render types draw quads.
      *
-     * @param color the colour every corner is tinted, as ARGB
+     * @param color the color every corner is tinted, as ARGB
      * @param light the packed light every corner is lit by
      */
     public static void emit(final PoseStack.Pose pose, final VertexConsumer buffer, final float[] triangles,
@@ -63,6 +68,75 @@ public final class GateGeometry {
                         .setNormal(pose, triangles[c + 5], triangles[c + 6], triangles[c + 7]);
             }
         }
+    }
+
+    /**
+     * Triangles with every corner moved round the gate's center as {@link ChevronSpacing#squeeze} moves its angle,
+     * their normals turned with them. Each is made once for each spacing and kept, so it is the same array each time.
+     *
+     * @param triangles triangles about the gate's center, which is the origin, the gate facing +z
+     * @param spacing how far apart the chevrons stand
+     */
+    public static float[] squeezed(final float[] triangles, final double spacing) {
+        if (spacing == ChevronSpacing.STANDARD) {
+            return triangles;
+        }
+        return GateGeometry.SQUEEZED.computeIfAbsent(triangles, key -> new HashMap<>())
+                .computeIfAbsent(spacing, key -> GateGeometry.squeeze(triangles, spacing));
+    }
+
+    private static final Map<float[], Map<Double, float[]>> SQUEEZED = new IdentityHashMap<>();
+
+    private static float[] squeeze(final float[] triangles, final double spacing) {
+        final float[] out = triangles.clone();
+        for (int c = 0; c < out.length; c += 8) {
+            final double x = out[c];
+            final double y = out[c + 1];
+            if (x == 0 && y == 0) {
+                continue;
+            }
+            final double angle = Math.toDegrees(Math.atan2(y, x));
+            final double turn = Math.toRadians(ChevronSpacing.squeeze(angle, spacing) - angle);
+            GateGeometry.turn(out, c, turn);
+            GateGeometry.turn(out, c + 5, turn);
+        }
+        return out;
+    }
+
+    /** @return the triangles turned anticlockwise about the gate's center, seen from in front */
+    public static float[] turned(final float[] triangles, final double degrees) {
+        final float[] out = triangles.clone();
+        final double turn = Math.toRadians(degrees);
+        for (int c = 0; c < out.length; c += 8) {
+            GateGeometry.turn(out, c, turn);
+            GateGeometry.turn(out, c + 5, turn);
+        }
+        return out;
+    }
+
+    /** @return every one of the arrays' triangles in one */
+    public static float[] joined(final List<float[]> parts) {
+        int size = 0;
+        for (final float[] part : parts) {
+            size += part.length;
+        }
+        final float[] out = new float[size];
+        int at = 0;
+        for (final float[] part : parts) {
+            System.arraycopy(part, 0, out, at, part.length);
+            at += part.length;
+        }
+        return out;
+    }
+
+    // Turns the x and y at an index about the z axis
+    private static void turn(final float[] data, final int at, final double radians) {
+        final double cos = Math.cos(radians);
+        final double sin = Math.sin(radians);
+        final double x = data[at];
+        final double y = data[at + 1];
+        data[at] = (float) (x * cos - y * sin);
+        data[at + 1] = (float) (x * sin + y * cos);
     }
 
     /** Collects triangles into an array. */

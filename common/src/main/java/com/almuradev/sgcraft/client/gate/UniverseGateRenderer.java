@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.client.gate;
 
 import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.gate.ChevronOrder;
+import com.almuradev.sgcraft.gate.ChevronSpacing;
 import com.almuradev.sgcraft.gate.DialPhase;
 import com.almuradev.sgcraft.gate.DialView;
 import com.almuradev.sgcraft.SGCraft;
@@ -61,7 +62,7 @@ public final class UniverseGateRenderer implements GateTypeRenderer {
     private static final Identifier CHEVRON_GLOW = UniverseGateRenderer.texture("chevron_glow");
     private static final Identifier CHEVRON_LIGHTS = UniverseGateRenderer.texture("chevron_lights");
     // A lit symbol is its glyph added twice in white, then its blurred glow in pale blue; a lit chevron is its glow
-    // added in grey, then its lights in white
+    // added in gray, then its lights in white
     private static final int CORE_LAYERS = 2;
     private static final int SYMBOL_GLOW = ARGB.colorFromFloat(1.0F, 0.96F, 1.0F, 1.0F);
     private static final int CHEVRON_GLOW_COLOR = ARGB.colorFromFloat(1.0F, 0.35F, 0.35F, 0.35F);
@@ -70,6 +71,13 @@ public final class UniverseGateRenderer implements GateTypeRenderer {
     // the metal round them
     private static final float SYMBOL_CUT = 0.4F;
     private static final float UNLIT_LIGHT = 0.6F;
+    // The cool white its lit parts light the gate with; how bright the glow round a lit symbol and a lit chevron is at
+    // most, and how far each reaches, in the half size of the symbol or the chevron's lights
+    private static final int GLOW = ARGB.color(225, 235, 255);
+    private static final float SYMBOL_GLOW_STRENGTH = 0.15F;
+    private static final double SYMBOL_REACH = 2.4;
+    private static final float CHEVRON_GLOW_STRENGTH = 0.22F;
+    private static final double CHEVRON_REACH = 2.0;
 
     @Override
     public void submit(final StargateBaseRenderState state, final PoseStack poseStack,
@@ -81,14 +89,15 @@ public final class UniverseGateRenderer implements GateTypeRenderer {
         final DialView view = state.view;
         final int light = state.lightCoords;
         final int white = ARGB.white(1.0F);
-        // Only the dialling gate turns, its chevrons with it
+        final double spacing = state.spacing;
+        // Only the dialing gate turns, its chevrons with it
         poseStack.pushPose();
         if (view.initiator() && view.phase() != DialPhase.IDLE) {
-            poseStack.rotateDegrees(Axis.ZP, view.ringAngle(state.time));
+            poseStack.rotateDegrees(Axis.ZP, UniverseGateRenderer.turn(view, state.time, spacing));
         }
         for (int part = UniverseGateMesh.BODY; part <= UniverseGateMesh.DETAIL; part++) {
-            UniverseGateRenderer.solid(collector, poseStack, UniverseGateRenderer.RING[part], mesh.ring(part), white,
-                    light);
+            UniverseGateRenderer.solid(collector, poseStack, UniverseGateRenderer.RING[part],
+                    GateGeometry.squeezed(mesh.ring(part), spacing), white, light);
         }
         // Like the other gates, it has seven chevrons, the bottom two left out, until it has nine: chevron i is the
         // model's (i - 4)th clockwise from the top
@@ -96,32 +105,45 @@ public final class UniverseGateRenderer implements GateTypeRenderer {
         for (int i = first; i < first + state.chevrons; i++) {
             final int slot = ((i - 4) % UniverseGateModel.CHEVRONS + UniverseGateModel.CHEVRONS)
                     % UniverseGateModel.CHEVRONS;
+            // Each chevron moves whole to where it now stands
+            poseStack.pushPose();
+            poseStack.rotateDegrees(Axis.ZP, (float) (ChevronSpacing.angle(i, spacing)
+                    - ChevronSpacing.angle(i, ChevronSpacing.STANDARD)));
             UniverseGateRenderer.solid(collector, poseStack, UniverseGateRenderer.CHEVRON, mesh.chevron(slot), white,
                     light);
+            poseStack.popPose();
         }
-        UniverseGateRenderer.solid(collector, poseStack, UniverseGateRenderer.PANEL, mesh.panels(), white, light);
-        UniverseGateRenderer.overlay(collector, poseStack, UniverseGateRenderer.SYMBOLS_CUT, mesh.symbols(),
+        UniverseGateRenderer.solid(collector, poseStack, UniverseGateRenderer.PANEL,
+                GateGeometry.squeezed(mesh.panels(), spacing), white, light);
+        UniverseGateRenderer.overlay(collector, poseStack, UniverseGateRenderer.SYMBOLS_CUT,
+                GateGeometry.squeezed(mesh.symbols(), spacing),
                 ARGB.colorFromFloat(UniverseGateRenderer.SYMBOL_CUT, 0.0F, 0.0F, 0.0F), light);
-        // The symbols dialled so far shine out of the ring, white, with a blue glow
+        state.glows.clear();
+        // The symbols dialed so far shine out of the ring, white, with a blue glow
         if (view.active()) {
+            final int symbolGlow = ARGB.scaleRGB(UniverseGateRenderer.GLOW, UniverseGateRenderer.SYMBOL_GLOW_STRENGTH);
             final List<Symbol> symbols = view.symbols();
             for (int k = 0; k < Math.min(view.engaged(), symbols.size()); k++) {
-                final float[] symbol = mesh.symbol(symbols.get(k).index());
-                if (symbol == null) {
+                final float[] standard = mesh.symbol(symbols.get(k).index());
+                if (standard == null) {
                     continue;
                 }
+                final float[] symbol = GateGeometry.squeezed(standard, spacing);
                 for (int layer = 0; layer < UniverseGateRenderer.CORE_LAYERS; layer++) {
                     UniverseGateRenderer.glow(collector, poseStack, UniverseGateRenderer.SYMBOLS, symbol, white);
                 }
                 UniverseGateRenderer.glow(collector, poseStack, UniverseGateRenderer.SYMBOLS_GLOW, symbol,
                         UniverseGateRenderer.SYMBOL_GLOW);
+                state.glows.around(GateGlow.bounds(symbol), 0, UniverseGateRenderer.SYMBOL_REACH, symbolGlow, true);
             }
         }
         // Every chevron lights at once while the gate is active; otherwise their lights are darkened
         final int darkened = ARGB.colorFromFloat(UniverseGateRenderer.UNLIT_LIGHT, 0.0F, 0.0F, 0.0F);
+        final int chevronGlow = ARGB.scaleRGB(UniverseGateRenderer.GLOW, UniverseGateRenderer.CHEVRON_GLOW_STRENGTH);
         for (int i = first; i < first + state.chevrons; i++) {
             poseStack.pushPose();
-            poseStack.rotateDegrees(Axis.ZP, (4 - i) * StargateBaseRenderer.CHEVRON_SPACING);
+            final double turn = ChevronSpacing.angle(i, spacing) - 90;
+            poseStack.rotateDegrees(Axis.ZP, (float) turn);
             UniverseGateRenderer.overlay(collector, poseStack, UniverseGateRenderer.PAINT,
                     mesh.overlay(UniverseGateMesh.PAINT), white, light);
             if (view.active()) {
@@ -129,13 +151,42 @@ public final class UniverseGateRenderer implements GateTypeRenderer {
                         mesh.overlay(UniverseGateMesh.LIGHTS), UniverseGateRenderer.CHEVRON_GLOW_COLOR);
                 UniverseGateRenderer.glow(collector, poseStack, UniverseGateRenderer.CHEVRON_LIGHTS,
                         mesh.overlay(UniverseGateMesh.LIGHTS), white);
+                state.glows.around(GateGlow.bounds(mesh.overlay(UniverseGateMesh.LIGHTS)), turn,
+                        UniverseGateRenderer.CHEVRON_REACH, chevronGlow, true);
             } else {
                 UniverseGateRenderer.overlay(collector, poseStack, UniverseGateRenderer.LIGHTS_CUT,
                         mesh.overlay(UniverseGateMesh.LIGHTS), darkened, light);
             }
             poseStack.popPose();
         }
+        // Turned with the ring, as its symbols and chevrons are
+        state.glows.submit(collector, poseStack, GateGlow.HALO_TYPE);
         poseStack.popPose();
+    }
+
+    @Override
+    public int glowColor() {
+        return UniverseGateRenderer.GLOW;
+    }
+
+    // How far the ring has turned. Its turn is worked out at the standard spacing; with its chevrons drawn together,
+    // each move starts and ends where the same symbols come to the top, and turns evenly between, so it doesn't
+    // speed up across the ring's stretched bottom
+    private static float turn(final DialView view, final double time, final double spacing) {
+        final float standard = view.ringAngle(time);
+        if (spacing == ChevronSpacing.STANDARD) {
+            return standard;
+        }
+        final double span = view.ringTo() - view.ringFrom();
+        final double progress = span == 0 ? 1 : (standard - view.ringFrom()) / span;
+        final double from = UniverseGateRenderer.atTop(view.ringFrom(), spacing);
+        final double to = UniverseGateRenderer.atTop(view.ringTo(), spacing);
+        return (float) (from + (to - from) * progress);
+    }
+
+    // A turn of the ring at the standard spacing, as the same turn at another: the symbol it brings to the top
+    private static double atTop(final double turn, final double spacing) {
+        return 90 - ChevronSpacing.squeeze(90 - turn, spacing);
     }
 
     // Added to what is beneath it, at full brightness
@@ -150,7 +201,7 @@ public final class UniverseGateRenderer implements GateTypeRenderer {
         GateFeatureRenderer.submit(collector, poseStack.last(), texture, GateMesh.of(triangles), color, light);
     }
 
-    // Blended over what is beneath it by the texture's alpha and the colour's. These are few triangles, sent each
+    // Blended over what is beneath it by the texture's alpha and the color's. These are few triangles, sent each
     // frame with the level's translucent geometry, so they blend as it does
     private static void overlay(final SubmitNodeCollector collector, final PoseStack poseStack,
             final Identifier texture, final float[] triangles, final int color, final int light) {

@@ -61,9 +61,9 @@ public final class GateLoopSounds {
                 view -> view.phase() == DialPhase.CONNECTED);
     }
 
-    // The dialling gate rolls while a symbol is being dialled
+    // The dialing gate rolls while a symbol is being dialed
     private static boolean rolling(final DialView view) {
-        return view.initiator() && view.phase() == DialPhase.DIALLING;
+        return view.initiator() && view.phase() == DialPhase.DIALING;
     }
 
     private static void keep(final Map<StargateBaseBlockEntity, Loop> playing, final StargateBaseBlockEntity base,
@@ -90,8 +90,10 @@ public final class GateLoopSounds {
             this.base = base;
             this.wanted = wanted;
             this.looping = true;
+            // From the middle of the ring, as far as the gate's size carries it
+            this.volume = SGSounds.volume(base.shape());
             this.x = base.getBlockPos().getX() + 0.5;
-            this.y = base.getBlockPos().getY() + 2.5;
+            this.y = base.getBlockPos().getY() + 0.5 + base.shape().centerY();
             this.z = base.getBlockPos().getZ() + 0.5;
         }
 

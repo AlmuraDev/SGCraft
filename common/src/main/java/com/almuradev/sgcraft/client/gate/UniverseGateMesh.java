@@ -55,18 +55,18 @@ public final class UniverseGateMesh {
     private static final double GROUP_ANGLE = 360.0 / 9;
     private static final double CHEVRON_SECTOR_ANGLE = 8;
     private static final double SLOT_ANGLE = (UniverseGateMesh.GROUP_ANGLE - UniverseGateMesh.CHEVRON_SECTOR_ANGLE) / 4;
-    // The inside edge of the arches, as measured with the model: (degrees either side of the arch's centre, radius)
+    // The inside edge of the arches, as measured with the model: (degrees either side of the arch's center, radius)
     // from the bottom up to the point of the arch
     private static final double[][] ARCH_INSIDE = {
             {2.716, 2.669}, {2.685, 2.778}, {2.364, 2.946}, {2.141, 3.022}, {1.624, 3.099},
             {1.272, 3.137}, {0.809, 3.168}, {0.480, 3.183}, {0.143, 3.189}, {0, 3.191}
     };
     // The glyph sheet's cells are the panels measured with the model: GLYPH_HALF degrees either side of the arch's
-    // centre, from GLYPH_INNER out to GLYPH_OUTER, six cells across and down
+    // center, from GLYPH_INNER out to GLYPH_OUTER, six cells across and down
     private static final double GLYPH_HALF = 2.0;
     private static final double GLYPH_INNER = 2.7424;
     private static final double GLYPH_OUTER = 3.1404;
-    // Where a chevron's light and paint masks are laid: from LIGHTS_HALF degrees either side of its centre, and from
+    // Where a chevron's light and paint masks are laid: from LIGHTS_HALF degrees either side of its center, and from
     // LIGHTS_OUTER in to LIGHTS_INNER; only on faces turned at least LIGHT_FACING forward
     private static final double LIGHTS_HALF = 17;
     private static final double LIGHTS_INNER = 2.60;
@@ -165,7 +165,7 @@ public final class UniverseGateMesh {
         return this.overlays[overlay];
     }
 
-    /** @return the centre of a symbol, in degrees anticlockwise from the right, with the top chevron at 90 */
+    /** @return the center of a symbol, in degrees anticlockwise from the right, with the top chevron at 90 */
     public static double symbolAngle(final int symbol) {
         return 90 - (symbol / 4 * UniverseGateMesh.GROUP_ANGLE + UniverseGateMesh.CHEVRON_SECTOR_ANGLE / 2
                 + (symbol % 4 + 0.5) * UniverseGateMesh.SLOT_ANGLE);
@@ -197,11 +197,11 @@ public final class UniverseGateMesh {
         final double k = 1 / UniverseGateMesh.METAL_REPEAT;
         final double[][] p = UniverseGateMesh.ARCH_INSIDE;
         for (int symbol = 0; symbol < UniverseGateMesh.SYMBOLS; symbol++) {
-            final double centre = UniverseGateMesh.symbolAngle(symbol);
+            final double center = UniverseGateMesh.symbolAngle(symbol);
             for (int i = 0; i + 1 < p.length; i++) {
                 // Anticlockwise seen from in front: bottom left, bottom right, top right, top left
-                final double[][] q = {{centre + p[i][0], p[i][1]}, {centre - p[i][0], p[i][1]},
-                        {centre - p[i + 1][0], p[i + 1][1]}, {centre + p[i + 1][0], p[i + 1][1]}};
+                final double[][] q = {{center + p[i][0], p[i][1]}, {center - p[i][0], p[i][1]},
+                        {center - p[i + 1][0], p[i + 1][1]}, {center + p[i + 1][0], p[i + 1][1]}};
                 final double[][] corners = new double[4][];
                 for (int c = 0; c < 4; c++) {
                     final double a = Math.toRadians(q[c][0]);
@@ -230,15 +230,15 @@ public final class UniverseGateMesh {
         final double z0 = UniverseGateModel.faceZ(r0) + lift;
         final double z1 = UniverseGateModel.faceZ(r1) + lift;
         final int pieces = 6;
-        final double centre = UniverseGateMesh.symbolAngle(symbol);
+        final double center = UniverseGateMesh.symbolAngle(symbol);
         final double u0 = symbol % 6 * cell;
         final double v0 = symbol / 6 * cell;
         for (int i = 0; i < pieces; i++) {
             // Left to right across the symbol: anticlockwise to clockwise
             final double fa = (double) i / pieces;
             final double fb = (double) (i + 1) / pieces;
-            final double aa = Math.toRadians(centre + UniverseGateMesh.GLYPH_HALF * (1 - 2 * fa));
-            final double ab = Math.toRadians(centre + UniverseGateMesh.GLYPH_HALF * (1 - 2 * fb));
+            final double aa = Math.toRadians(center + UniverseGateMesh.GLYPH_HALF * (1 - 2 * fa));
+            final double ab = Math.toRadians(center + UniverseGateMesh.GLYPH_HALF * (1 - 2 * fb));
             final double ua = u0 + cell * fa;
             final double ub = u0 + cell * fb;
             this.quad(out, new double[][] {

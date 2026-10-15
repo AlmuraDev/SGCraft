@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.client;
 
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.feature.submit.SubmitNode;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 import java.util.ServiceLoader;
 
@@ -45,6 +46,9 @@ public interface ClientPlatform {
      * with the loader.
      */
     void submitSolid(final SubmitNodeCollector collector, final SubmitNode node);
+
+    /** Sends a payload from this client to the server, which must have registered it with the loader. */
+    void sendToServer(final CustomPacketPayload payload);
 
     final class Holder {
 

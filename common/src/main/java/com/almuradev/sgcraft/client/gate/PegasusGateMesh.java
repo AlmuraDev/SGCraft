@@ -51,7 +51,7 @@ public final class PegasusGateMesh {
     // How many glyphs a Pegasus gate has, one to each screen round its ring, and the angle between them
     private static final int GLYPHS = 36;
     private static final double GLYPH_ANGLE = 360.0 / PegasusGateMesh.GLYPHS;
-    // The screens' crystal is CRYSTAL_SIZE metres across its texture; each screen shows a different part of it, as the
+    // The screens' crystal is CRYSTAL_SIZE meters across its texture; each screen shows a different part of it, as the
     // screens were cut from different parts of a block of it
     private static final double CRYSTAL_SIZE = 2;
     // Which of the reference model's glyphs each of the gate's symbols is, in the order of its symbol strip
@@ -273,7 +273,7 @@ public final class PegasusGateMesh {
         }
     }
 
-    // One corner of a triangle, turned about the gate's centre and scaled into blocks
+    // One corner of a triangle, turned about the gate's center and scaled into blocks
     private void corner(final GateGeometry.Builder out, final double[] t, final double[] n, final int v,
             final double turn, final double u, final double w) {
         final double c = Math.cos(turn);
