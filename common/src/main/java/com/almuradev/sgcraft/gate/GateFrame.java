@@ -33,23 +33,38 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * A standing gate's own frame: its origin the centre of its base block, x to the gate's right as seen from in front,
- * y up, and z out of its front. The event horizon is the plane z = 0, and the ring's centre is
- * {@link #CENTRE_Y} above the origin.
+ * A standing gate's own frame: its origin the center of its base block, x to the gate's right as seen from in front,
+ * y up, and z out of its front. The event horizon is the plane z = 0, and the ring's center is its
+ * {@linkplain #shape() shape's} {@linkplain GateShape#centerY() center height} above the origin.
  */
 public final class GateFrame {
-
-    /** How far the ring's centre is above the centre of the base, in blocks. */
-    public static final double CENTRE_Y = 2.0;
 
     private final Vec3 origin;
     private final Vec3 right;
     private final Vec3 front;
+    private final Direction facing;
+    private final GateShape shape;
 
     public GateFrame(final BlockPos base, final Direction facing) {
+        this(base, facing, GateShape.STANDARD);
+    }
+
+    public GateFrame(final BlockPos base, final Direction facing, final GateShape shape) {
+        this.shape = shape;
+        this.facing = facing;
         this.origin = Vec3.atCenterOf(base);
         this.right = Vec3.atLowerCornerOf(facing.getCounterClockWise().getUnitVec3i());
         this.front = Vec3.atLowerCornerOf(facing.getUnitVec3i());
+    }
+
+    /** @return the way the gate's front faces */
+    public Direction facing() {
+        return this.facing;
+    }
+
+    /** @return how big the gate is and how it is laid out */
+    public GateShape shape() {
+        return this.shape;
     }
 
     /** @return a point of the world in the gate's frame */

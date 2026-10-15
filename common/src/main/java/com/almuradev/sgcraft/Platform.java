@@ -25,7 +25,15 @@
 
 package com.almuradev.sgcraft;
 
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
+
+import java.nio.file.Path;
 import java.util.ServiceLoader;
+import java.util.function.BiFunction;
 
 /**
  * What common code needs from the mod loader it runs on. Each loader project provides one implementation, named in
@@ -41,11 +49,25 @@ public interface Platform {
 
     boolean isDevelopmentEnvironment();
 
+    /**
+     * Makes a menu type, which vanilla only lets each loader make its own way.
+     *
+     * @param factory makes the client's menu from its id and the player's inventory
+     */
+    <T extends AbstractContainerMenu> MenuType<T> menuType(final BiFunction<Integer, Inventory, T> factory);
+
+    /** @return whether a player's client can take a payload of this type, which a client without the mod can't */
+    boolean canSend(final ServerPlayer player, final CustomPacketPayload.Type<?> type);
+
+    /** @return the folder the game keeps its mods' settings in */
+    Path configDir();
+
     final class Holder {
 
         private static final Platform INSTANCE = ServiceLoader.load(Platform.class, Platform.class.getClassLoader())
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No " + Platform.class.getName() + " for this mod loader"));
+                .orElseThrow(() -> new IllegalStateException("No " + Platform.class.getName()
+                        + " for this mod loader"));
 
         private Holder() {
         }

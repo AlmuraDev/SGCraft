@@ -32,12 +32,15 @@ import com.almuradev.sgcraft.api.addressbook.AddressBooks;
 import com.almuradev.sgcraft.api.energy.EnergyService;
 import com.almuradev.sgcraft.api.event.EventBus;
 import com.almuradev.sgcraft.api.gate.Stargates;
+import com.almuradev.sgcraft.mod.event.SGEventBus;
 
 /**
  * SGCraft's own implementation of the API, found through {@link java.util.ServiceLoader}. Addresses and gates
  * belong to the running server, so asking for them with no server running throws {@link IllegalStateException}.
  */
 public final class SGCraftModApi implements SGCraftApi {
+
+    private final EnergyService energy = new SGEnergyService();
 
     @Override
     public Addressing addressing() {
@@ -51,17 +54,17 @@ public final class SGCraftModApi implements SGCraftApi {
 
     @Override
     public AddressBooks addressBooks() {
-        throw new UnsupportedOperationException("Address books aren't supported yet");
+        return SGServer.require().addressBooks();
     }
 
     @Override
     public EnergyService energy() {
-        throw new UnsupportedOperationException("Energy isn't supported yet");
+        return this.energy;
     }
 
     @Override
     public EventBus eventBus() {
-        throw new UnsupportedOperationException("Events aren't supported yet");
+        return SGEventBus.get();
     }
 
     @Override

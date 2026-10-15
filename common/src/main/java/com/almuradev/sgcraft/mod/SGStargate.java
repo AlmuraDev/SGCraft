@@ -32,7 +32,7 @@ import com.almuradev.sgcraft.api.access.GateAccess;
 import com.almuradev.sgcraft.api.access.GateRight;
 import com.almuradev.sgcraft.api.address.Address;
 import com.almuradev.sgcraft.api.address.AddressTarget;
-import com.almuradev.sgcraft.api.energy.GateEnergy;
+import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.api.gate.Connection;
 import com.almuradev.sgcraft.api.gate.DialMode;
 import com.almuradev.sgcraft.api.gate.DialResult;
@@ -47,28 +47,40 @@ import com.almuradev.sgcraft.api.gate.Iris;
 import com.almuradev.sgcraft.api.gate.PlacementMode;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.block.entity.StargateBaseBlockEntity;
+import com.almuradev.sgcraft.gate.ChevronOrder;
+import com.almuradev.sgcraft.gate.DialPhase;
 import com.almuradev.sgcraft.gate.DialStyle;
-import com.almuradev.sgcraft.gate.GateFrame;
 import com.almuradev.sgcraft.gate.DialView;
+import com.almuradev.sgcraft.gate.FluidSpill;
+import com.almuradev.sgcraft.gate.GateFrame;
+import com.almuradev.sgcraft.gate.GateLight;
+import com.almuradev.sgcraft.gate.GateShape;
+import com.almuradev.sgcraft.gate.IrisView;
+import com.almuradev.sgcraft.mod.GateStore.GateRecord;
+import com.almuradev.sgcraft.mod.event.SGEventBus;
+import com.almuradev.sgcraft.mod.event.SGEvents;
 import com.almuradev.sgcraft.sound.SGSounds;
 import net.minecraft.core.BlockPos;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
-import com.almuradev.sgcraft.mod.GateStore.GateRecord;
 import net.minecraft.core.Direction;
 import net.minecraft.core.FrontAndTop;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
@@ -76,13 +88,26 @@ import java.util.function.Consumer;
 /**
  * A formed gate on a running server. Its lasting details live in the {@link GateStore}; what it is doing lives here,
  * and is copied to its base's block entity whenever the base is loaded, for the client to draw.
+ *
+ * <p>Every action checks the cause's rights first, through {@link #access()}, and fires its events on the
+ * {@link SGEventBus}.</p>
  */
 public final class SGStargate implements Stargate {
 
+    // How many symbols the shortest address has, and how long symbols locked one at a time stay locked with no more
+    private static final int SHORTEST_ADDRESS = 7;
+    private static final int ENGAGE_TIMEOUT_TICKS = 600;
+
     private final SGStargates stargates;
     private final GlobalPos position;
+    private final SGGateAccess access = new SGGateAccess(this);
+    private final SGIris iris = new SGIris(this);
+    private final SGGateEnergy energy = new SGGateEnergy(this);
     private DialView view = DialView.IDLE;
     private @Nullable SGConnection connection;
+    // Symbols locked one at a time, as a DHD does, and when the last was
+    private final List<Symbol> engaged = new ArrayList<>();
+    private long lastEngaged;
 
     SGStargate(final SGStargates stargates, final GlobalPos position) {
         this.stargates = stargates;
@@ -93,6 +118,10 @@ public final class SGStargate implements Stargate {
         return this.stargates.store().gate(this.position);
     }
 
+    SGStargates stargates() {
+        return this.stargates;
+    }
+
     MinecraftServer server() {
         return this.stargates.server();
     }
@@ -101,19 +130,38 @@ public final class SGStargate implements Stargate {
         return this.stargates.store();
     }
 
+    /** @return what the gate holds between restarts, such as its iris and energy; a copy */
+    CompoundTag saved() {
+        return this.record().map(GateRecord::state).orElseGet(CompoundTag::new);
+    }
+
+    void setSaved(final CompoundTag state) {
+        this.record().ifPresent(record -> this.store().put(record.withState(state)));
+    }
+
     /** @return the gate's world, if it is loaded */
     @Nullable ServerLevel level() {
         return this.stargates.server().getLevel(this.position.dimension());
     }
 
     /** @return the gate's own frame, which its horizon and travel are measured in */
-    GateFrame frame() {
-        return new GateFrame(this.position.pos(), this.record().map(GateRecord::facing).orElse(Direction.NORTH));
+    public GateFrame frame() {
+        return new GateFrame(this.position.pos(), this.facing(), this.shape());
+    }
+
+    /** @return which way the gate faces */
+    public Direction facing() {
+        return this.record().map(GateRecord::facing).orElse(Direction.NORTH);
     }
 
     /** @return the key of the gate's type */
     public ResourceKey<GateType> typeKey() {
         return this.record().map(GateRecord::type).orElse(GateTypes.MILKY_WAY);
+    }
+
+    /** @return the game time, which the gate's timings are counted in */
+    long now() {
+        return this.stargates.server().overworld().getGameTime();
     }
 
     @Override
@@ -123,8 +171,7 @@ public final class SGStargate implements Stargate {
 
     @Override
     public FrontAndTop orientation() {
-        return FrontAndTop.fromFrontAndTop(this.record().map(GateRecord::facing).orElse(Direction.NORTH),
-                Direction.UP);
+        return FrontAndTop.fromFrontAndTop(this.facing(), Direction.UP);
     }
 
     @Override
@@ -138,7 +185,12 @@ public final class SGStargate implements Stargate {
 
     @Override
     public GateSize size() {
-        return GateSize.STANDARD;
+        return this.shape().size();
+    }
+
+    /** @return how big the gate is and how it is laid out */
+    public GateShape shape() {
+        return this.record().map(GateRecord::shape).orElse(GateShape.STANDARD);
     }
 
     @Override
@@ -153,10 +205,13 @@ public final class SGStargate implements Stargate {
 
     @Override
     public GateState state() {
-        return switch (this.view.phase()) {
+        return SGStargate.stateOf(this.view);
+    }
+
+    private static GateState stateOf(final DialView view) {
+        return switch (view.phase()) {
             case IDLE -> GateState.IDLE;
-            case DIALLING, INTER_DIALLING, SYNC_AWAIT -> this.view.initiator() ? GateState.DIALLING
-                    : GateState.INCOMING;
+            case DIALING, INTER_DIALING, SYNC_AWAIT -> view.initiator() ? GateState.DIALING : GateState.INCOMING;
             case ESTABLISHING -> GateState.OPENING;
             case TRANSIENT, CONNECTED -> GateState.CONNECTED;
             case DISCONNECTING -> GateState.CLOSING;
@@ -168,24 +223,50 @@ public final class SGStargate implements Stargate {
         return this.view;
     }
 
+    // Shows what the gate is doing, and tells listeners if that changes its state
+    private void show(final DialView view, final Cause cause) {
+        final GateState before = this.state();
+        this.view = view;
+        this.sync();
+        final GateState after = this.state();
+        if (before != after) {
+            SGEventBus.get().post(new SGEvents.StateChange(cause, this, before, after));
+        }
+    }
+
     @Override
     public Optional<Connection> connection() {
         return Optional.ofNullable(this.connection);
     }
 
-    @Override
-    public Optional<Iris> iris() {
-        return Optional.empty();
+    /** @return the connection the gate is part of, if any */
+    public Optional<SGConnection> liveConnection() {
+        return Optional.ofNullable(this.connection);
     }
 
     @Override
-    public GateEnergy energy() {
-        return Unmetered.ENERGY;
+    public Optional<Iris> iris() {
+        return this.get(GateProperties.IRIS).isPresent() ? Optional.of(this.iris) : Optional.empty();
+    }
+
+    /** @return the gate's iris, whether or not one is fitted */
+    public SGIris irisState() {
+        return this.iris;
+    }
+
+    /** @return whether the gate has an iris fitted that stops travelers now */
+    public boolean irisBlocks() {
+        return this.get(GateProperties.IRIS).isPresent() && this.iris.blocks();
+    }
+
+    @Override
+    public SGGateEnergy energy() {
+        return this.energy;
     }
 
     @Override
     public GateAccess access() {
-        return Unmetered.ACCESS;
+        return this.access;
     }
 
     @Override
@@ -201,28 +282,65 @@ public final class SGStargate implements Stargate {
         if (this.state() != GateState.IDLE) {
             return CompletableFuture.completedFuture(DialResult.BUSY);
         }
+        if (!this.access.allows(cause, GateRight.USE)) {
+            return this.refused(address, cause, DialResult.DENIED, null);
+        }
         if (this.stargates.addressing().reachOf(address).isEmpty()) {
-            return this.refused(DialResult.INVALID_ADDRESS);
+            return this.refused(address, cause, DialResult.INVALID_ADDRESS, null);
         }
         if (address.size() > this.chevrons()) {
-            return this.refused(DialResult.NOT_ENOUGH_CHEVRONS);
+            return this.refused(address, cause, DialResult.NOT_ENOUGH_CHEVRONS, null);
         }
         final Optional<AddressTarget> target = this.stargates.addressing().resolve(address, this.position.dimension());
         final Optional<SGStargate> gate = target.flatMap(this.stargates::inCell);
         if (gate.isEmpty()) {
-            return this.refused(DialResult.NO_GATE);
+            return this.refused(address, cause, DialResult.NO_GATE, null);
         }
         if (gate.get() == this) {
-            return this.refused(DialResult.SAME_GATE);
+            return this.refused(address, cause, DialResult.SAME_GATE, gate.get());
         }
         if (gate.get().state() != GateState.IDLE) {
-            return this.refused(DialResult.TARGET_BUSY);
+            return this.refused(address, cause, DialResult.TARGET_BUSY, gate.get());
+        }
+        if (!this.access.allowsOutgoing(gate.get()) || !gate.get().access().allowsIncoming(this)) {
+            return this.refused(address, cause, DialResult.DENIED, gate.get());
+        }
+        if (!SGEventBus.get().allows(new SGEvents.DialPre(cause, this, address, gate.get()))) {
+            return this.refused(address, cause, DialResult.CANCELED, gate.get());
+        }
+        long chevronCost = 0;
+        long openCost = 0;
+        double tickCost = 0;
+        if (this.get(GateProperties.REQUIRES_POWER).orElse(true) && !this.freeFor(cause)) {
+            final DialCosts costs = this.stargates.config().dialCosts().forGate(this);
+            final double factor = this.stargates.distanceFactor(this, gate.get());
+            final SGEvents.DialCost cost = SGEventBus.get().post(new SGEvents.DialCost(cause, this, address,
+                    gate.get(), costs.chevron().scaledWhole(factor), costs.open().scaledWhole(factor),
+                    costs.tick().scaled(factor)));
+            chevronCost = cost.chevronCost();
+            openCost = cost.openCost();
+            tickCost = cost.tickCost();
+            // Enough for every chevron and the opening, so a dial doesn't start that can't finish
+            final long needed = SGConnection.Costs.add(SGConnection.Costs.times(chevronCost, address.size()),
+                    openCost);
+            if (this.energy.available() < needed) {
+                return this.refused(address, cause, DialResult.NOT_ENOUGH_ENERGY, gate.get());
+            }
         }
         final SGConnection connection = new SGConnection(this, gate.get(), address,
                 this.stargates.addressing().addressOf(this.position, gate.get().position.dimension()),
-                this.get(GateProperties.OPEN_TICKS).orElse(0));
+                this.get(GateProperties.OPEN_TICKS).orElse(0), cause,
+                new SGConnection.Costs(chevronCost, openCost, tickCost));
+        connection.result().thenAccept(result -> SGEventBus.get().post(
+                new SGEvents.DialPost(cause, this, address, result, Optional.of(gate.get()))));
         this.stargates.connect(connection, mode);
         return connection.result();
+    }
+
+    // Players in creative mode dial without energy, if the server allows it
+    private boolean freeFor(final Cause cause) {
+        return this.stargates.config().freeInCreative()
+                && cause.first(Player.class).map(Player::isCreative).orElse(false);
     }
 
     @Override
@@ -237,47 +355,161 @@ public final class SGStargate implements Stargate {
     }
 
     @Override
+    public ActionResult engage(final Symbol symbol, final Cause cause) {
+        if (!this.exists() || this.connection != null || this.engaged.size() >= this.chevrons()) {
+            return ActionResult.NOT_POSSIBLE;
+        }
+        if (!this.access.allows(cause, GateRight.USE)) {
+            return ActionResult.DENIED;
+        }
+        this.engaged.add(symbol);
+        this.lastEngaged = this.now();
+        this.play(SGSounds.chevron(DialStyle.of(this.typeKey()), true));
+        final StringBuilder address = new StringBuilder();
+        this.engaged.forEach(engaged -> address.append(engaged.character()));
+        // Until the address is longer, its chevrons light as for the shortest address, the top chevron last
+        final int expected = Math.max(SGStargate.SHORTEST_ADDRESS, this.engaged.size());
+        this.show(new DialView(DialPhase.DIALING, true, address.toString(), this.engaged.size(), 0, 0, 0, 0,
+                this.now(), 0, 0, this.now(), expected), cause);
+        this.stargates.engaging(this);
+        return ActionResult.DONE;
+    }
+
+    @Override
+    public List<Symbol> engaged() {
+        return List.copyOf(this.engaged);
+    }
+
+    @Override
+    public CompletionStage<DialResult> dialEngaged(final Cause cause) {
+        if (this.engaged.isEmpty()) {
+            this.play(SGSounds.fail(DialStyle.of(this.typeKey())));
+            return CompletableFuture.completedFuture(DialResult.INVALID_ADDRESS);
+        }
+        final Address address = new Address(this.engaged);
+        this.release(cause);
+        return this.dial(address, DialMode.QUICK, cause);
+    }
+
+    // Lets go of symbols locked one at a time, without a sound
+    private void release(final Cause cause) {
+        this.engaged.clear();
+        if (this.connection == null) {
+            this.show(DialView.IDLE, cause);
+        }
+    }
+
+    /** Lets go of symbols locked one at a time if none has been locked for a while. Called each tick while any are. */
+    boolean releaseIfIdle() {
+        if (this.engaged.isEmpty()) {
+            return true;
+        }
+        if (this.now() - this.lastEngaged < SGStargate.ENGAGE_TIMEOUT_TICKS) {
+            return false;
+        }
+        this.play(SGSounds.fail(DialStyle.of(this.typeKey())));
+        this.release(Cause.of(this.server()));
+        return true;
+    }
+
+    @Override
     public ActionResult disconnect(final Cause cause) {
         if (!this.exists()) {
             return ActionResult.NOT_POSSIBLE;
         }
+        if (!this.access.allows(cause, GateRight.USE)) {
+            return ActionResult.DENIED;
+        }
+        if (!this.engaged.isEmpty() && this.connection == null) {
+            this.play(SGSounds.fail(DialStyle.of(this.typeKey())));
+            this.release(cause);
+            return ActionResult.DONE;
+        }
         if (this.connection == null || this.connection.isClosing()) {
             return ActionResult.NO_CHANGE;
         }
-        this.connection.close();
+        // The dialed end may close the wormhole only if the dialing gate allows it
+        if (this.connection.target() == this
+                && !this.connection.dialer().get(GateProperties.CLOSE_FROM_EITHER_END).orElse(true)) {
+            return ActionResult.NOT_POSSIBLE;
+        }
+        if (!SGEventBus.get().allows(new SGEvents.ConnectionDisconnect(cause, this.connection))) {
+            return ActionResult.CANCELED;
+        }
+        this.connection.close(cause);
         return ActionResult.DONE;
     }
 
     @Override
     public <T> ActionResult set(final GateProperty<T> property, final T value, final Cause cause) {
-        if (!this.exists()) {
-            return ActionResult.NOT_POSSIBLE;
-        }
-        return this.stargates.setProperty(this.position, property, value);
+        return this.change(property, Optional.of(value), cause);
     }
 
     @Override
     public ActionResult remove(final GateProperty<?> property, final Cause cause) {
-        if (!this.exists()) {
+        return this.removeTyped(property, cause);
+    }
+
+    private <T> ActionResult removeTyped(final GateProperty<T> property, final Cause cause) {
+        return this.change(property, Optional.empty(), cause);
+    }
+
+    // Sets or removes a property: the rights first, then the access events for access settings, then the
+    // property's own events, which see the value as the access listeners left it
+    private <T> ActionResult change(final GateProperty<T> property, final Optional<T> value, final Cause cause) {
+        if (!this.exists() || !this.stargates.isRegistered(property)) {
             return ActionResult.NOT_POSSIBLE;
         }
-        return this.stargates.removeProperty(this.position, property);
+        if (!this.access.allows(cause, GateRight.CONFIGURE)) {
+            return ActionResult.DENIED;
+        }
+        final Optional<T> own = this.stargates.ownProperty(this.position, property);
+        if (value.isEmpty() ? own.isEmpty() : own.equals(value)) {
+            return ActionResult.NO_CHANGE;
+        }
+        final Optional<T> old = this.get(property);
+        final List<Runnable> posts = new ArrayList<>();
+        final Optional<T> adjusted = AccessChanges.adjust(this, property, old, value, cause, posts);
+        final SGEvents.PropertyPre pre = SGEventBus.get().post(
+                new SGEvents.PropertyPre(cause, this, property, old, adjusted));
+        if (pre.isCanceled()) {
+            return ActionResult.CANCELED;
+        }
+        final Optional<T> wanted = pre.newValue(property);
+        final ActionResult result = wanted.isPresent()
+                ? this.stargates.setProperty(this.position, property, wanted.get())
+                : this.stargates.removeProperty(this.position, property);
+        if (result != ActionResult.DONE) {
+            return result;
+        }
+        if (property == GateProperties.IRIS) {
+            if (wanted.isPresent() && old.isEmpty()) {
+                this.iris.fitted();
+            } else if (wanted.isEmpty()) {
+                this.iris.removed();
+            }
+        }
+        // What the base shows may depend on it
+        this.sync();
+        posts.forEach(Runnable::run);
+        SGEventBus.get().post(new SGEvents.PropertyPost(cause, this, property, old, this.get(property)));
+        return ActionResult.DONE;
     }
 
     @Override
     public ActionResult setType(final GateType type, final Cause cause) {
         return this.stargates.server().registryAccess().lookupOrThrow(SGCraftRegistries.GATE_TYPE)
                 .getResourceKey(type)
-                .map(key -> this.setType(key))
+                .map(key -> this.setType(key, cause))
                 .orElse(ActionResult.NOT_POSSIBLE);
     }
 
     @Override
     public ActionResult setType(final Holder<GateType> type, final Cause cause) {
-        return type.unwrapKey().map(this::setType).orElse(ActionResult.NOT_POSSIBLE);
+        return type.unwrapKey().map(key -> this.setType(key, cause)).orElse(ActionResult.NOT_POSSIBLE);
     }
 
-    private ActionResult setType(final ResourceKey<GateType> type) {
+    private ActionResult setType(final ResourceKey<GateType> type, final Cause cause) {
         final Optional<GateRecord> record = this.record();
         if (record.isEmpty() || this.state() != GateState.IDLE) {
             return ActionResult.NOT_POSSIBLE;
@@ -289,6 +521,9 @@ public final class SGStargate implements Stargate {
         }
         if (record.get().type().equals(type)) {
             return ActionResult.NO_CHANGE;
+        }
+        if (!this.access.allows(cause, GateRight.CONFIGURE)) {
+            return ActionResult.DENIED;
         }
         this.stargates.store().put(record.get().withType(type));
         this.withBase(base -> base.setGateType(type));
@@ -304,6 +539,9 @@ public final class SGStargate implements Stargate {
         if (record.get().chevrons() == chevrons) {
             return ActionResult.NO_CHANGE;
         }
+        if (!this.access.allows(cause, GateRight.CONFIGURE)) {
+            return ActionResult.DENIED;
+        }
         this.stargates.store().put(record.get().withChevrons(chevrons));
         this.withBase(base -> base.setChevrons(chevrons));
         return ActionResult.DONE;
@@ -311,22 +549,28 @@ public final class SGStargate implements Stargate {
 
     @Override
     public ActionResult placeFixtures(final FixtureBuffer fixtures, final PlacementMode mode, final Cause cause) {
-        return ActionResult.NOT_POSSIBLE;
+        final ServerLevel level = this.level();
+        if (!this.exists() || level == null) {
+            return ActionResult.NOT_POSSIBLE;
+        }
+        if (!this.access.allows(cause, GateRight.CONFIGURE)) {
+            return ActionResult.DENIED;
+        }
+        return Fixtures.build(level, this.frame(), this.facing(), fixtures, mode) ? ActionResult.DONE
+                : ActionResult.NOT_POSSIBLE;
     }
 
-    void enter(final SGConnection connection, final DialView view) {
+    void enter(final SGConnection connection, final DialView view, final Cause cause) {
         this.connection = connection;
-        this.view = view;
-        this.sync();
+        this.show(view, cause);
     }
 
-    void leave(final SGConnection connection) {
+    void leave(final SGConnection connection, final Cause cause) {
         if (this.connection != connection) {
             return;
         }
         this.connection = null;
-        this.view = DialView.IDLE;
-        this.sync();
+        this.show(DialView.IDLE, cause);
     }
 
     /** The gate was broken: its connection ends. */
@@ -336,34 +580,92 @@ public final class SGStargate implements Stargate {
         }
     }
 
-    /** Copies what the gate is doing to its base, if the base is loaded. */
+    /**
+     * Copies what the gate is doing, and its iris, to its base, if the base is loaded, and lights the ring under its
+     * lit chevrons.
+     */
     public void sync() {
-        this.withBase(base -> base.setDialView(this.view));
+        final Optional<IrisView> iris = this.get(GateProperties.IRIS)
+                .map(type -> new IrisView(type, this.iris.state(), this.iris.since()));
+        final boolean signal = this.state() != GateState.IDLE && this.get(GateProperties.REDSTONE_OUTPUT).orElse(true);
+        final boolean transparent = this.get(GateProperties.HORIZON_TRANSPARENT).orElse(true);
+        this.withBase(base -> {
+            base.setDialView(this.view);
+            base.setIris(iris.orElse(null));
+            base.setSignal(signal);
+            base.setTransparent(transparent);
+            if (base.getLevel() != null) {
+                GateLight.showChevrons(base.getLevel(), this.frame(), this.litChevrons());
+            }
+        });
     }
 
-    /** Plays a sound from the middle of the gate's ring, if its world is loaded. */
-    void play(final SoundEvent sound) {
+    // Which chevrons are lit, by position, as the gate's renderer lights them: those locked, or every one of a
+    // Universe gate while it is active
+    private boolean[] litChevrons() {
+        if (!this.typeKey().equals(GateTypes.UNIVERSE)) {
+            return ChevronOrder.locked(this.chevrons(), this.view.length(), this.view.engaged());
+        }
+        final boolean[] lit = new boolean[ChevronOrder.POSITIONS];
+        if (this.view.active()) {
+            final int first = ChevronOrder.first(this.chevrons());
+            for (int position = first; position < Math.min(first + this.chevrons(), lit.length); position++) {
+                lit[position] = true;
+            }
+        }
+        return lit;
+    }
+
+    /**
+     * What happens once the gate is broken, worked out while it still stands: an explosion in the middle of its ring,
+     * as in 1.12, if its wormhole is open and its settings give one.
+     */
+    Runnable breach() {
+        final ServerLevel level = this.stargates.server().getLevel(this.position.dimension());
+        final float strength = this.get(GateProperties.BREACH_EXPLOSION).orElse(10.0).floatValue();
+        if (level == null || this.state() != GateState.CONNECTED || strength <= 0) {
+            return () -> { };
+        }
+        final BlockPos pos = this.position.pos();
+        final double y = pos.getY() + 0.5 + this.shape().centerY();
+        final boolean fire = this.get(GateProperties.BREACH_FIRE).orElse(true);
+        final Level.ExplosionInteraction blocks = this.get(GateProperties.BREACH_BREAKS_BLOCKS).orElse(true)
+                ? Level.ExplosionInteraction.BLOCK : Level.ExplosionInteraction.NONE;
+        return () -> level.explode(null, pos.getX() + 0.5, y, pos.getZ() + 0.5, strength, fire, blocks);
+    }
+
+    /** Plays a sound from the middle of the gate's ring, as far as its size carries it, if its world is loaded. */
+    public void play(final SoundEvent sound) {
         final ServerLevel level = this.stargates.server().getLevel(this.position.dimension());
         if (level != null) {
             final BlockPos pos = this.position.pos();
-            level.playSound(null, pos.getX() + 0.5, pos.getY() + 2.5, pos.getZ() + 0.5, sound, SoundSource.BLOCKS,
-                    1.0F, 1.0F);
+            final GateShape shape = this.shape();
+            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5 + shape.centerY(), pos.getZ() + 0.5, sound,
+                    SoundSource.BLOCKS, SGSounds.volume(shape), 1.0F);
         }
     }
 
     // A dial refused at the start: the gate sounds its failure, unless it is busy with another
-    private CompletionStage<DialResult> refused(final DialResult result) {
-        if (result != DialResult.BUSY) {
-            this.play(SGSounds.fail(DialStyle.of(this.typeKey())));
-        }
+    private CompletionStage<DialResult> refused(final Address address, final Cause cause, final DialResult result,
+            final @Nullable SGStargate target) {
+        this.play(SGSounds.fail(DialStyle.of(this.typeKey())));
+        SGEventBus.get().post(new SGEvents.DialPost(cause, this, address, result, Optional.ofNullable(target)));
         return CompletableFuture.completedFuture(result);
     }
 
     void keepLoaded() {
         final ServerLevel level = this.stargates.server().getLevel(this.position.dimension());
         if (level != null) {
-            level.getChunkSource().addTicketWithRadius(TicketType.PORTAL, ChunkPos.containing(this.position.pos()), 1);
+            // Out to the gate's edges, which a supergate's reach further
+            final int radius = 1 + (this.shape().radius() + 15) / 16;
+            level.getChunkSource().addTicketWithRadius(TicketType.PORTAL, ChunkPos.containing(this.position.pos()),
+                    radius);
         }
+    }
+
+    /** Shows fluid pouring out of the gate, or none. */
+    void showSpill(final @Nullable FluidSpill spill) {
+        this.withBase(base -> base.setSpill(spill));
     }
 
     private void withBase(final Consumer<StargateBaseBlockEntity> action) {
@@ -375,58 +677,17 @@ public final class SGStargate implements Stargate {
     }
 
     @Override
-    public String toString() {
-        return "Stargate[" + this.position + ", " + this.view.phase() + "]";
+    public boolean equals(final Object other) {
+        return other instanceof SGStargate gate && gate.position.equals(this.position);
     }
 
-    /** Stand-ins until gates have energy and access control. */
-    private static final class Unmetered {
+    @Override
+    public int hashCode() {
+        return this.position.hashCode();
+    }
 
-        static final GateEnergy ENERGY = new GateEnergy() {
-            @Override
-            public long stored() {
-                return 0;
-            }
-
-            @Override
-            public long capacity() {
-                return 0;
-            }
-
-            @Override
-            public long insert(final long amount, final boolean simulate) {
-                return 0;
-            }
-
-            @Override
-            public long extract(final long amount, final boolean simulate) {
-                return 0;
-            }
-        };
-
-        static final GateAccess ACCESS = new GateAccess() {
-            @Override
-            public boolean allowsIncoming(final Stargate from) {
-                return true;
-            }
-
-            @Override
-            public boolean allowsOutgoing(final Stargate to) {
-                return true;
-            }
-
-            @Override
-            public boolean allows(final UUID player, final GateRight right) {
-                return true;
-            }
-
-            @Override
-            public boolean allows(final Cause cause, final GateRight right) {
-                return true;
-            }
-        };
-
-        private Unmetered() {
-        }
+    @Override
+    public String toString() {
+        return "Stargate[" + this.position + ", " + this.view.phase() + "]";
     }
 }

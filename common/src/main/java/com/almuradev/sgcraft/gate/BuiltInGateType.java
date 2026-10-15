@@ -29,8 +29,10 @@ import com.almuradev.sgcraft.api.gate.FixtureBuffer;
 import com.almuradev.sgcraft.api.gate.GateSize;
 import com.almuradev.sgcraft.api.gate.GateType;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * One of the gate types SGCraft registers itself. For now each is built at the standard size only, with no fixtures.
@@ -38,9 +40,19 @@ import java.util.Objects;
 public final class BuiltInGateType implements GateType {
 
     private final Component name;
+    private final Set<ResourceKey<GateType>> dhds;
 
-    public BuiltInGateType(final Component name) {
+    /**
+     * @param dhds the styles of DHD that dial this type
+     */
+    public BuiltInGateType(final Component name, final Set<ResourceKey<GateType>> dhds) {
         this.name = Objects.requireNonNull(name, "name");
+        this.dhds = Set.copyOf(dhds);
+    }
+
+    @Override
+    public boolean acceptsDhd(final ResourceKey<GateType> style) {
+        return this.dhds.contains(style);
     }
 
     @Override
@@ -50,7 +62,8 @@ public final class BuiltInGateType implements GateType {
 
     @Override
     public boolean supports(final GateSize size) {
-        return size.equals(GateSize.STANDARD);
+        // Every built in type comes as a standard gate and as a supergate of any size
+        return GateShape.of(size).isPresent();
     }
 
     @Override

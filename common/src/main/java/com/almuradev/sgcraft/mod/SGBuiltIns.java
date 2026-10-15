@@ -25,17 +25,39 @@
 
 package com.almuradev.sgcraft.mod;
 
+import com.almuradev.sgcraft.Platform;
+import com.almuradev.sgcraft.SGCraft;
+import com.almuradev.sgcraft.api.SGCraftApi;
 import com.almuradev.sgcraft.api.SGCraftRegistries;
 import com.almuradev.sgcraft.api.address.AddressReach;
 import com.almuradev.sgcraft.api.address.AddressReaches;
+import com.almuradev.sgcraft.api.addressbook.AddressBookProvider;
+import com.almuradev.sgcraft.api.energy.EnergyBridge;
+import com.almuradev.sgcraft.api.energy.EnergySourceProvider;
 import com.almuradev.sgcraft.api.gate.GateProperties;
 import com.almuradev.sgcraft.api.gate.GateProperty;
+import com.almuradev.sgcraft.api.gate.IrisType;
+import com.almuradev.sgcraft.api.gate.IrisTypes;
+import com.almuradev.sgcraft.block.entity.PowerUnitBlockEntity;
+import com.almuradev.sgcraft.dhd.DhdFuelMenu;
+import com.almuradev.sgcraft.dhd.DhdFuelProvider;
+import com.almuradev.sgcraft.gate.GateBaseMenu;
+import com.almuradev.sgcraft.item.SGItems;
+import com.almuradev.sgcraft.power.PowerUnitMenu;
+import com.almuradev.sgcraft.power.PowerUnitProvider;
 import com.almuradev.sgcraft.registry.RegistrySink;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.inventory.MenuType;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
- * The registry entries the API requires every implementation to register: the three address reaches and the gate
- * properties.
+ * The registry entries the API requires every implementation to register: the three address reaches, the gate
+ * properties and the metal iris; and SGCraft's own energy source, address books, energy bridge and menus.
  */
 public final class SGBuiltIns {
 
@@ -46,6 +68,52 @@ public final class SGBuiltIns {
         sink.register(AddressReaches.SAME_WORLD, new GridReach(7, GridReach.Kind.SAME_WORLD));
         sink.register(AddressReaches.SAME_GROUP, new GridReach(8, GridReach.Kind.SAME_GROUP));
         sink.register(AddressReaches.OTHER_GROUP, new GridReach(9, GridReach.Kind.OTHER_GROUP));
+    }
+
+    public static void registerIrisTypes(final RegistrySink<IrisType> sink) {
+        sink.register(IrisTypes.METAL, () -> Component.translatable("iris_type.sgcraft.metal"));
+    }
+
+    /** SGCraft's own energy sources: the naquadah in a gate's DHDs. */
+    public static void registerEnergySources(final RegistrySink<EnergySourceProvider> sink) {
+        sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_SOURCE_PROVIDER, SGCraft.id("dhd_fuel")),
+                new DhdFuelProvider());
+        sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_SOURCE_PROVIDER, SGCraft.id("power_unit")),
+                new PowerUnitProvider());
+    }
+
+    /**
+     * SGCraft's own address books: each player's own, which the address book commands use, and the books on the PDDs
+     * and gate control tablets a player holds.
+     */
+    public static void registerAddressBooks(final RegistrySink<AddressBookProvider> sink) {
+        sink.register(ResourceKey.create(SGCraftRegistries.ADDRESS_BOOK_PROVIDER, SGCraft.id("player")),
+                player -> List.of(SGCraftApi.get().addressBooks().forPlayer(player.getUUID())));
+        sink.register(ResourceKey.create(SGCraftRegistries.ADDRESS_BOOK_PROVIDER, SGCraft.id("pdd")),
+                player -> Arrays.stream(InteractionHand.values()).map(player::getItemInHand)
+                        .filter(stack -> stack.is(SGItems.PDD) || stack.is(SGItems.GATE_CONTROL_TABLET))
+                        .map(ItemAddressBook::of).toList());
+    }
+
+    /**
+     * SGCraft's own energy bridge: energy already in SGCraft's units, at one for one unless the server's settings scale
+     * it. An add-on that hands gates energy it has worked out itself can use this bridge's rate.
+     */
+    public static void registerEnergyBridges(final RegistrySink<EnergyBridge> sink) {
+        sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_BRIDGE, SGCraft.id("direct")), () -> 1.0);
+        // FE, the loaders' common energy, which power units store
+        sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_BRIDGE, SGCraft.id("forge_energy")),
+                PowerUnitBlockEntity.FORGE_ENERGY);
+    }
+
+    /** SGCraft's menus. */
+    public static void registerMenus(final RegistrySink<MenuType<?>> sink) {
+        DhdFuelMenu.TYPE = Platform.get().menuType(DhdFuelMenu::new);
+        sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("dhd_fuel")), DhdFuelMenu.TYPE);
+        GateBaseMenu.TYPE = Platform.get().menuType(GateBaseMenu::new);
+        sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("gate_base")), GateBaseMenu.TYPE);
+        PowerUnitMenu.TYPE = Platform.get().menuType(PowerUnitMenu::new);
+        sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("power_unit")), PowerUnitMenu.TYPE);
     }
 
     public static void registerProperties(final RegistrySink<GateProperty<?>> sink) {

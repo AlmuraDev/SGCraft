@@ -47,18 +47,18 @@ import java.util.Optional;
  * A reach that names a cell of a world by its position on a grid, then names the world, the group, or neither.
  *
  * <p>With {@code p} position symbols there are {@code 36^p} codes, which is {@code (6^p)^2}, so the grid is
- * {@code 6^p} cells square, centred on the world's middle. The cell's code is scrambled so that gates near each other
+ * {@code 6^p} cells square, centerd on the world's middle. The cell's code is scrambled so that gates near each other
  * don't get addresses that look alike. The {@code @} symbol is never a position symbol.</p>
  */
 public final class GridReach implements AddressReach {
 
     /** What the symbols after the position name. */
     public enum Kind {
-        /** Nothing: the dialling gate's own world. */
+        /** Nothing: the dialing gate's own world. */
         SAME_WORLD(0),
-        /** The world, within the dialling gate's group. */
+        /** The world, within the dialing gate's group. */
         SAME_GROUP(1),
-        /** The world, then its group, which isn't the dialling gate's. */
+        /** The world, then its group, which isn't the dialing gate's. */
         OTHER_GROUP(2);
 
         private final int extraSymbols;

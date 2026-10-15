@@ -28,17 +28,22 @@ package com.almuradev.sgcraft.mod;
 import com.almuradev.sgcraft.api.ActionResult;
 import com.almuradev.sgcraft.api.Cause;
 import com.almuradev.sgcraft.api.SGCraftRegistries;
+import com.almuradev.sgcraft.api.access.GateRight;
 import com.almuradev.sgcraft.api.address.Address;
 import com.almuradev.sgcraft.api.address.AddressTarget;
 import com.almuradev.sgcraft.api.gate.DialMode;
 import com.almuradev.sgcraft.api.gate.GatePlacement;
 import com.almuradev.sgcraft.api.gate.GateProperty;
 import com.almuradev.sgcraft.api.gate.GateType;
+import com.almuradev.sgcraft.api.gate.IrisState;
 import com.almuradev.sgcraft.api.gate.PlacementResult;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.api.gate.Stargates;
 import com.almuradev.sgcraft.gate.GateFormation;
+import com.almuradev.sgcraft.gate.GateShape;
 import com.almuradev.sgcraft.mod.GateStore.GateRecord;
+import com.almuradev.sgcraft.mod.event.SGEventBus;
+import com.almuradev.sgcraft.mod.event.SGEvents;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
@@ -55,9 +60,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * The gates on a running server: the formed gates in the {@link GateStore}, each with a live {@link SGStargate} once
@@ -67,12 +74,63 @@ public final class SGStargates implements Stargates {
 
     private final MinecraftServer server;
     private final SGAddressing addressing;
+    private SGConfig config;
+    // Gates whose iris is moving, ticked until it stops, with why it moved
+    private final Map<SGStargate, Cause> irises = new HashMap<>();
+    // While a gate is being placed whole, its forming fires no forming events
+    private boolean placing;
     private final Map<GlobalPos, SGStargate> live = new HashMap<>();
     private final List<SGConnection> connections = new ArrayList<>();
+    // Gates with symbols locked one at a time, as a DHD does, watched so they let go if left
+    private final Set<SGStargate> engaging = new HashSet<>();
 
-    public SGStargates(final MinecraftServer server, final SGAddressing addressing) {
+    public SGStargates(final MinecraftServer server, final SGAddressing addressing, final SGConfig config) {
         this.server = server;
         this.addressing = addressing;
+        this.config = config;
+    }
+
+    SGConfig config() {
+        return this.config;
+    }
+
+    /**
+     * Changes what wormholes cost from now on, and writes it to the settings file. Wormholes already dialing or open
+     * keep what they cost when they were dialed.
+     *
+     * @return whether the settings file was written
+     */
+    public boolean setDialCosts(final DialCosts costs) {
+        this.config = this.config.withDialCosts(costs);
+        return SGConfig.saveDialCosts(costs);
+    }
+
+    /** @return whether a gate is being placed whole, so its forming isn't a player building it */
+    public boolean isPlacing() {
+        return this.placing;
+    }
+
+    /**
+     * How many times more a wormhole between two gates costs than the base cost, as in the original: more the further
+     * apart they are, more again between worlds, and more again to or from a supergate, whichever end dials.
+     */
+    double distanceFactor(final Stargate from, final Stargate to) {
+        final BlockPos a = from.position().pos();
+        final BlockPos b = to.position().pos();
+        final double d = Math.hypot(a.getX() - b.getX(), a.getZ() - b.getZ());
+        final double scale = Math.log(0.05 * d + 1) / Math.log(0.05 * 16 * 279935);
+        double factor = 1 + 14 * this.config.distanceFactorMultiplier() * scale * scale;
+        if (!from.position().dimension().equals(to.position().dimension())) {
+            factor *= this.config.interWorldMultiplier();
+        }
+        if (from.size().radius() > GateShape.STANDARD.radius() || to.size().radius() > GateShape.STANDARD.radius()) {
+            factor *= this.config.supergateEnergyMultiplier();
+        }
+        return factor;
+    }
+
+    void moving(final SGStargate gate, final Cause cause) {
+        this.irises.put(gate, cause);
     }
 
     MinecraftServer server() {
@@ -97,21 +155,34 @@ public final class SGStargates implements Stargates {
 
     /** Records a gate that has just formed, keeping its chevrons and properties if it was known before. */
     public void formed(final GlobalPos position, final ResourceKey<GateType> type, final Direction facing,
-            final int chevrons) {
+            final int chevrons, final GateShape shape) {
         final GateStore store = this.store();
         final Optional<GateRecord> known = store.gate(position);
         store.put(new GateRecord(position, type, facing, known.map(GateRecord::chevrons).orElse(chevrons),
-                known.map(GateRecord::properties).orElseGet(CompoundTag::new)));
+                known.map(GateRecord::properties).orElseGet(CompoundTag::new),
+                known.map(GateRecord::state).orElseGet(CompoundTag::new), shape.radius()));
         this.gate(position).ifPresent(SGStargate::sync);
     }
 
     /** Forgets a gate that has been broken apart, ending its connection. */
-    public void broken(final GlobalPos position) {
-        final SGStargate gate = this.live.remove(position);
-        if (gate != null) {
-            gate.gone();
-        }
+    public void broken(final GlobalPos position, final Cause cause) {
+        final Optional<SGStargate> gate = this.gate(position);
+        final Runnable breach = gate.map(SGStargate::breach).orElse(() -> { });
+        this.live.remove(position);
+        gate.ifPresent(SGStargate::gone);
         this.store().remove(position);
+        gate.ifPresent(broken -> SGEventBus.get().post(new SGEvents.BreakPost(cause, broken)));
+        breach.run();
+    }
+
+    /** Carries on the irises that were moving when the server last stopped. */
+    private void restoreIrises() {
+        for (final GateRecord record : this.store().gates()) {
+            final IrisState state = SGIris.stateOf(record.state());
+            if (state == IrisState.OPENING || state == IrisState.CLOSING) {
+                this.gate(record.position()).ifPresent(gate -> this.irises.put(gate, Cause.of(this.server)));
+            }
+        }
     }
 
     void connect(final SGConnection connection, final DialMode mode) {
@@ -122,6 +193,13 @@ public final class SGStargates implements Stargates {
     /** Moves every connection on by a tick. */
     public void tick() {
         this.connections.removeIf(SGConnection::tick);
+        this.engaging.removeIf(SGStargate::releaseIfIdle);
+        this.irises.entrySet().removeIf(entry -> !entry.getKey().exists()
+                || entry.getKey().irisState().tick(entry.getValue()));
+    }
+
+    void engaging(final SGStargate gate) {
+        this.engaging.add(gate);
     }
 
     /**
@@ -131,13 +209,14 @@ public final class SGStargates implements Stargates {
         this.connections.clear();
     }
 
-    /** Carries on the connections that were under way when the server last stopped. */
+    /** Carries on the connections that were under way when the server last stopped, and the moving irises. */
     public void restore() {
+        this.restoreIrises();
         final GateStore store = this.store();
         for (final CompoundTag tag : store.connections()) {
             final Optional<SGConnection> connection = SGConnection.restore(this, tag);
             if (connection.isEmpty()) {
-                tag.read("dialler", GlobalPos.CODEC).ifPresent(store::removeConnection);
+                tag.read("dialer", GlobalPos.CODEC).ifPresent(store::removeConnection);
                 continue;
             }
             this.connections.add(connection.get());
@@ -159,19 +238,26 @@ public final class SGStargates implements Stargates {
     }
 
     <T> Optional<T> property(final GlobalPos position, final GateProperty<T> property) {
+        if (this.propertyId(property).isEmpty()) {
+            return Optional.empty();
+        }
+        final Optional<T> own = this.ownProperty(position, property);
+        return own.isPresent() ? own : property.defaultValue();
+    }
+
+    /** @return the gate's own value of a property, without the default */
+    <T> Optional<T> ownProperty(final GlobalPos position, final GateProperty<T> property) {
         final Optional<Identifier> id = this.propertyId(property);
         if (id.isEmpty()) {
             return Optional.empty();
         }
-        final Optional<Tag> tag = this.store().gate(position)
-                .flatMap(gate -> Optional.ofNullable(gate.properties().get(id.get().toString())));
-        if (tag.isPresent()) {
-            final Optional<T> value = property.codec().parse(NbtOps.INSTANCE, tag.get()).result();
-            if (value.isPresent()) {
-                return value;
-            }
-        }
-        return property.defaultValue();
+        return this.store().gate(position)
+                .flatMap(gate -> Optional.ofNullable(gate.properties().get(id.get().toString())))
+                .flatMap(tag -> property.codec().parse(NbtOps.INSTANCE, tag).result());
+    }
+
+    boolean isRegistered(final GateProperty<?> property) {
+        return this.propertyId(property).isPresent();
     }
 
     <T> ActionResult setProperty(final GlobalPos position, final GateProperty<T> property, final T value) {
@@ -217,7 +303,8 @@ public final class SGStargates implements Stargates {
     public Optional<Stargate> at(final GlobalPos position) {
         for (final GateRecord gate : this.store().gates()) {
             if (gate.position().dimension().equals(position.dimension())
-                    && GateFormation.isPartOfGate(gate.position().pos(), gate.facing(), position.pos())) {
+                    && GateFormation.isPartOfGate(gate.position().pos(), gate.facing(), gate.shape(),
+                    position.pos())) {
                 return this.gate(gate.position()).map(Stargate.class::cast);
             }
         }
@@ -248,13 +335,29 @@ public final class SGStargates implements Stargates {
                 .min(Comparator.comparingDouble(gate -> gate.position().pos().distSqr(pos)));
     }
 
+    /** Chooses the nearest gate in the same world that the cause may use. */
     @Override
     public Optional<Stargate> mostAppropriate(final GlobalPos position, final Cause cause) {
-        return this.mostAppropriate(position);
+        final BlockPos pos = position.pos();
+        return this.in(position.dimension()).stream()
+                .filter(gate -> gate.access().allows(cause, GateRight.USE))
+                .min(Comparator.comparingDouble(gate -> gate.position().pos().distSqr(pos)));
     }
 
     @Override
     public PlacementResult place(final GatePlacement placement, final Cause cause) {
-        throw new UnsupportedOperationException("Placing gates isn't supported yet");
+        final SGEvents.PlacePre pre = SGEventBus.get().post(new SGEvents.PlacePre(cause, placement));
+        if (pre.isCanceled()) {
+            return GatePlacer.Result.of(PlacementResult.Status.CANCELED);
+        }
+        this.placing = true;
+        try {
+            final PlacementResult result = new GatePlacer(this, cause).place(pre.placement());
+            result.gate().ifPresent(gate -> SGEventBus.get().post(new SGEvents.PlacePost(cause, gate,
+                    pre.placement().withPosition(gate.position()))));
+            return result;
+        } finally {
+            this.placing = false;
+        }
     }
 }

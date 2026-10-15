@@ -29,6 +29,7 @@ import com.almuradev.sgcraft.SGCraft;
 import com.almuradev.sgcraft.api.SGCraftRegistries;
 import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.api.gate.GateType;
+import com.almuradev.sgcraft.gate.GateShape;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -50,7 +51,7 @@ import java.util.Optional;
 
 /**
  * Every formed gate on the server, kept with the server's data so gates in unloaded chunks can still be found and
- * dialled, and the symbol each world was given within its group.
+ * dialed, and the symbol each world was given within its group.
  */
 public final class GateStore extends SavedData {
 
@@ -68,7 +69,8 @@ public final class GateStore extends SavedData {
                     .optionalFieldOf("world_symbols", Map.of())
                     .forGetter(store -> store.worldSymbols),
             CompoundTag.CODEC.listOf().optionalFieldOf("connections", List.of())
-                    .forGetter(store -> List.copyOf(store.connections.values()))
+                    .forGetter(store -> List.copyOf(store.connections.values())),
+            Codec.STRING.optionalFieldOf("point_of_origin").forGetter(store -> store.pointOfOrigin)
     ).apply(instance, GateStore::new));
 
     public static final SavedDataType<GateStore> TYPE =
@@ -76,18 +78,21 @@ public final class GateStore extends SavedData {
 
     private final Map<GlobalPos, GateRecord> gates = new LinkedHashMap<>();
     private final Map<ResourceKey<Level>, Symbol> worldSymbols = new LinkedHashMap<>();
-    // Each connection under way, by its dialling gate, as the connection saves itself
+    // Each connection under way, by its dialing gate, as the connection saves itself
     private final Map<GlobalPos, CompoundTag> connections = new LinkedHashMap<>();
+    // The point of origin addresses were made with, as the setting gave it, or empty before any was recorded
+    private Optional<String> pointOfOrigin = Optional.empty();
 
     private GateStore() {
     }
 
     private GateStore(final List<GateRecord> gates, final Map<ResourceKey<Level>, Symbol> worldSymbols,
-            final List<CompoundTag> connections) {
+            final List<CompoundTag> connections, final Optional<String> pointOfOrigin) {
+        this.pointOfOrigin = pointOfOrigin;
         gates.forEach(gate -> this.gates.put(gate.position(), gate));
         this.worldSymbols.putAll(worldSymbols);
-        connections.forEach(tag -> tag.read("dialler", GlobalPos.CODEC)
-                .ifPresent(dialler -> this.connections.put(dialler, tag)));
+        connections.forEach(tag -> tag.read("dialer", GlobalPos.CODEC)
+                .ifPresent(dialer -> this.connections.put(dialer, tag)));
     }
 
     /** @return each connection under way when last saved, as it saved itself */
@@ -95,13 +100,13 @@ public final class GateStore extends SavedData {
         return List.copyOf(this.connections.values());
     }
 
-    public void putConnection(final GlobalPos dialler, final CompoundTag connection) {
-        this.connections.put(dialler, connection);
+    public void putConnection(final GlobalPos dialer, final CompoundTag connection) {
+        this.connections.put(dialer, connection);
         this.setDirty();
     }
 
-    public void removeConnection(final GlobalPos dialler) {
-        if (this.connections.remove(dialler) != null) {
+    public void removeConnection(final GlobalPos dialer) {
+        if (this.connections.remove(dialer) != null) {
             this.setDirty();
         }
     }
@@ -126,6 +131,18 @@ public final class GateStore extends SavedData {
         }
     }
 
+    /** @return the point of origin addresses were last made with, as the setting gave it, if one was recorded */
+    public Optional<String> pointOfOrigin() {
+        return this.pointOfOrigin;
+    }
+
+    public void setPointOfOrigin(final String pointOfOrigin) {
+        if (!this.pointOfOrigin.equals(Optional.of(pointOfOrigin))) {
+            this.pointOfOrigin = Optional.of(pointOfOrigin);
+            this.setDirty();
+        }
+    }
+
     /** @return the symbol each world has been given, in the order they were given */
     public Map<ResourceKey<Level>, Symbol> worldSymbols() {
         return Collections.unmodifiableMap(this.worldSymbols);
@@ -138,22 +155,36 @@ public final class GateStore extends SavedData {
     }
 
     /**
-     * A formed gate as it is saved: where its base is, its type, which way it faces, how many chevrons it has, and
-     * the values of its properties that differ from their defaults, by each property's registry name.
+     * A formed gate as it is saved: where its base is, its type, which way it faces, how many chevrons it has, the
+     * values of its properties that differ from their defaults, by each property's registry name, and what it holds
+     * between restarts, such as where its iris is and the energy it has stored.
      */
     public record GateRecord(GlobalPos position, ResourceKey<GateType> type, Direction facing, int chevrons,
-            CompoundTag properties) {
+            CompoundTag properties, CompoundTag state, int radius) {
 
         static final Codec<GateRecord> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 GlobalPos.CODEC.fieldOf("position").forGetter(GateRecord::position),
                 ResourceKey.codec(SGCraftRegistries.GATE_TYPE).fieldOf("type").forGetter(GateRecord::type),
                 Direction.CODEC.fieldOf("facing").forGetter(GateRecord::facing),
                 Codec.INT.fieldOf("chevrons").forGetter(GateRecord::chevrons),
-                CompoundTag.CODEC.optionalFieldOf("properties", new CompoundTag()).forGetter(GateRecord::properties)
+                CompoundTag.CODEC.optionalFieldOf("properties", new CompoundTag()).forGetter(GateRecord::properties),
+                CompoundTag.CODEC.optionalFieldOf("state", new CompoundTag()).forGetter(GateRecord::state),
+                Codec.INT.optionalFieldOf("radius", GateShape.STANDARD.radius()).forGetter(GateRecord::radius)
         ).apply(instance, GateRecord::new));
+
+        public GateRecord(final GlobalPos position, final ResourceKey<GateType> type, final Direction facing,
+                final int chevrons, final CompoundTag properties) {
+            this(position, type, facing, chevrons, properties, new CompoundTag(), GateShape.STANDARD.radius());
+        }
 
         public GateRecord {
             properties = properties.copy();
+            state = state.copy();
+        }
+
+        @Override
+        public CompoundTag state() {
+            return this.state.copy();
         }
 
         @Override
@@ -161,16 +192,29 @@ public final class GateStore extends SavedData {
             return this.properties.copy();
         }
 
+        /** @return how big the gate is and how it is laid out */
+        public GateShape shape() {
+            return GateShape.ofRadius(this.radius);
+        }
+
         public GateRecord withChevrons(final int chevrons) {
-            return new GateRecord(this.position, this.type, this.facing, chevrons, this.properties);
+            return new GateRecord(this.position, this.type, this.facing, chevrons, this.properties, this.state,
+                    this.radius);
         }
 
         public GateRecord withType(final ResourceKey<GateType> type) {
-            return new GateRecord(this.position, type, this.facing, this.chevrons, this.properties);
+            return new GateRecord(this.position, type, this.facing, this.chevrons, this.properties, this.state,
+                    this.radius);
         }
 
         public GateRecord withProperties(final CompoundTag properties) {
-            return new GateRecord(this.position, this.type, this.facing, this.chevrons, properties);
+            return new GateRecord(this.position, this.type, this.facing, this.chevrons, properties, this.state,
+                    this.radius);
+        }
+
+        public GateRecord withState(final CompoundTag state) {
+            return new GateRecord(this.position, this.type, this.facing, this.chevrons, this.properties, state,
+                    this.radius);
         }
     }
 }

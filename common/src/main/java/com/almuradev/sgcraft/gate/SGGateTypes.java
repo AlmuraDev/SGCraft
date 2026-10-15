@@ -30,6 +30,8 @@ import com.almuradev.sgcraft.api.gate.GateTypes;
 import com.almuradev.sgcraft.registry.RegistrySink;
 import net.minecraft.network.chat.Component;
 
+import java.util.Set;
+
 /**
  * Registers the gate types the API requires.
  */
@@ -39,8 +41,12 @@ public final class SGGateTypes {
     }
 
     public static void register(final RegistrySink<GateType> sink) {
-        sink.register(GateTypes.MILKY_WAY, new BuiltInGateType(Component.translatable("gate_type.sgcraft.milky_way")));
-        sink.register(GateTypes.PEGASUS, new BuiltInGateType(Component.translatable("gate_type.sgcraft.pegasus")));
-        sink.register(GateTypes.UNIVERSE, new BuiltInGateType(Component.translatable("gate_type.sgcraft.universe")));
+        // Each is dialed by its own DHD; the Universe gate had none on the show
+        sink.register(GateTypes.MILKY_WAY, new BuiltInGateType(Component.translatable("gate_type.sgcraft.milky_way"),
+                Set.of(GateTypes.MILKY_WAY)));
+        sink.register(GateTypes.PEGASUS, new BuiltInGateType(Component.translatable("gate_type.sgcraft.pegasus"),
+                Set.of(GateTypes.PEGASUS)));
+        sink.register(GateTypes.UNIVERSE, new BuiltInGateType(Component.translatable("gate_type.sgcraft.universe"),
+                Set.of()));
     }
 }

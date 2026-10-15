@@ -53,8 +53,8 @@ public final class ChevronOrder {
 
     /**
      * @param chevrons how many chevrons the gate has
-     * @param symbols how many symbols are being dialled
-     * @return the position of the chevron each symbol locks at, in dialling order; the last symbol locks at the top
+     * @param symbols how many symbols are being dialed
+     * @return the position of the chevron each symbol locks at, in dialing order; the last symbol locks at the top
      */
     public static int[] positions(final int chevrons, final int symbols) {
         final int[] positions = new int[Math.max(0, symbols)];
@@ -80,7 +80,7 @@ public final class ChevronOrder {
 
     /**
      * @param chevrons how many chevrons the gate has
-     * @param symbols how many symbols are being dialled
+     * @param symbols how many symbols are being dialed
      * @param locked how many have locked
      * @return whether each position's chevron is locked, by position
      */

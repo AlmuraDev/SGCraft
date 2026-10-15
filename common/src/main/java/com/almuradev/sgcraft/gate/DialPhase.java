@@ -31,10 +31,10 @@ package com.almuradev.sgcraft.gate;
 public enum DialPhase {
     /** Doing nothing. */
     IDLE,
-    /** The dialling gate's ring is moving to a symbol, or its light is running to a chevron. */
-    DIALLING,
+    /** The dialing gate's ring is moving to a symbol, or its light is running to a chevron. */
+    DIALING,
     /** A chevron has just locked, and the next symbol hasn't started. */
-    INTER_DIALLING,
+    INTER_DIALING,
     /** Every chevron has locked, and the gates are waiting on each other. */
     SYNC_AWAIT,
     /** The wormhole is forming. */

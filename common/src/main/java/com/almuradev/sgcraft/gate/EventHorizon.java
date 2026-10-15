@@ -33,8 +33,8 @@ import net.minecraft.util.RandomSource;
  * The surface of an open wormhole: a disc of rings and spokes whose points move along the gate's axis as waves, as in
  * the original SGCraft. The kawoosh is this surface thrown forward as the wormhole opens. Only clients simulate it.
  *
- * <p>The disc has {@link #RINGS} rings out from its centre, each {@link #BAND} blocks wide, and {@link #SPOKES}
- * points round each ring. The outermost ring is held flat by the gate, and the centre moves with the average of the
+ * <p>The disc has {@link #RINGS} rings out from its center, each {@link #BAND} blocks wide, and {@link #SPOKES}
+ * points round each ring. The outermost ring is held flat by the gate, and the center moves with the average of the
  * first ring.</p>
  */
 public final class EventHorizon {
@@ -58,7 +58,7 @@ public final class EventHorizon {
     private final double[][] velocity = new double[EventHorizon.SPOKES + 2][EventHorizon.RINGS + 1];
     private final double[][] previous = new double[EventHorizon.SPOKES + 2][EventHorizon.RINGS + 1];
 
-    /** Throws the surface forward from its centre: the kawoosh. */
+    /** Throws the surface forward from its center: the kawoosh. */
     public void open(final RandomSource random) {
         for (int j = 1; j <= EventHorizon.SPOKES; j++) {
             this.velocity[j][0] = EventHorizon.OPENING_IMPULSE;
@@ -99,13 +99,13 @@ public final class EventHorizon {
                 u[j][i] += this.velocity[j][i];
             }
         }
-        double centre = 0;
+        double center = 0;
         for (int j = 1; j <= EventHorizon.SPOKES; j++) {
-            centre += u[j][1];
+            center += u[j][1];
         }
-        centre /= EventHorizon.SPOKES;
+        center /= EventHorizon.SPOKES;
         for (int j = 1; j <= EventHorizon.SPOKES; j++) {
-            u[j][0] = centre;
+            u[j][0] = center;
         }
         this.wrap();
     }
@@ -119,7 +119,7 @@ public final class EventHorizon {
 
     /**
      * @param spoke a spoke, from 0 to {@link #SPOKES}, where 0 and {@link #SPOKES} are the same
-     * @param ring a ring, from 0 at the centre to {@link #RINGS} at the gate's edge
+     * @param ring a ring, from 0 at the center to {@link #RINGS} at the gate's edge
      * @param partialTick how far through the tick, from 0 to 1
      * @return how far forward of the gate that point of the surface is, in blocks
      */

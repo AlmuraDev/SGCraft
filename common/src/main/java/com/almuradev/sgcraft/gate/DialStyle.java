@@ -46,7 +46,7 @@ public enum DialStyle {
     PEGASUS(10, 10),
     UNIVERSE(24, 30);
 
-    // How fast a ring turns, in degrees a tick
+    // How fast a ring turns, in degrees a tick, unless the gate says otherwise
     private static final double RING_SPEED = 2.0;
     // How many glyphs the Milky Way ring carries; glyph 0 is the point of origin
     private static final int MILKY_WAY_GLYPHS = 39;
@@ -58,11 +58,11 @@ public enum DialStyle {
     private static final double PEGASUS_TICKS_PER_GLYPH = 1.4;
     private static final double PEGASUS_GLYPH_ANGLE = 10;
 
-    private final int interDiallingTicks;
+    private final int interDialingTicks;
     private final int establishingTicks;
 
-    DialStyle(final int interDiallingTicks, final int establishingTicks) {
-        this.interDiallingTicks = interDiallingTicks;
+    DialStyle(final int interDialingTicks, final int establishingTicks) {
+        this.interDialingTicks = interDialingTicks;
         this.establishingTicks = establishingTicks;
     }
 
@@ -73,9 +73,18 @@ public enum DialStyle {
         return type.equals(GateTypes.UNIVERSE) ? DialStyle.UNIVERSE : DialStyle.MILKY_WAY;
     }
 
+    /**
+     * @return how fast a gate of this style dials unless it says otherwise, in degrees a tick: its ring's turn, or
+     *     its light's run
+     */
+    public double defaultSpeed() {
+        return this == DialStyle.PEGASUS ? DialStyle.PEGASUS_GLYPH_ANGLE / DialStyle.PEGASUS_TICKS_PER_GLYPH
+                : DialStyle.RING_SPEED;
+    }
+
     /** @return how long the gate rests between one chevron locking and the next symbol starting */
-    public int interDiallingTicks() {
-        return this.interDiallingTicks;
+    public int interDialingTicks() {
+        return this.interDialingTicks;
     }
 
     /** @return how long the wormhole takes to form once every chevron has locked */
@@ -95,12 +104,14 @@ public enum DialStyle {
 
     /**
      * @param angle where the ring is, or how far the light has run, before this symbol
-     * @param symbol the symbol being dialled
+     * @param symbol the symbol being dialed
      * @param index its place in the address, from 0
      * @param positions the chevron position each symbol of the address locks at; see {@link ChevronOrder}
+     * @param speed how fast the gate dials, in degrees a tick
      * @return the move to dial the symbol
      */
-    public Move move(final float angle, final Symbol symbol, final int index, final int[] positions) {
+    public Move move(final float angle, final Symbol symbol, final int index, final int[] positions,
+            final double speed) {
         if (this == DialStyle.PEGASUS) {
             final int from = index == 0 ? ChevronOrder.TOP : positions[index - 1];
             final int to = positions[index];
@@ -112,8 +123,7 @@ public enum DialStyle {
             }
             final double travel = direction * Math.round(distance / DialStyle.PEGASUS_GLYPH_ANGLE)
                     * DialStyle.PEGASUS_GLYPH_ANGLE;
-            final int ticks = (int) Math.round(Math.abs(travel) / DialStyle.PEGASUS_GLYPH_ANGLE
-                    * DialStyle.PEGASUS_TICKS_PER_GLYPH);
+            final int ticks = (int) Math.round(Math.abs(travel) / speed);
             return new Move(angle, (float) (angle + travel), ticks);
         }
         float start = angle;
@@ -126,7 +136,7 @@ public enum DialStyle {
             target -= Math.copySign(360, start == 0 ? 1 : start);
             difference = target - start;
         }
-        return new Move(start, (float) target, (int) Math.abs(difference / DialStyle.RING_SPEED));
+        return new Move(start, (float) target, (int) Math.abs(difference / speed));
     }
 
     /**

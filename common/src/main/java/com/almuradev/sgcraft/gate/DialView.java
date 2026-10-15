@@ -38,23 +38,31 @@ import java.util.Optional;
  * animate between updates.
  *
  * @param phase the step of the dial the gate is at
- * @param initiator whether this gate dialled, rather than being dialled
- * @param address the symbols in play: those the gate dialled, or, for the dialled gate, the dialling gate's address
+ * @param initiator whether this gate dialed, rather than being dialed
+ * @param address the symbols in play: those the gate dialed, or, for the dialed gate, the dialing gate's address
  * @param engaged how many chevrons have locked
- * @param ringFrom the dialling gate's ring angle when it started its current move, in degrees anticlockwise
+ * @param ringFrom the dialing gate's ring angle when it started its current move, in degrees anticlockwise
  * @param ringTo the angle it is moving to
  * @param ringStart when the move started
  * @param ringEnd when the move ends
  * @param lockTick when the last chevron locked
- * @param fillStart when a dialled Pegasus gate starts filling with light
+ * @param fillStart when a dialed Pegasus gate starts filling with light
  * @param fillEnd when it is full
  * @param phaseStart when the gate entered its phase
+ * @param expected how many symbols the address will have, if more than are in it so far, as while a DHD dials; 0
+ *     when the address is complete
  */
 public record DialView(DialPhase phase, boolean initiator, String address, int engaged, float ringFrom,
-        float ringTo, long ringStart, long ringEnd, long lockTick, long fillStart, long fillEnd, long phaseStart) {
+        float ringTo, long ringStart, long ringEnd, long lockTick, long fillStart, long fillEnd, long phaseStart,
+        int expected) {
 
     /** A gate doing nothing. */
-    public static final DialView IDLE = new DialView(DialPhase.IDLE, false, "", 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    public static final DialView IDLE = new DialView(DialPhase.IDLE, false, "", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+
+    /** @return how many symbols the address has, or will have; which chevron each locks at depends on it */
+    public int length() {
+        return Math.max(this.expected, this.symbols().size());
+    }
 
     /** @return the symbols in play, in order */
     public List<Symbol> symbols() {
@@ -65,13 +73,13 @@ public record DialView(DialPhase phase, boolean initiator, String address, int e
         return symbols;
     }
 
-    /** @return whether the gate is dialling, being dialled or open, but not idle or shutting down */
+    /** @return whether the gate is dialing, being dialed or open, but not idle or shutting down */
     public boolean active() {
         return this.phase != DialPhase.IDLE && this.phase != DialPhase.DISCONNECTING;
     }
 
     /**
-     * @return the dialling gate's ring angle at {@code time}, moving evenly from {@link #ringFrom} to
+     * @return the dialing gate's ring angle at {@code time}, moving evenly from {@link #ringFrom} to
      *     {@link #ringTo}
      */
     public float ringAngle(final double time) {
@@ -96,6 +104,7 @@ public record DialView(DialPhase phase, boolean initiator, String address, int e
         tag.putLong("fill_start", this.fillStart);
         tag.putLong("fill_end", this.fillEnd);
         tag.putLong("phase_start", this.phaseStart);
+        tag.putInt("expected", this.expected);
         return tag;
     }
 
@@ -112,6 +121,7 @@ public record DialView(DialPhase phase, boolean initiator, String address, int e
         return new DialView(phase, tag.getBooleanOr("initiator", false), tag.getStringOr("address", ""),
                 tag.getIntOr("engaged", 0), tag.getFloatOr("ring_from", 0), tag.getFloatOr("ring_to", 0),
                 tag.getLongOr("ring_start", 0), tag.getLongOr("ring_end", 0), tag.getLongOr("lock_tick", 0),
-                tag.getLongOr("fill_start", 0), tag.getLongOr("fill_end", 0), tag.getLongOr("phase_start", 0));
+                tag.getLongOr("fill_start", 0), tag.getLongOr("fill_end", 0), tag.getLongOr("phase_start", 0),
+                tag.getIntOr("expected", 0));
     }
 }

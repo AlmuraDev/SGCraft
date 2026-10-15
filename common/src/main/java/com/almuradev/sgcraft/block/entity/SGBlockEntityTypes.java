@@ -41,14 +41,27 @@ import java.util.Set;
 public final class SGBlockEntityTypes {
 
     public static BlockEntityType<StargateBaseBlockEntity> STARGATE_BASE;
+    public static BlockEntityType<DhdBlockEntity> DHD;
+    public static BlockEntityType<GateSpawnerBlockEntity> GATE_SPAWNER;
+    public static BlockEntityType<PowerUnitBlockEntity> POWER_UNIT;
 
     private SGBlockEntityTypes() {
     }
 
     public static void register(final RegistrySink<BlockEntityType<?>> sink) {
         SGBlockEntityTypes.STARGATE_BASE = new BlockEntityType<>(StargateBaseBlockEntity::new,
-                Set.of(SGBlocks.STARGATE_BASE, SGBlocks.STARGATE_BASE_PEGASUS, SGBlocks.STARGATE_BASE_UNIVERSE));
+                Set.of(SGBlocks.STARGATE_BASE, SGBlocks.STARGATE_BASE_PEGASUS, SGBlocks.STARGATE_BASE_UNIVERSE,
+                        SGBlocks.SUPERGATE_BASE));
         sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("stargate_base")),
                 SGBlockEntityTypes.STARGATE_BASE);
+        SGBlockEntityTypes.DHD = new BlockEntityType<>(DhdBlockEntity::new, Set.of(SGBlocks.DHD, SGBlocks.DHD_PEGASUS));
+        sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("dhd")), SGBlockEntityTypes.DHD);
+        SGBlockEntityTypes.GATE_SPAWNER = new BlockEntityType<>(GateSpawnerBlockEntity::new,
+                Set.copyOf(SGBlocks.SPAWNERS));
+        sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("gate_spawner")),
+                SGBlockEntityTypes.GATE_SPAWNER);
+        SGBlockEntityTypes.POWER_UNIT = new BlockEntityType<>(PowerUnitBlockEntity::new, Set.of(SGBlocks.POWER_UNIT));
+        sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("power_unit")),
+                SGBlockEntityTypes.POWER_UNIT);
     }
 }

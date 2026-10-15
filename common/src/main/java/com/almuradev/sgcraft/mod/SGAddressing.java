@@ -56,18 +56,36 @@ import java.util.Set;
  */
 public final class SGAddressing implements Addressing {
 
-    private static final AddressPartition PARTITION = new SimplePartition(1, Optional.empty());
-
     private final MinecraftServer server;
+    private final AddressPartition partition;
     private final List<AddressReach> reaches;
     private final DefaultGroup defaultGroup = new DefaultGroup();
 
-    public SGAddressing(final MinecraftServer server) {
+    public SGAddressing(final MinecraftServer server, final SGConfig config) {
         this.server = server;
+        this.partition = new SimplePartition(1, config.originSymbol());
+        this.recordOrigin(config.pointOfOrigin());
         this.reaches = server.registryAccess().lookupOrThrow(SGCraftRegistries.ADDRESS_REACH).stream()
                 .sorted(Comparator.comparingInt(AddressReach::symbolCount))
                 .toList();
         this.assignWorldSymbols();
+    }
+
+    // Records the point of origin in use, warning loudly if it isn't the one the gates' addresses were made with,
+    // since every address then changes
+    private void recordOrigin(final String origin) {
+        final GateStore store = this.store();
+        final Optional<String> recorded = store.pointOfOrigin();
+        if (recorded.isPresent() && !recorded.get().equals(origin)) {
+            SGCraft.LOG.warn("**********************************************************************");
+            SGCraft.LOG.warn("The point of origin has changed from \"{}\" to \"{}\". Every address in these worlds "
+                    + "has changed:", recorded.get(), origin);
+            for (final ServerLevel level : this.server.getAllLevels()) {
+                SGCraft.LOG.warn("  {}", level.dimension().identifier());
+            }
+            SGCraft.LOG.warn("**********************************************************************");
+        }
+        store.setPointOfOrigin(origin);
     }
 
     // Gives each world without a symbol the first one not yet used; a world's symbol never changes once given
@@ -126,7 +144,7 @@ public final class SGAddressing implements Addressing {
 
     @Override
     public AddressPartition partition(final ResourceKey<Level> world) {
-        return SGAddressing.PARTITION;
+        return this.partition;
     }
 
     @Override

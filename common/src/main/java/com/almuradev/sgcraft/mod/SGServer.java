@@ -30,9 +30,12 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.server.MinecraftServer;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayDeque;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
 import java.util.UUID;
 
 /**
@@ -49,13 +52,22 @@ public final class SGServer {
     private final MinecraftServer server;
     private final SGAddressing addressing;
     private final SGStargates stargates;
+    private final SGConfig config;
+    private final SGAddressBooks addressBooks;
+    // The addresses new PDDs and tablets start with
+    private List<DefaultAddresses.Entry> defaultAddresses;
     // The gate each player, or the console, has selected for commands, until the server stops
     private final Map<UUID, GlobalPos> selections = new HashMap<>();
+    // Work to do at the start of the next tick, once whatever asked for it has finished
+    private final Queue<Runnable> nextTick = new ArrayDeque<>();
 
     private SGServer(final MinecraftServer server) {
         this.server = server;
-        this.addressing = new SGAddressing(server);
-        this.stargates = new SGStargates(server, this.addressing);
+        this.config = SGConfig.load();
+        this.addressing = new SGAddressing(server, this.config);
+        this.stargates = new SGStargates(server, this.addressing, this.config);
+        this.addressBooks = new SGAddressBooks(server);
+        this.defaultAddresses = DefaultAddresses.load();
     }
 
     /** @return the running server's state, or empty if no server is running */
@@ -75,6 +87,11 @@ public final class SGServer {
         return server;
     }
 
+    /** Runs {@code task} on the server thread at the start of the next tick. */
+    public void nextTick(final Runnable task) {
+        this.nextTick.add(task);
+    }
+
     public static void starting(final MinecraftServer server) {
         SGServer.current = new SGServer(server);
         SGServer.current.stargates.restore();
@@ -85,6 +102,9 @@ public final class SGServer {
     public static void tick(final MinecraftServer server) {
         final SGServer current = SGServer.current;
         if (current != null && current.server == server) {
+            for (int i = current.nextTick.size(); i > 0; i--) {
+                current.nextTick.remove().run();
+            }
             current.stargates.tick();
         }
     }
@@ -107,6 +127,30 @@ public final class SGServer {
 
     public SGStargates stargates() {
         return this.stargates;
+    }
+
+    public SGAddressBooks addressBooks() {
+        return this.addressBooks;
+    }
+
+    /** @return the server's settings, as read when it started, with any dial costs changed since */
+    public SGConfig config() {
+        return this.stargates.config();
+    }
+
+    /** @return the addresses new PDDs and gate control tablets start with */
+    public List<DefaultAddresses.Entry> defaultAddresses() {
+        return this.defaultAddresses;
+    }
+
+    /**
+     * Sets the addresses new PDDs and gate control tablets start with, and writes them to their file.
+     *
+     * @return whether the file was written
+     */
+    public boolean setDefaultAddresses(final List<DefaultAddresses.Entry> addresses) {
+        this.defaultAddresses = List.copyOf(addresses);
+        return DefaultAddresses.save(this.defaultAddresses);
     }
 
     /** @return the gate someone has selected for commands */
