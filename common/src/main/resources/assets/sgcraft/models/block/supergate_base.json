@@ -1,0 +1,9 @@
+{
+  "parent": "minecraft:block/orientable_with_bottom",
+  "textures": {
+    "top": "sgcraft:block/supergateblock",
+    "bottom": "sgcraft:block/supergateblock",
+    "side": "sgcraft:block/supergatering",
+    "front": "sgcraft:block/supergatebase_front"
+  }
+}

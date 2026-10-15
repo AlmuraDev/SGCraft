@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "S": "sgcraft:supergate_ring",
+    "N": "sgcraft:naquadah_ingot",
+    "e": "minecraft:nether_star",
+    "b": "sgcraft:stargate_base",
+    "n": "sgcraft:naquadah_block"
+  },
+  "pattern": [
+    "SeS",
+    "NbN",
+    "SnS"
+  ],
+  "result": {
+    "id": "sgcraft:supergate_base"
+  }
+}

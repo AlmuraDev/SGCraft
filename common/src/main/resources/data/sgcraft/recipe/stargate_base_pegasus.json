@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "g": "minecraft:glowstone_dust",
+    "l": "minecraft:lapis_block",
+    "r": "minecraft:redstone",
+    "b": "sgcraft:stargate_base"
+  },
+  "pattern": [
+    "glg",
+    "rbr",
+    "glg"
+  ],
+  "result": {
+    "id": "sgcraft:stargate_base_pegasus"
+  }
+}

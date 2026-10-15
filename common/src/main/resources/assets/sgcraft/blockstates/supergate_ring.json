@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "merged=false": {
+      "model": "sgcraft:block/supergate_ring"
+    },
+    "merged=true": {
+      "model": "sgcraft:block/supergate_ring"
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "C": "minecraft:chiseled_sandstone",
+    "N": "sgcraft:naquadah_ingot",
+    "S": "minecraft:smooth_sandstone",
+    "g": "minecraft:glowstone_dust",
+    "r": "minecraft:redstone",
+    "p": "minecraft:ender_pearl"
+  },
+  "pattern": [
+    "CgC",
+    "NpN",
+    "SrS"
+  ],
+  "result": {
+    "id": "sgcraft:stargate_chevron"
+  }
+}

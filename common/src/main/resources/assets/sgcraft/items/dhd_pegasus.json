@@ -1,0 +1,10 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "sgcraft:block/dhd",
+    "model": {
+      "type": "sgcraft:dhd",
+      "pegasus": true
+    }
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "g": "minecraft:glowstone_dust",
+    "l": "minecraft:lapis_block",
+    "r": "minecraft:redstone",
+    "d": "sgcraft:dhd"
+  },
+  "pattern": [
+    "glg",
+    "rdr",
+    "glg"
+  ],
+  "result": {
+    "id": "sgcraft:dhd_pegasus"
+  }
+}

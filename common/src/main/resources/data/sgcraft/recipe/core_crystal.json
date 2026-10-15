@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "b": "minecraft:blue_dye",
+    "r": "minecraft:redstone",
+    "d": "minecraft:diamond"
+  },
+  "pattern": [
+    "bbr",
+    "rdb",
+    "brb"
+  ],
+  "result": {
+    "id": "sgcraft:core_crystal"
+  }
+}

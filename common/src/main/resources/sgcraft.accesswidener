@@ -1,0 +1,3 @@
+classTweaker	v1	official
+# Fabric API has no way to register an item's special renderer, so the DHD's goes into vanilla's own list
+accessible	field	net/minecraft/client/renderer/special/SpecialModelRenderers	ID_MAPPER	Lnet/minecraft/util/ExtraCodecs$LateBoundIdMapper;

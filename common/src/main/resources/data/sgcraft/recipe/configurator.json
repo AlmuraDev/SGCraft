@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "r": "minecraft:redstone",
+    "c": "minecraft:comparator",
+    "x": "sgcraft:controller_crystal",
+    "N": "sgcraft:naquadah_ingot",
+    "z": "sgcraft:core_crystal",
+    "b": "minecraft:writable_book"
+  },
+  "pattern": [
+    "rcr",
+    "xNz",
+    "rbr"
+  ],
+  "result": {
+    "id": "sgcraft:configurator"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "r": "minecraft:redstone",
+    "C": "minecraft:clock",
+    "x": "sgcraft:controller_crystal",
+    "L": "minecraft:lever",
+    "z": "sgcraft:core_crystal",
+    "n": "sgcraft:naquadah",
+    "b": "minecraft:writable_book"
+  },
+  "pattern": [
+    "rCr",
+    "xLz",
+    "nbn"
+  ],
+  "result": {
+    "id": "sgcraft:gdo"
+  }
+}

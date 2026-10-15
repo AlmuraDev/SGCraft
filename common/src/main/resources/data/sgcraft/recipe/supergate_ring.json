@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "R": "sgcraft:stargate_ring",
+    "N": "sgcraft:naquadah_ingot",
+    "B": "sgcraft:naquadah_block"
+  },
+  "pattern": [
+    "RNR",
+    "NBN",
+    "RNR"
+  ],
+  "result": {
+    "id": "sgcraft:supergate_ring",
+    "count": 4
+  }
+}

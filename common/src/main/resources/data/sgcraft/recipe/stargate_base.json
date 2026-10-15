@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "C": "minecraft:chiseled_sandstone",
+    "N": "sgcraft:naquadah_ingot",
+    "S": "minecraft:smooth_sandstone",
+    "r": "minecraft:redstone",
+    "e": "minecraft:ender_eye",
+    "c": "sgcraft:core_crystal"
+  },
+  "pattern": [
+    "CrC",
+    "NeN",
+    "ScS"
+  ],
+  "result": {
+    "id": "sgcraft:stargate_base"
+  }
+}

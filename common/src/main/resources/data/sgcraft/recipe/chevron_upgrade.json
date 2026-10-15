@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "g": "minecraft:glowstone_dust",
+    "p": "minecraft:ender_pearl",
+    "N": "sgcraft:naquadah_ingot",
+    "r": "minecraft:redstone"
+  },
+  "pattern": [
+    "g g",
+    "pNp",
+    "r r"
+  ],
+  "result": {
+    "id": "sgcraft:chevron_upgrade"
+  }
+}

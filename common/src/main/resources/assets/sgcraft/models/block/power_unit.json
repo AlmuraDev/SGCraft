@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "sgcraft:block/power_unit_top",
+    "bottom": "sgcraft:block/power_unit_bottom",
+    "side": "sgcraft:block/power_unit_side"
+  }
+}

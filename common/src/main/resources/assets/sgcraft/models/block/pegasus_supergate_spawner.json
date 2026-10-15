@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/cube_all",
+  "textures": {
+    "all": "sgcraft:block/pegasus_supergate_spawner"
+  }
+}

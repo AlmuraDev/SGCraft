@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "sgcraft:block/dhd"
+    },
+    "facing=east": {
+      "model": "sgcraft:block/dhd",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "sgcraft:block/dhd",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "sgcraft:block/dhd",
+      "y": 270
+    }
+  }
+}

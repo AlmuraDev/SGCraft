@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "building",
+  "key": {
+    "e": "minecraft:ender_pearl",
+    "d": "minecraft:diamond",
+    "c": "sgcraft:stargate_chevron",
+    "b": "sgcraft:stargate_base"
+  },
+  "pattern": [
+    "ede",
+    "cbc",
+    "ede"
+  ],
+  "result": {
+    "id": "sgcraft:stargate_base_universe"
+  }
+}

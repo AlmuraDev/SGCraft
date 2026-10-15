@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "minecraft:iron_ingot",
+    "sgcraft:naquadah"
+  ],
+  "result": {
+    "id": "sgcraft:naquadah_ingot"
+  }
+}

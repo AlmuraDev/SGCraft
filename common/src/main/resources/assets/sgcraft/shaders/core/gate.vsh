@@ -20,6 +20,8 @@ layout(push_constant) uniform GatePart {
     vec4 Tint;
     // The block and sky light the part is lit by
     ivec2 Light;
+    // Not 0 if the part shines with its own light, as bright as its tint
+    int Emissive;
 } part;
 
 uniform sampler2D Sampler2;
@@ -38,11 +40,19 @@ void main() {
     sphericalVertexDistance = fog_spherical_distance(position.xyz);
     cylindricalVertexDistance = fog_cylindrical_distance(position.xyz);
 
-    // Both faces are drawn, each lit as it faces
-    vec2 light = minecraft_compute_light(Light0_Direction, Light1_Direction, normalize(mat3(part.ModelMat) * Normal));
-    vertexPerFaceColorBack = minecraft_mix_light_separate(-light, part.Tint);
-    vertexPerFaceColorFront = minecraft_mix_light_separate(light, part.Tint);
+    if (part.Emissive != 0) {
+        // Unshaded, and as bright whatever light it stands in
+        vertexPerFaceColorBack = part.Tint;
+        vertexPerFaceColorFront = part.Tint;
+        lightMapColor = vec4(1.0);
+    } else {
+        // Both faces are drawn, each lit as it faces
+        vec2 light = minecraft_compute_light(Light0_Direction, Light1_Direction,
+                normalize(mat3(part.ModelMat) * Normal));
+        vertexPerFaceColorBack = minecraft_mix_light_separate(-light, part.Tint);
+        vertexPerFaceColorFront = minecraft_mix_light_separate(light, part.Tint);
+        lightMapColor = sample_lightmap(Sampler2, part.Light);
+    }
 
-    lightMapColor = sample_lightmap(Sampler2, part.Light);
     texCoord0 = UV0;
 }

@@ -1,0 +1,18 @@
+{
+    "required": true,
+    "minVersion": "0.8",
+    "package": "com.almuradev.sgcraft.mixin",
+    "compatibilityLevel": "JAVA_25",
+    "mixins": [
+        "ScatteredFeaturePieceAccessor",
+        "StructureMixin",
+        "StructurePiecesBuilderAccessor",
+        "StructureTemplatePoolAccessor"
+    ],
+    "client": [
+        "client.RenderTypeInvoker"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

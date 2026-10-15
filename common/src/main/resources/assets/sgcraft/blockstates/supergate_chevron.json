@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "merged=false": {
+      "model": "sgcraft:block/supergate_chevron"
+    },
+    "merged=true": {
+      "model": "sgcraft:block/supergate_chevron"
+    }
+  }
+}

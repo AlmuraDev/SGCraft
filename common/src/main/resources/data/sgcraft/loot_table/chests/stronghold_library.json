@@ -1,0 +1,28 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": {
+        "type": "minecraft:uniform",
+        "min": 1,
+        "max": 2
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "sgcraft:core_crystal",
+          "weight": 1
+        },
+        {
+          "type": "minecraft:item",
+          "name": "sgcraft:controller_crystal",
+          "weight": 2
+        }
+      ],
+      "condition": {
+        "type": "minecraft:random_chance",
+        "chance": 0.75
+      }
+    }
+  ]
+}

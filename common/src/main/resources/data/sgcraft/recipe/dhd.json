@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "b": "minecraft:stone_button",
+    "O": "minecraft:obsidian",
+    "p": "minecraft:ender_pearl",
+    "c": "sgcraft:controller_crystal"
+  },
+  "pattern": [
+    "bbb",
+    "OpO",
+    "OcO"
+  ],
+  "result": {
+    "id": "sgcraft:dhd"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "o": "minecraft:orange_dye",
+    "r": "minecraft:redstone",
+    "d": "minecraft:diamond"
+  },
+  "pattern": [
+    "roo",
+    "odr",
+    "oor"
+  ],
+  "result": {
+    "id": "sgcraft:controller_crystal"
+  }
+}

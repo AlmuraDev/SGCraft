@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "g": "minecraft:glass_pane",
+    "i": "sgcraft:naquadah_ingot",
+    "p": "sgcraft:pdd",
+    "x": "sgcraft:controller_crystal",
+    "r": "minecraft:redstone"
+  },
+  "pattern": [
+    "ggg",
+    "xpx",
+    "iri"
+  ],
+  "result": {
+    "id": "sgcraft:gate_control_tablet"
+  }
+}

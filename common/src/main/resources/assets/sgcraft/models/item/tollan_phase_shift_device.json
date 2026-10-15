@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "sgcraft:item/tollan_phase_shift_device"
+  }
+}

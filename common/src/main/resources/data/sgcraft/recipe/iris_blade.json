@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "i": "minecraft:iron_ingot",
+    "c": "minecraft:charcoal"
+  },
+  "pattern": [
+    " ii",
+    "ic ",
+    "i  "
+  ],
+  "result": {
+    "id": "sgcraft:iris_blade"
+  }
+}

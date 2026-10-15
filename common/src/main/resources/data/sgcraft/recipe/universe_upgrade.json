@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "e": "minecraft:ender_pearl",
+    "d": "minecraft:diamond",
+    "c": "sgcraft:chevron_upgrade",
+    "n": "sgcraft:core_crystal"
+  },
+  "pattern": [
+    "ede",
+    "cnc",
+    "ede"
+  ],
+  "result": {
+    "id": "sgcraft:universe_upgrade"
+  }
+}

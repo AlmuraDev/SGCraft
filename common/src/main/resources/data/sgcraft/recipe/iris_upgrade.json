@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "b": "sgcraft:iris_blade",
+    "r": "minecraft:redstone"
+  },
+  "pattern": [
+    "bbb",
+    "brb",
+    "bbb"
+  ],
+  "result": {
+    "id": "sgcraft:iris_upgrade"
+  }
+}

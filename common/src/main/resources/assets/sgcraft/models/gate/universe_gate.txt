@@ -1,7 +1,7 @@
 # The raised faces of a Universe (Destiny) gate for a ninth of it, the front of the ring round one chevron
 # and halfway to the next either side (see UniverseGateModel). One face a line: its part (a: chevron, b: arch
 # frames and posts, c: pipes and lattice), then each corner of its outline as degrees clockwise from the
-# chevron's centre, radius and z, in the model's units. Measured from the Destiny gate model by
+# chevron's center, radius and z, in the model's units. Measured from the Destiny gate model by
 # tools/universe/extract.js.
 a -2.3986 2.6220 0.1760 -2.4023 2.6180 0.1287 2.3039 2.6178 0.1287 2.3003 2.6219 0.1760
 a -1.4210 2.9224 0.1883 -1.6029 2.8457 0.1816 -2.4135 2.7639 0.1743 -0.9976 2.8015 0.1778 -0.6939 2.8448 0.1816 -0.6758 2.9217 0.1883 -1.4963 2.9908 0.1943

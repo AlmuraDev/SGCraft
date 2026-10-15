@@ -1,0 +1,21 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "r": "minecraft:redstone",
+    "c": "minecraft:compass",
+    "n": "sgcraft:naquadah",
+    "C": "minecraft:clock",
+    "x": "sgcraft:controller_crystal",
+    "b": "minecraft:writable_book",
+    "z": "sgcraft:core_crystal"
+  },
+  "pattern": [
+    "rcr",
+    "nCn",
+    "xbz"
+  ],
+  "result": {
+    "id": "sgcraft:pdd"
+  }
+}

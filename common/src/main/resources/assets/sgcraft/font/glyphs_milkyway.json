@@ -1,0 +1,16 @@
+{
+  "providers": [
+    {
+      "type": "bitmap",
+      "file": "sgcraft:font/glyphs_milkyway.png",
+      "ascent": 8,
+      "height": 10,
+      "chars": [
+        "ABCDEFGHIJ",
+        "KLMNOPQRST",
+        "UVWXYZ0123",
+        "456789@\u0000\u0000\u0000"
+      ]
+    }
+  ]
+}

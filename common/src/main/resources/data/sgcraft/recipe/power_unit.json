@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "r": "minecraft:emerald",
+    "g": "minecraft:glass_pane",
+    "z": "sgcraft:core_crystal",
+    "I": "minecraft:iron_block",
+    "n": "minecraft:emerald_block"
+  },
+  "pattern": [
+    "rgr",
+    "zIz",
+    "InI"
+  ],
+  "result": {
+    "id": "sgcraft:power_unit"
+  }
+}

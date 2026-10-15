@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/generated",
+  "textures": {
+    "layer0": "sgcraft:item/gate_control_tablet"
+  }
+}
