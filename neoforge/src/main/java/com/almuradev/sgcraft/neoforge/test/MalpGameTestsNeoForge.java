@@ -138,6 +138,9 @@ final class MalpGameTestsNeoForge {
         tests.put("malp_runs_the_end_arena", MalpGameTestsNeoForge::runsEndArena);
         tests.put("malp_keeps_mobs_near_it_from_despawning", MalpGameTestsNeoForge::keepsMobsFromDespawning);
         tests.put("malp_lets_mobs_spawn_near_it", MalpGameTestsNeoForge::spawnsNearMalp);
+        tests.put("malp_burns_in_lava", MalpGameTestsNeoForge::burnsInLava);
+        tests.put("malp_pricked_by_cactus", MalpGameTestsNeoForge::prickedByCactus);
+        tests.put("malp_destroyed_by_explosion", MalpGameTestsNeoForge::explodes);
         tests.put("malp_without_power_drives_on_flat_battery", (helper, origin) ->
                 MalpGameTestsNeoForge.drivesWithoutPower(helper, MalpGameTestsNeoForge.battery(0)));
         tests.put("malp_without_power_drives_without_battery", (helper, origin) ->
@@ -1001,6 +1004,45 @@ final class MalpGameTestsNeoForge {
         helper.succeedWhen(() -> {
             helper.assertTrue(spawned.get() != null, "Nothing spawned near the MALP");
             spawned.get().discard();
+            malp.discard();
+        });
+    }
+
+    // Lava burns a MALP as it would anything, and destroys it
+    private static void burnsInLava(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final BlockPos at = MalpGameTestsNeoForge.inside(helper, 4, 8);
+        level.setBlock(at, Blocks.LAVA.defaultBlockState(), Block.UPDATE_ALL);
+        final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at), BatteryItem.capacity(),
+                GlobalPos.of(level.dimension(), origin));
+        helper.succeedWhen(() -> helper.assertTrue(malp.isRemoved(), "The MALP is still whole in lava"));
+    }
+
+    // An explosion beside a MALP destroys it
+    private static void explodes(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final BlockPos at = MalpGameTestsNeoForge.inside(helper, 12, 8);
+        final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at), BatteryItem.capacity(),
+                GlobalPos.of(level.dimension(), origin));
+        helper.runAfterDelay(5, () -> level.explode(null, malp.getX() + 1.5, malp.getY() + 0.5, malp.getZ(), 4,
+                Level.ExplosionInteraction.NONE));
+        helper.runAfterDelay(6, () -> helper.succeedWhen(() -> helper.assertTrue(malp.isRemoved(),
+                "The MALP survived the explosion")));
+    }
+
+    // A cactus pricks a MALP that drives into it
+    private static void prickedByCactus(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final BlockPos at = MalpGameTestsNeoForge.inside(helper, 4, 12);
+        level.setBlock(at.below(), Blocks.SAND.defaultBlockState(), Block.UPDATE_ALL);
+        level.setBlock(at, Blocks.CACTUS.defaultBlockState(), Block.UPDATE_ALL);
+        final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.west()),
+                BatteryItem.capacity(), GlobalPos.of(level.dimension(), origin));
+        // A yaw of -90 faces east, into the cactus
+        malp.setYRot(-90);
+        helper.onEachTick(() -> malp.drive(1, 0));
+        helper.succeedWhen(() -> {
+            helper.assertTrue(malp.getDamage() > 0 || malp.isRemoved(), "The cactus didn't hurt the MALP");
             malp.discard();
         });
     }

@@ -359,6 +359,8 @@ public final class MalpEntity extends VehicleEntity implements RemoteViewSource 
         this.setDeltaMovement(motion);
         final Vec3 before = this.position();
         this.move(MoverType.SELF, this.getDeltaMovement());
+        // The blocks it moved through act on it as on any creature: lava and fire burn it, cactus pricks it
+        this.applyEffectsFromBlocks();
         if (this.onGround()) {
             this.setDeltaMovement(this.getDeltaMovement().multiply(1, 0, 1));
         }
