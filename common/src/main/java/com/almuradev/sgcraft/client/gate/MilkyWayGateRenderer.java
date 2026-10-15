@@ -51,7 +51,7 @@ public final class MilkyWayGateRenderer implements GateTypeRenderer {
     // The warm orange its chevrons light the gate with, how bright their glow is at most, and how far it reaches, in
     // the half size of a chevron's lights
     private static final int GLOW = ARGB.color(255, 150, 50);
-    private static final float CHEVRON_GLOW = 0.4F;
+    private static final float CHEVRON_GLOW = 0.2F;
     private static final double CHEVRON_REACH = 2.6;
 
     private static final Identifier[] METALS = {

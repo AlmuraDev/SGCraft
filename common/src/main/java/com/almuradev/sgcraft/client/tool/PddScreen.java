@@ -56,6 +56,10 @@ public final class PddScreen extends Screen {
     private static final int LIST_WIDTH = 320;
     private static final int ROW = 24;
     private static final int REFRESH_TICKS = 20;
+    // The screen's bottom margin, the space the boxes and buttons take below the list, and the strip above the boxes
+    // where the list's count is written
+    private static final int BOTTOM = 100;
+    private static final int COUNT_HEIGHT = 12;
 
     private PddState state;
     private @Nullable Entries list;
@@ -84,8 +88,9 @@ public final class PddScreen extends Screen {
     @Override
     protected void init() {
         final int left = (this.width - PddScreen.LIST_WIDTH) / 2;
-        final int bottom = this.height - 100;
-        this.list = this.addRenderableWidget(new Entries(this.minecraft, PddScreen.LIST_WIDTH, bottom - 40, 40));
+        final int bottom = this.height - PddScreen.BOTTOM;
+        this.list = this.addRenderableWidget(new Entries(this.minecraft, PddScreen.LIST_WIDTH,
+                bottom - 40 - PddScreen.COUNT_HEIGHT, 40));
         this.list.setX(left);
         this.list.fill(this.state.entries(), "");
         this.name = this.addRenderableWidget(new EditBox(this.font, left, bottom + 6, 180, 20,
@@ -201,6 +206,12 @@ public final class PddScreen extends Screen {
         graphics.centeredText(this.font, gate, this.width / 2, 22, 0xFFAAAAAA);
         if (!this.state.message().isEmpty()) {
             graphics.centeredText(this.font, this.state.message(), this.width / 2, this.height - 16, 0xFFFF6060);
+        }
+        if (this.list != null) {
+            final Component count = Component.translatableWithFallback("screen.sgcraft.pdd.addresses_count",
+                    "Addresses: %s", this.state.entries().size());
+            graphics.text(this.font, count, this.list.getX() + 2,
+                    this.height - PddScreen.BOTTOM - PddScreen.COUNT_HEIGHT + 2, 0xFF808080);
         }
     }
 

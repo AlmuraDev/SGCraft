@@ -65,6 +65,7 @@ import com.almuradev.sgcraft.gate.GateFormation;
 import com.almuradev.sgcraft.gate.FluidSpill;
 import com.almuradev.sgcraft.gate.GateFrame;
 import com.almuradev.sgcraft.gate.GateLight;
+import com.almuradev.sgcraft.gate.GateOrientation;
 import com.almuradev.sgcraft.gate.GateShape;
 import com.almuradev.sgcraft.item.SGDataComponents;
 import com.almuradev.sgcraft.item.SGItems;
@@ -227,6 +228,12 @@ public final class SGGameTests {
         SGGameTests.TESTS.put("breaking_an_open_gate_explodes", SGGameTests::breach);
         SGGameTests.TESTS.put("type_upgrade_changes_gate", SGGameTests::typeUpgrade);
         SGGameTests.TESTS.put("open_gate_gives_light", SGGameTests::gateGivesLight);
+        SGGameTests.TESTS.put("flat_gate_forms_face_up", SGGameTests::flatGateForms);
+        SGGameTests.TESTS.put("flat_gate_turns_face_down", SGGameTests::flatGateTurns);
+        SGGameTests.TESTS.put("flat_gate_travels_to_standing_gate", SGGameTests::flatToStanding);
+        SGGameTests.TESTS.put("standing_gate_travels_to_flat_gate", SGGameTests::standingToFlat);
+        SGGameTests.TESTS.put("face_down_gate_takes_heads_first", SGGameTests::headFirst);
+        SGGameTests.TESTS.put("horizon_lies_in_flat_opening", SGGameTests::flatHorizon);
     }
 
     private SGGameTests() {
@@ -723,7 +730,7 @@ public final class SGGameTests {
                 gate.position().pos(), "sgcraft:pegasus",
                 8, List.of(new ToolPayloads.Change("sgcraft:open_ticks", Optional.of("1234")),
                         new ToolPayloads.Change("sgcraft:iris", Optional.of("\"sgcraft:metal\"")),
-                        new ToolPayloads.Change("sgcraft:one_way_travel", Optional.of("false"))), "", false));
+                        new ToolPayloads.Change("sgcraft:one_way_travel", Optional.of("false"))), "", false, ""));
         helper.assertTrue(gate.type().is(GateTypes.PEGASUS), "The type didn't change");
         helper.assertTrue(gate.chevrons() == 8, "The chevrons didn't change");
         helper.assertTrue(gate.get(GateProperties.OPEN_TICKS).orElse(0) == 1234, "The open time didn't change");
@@ -733,7 +740,7 @@ public final class SGGameTests {
         ToolActions.configurator(player, new ToolPayloads.ConfiguratorApply(
                 gate.position().dimension().identifier().toString(),
                 gate.position().pos(), "", 0,
-                List.of(new ToolPayloads.Change("sgcraft:open_ticks", Optional.empty())), "", false));
+                List.of(new ToolPayloads.Change("sgcraft:open_ticks", Optional.empty())), "", false, ""));
         helper.assertTrue(gate.get(GateProperties.OPEN_TICKS).orElse(0) == 6000, "Clearing didn't restore the default");
         helper.succeed();
     }
@@ -776,7 +783,7 @@ public final class SGGameTests {
         final ServerLevel level = helper.getLevel();
         final BlockPos base = origin.offset(SGGameTests.A);
         level.getChunk(base);
-        GateFormation.buildRing(level, base, Direction.NORTH, GateShape.supergate(5));
+        GateFormation.buildRing(level, new GateFrame(base, Direction.NORTH, GateShape.supergate(5)));
         level.setBlock(base, SGBlocks.SUPERGATE_BASE.defaultBlockState()
                 .setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH), Block.UPDATE_ALL);
         final Optional<Stargate> gate = SGCraftApi.get().stargates().at(GlobalPos.of(level.dimension(), base));
@@ -1506,6 +1513,208 @@ public final class SGGameTests {
             helper.assertTrue(level.getBlockState(top).getLightEmission(level, top) == 0,
                     "A's ring still gives light");
             helper.assertTrue(level.getBlockState(middle).isAir(), "A's opening wasn't emptied");
+        });
+    }
+
+    // A gate lying flat at a base facing north, its ring running south from it
+    private static Stargate placeFlat(final GameTestHelper helper, final BlockPos at, final FrontAndTop orientation) {
+        final PlacementResult result = SGCraftApi.get().stargates().place(GatePlacement.builder()
+                .position(GlobalPos.of(helper.getLevel().dimension(), at)).orientation(orientation)
+                .type(SGGameTests.type(helper, GateTypes.MILKY_WAY))
+                .chevrons(9).mode(PlacementMode.FORCE).noFixtures().build(), SGGameTests.server(helper));
+        if (result.status() != PlacementResult.Status.PLACED) {
+            throw helper.assertionException(Component.literal("Placing a flat gate failed: " + result.status()
+                    + " " + result.reason().map(Component::getString).orElse("")));
+        }
+        return result.gate().orElseThrow();
+    }
+
+    // A ring laid flat by hand behind a base forms facing up, its ring at the base's height
+    private static void flatGateForms(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final BlockPos base = origin.offset(SGGameTests.A);
+        level.getChunk(base);
+        GateFormation.buildRing(level, new GateFrame(base, Direction.NORTH, GateOrientation.FACE_UP,
+                GateShape.STANDARD));
+        level.setBlock(base, SGBlocks.STARGATE_BASE.defaultBlockState()
+                .setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH), Block.UPDATE_ALL);
+        final Optional<Stargate> gate = SGCraftApi.get().stargates().at(GlobalPos.of(level.dimension(), base));
+        helper.assertTrue(gate.isPresent(), "The flat ring didn't form");
+        helper.assertTrue(gate.get().orientation() == FrontAndTop.UP_SOUTH,
+                "The flat gate formed " + gate.get().orientation() + ", not facing up");
+        // The top of the ring is four blocks behind the base, at its height
+        final BlockState top = level.getBlockState(base.south(4));
+        helper.assertTrue(top.is(SGBlocks.STARGATE_CHEVRON) && top.getValue(RingBlock.MERGED),
+                "The top of the ring isn't a merged chevron: " + top);
+        helper.assertTrue(SGCraftApi.get().stargates().at(GlobalPos.of(level.dimension(), base.south(4).west(2)))
+                .isPresent(), "The flat ring's corner isn't part of the gate");
+        helper.assertTrue(level.getBlockEntity(base) instanceof StargateBaseBlockEntity entity
+                && entity.orientation() == GateOrientation.FACE_UP, "The base doesn't hold the gate lying face up");
+        helper.succeed();
+    }
+
+    // The configurator, the command and the API turn a flat gate face down and up; one standing doesn't turn, and a
+    // flat ring broken and mended forms as it was turned
+    private static void flatGateTurns(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final Stargate gate = SGGameTests.placeFlat(helper, origin.offset(SGGameTests.A), FrontAndTop.UP_SOUTH);
+        final BlockPos base = gate.position().pos();
+        final ServerPlayer player = SGGameTests.playerAt(helper, gate);
+        ToolActions.configurator(player, new ToolPayloads.ConfiguratorApply(
+                gate.position().dimension().identifier().toString(), base, "", 0, List.of(), "", false,
+                "face_down"));
+        helper.assertTrue(gate.orientation() == FrontAndTop.DOWN_SOUTH,
+                "The configurator didn't turn the gate face down: " + gate.orientation());
+        helper.assertTrue(level.getBlockEntity(base) instanceof StargateBaseBlockEntity entity
+                && entity.orientation() == GateOrientation.FACE_DOWN, "The base doesn't hold the gate face down");
+        level.getServer().getCommands().performPrefixedCommand(level.getServer().createCommandSourceStack()
+                .withLevel(level).withSuppressedOutput(), "sgcraft gate " + base.getX() + " " + base.getY() + " "
+                + base.getZ() + " orientation face_up");
+        helper.assertTrue(gate.orientation() == FrontAndTop.UP_SOUTH,
+                "The command didn't turn the gate face up: " + gate.orientation());
+        final Cause cause = SGGameTests.server(helper);
+        helper.assertTrue(gate.setOrientation(FrontAndTop.DOWN_SOUTH, cause) == ActionResult.DONE,
+                "The API didn't turn the gate face down");
+        helper.assertTrue(gate.setOrientation(FrontAndTop.DOWN_SOUTH, cause) == ActionResult.NO_CHANGE,
+                "Turning the gate the way it lies changed it");
+        helper.assertTrue(gate.setOrientation(FrontAndTop.DOWN_NORTH, cause) == ActionResult.NOT_POSSIBLE
+                && gate.setOrientation(FrontAndTop.SOUTH_UP, cause) == ActionResult.NOT_POSSIBLE,
+                "The flat gate turned off its ring");
+        final Stargate standing = SGGameTests.place(helper, origin.offset(SGGameTests.B), 9);
+        helper.assertTrue(standing.setOrientation(FrontAndTop.UP_SOUTH, cause) == ActionResult.NOT_POSSIBLE,
+                "A standing gate lay down");
+        final BlockPos top = base.south(4);
+        level.destroyBlock(top, false);
+        helper.assertTrue(SGCraftApi.get().stargates().at(gate.position()).isEmpty(),
+                "The gate is still known after its ring broke");
+        level.setBlock(top, SGBlocks.STARGATE_CHEVRON.defaultBlockState(), Block.UPDATE_ALL);
+        final Optional<Stargate> mended = SGCraftApi.get().stargates().at(gate.position());
+        helper.assertTrue(mended.isPresent() && mended.get().orientation() == FrontAndTop.DOWN_SOUTH,
+                "The mended ring didn't form face down: " + mended.map(Stargate::orientation));
+        final Stargate down = SGGameTests.placeFlat(helper, origin.offset(SGGameTests.B).offset(0, 0, 16),
+                FrontAndTop.DOWN_SOUTH);
+        helper.assertTrue(down.orientation() == FrontAndTop.DOWN_SOUTH,
+                "A gate placed face down lies " + down.orientation());
+        helper.succeed();
+    }
+
+    // A pig dropped into flat gate A comes out of standing gate B
+    private static void flatToStanding(final GameTestHelper helper, final BlockPos origin) {
+        final Stargate a = SGGameTests.placeFlat(helper, origin.offset(SGGameTests.A), FrontAndTop.UP_SOUTH);
+        final Stargate b = SGGameTests.place(helper, origin.offset(SGGameTests.B), 9);
+        SGGameTests.crossingBetween(helper, a, b, new GateFrame(a.position().pos(), Direction.NORTH,
+                GateOrientation.FACE_UP, GateShape.STANDARD), new Vec3(0, 2, 0.8), new Vec3(0, 2, -0.4));
+    }
+
+    // A pig walked into standing gate A comes out under gate B, which lies face down, head first
+    private static void standingToFlat(final GameTestHelper helper, final BlockPos origin) {
+        final Stargate a = SGGameTests.place(helper, origin.offset(SGGameTests.A), 9);
+        final Stargate b = SGGameTests.placeFlat(helper, origin.offset(SGGameTests.B), FrontAndTop.DOWN_SOUTH);
+        SGGameTests.crossingBetween(helper, a, b, new GateFrame(a.position().pos(), Direction.NORTH),
+                new Vec3(0, 1, 0.8), new Vec3(0, 1, -0.4));
+    }
+
+    // A pig rising into gate A, which lies face down, goes through once its head is past the horizon, its feet still
+    // below it
+    private static void headFirst(final GameTestHelper helper, final BlockPos origin) {
+        final Stargate a = SGGameTests.placeFlat(helper, origin.offset(SGGameTests.A), FrontAndTop.DOWN_SOUTH);
+        final Stargate b = SGGameTests.place(helper, origin.offset(SGGameTests.B), 9);
+        SGGameTests.crossingBetween(helper, a, b, new GateFrame(a.position().pos(), Direction.NORTH,
+                GateOrientation.FACE_DOWN, GateShape.STANDARD), new Vec3(0, 2, 2.0), new Vec3(0, 2, 0.6));
+    }
+
+    // A pig set in front of gate A, then just past its horizon, once the wormhole to B is open, comes out of B's
+    // front: above a gate facing up, below one facing down. It flies on as fast as it was moved, so where it came out
+    // is taken as it arrives.
+    private static void crossingBetween(final GameTestHelper helper, final Stargate a, final Stargate b,
+            final GateFrame near, final Vec3 front, final Vec3 behind) {
+        a.set(GateProperties.REQUIRES_POWER, false, SGGameTests.server(helper));
+        a.set(GateProperties.OPENING_DAMAGE, false, SGGameTests.server(helper));
+        final AtomicReference<DialResult> result = new AtomicReference<>();
+        final AtomicInteger arrived = new AtomicInteger();
+        final AtomicReference<Vec3> arrival = new AtomicReference<>();
+        final EventBus.Registration listener = SGCraftApi.get().eventBus().register(TravelEvent.Post.class,
+                event -> {
+                    if (event.gate().equals(a)) {
+                        arrived.incrementAndGet();
+                        arrival.set(event.traveler().position());
+                    }
+                });
+        a.dial(SGGameTests.addressOf(b, a), DialMode.QUICK, SGGameTests.server(helper)).thenAccept(result::set);
+        final AtomicReference<Mob> pig = new AtomicReference<>();
+        helper.runAfterDelay(SGIris.MOVE_TICKS + 60, () -> {
+            helper.assertTrue(result.get() == DialResult.CONNECTED, "The dial ended " + result.get());
+            final Mob spawned = helper.spawnWithNoFreeWill(EntityTypes.PIG, BlockPos.ZERO.above());
+            spawned.setNoGravity(true);
+            final Vec3 at = near.toWorld(front);
+            spawned.setPos(at.x, at.y, at.z);
+            pig.set(spawned);
+        });
+        helper.runAfterDelay(SGIris.MOVE_TICKS + 63, () -> {
+            final Vec3 at = near.toWorld(behind);
+            pig.get().setPos(at.x, at.y, at.z);
+        });
+        helper.runAfterDelay(SGIris.MOVE_TICKS + 70, () -> {
+            listener.unregister();
+            helper.assertTrue(arrived.get() == 1 && pig.get().isAlive() && new AABB(b.position().pos()).inflate(4)
+                    .contains(arrival.get()), "The traveler didn't come out of gate B: " + arrived.get()
+                    + " arrived, at " + arrival.get() + ", B at " + b.position().pos().toShortString());
+            final double baseY = b.position().pos().getY() + 0.5;
+            if (b.orientation() == FrontAndTop.DOWN_SOUTH) {
+                helper.assertTrue(arrival.get().y + pig.get().getBbHeight() < baseY,
+                        "The traveler came out of B's back: at " + arrival.get());
+            } else {
+                helper.assertTrue(new GateFrame(b.position().pos(), Direction.NORTH).toLocal(arrival.get()).z > 0,
+                        "The traveler came out of B's back: at " + arrival.get());
+            }
+            helper.succeed();
+        });
+    }
+
+    // Open, a flat gate's horizon fills its opening at the base's height, facing up or down as the gate does, and
+    // lights it and the ring under its chevrons; closed, the opening is empty again
+    private static void flatHorizon(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final Stargate a = SGGameTests.placeFlat(helper, origin.offset(SGGameTests.A), FrontAndTop.UP_SOUTH);
+        final Stargate b = SGGameTests.placeFlat(helper, origin.offset(SGGameTests.B), FrontAndTop.DOWN_SOUTH);
+        a.set(GateProperties.REQUIRES_POWER, false, SGGameTests.server(helper));
+        a.set(GateProperties.OPENING_DAMAGE, false, SGGameTests.server(helper));
+        final GateFrame near = new GateFrame(a.position().pos(), Direction.NORTH, GateOrientation.FACE_UP,
+                GateShape.STANDARD);
+        final GateFrame far = new GateFrame(b.position().pos(), Direction.NORTH, GateOrientation.FACE_DOWN,
+                GateShape.STANDARD);
+        final AtomicReference<DialResult> result = new AtomicReference<>();
+        final AtomicBoolean closed = new AtomicBoolean();
+        a.dial(SGGameTests.addressOf(b, a), DialMode.QUICK, SGGameTests.server(helper)).thenAccept(result::set);
+        helper.succeedWhen(() -> {
+            if (!closed.get()) {
+                helper.assertTrue(result.get() == DialResult.CONNECTED, "The gates haven't connected");
+                for (final GateFrame frame : List.of(near, far)) {
+                    final Direction faces = frame == near ? Direction.UP : Direction.DOWN;
+                    for (int x = -1; x <= 1; x++) {
+                        for (int y = 1; y <= 3; y++) {
+                            final BlockPos pos = frame.block(x, y, 0);
+                            final BlockState horizon = level.getBlockState(pos);
+                            helper.assertTrue(pos.getY() == frame.block(0, 0, 0).getY()
+                                    && horizon.is(SGBlocks.EVENT_HORIZON)
+                                    && horizon.getValue(BlockStateProperties.FACING) == faces,
+                                    "The opening at " + pos.toShortString() + " isn't a horizon facing " + faces
+                                            + ": " + horizon);
+                        }
+                    }
+                    helper.assertTrue(!level.getBlockState(frame.block(0, 2, 1)).is(SGBlocks.EVENT_HORIZON),
+                            "The horizon reaches out of the flat opening");
+                }
+                final BlockPos top = near.block(0, 4, 0);
+                helper.assertTrue(level.getBlockState(top).getLightEmission(level, top) == GateLight.CHEVRON,
+                        "A's top chevron doesn't light its flat ring");
+                helper.assertTrue(level.getBrightness(LightLayer.BLOCK, near.block(0, 2, 2)) > 0,
+                        "Nothing above A is lit");
+                a.disconnect(SGGameTests.server(helper));
+                closed.set(true);
+            }
+            helper.assertTrue(a.state() == GateState.IDLE, "A hasn't closed");
+            helper.assertTrue(level.getBlockState(near.block(0, 2, 0)).isAir(), "A's opening wasn't emptied");
         });
     }
 }

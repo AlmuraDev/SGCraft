@@ -337,10 +337,11 @@ public final class ToolPayloads {
      * @param typeNames each type's name as players see it, as JSON, in the same order as {@code types}
      * @param message something to tell the player, or empty
      * @param fePerEnergy how many FE a power unit gives for one unit of gate energy
+     * @param orientation whether the gate stands or lies flat, by its serialized name
      */
     public record ConfiguratorState(boolean open, GateInfo gate, int chevrons, List<String> types,
             String world, List<String> typeNames, List<Property> properties, List<Named> players, String message,
-            double fePerEnergy)
+            double fePerEnergy, String orientation)
             implements SGPacket {
 
         public static final Type<ConfiguratorState> TYPE = new Type<>(SGCraft.id("configurator_state"));
@@ -350,7 +351,7 @@ public final class ToolPayloads {
                     SGPacket.readList(buf, FriendlyByteBuf::readUtf), buf.readUtf(),
                     SGPacket.readList(buf, FriendlyByteBuf::readUtf),
                     SGPacket.readList(buf, Property::new),
-                    SGPacket.readList(buf, Named::new), buf.readUtf(), buf.readDouble());
+                    SGPacket.readList(buf, Named::new), buf.readUtf(), buf.readDouble(), buf.readUtf());
         }
 
         @Override
@@ -365,6 +366,7 @@ public final class ToolPayloads {
             SGPacket.writeList(buf, this.players, (out, player) -> player.write(out));
             buf.writeUtf(this.message);
             buf.writeDouble(this.fePerEnergy);
+            buf.writeUtf(this.orientation);
         }
 
         @Override
@@ -393,16 +395,18 @@ public final class ToolPayloads {
      * @param chevrons the chevrons to change to, or 0 to leave them
      * @param addPlayer the name of a player to list with the gate's default rights, or empty
      * @param refresh true to change nothing and only send the state again
+     * @param orientation the way to turn a gate lying flat, face up or face down by its serialized name, or empty to
+     *     leave it
      */
     public record ConfiguratorApply(String world, BlockPos gate, String gateType, int chevrons, List<Change> changes,
-            String addPlayer, boolean refresh) implements SGPacket {
+            String addPlayer, boolean refresh, String orientation) implements SGPacket {
 
         public static final Type<ConfiguratorApply> TYPE = new Type<>(SGCraft.id("configurator_apply"));
 
         public ConfiguratorApply(final FriendlyByteBuf buf) {
             this(buf.readUtf(), buf.readBlockPos(), buf.readUtf(), buf.readVarInt(),
                     SGPacket.readList(buf, Change::new),
-                    buf.readUtf(), buf.readBoolean());
+                    buf.readUtf(), buf.readBoolean(), buf.readUtf());
         }
 
         @Override
@@ -414,6 +418,7 @@ public final class ToolPayloads {
             SGPacket.writeList(buf, this.changes, (out, change) -> change.write(out));
             buf.writeUtf(this.addPlayer);
             buf.writeBoolean(this.refresh);
+            buf.writeUtf(this.orientation);
         }
 
         @Override

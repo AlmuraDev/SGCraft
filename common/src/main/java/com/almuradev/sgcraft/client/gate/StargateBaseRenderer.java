@@ -33,7 +33,8 @@ import com.almuradev.sgcraft.gate.ChevronOrder;
 import com.almuradev.sgcraft.gate.ChevronSpacing;
 import com.almuradev.sgcraft.gate.DialPhase;
 import com.almuradev.sgcraft.gate.EventHorizon;
-import com.almuradev.sgcraft.gate.GateLight;
+import com.almuradev.sgcraft.gate.GateFrame;
+import com.almuradev.sgcraft.gate.GateOrientation;
 import com.almuradev.sgcraft.gate.GateShape;
 import com.almuradev.sgcraft.gate.IrisView;
 import com.almuradev.sgcraft.mod.SGIris;
@@ -66,8 +67,10 @@ import java.util.Optional;
 /**
  * Draws a formed gate from its base, by its type's {@link GateTypeRenderer}.
  *
- * <p>The gate is drawn in its own frame: its center two blocks above the middle of the base, x to its right as seen
- * from in front, y up, and its front towards +z, turned to face the way the base does.</p>
+ * <p>The gate is drawn in its own frame (see {@link GateFrame}): its center up its ring from the middle of the base,
+ * x to its right as seen from in front, y up its ring, and its front towards +z. The base's frame is turned to face
+ * the way the base does, then, for a gate lying flat, turned over so the ring runs out along the base's back, its
+ * front up or down, as the original turns it.</p>
  */
 public final class StargateBaseRenderer
         implements BlockEntityRenderer<StargateBaseBlockEntity, StargateBaseRenderState> {
@@ -77,11 +80,10 @@ public final class StargateBaseRenderer
 
 
     private static final Identifier HORIZON = SGCraft.id("textures/gate/event_horizon.png");
-    // The glow over an open horizon, in the gate's color: how bright it is, how much of that rises and falls with the
-    // horizon's waves, how far it reaches from the center, past the ring, how far in front of and behind the gate it
-    // lies, out of the ring, and how long it takes to fade as the wormhole shuts, in ticks
-    private static final float HORIZON_GLOW = 0.2F;
-    private static final float HORIZON_GLOW_SWING = 0.1F;
+    // The glow over an open horizon, in the gate's color: how bright it is, how far it reaches from the center, past
+    // the ring, how far in front of and behind the gate it lies, out of the ring, and how long it takes to fade as the
+    // wormhole shuts, in ticks
+    private static final float HORIZON_GLOW = 0.1F;
     private static final double HORIZON_GLOW_REACH = 3.0;
     private static final double HORIZON_GLOW_DEPTH = 0.15;
     private static final double HORIZON_GLOW_FADE_TICKS = 40;
@@ -108,7 +110,8 @@ public final class StargateBaseRenderer
         state.shape = gate.shape();
         state.gateType = gate.gateType();
         state.facing = gate.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
-        // After the facing, which says which way the bottom row runs
+        state.orientation = gate.orientation();
+        // After the facing, which says which way the bottom row runs, and the orientation, as a flat gate has none
         StargateBaseRenderer.extractCamouflage(gate, state);
         state.chevrons = gate.chevrons();
         state.spacing = ChevronSpacing.of(gate.chevrons(), gate.camouflage());
@@ -134,7 +137,7 @@ public final class StargateBaseRenderer
         // The base is solid, so it has no light of its own; the gate is lit as the middle of its ring is
         if (gate.getLevel() != null) {
             state.lightCoords = LightCoordsUtil.getLightCoords(gate.getLevel(),
-                    gate.getBlockPos().above(gate.shape().radius()));
+                    gate.frame().block(0, gate.shape().radius(), 0));
         }
     }
 
@@ -151,6 +154,13 @@ public final class StargateBaseRenderer
         poseStack.pushPose();
         poseStack.translate(0.5, 0.5, 0.5);
         poseStack.rotateDegrees(Axis.YP, -state.facing.toYRot());
+        // From the base's frame into the gate's: lying flat, its ring runs out along the base's back
+        if (state.orientation == GateOrientation.FACE_UP) {
+            poseStack.rotateDegrees(Axis.XP, -90.0F);
+        } else if (state.orientation == GateOrientation.FACE_DOWN) {
+            poseStack.rotateDegrees(Axis.ZP, 180.0F);
+            poseStack.rotateDegrees(Axis.XP, -90.0F);
+        }
         poseStack.translate(0.0, state.shape.centerY(), 0.0);
         // A supergate is a standard gate scaled up to its blocks, but only as thick as them, as in the original
         final double scale = state.shape.scale();
@@ -189,13 +199,11 @@ public final class StargateBaseRenderer
                 });
     }
 
-    // A soft glow in the gate's color over its open horizon, on both faces, rising and falling with the horizon's
-    // waves as its light does; an iris shuts it off, and it fades as the wormhole shuts down
+    // A soft, steady glow in the gate's color over its open horizon, on both faces; an iris shuts it off, and it fades
+    // as the wormhole shuts down
     private static void submitHorizonGlow(final StargateBaseRenderState state, final int color,
             final PoseStack poseStack, final SubmitNodeCollector collector) {
-        double strength = StargateBaseRenderer.HORIZON_GLOW
-                + StargateBaseRenderer.HORIZON_GLOW_SWING * GateLight.wave(state.time, 0);
-        strength *= state.irisAperture;
+        double strength = StargateBaseRenderer.HORIZON_GLOW * state.irisAperture;
         if (state.view.phase() == DialPhase.DISCONNECTING) {
             strength *= Math.max(0, 1 - (state.time - state.view.phaseStart())
                     / StargateBaseRenderer.HORIZON_GLOW_FADE_TICKS);
@@ -240,7 +248,8 @@ public final class StargateBaseRenderer
     private static void extractCamouflage(final StargateBaseBlockEntity gate, final StargateBaseRenderState state) {
         final Direction right = state.facing.getCounterClockWise();
         for (int slot = 0; slot < StargateBaseBlockEntity.CAMOUFLAGE_SLOTS; slot++) {
-            final Optional<BlockState> block = gate.isFormed() ? gate.camouflageState(slot) : Optional.empty();
+            final Optional<BlockState> block = gate.isFormed() && !state.orientation.isFlat()
+                    ? gate.camouflageState(slot) : Optional.empty();
             if (block.isEmpty() || !(gate.getLevel() instanceof ClientLevel level)) {
                 state.camouflage[slot] = null;
                 continue;
@@ -274,14 +283,16 @@ public final class StargateBaseRenderer
     }
 
     /**
-     * The space the whole gate can take up, whichever way it faces, so it isn't culled while any of it is in view.
-     * NeoForge culls block entities by this box; it isn't part of the vanilla interface, so there is no
+     * The space the whole gate can take up, whichever way it faces or lies, so it isn't culled while any of it is in
+     * view. NeoForge culls block entities by this box; it isn't part of the vanilla interface, so there is no
      * {@code @Override}.
      */
     public AABB getRenderBoundingBox(final StargateBaseBlockEntity gate) {
         final GateShape shape = gate.shape();
+        final GateFrame frame = gate.frame();
         final double half = shape.radius() + 1.0;
-        return new AABB(gate.getBlockPos()).inflate(half, 0.0, half).expandTowards(0.0, shape.height() - 1, 0.0);
+        // Round the ring, and out of either face by half its width
+        return frame.box(new Vec3(-half, -0.5, -half), new Vec3(half, shape.height() - 0.5, half));
     }
 
     @Override

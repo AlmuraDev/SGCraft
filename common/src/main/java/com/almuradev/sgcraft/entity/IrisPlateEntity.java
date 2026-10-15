@@ -52,12 +52,15 @@ import org.jspecify.annotations.Nullable;
  */
 public final class IrisPlateEntity extends Entity {
 
-    // How far the plate reaches across the gate and up it from its middle, and the way the gate faces
+    // How far the plate reaches across the gate and up it from its middle, the way the gate's front faces, and the
+    // way the top of its ring points
     private static final EntityDataAccessor<Float> HALF_WIDTH = SynchedEntityData.defineId(IrisPlateEntity.class,
             EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Float> HALF_HEIGHT = SynchedEntityData.defineId(IrisPlateEntity.class,
             EntityDataSerializers.FLOAT);
     private static final EntityDataAccessor<Direction> FACING = SynchedEntityData.defineId(IrisPlateEntity.class,
+            EntityDataSerializers.DIRECTION);
+    private static final EntityDataAccessor<Direction> TOP = SynchedEntityData.defineId(IrisPlateEntity.class,
             EntityDataSerializers.DIRECTION);
     // How thick the plate is, from just behind the blades to just in front of them
     private static final double HALF_DEPTH = 0.15;
@@ -76,15 +79,17 @@ public final class IrisPlateEntity extends Entity {
      * Makes a plate for a gate's iris.
      *
      * @param middle where the plate's middle is, which it stands at
-     * @param facing the way the gate faces
+     * @param facing the way the gate's front faces
+     * @param top the way the top of the gate's ring points: up, unless the gate lies flat
      * @param halfWidth how far the plate reaches either way across the gate
-     * @param halfHeight how far it reaches up and down
+     * @param halfHeight how far it reaches up and down the gate's ring
      * @param base the gate's base, which the plate checks is still there
      */
     public static IrisPlateEntity create(final ServerLevel level, final Vec3 middle, final Direction facing,
-            final double halfWidth, final double halfHeight, final BlockPos base) {
+            final Direction top, final double halfWidth, final double halfHeight, final BlockPos base) {
         final IrisPlateEntity plate = new IrisPlateEntity(SGEntityTypes.IRIS_PLATE, level);
         plate.entityData.set(IrisPlateEntity.FACING, facing);
+        plate.entityData.set(IrisPlateEntity.TOP, top);
         plate.entityData.set(IrisPlateEntity.HALF_WIDTH, (float) halfWidth);
         plate.entityData.set(IrisPlateEntity.HALF_HEIGHT, (float) halfHeight);
         plate.base = base;
@@ -97,6 +102,7 @@ public final class IrisPlateEntity extends Entity {
         builder.define(IrisPlateEntity.HALF_WIDTH, 0F);
         builder.define(IrisPlateEntity.HALF_HEIGHT, 0F);
         builder.define(IrisPlateEntity.FACING, Direction.NORTH);
+        builder.define(IrisPlateEntity.TOP, Direction.UP);
     }
 
     @Override
@@ -105,18 +111,25 @@ public final class IrisPlateEntity extends Entity {
         this.setBoundingBox(this.makeBoundingBox(this.position()));
     }
 
-    // Across the gate and up it by the plate's size, and through it by its thickness
+    // Across the gate and up its ring by the plate's size, and through it by its thickness
     @Override
     protected AABB makeBoundingBox(final Vec3 position) {
-        final Direction facing = this.entityData.get(IrisPlateEntity.FACING);
-        final double across = this.entityData.get(IrisPlateEntity.HALF_WIDTH);
-        final double up = this.entityData.get(IrisPlateEntity.HALF_HEIGHT);
-        final double through = IrisPlateEntity.HALF_DEPTH;
-        final boolean alongX = facing.getAxis() == Direction.Axis.Z;
-        final double x = alongX ? across : through;
-        final double z = alongX ? through : across;
-        return new AABB(position.x - x, position.y - up, position.z - z, position.x + x, position.y + up,
+        final Direction.Axis through = this.entityData.get(IrisPlateEntity.FACING).getAxis();
+        final Direction.Axis up = this.entityData.get(IrisPlateEntity.TOP).getAxis();
+        final double x = this.reach(Direction.Axis.X, through, up);
+        final double y = this.reach(Direction.Axis.Y, through, up);
+        final double z = this.reach(Direction.Axis.Z, through, up);
+        return new AABB(position.x - x, position.y - y, position.z - z, position.x + x, position.y + y,
                 position.z + z);
+    }
+
+    // How far the plate reaches from its middle along an axis of the world
+    private double reach(final Direction.Axis axis, final Direction.Axis through, final Direction.Axis up) {
+        if (axis == through) {
+            return IrisPlateEntity.HALF_DEPTH;
+        }
+        return axis == up ? this.entityData.get(IrisPlateEntity.HALF_HEIGHT)
+                : this.entityData.get(IrisPlateEntity.HALF_WIDTH);
     }
 
     @Override

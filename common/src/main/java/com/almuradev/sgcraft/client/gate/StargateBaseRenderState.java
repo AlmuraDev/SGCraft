@@ -31,6 +31,7 @@ import com.almuradev.sgcraft.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.gate.ChevronOrder;
 import com.almuradev.sgcraft.gate.ChevronSpacing;
 import com.almuradev.sgcraft.gate.DialView;
+import com.almuradev.sgcraft.gate.GateOrientation;
 import com.almuradev.sgcraft.gate.GateShape;
 import net.minecraft.client.renderer.block.MovingBlockRenderState;
 import net.minecraft.client.renderer.blockentity.state.BlockEntityRenderState;
@@ -49,6 +50,8 @@ public final class StargateBaseRenderState extends BlockEntityRenderState {
     public GateShape shape = GateShape.STANDARD;
     public ResourceKey<GateType> gateType = GateTypes.MILKY_WAY;
     public Direction facing = Direction.NORTH;
+    // Whether the gate stands or lies flat, which turns its drawing from the base's frame into its own
+    public GateOrientation orientation = GateOrientation.STANDING;
     public int chevrons = 7;
     // Whether each chevron position's chevron is locked; see ChevronOrder
     public boolean[] locked = new boolean[ChevronOrder.POSITIONS];

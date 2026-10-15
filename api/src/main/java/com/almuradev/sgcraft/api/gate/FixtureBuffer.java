@@ -43,7 +43,9 @@ import java.util.Optional;
  * <p>Blocks are laid out relative to the gate's base block, for a gate standing upright and facing north
  * ({@link net.minecraft.core.FrontAndTop#NORTH_UP}): x runs to the gate's right as seen from in front, y towards
  * the top of the ring, and z out of the gate's front. Implementations must turn every offset and block state to
- * match the gate's actual orientation when they build the buffer. The order blocks are built in is up to the
+ * match the gate's actual orientation when they build the buffer. For a gate lying flat they lay the buffer out as
+ * for a gate standing upright on the same base block, facing the way the base block faces, so that the blocks
+ * stand on the ground round the base rather than over the gate's front. The order blocks are built in is up to the
  * implementation, which must build blocks that need support, such as torches or doors, after the blocks they rest
  * on.</p>
  *

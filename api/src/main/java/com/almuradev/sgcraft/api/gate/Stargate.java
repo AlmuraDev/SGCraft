@@ -55,8 +55,14 @@ public interface Stargate {
 
     /**
      * Which way the gate's front and the top of its ring point. A gate standing upright has its top
-     * {@linkplain net.minecraft.core.Direction#UP up} and faces one of the four horizontal directions. A gate lying
-     * flat faces up or down, and the top of its ring points one of the four horizontal directions.
+     * {@linkplain net.minecraft.core.Direction#UP up} and faces one of the four horizontal directions, the way its
+     * base block faces. A gate lying flat faces {@linkplain net.minecraft.core.Direction#UP up} or
+     * {@linkplain net.minecraft.core.Direction#DOWN down}, and the top of its ring points one of the four horizontal
+     * directions: its ring lies at the height of its base block and runs out from it that way, and the base block
+     * faces the other way.
+     *
+     * <p>Travel works the same through a gate whichever way it points: what goes into a gate's front comes out of the
+     * front of the gate at the other end of its wormhole, as though the two fronts were one.</p>
      *
      * @return the gate's orientation
      */
@@ -216,6 +222,20 @@ public interface Stargate {
      *     longer exists
      */
     ActionResult setChevrons(final int chevrons, final Cause cause);
+
+    /**
+     * Turns the gate to another {@linkplain #orientation() orientation} where it is. Its base and the blocks of its
+     * ring stay where they are, so only an orientation whose ring covers the same blocks is possible: a gate lying
+     * flat can be turned face up or face down, keeping the top of its ring pointing the same way, and a gate standing
+     * upright has no other.
+     *
+     * @param orientation the new orientation
+     * @param cause who is turning it
+     * @return {@link ActionResult#NO_CHANGE} if the gate already has that orientation, or
+     *     {@link ActionResult#NOT_POSSIBLE} if its ring can't lie that way, the gate isn't
+     *     {@linkplain GateState#IDLE idle}, or the gate no longer exists
+     */
+    ActionResult setOrientation(final FrontAndTop orientation, final Cause cause);
 
     /**
      * Builds blocks around this gate, such as a DHD for a gate placed without one.

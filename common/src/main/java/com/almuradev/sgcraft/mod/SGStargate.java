@@ -54,13 +54,13 @@ import com.almuradev.sgcraft.gate.DialView;
 import com.almuradev.sgcraft.gate.FluidSpill;
 import com.almuradev.sgcraft.gate.GateFrame;
 import com.almuradev.sgcraft.gate.GateLight;
+import com.almuradev.sgcraft.gate.GateOrientation;
 import com.almuradev.sgcraft.gate.GateShape;
 import com.almuradev.sgcraft.gate.IrisView;
 import com.almuradev.sgcraft.mod.GateStore.GateRecord;
 import com.almuradev.sgcraft.mod.event.SGEventBus;
 import com.almuradev.sgcraft.mod.event.SGEvents;
 import com.almuradev.sgcraft.sound.SGSounds;
-import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.FrontAndTop;
 import net.minecraft.core.GlobalPos;
@@ -76,6 +76,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -146,12 +147,17 @@ public final class SGStargate implements Stargate {
 
     /** @return the gate's own frame, which its horizon and travel are measured in */
     public GateFrame frame() {
-        return new GateFrame(this.position.pos(), this.facing(), this.shape());
+        return new GateFrame(this.position.pos(), this.facing(), this.lying(), this.shape());
     }
 
-    /** @return which way the gate faces */
+    /** @return which way the gate's base faces, which is the gate's front only while it stands */
     public Direction facing() {
         return this.record().map(GateRecord::facing).orElse(Direction.NORTH);
+    }
+
+    /** @return whether the gate stands or lies flat */
+    public GateOrientation lying() {
+        return this.record().map(GateRecord::orientation).orElse(GateOrientation.STANDING);
     }
 
     /** @return the key of the gate's type */
@@ -171,7 +177,7 @@ public final class SGStargate implements Stargate {
 
     @Override
     public FrontAndTop orientation() {
-        return FrontAndTop.fromFrontAndTop(this.facing(), Direction.UP);
+        return this.lying().frontAndTop(this.facing());
     }
 
     @Override
@@ -547,6 +553,30 @@ public final class SGStargate implements Stargate {
         return ActionResult.DONE;
     }
 
+    // A gate lying flat turns over where it lies, its ring on the same blocks; one standing can't turn
+    @Override
+    public ActionResult setOrientation(final FrontAndTop orientation, final Cause cause) {
+        final Optional<GateRecord> record = this.record();
+        if (record.isEmpty()) {
+            return ActionResult.NOT_POSSIBLE;
+        }
+        if (orientation == this.orientation()) {
+            return ActionResult.NO_CHANGE;
+        }
+        final GateOrientation lying = GateOrientation.of(orientation);
+        if (!this.lying().isFlat() || !lying.isFlat() || GateOrientation.facing(orientation) != this.facing()
+                || this.state() != GateState.IDLE) {
+            return ActionResult.NOT_POSSIBLE;
+        }
+        if (!this.access.allows(cause, GateRight.CONFIGURE)) {
+            return ActionResult.DENIED;
+        }
+        this.stargates.store().put(record.get().withOrientation(lying));
+        this.withBase(base -> base.setOrientation(lying));
+        this.sync();
+        return ActionResult.DONE;
+    }
+
     @Override
     public ActionResult placeFixtures(final FixtureBuffer fixtures, final PlacementMode mode, final Cause cause) {
         final ServerLevel level = this.level();
@@ -556,7 +586,7 @@ public final class SGStargate implements Stargate {
         if (!this.access.allows(cause, GateRight.CONFIGURE)) {
             return ActionResult.DENIED;
         }
-        return Fixtures.build(level, this.frame(), this.facing(), fixtures, mode) ? ActionResult.DONE
+        return Fixtures.build(level, this.frame(), fixtures, mode) ? ActionResult.DONE
                 : ActionResult.NOT_POSSIBLE;
     }
 
@@ -626,23 +656,26 @@ public final class SGStargate implements Stargate {
         if (level == null || this.state() != GateState.CONNECTED || strength <= 0) {
             return () -> { };
         }
-        final BlockPos pos = this.position.pos();
-        final double y = pos.getY() + 0.5 + this.shape().centerY();
+        final Vec3 middle = this.middle();
         final boolean fire = this.get(GateProperties.BREACH_FIRE).orElse(true);
         final Level.ExplosionInteraction blocks = this.get(GateProperties.BREACH_BREAKS_BLOCKS).orElse(true)
                 ? Level.ExplosionInteraction.BLOCK : Level.ExplosionInteraction.NONE;
-        return () -> level.explode(null, pos.getX() + 0.5, y, pos.getZ() + 0.5, strength, fire, blocks);
+        return () -> level.explode(null, middle.x, middle.y, middle.z, strength, fire, blocks);
     }
 
     /** Plays a sound from the middle of the gate's ring, as far as its size carries it, if its world is loaded. */
     public void play(final SoundEvent sound) {
         final ServerLevel level = this.stargates.server().getLevel(this.position.dimension());
         if (level != null) {
-            final BlockPos pos = this.position.pos();
-            final GateShape shape = this.shape();
-            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5 + shape.centerY(), pos.getZ() + 0.5, sound,
-                    SoundSource.BLOCKS, SGSounds.volume(shape), 1.0F);
+            final Vec3 middle = this.middle();
+            level.playSound(null, middle.x, middle.y, middle.z, sound, SoundSource.BLOCKS,
+                    SGSounds.volume(this.shape()), 1.0F);
         }
+    }
+
+    // The middle of the gate's ring, in the world
+    private Vec3 middle() {
+        return this.frame().toWorld(new Vec3(0, this.shape().centerY(), 0));
     }
 
     // A dial refused at the start: the gate sounds its failure, unless it is busy with another
@@ -656,8 +689,9 @@ public final class SGStargate implements Stargate {
     void keepLoaded() {
         final ServerLevel level = this.stargates.server().getLevel(this.position.dimension());
         if (level != null) {
-            // Out to the gate's edges, which a supergate's reach further
-            final int radius = 1 + (this.shape().radius() + 15) / 16;
+            // Out to the gate's edges, which a supergate's reach further, and a flat one's further still
+            final int reach = this.lying().isFlat() ? this.shape().height() : this.shape().radius();
+            final int radius = 1 + (reach + 15) / 16;
             level.getChunkSource().addTicketWithRadius(TicketType.PORTAL, ChunkPos.containing(this.position.pos()),
                     radius);
         }

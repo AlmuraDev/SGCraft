@@ -37,7 +37,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.LiquidBlockContainer;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
@@ -75,7 +74,7 @@ public final class EventHorizonBlock extends Block implements LiquidBlockContain
     public EventHorizonBlock(final Properties properties) {
         super(properties.lightLevel(state -> state.getValue(EventHorizonBlock.LEVEL)));
         this.registerDefaultState(this.defaultBlockState().setValue(EventHorizonBlock.SENDING, false)
-                .setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH).setValue(EventHorizonBlock.LEVEL, 0));
+                .setValue(BlockStateProperties.FACING, Direction.NORTH).setValue(EventHorizonBlock.LEVEL, 0));
     }
 
     /**
@@ -87,7 +86,7 @@ public final class EventHorizonBlock extends Block implements LiquidBlockContain
      */
     public static void seal(final Level level, final GateFrame frame, final boolean sending, final long time) {
         final BlockState horizon = SGBlocks.EVENT_HORIZON.defaultBlockState().setValue(EventHorizonBlock.SENDING,
-                sending).setValue(HorizontalDirectionalBlock.FACING, frame.facing());
+                sending).setValue(BlockStateProperties.FACING, frame.front());
         EventHorizonBlock.forEachInOpening(frame, (pos, x, y) -> {
             final BlockState state = level.getBlockState(pos);
             if (state.isAir()) {
@@ -156,7 +155,7 @@ public final class EventHorizonBlock extends Block implements LiquidBlockContain
 
     @Override
     protected void createBlockStateDefinition(final StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(EventHorizonBlock.SENDING, HorizontalDirectionalBlock.FACING, EventHorizonBlock.LEVEL);
+        builder.add(EventHorizonBlock.SENDING, BlockStateProperties.FACING, EventHorizonBlock.LEVEL);
     }
 
     // Fluid flowing in may come from either side, as the engine doesn't say which; whoever empties a bucket into it
@@ -170,7 +169,7 @@ public final class EventHorizonBlock extends Block implements LiquidBlockContain
         if (user == null) {
             return true;
         }
-        final Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+        final Direction facing = state.getValue(BlockStateProperties.FACING);
         final Vec3 toUser = user.position().subtract(Vec3.atCenterOf(pos));
         return toUser.dot(Vec3.atLowerCornerOf(facing.getUnitVec3i())) > 0
                 && level.getBlockState(pos.relative(facing)).isAir();
@@ -184,7 +183,7 @@ public final class EventHorizonBlock extends Block implements LiquidBlockContain
         if (!state.getValue(EventHorizonBlock.SENDING)) {
             return false;
         }
-        final BlockPos front = pos.relative(state.getValue(HorizontalDirectionalBlock.FACING));
+        final BlockPos front = pos.relative(state.getValue(BlockStateProperties.FACING));
         if (fluidState.isSource() && level.getBlockState(front).isAir()) {
             level.setBlock(front, fluidState.createLegacyBlock(), Block.UPDATE_ALL);
         }

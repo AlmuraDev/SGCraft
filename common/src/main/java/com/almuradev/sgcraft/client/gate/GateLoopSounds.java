@@ -36,6 +36,7 @@ import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -92,9 +93,10 @@ public final class GateLoopSounds {
             this.looping = true;
             // From the middle of the ring, as far as the gate's size carries it
             this.volume = SGSounds.volume(base.shape());
-            this.x = base.getBlockPos().getX() + 0.5;
-            this.y = base.getBlockPos().getY() + 0.5 + base.shape().centerY();
-            this.z = base.getBlockPos().getZ() + 0.5;
+            final Vec3 middle = base.frame().toWorld(new Vec3(0, base.shape().centerY(), 0));
+            this.x = middle.x;
+            this.y = middle.y;
+            this.z = middle.z;
         }
 
         @Override

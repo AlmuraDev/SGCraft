@@ -34,6 +34,7 @@ import com.almuradev.sgcraft.api.gate.GateProperties;
 import com.almuradev.sgcraft.block.RingBlock;
 import com.almuradev.sgcraft.block.StargateBaseBlock;
 import com.almuradev.sgcraft.gate.GateFrame;
+import com.almuradev.sgcraft.gate.GateOrientation;
 import com.almuradev.sgcraft.gate.GateShape;
 import com.almuradev.sgcraft.item.SGItems;
 import com.almuradev.sgcraft.mod.event.SGEventBus;
@@ -72,9 +73,10 @@ import java.util.Set;
  * What passes through one end of a wormhole, as in the original SGCraft: travelers crossing its event horizon, and
  * the kawoosh as it opens.
  *
- * <p>A traveler crosses when the bottom of it passes from in front of the horizon to behind it, through the opening.
- * It is watched for two ticks, so its movement is known, and comes out of the other gate's front, turned to face out
- * of it, moving as it went in. Its riders go with it.</p>
+ * <p>A traveler crosses when its leading point passes from in front of the horizon to behind it, through the opening:
+ * its feet, or its head going up into a gate lying face down. It is watched for two ticks, so its movement is known,
+ * and comes out of the other gate's front, turned to face out of it, moving as it went in. Its riders go with it. All
+ * of this is worked out in the gates' own frames, so it is the same whether either gate stands or lies flat.</p>
  */
 final class GateTravel {
 
@@ -163,13 +165,19 @@ final class GateTravel {
             return false;
         }
         final Vec3 now = entity.position();
+        final Vec3 lead = new Vec3(0, GateTravel.leadingHeight(entity, frame), 0);
         final Vec3 before = t.last.scale(2).subtract(now);
-        final Vec3 p0 = frame.toLocal(before);
-        final Vec3 p1 = frame.toLocal(now);
+        final Vec3 p0 = frame.toLocal(before.add(lead));
+        final Vec3 p1 = frame.toLocal(now.add(lead));
         final Vec3 middle = frame.toLocal(now.add(0, entity.getBbHeight() / 2, 0));
-        // A supergate's opening is the circle inside its drawn ring, which a traveler's middle must be in
-        final boolean inOpening = frame.shape().isSupergate() ? frame.shape().inOpening(middle.x, middle.y)
-                : Math.abs(middle.x) <= frame.shape().openingHalfWidth() + entity.getBbWidth() / 2;
+        // A supergate's opening is the circle inside its drawn ring, which a traveler's middle must be in. A standing
+        // gate's tracking box keeps travelers within its opening's height; a flat one's lies across them, so their
+        // middle must be between its floor and top too
+        final GateShape shape = frame.shape();
+        final double half = entity.getBbWidth() / 2;
+        final boolean inOpening = shape.isSupergate() ? shape.inOpening(middle.x, middle.y)
+                : Math.abs(middle.x) <= shape.openingHalfWidth() + half && (!frame.orientation().isFlat()
+                        || middle.y >= shape.openingFloor() - half && middle.y <= shape.openingTop() + half);
         final double deepest = Math.max(GateTravel.MAX_CROSSING_DEPTH, frame.shape().height());
         return inOpening && p0.z >= 0 && p1.z < 0 && p1.z > -deepest;
     }
@@ -196,12 +204,15 @@ final class GateTravel {
             return;
         }
         final GateFrame there = to.frame();
-        final Vec3 p = frame.toLocal(entity.position());
+        final Vec3 p = frame.toLocal(entity.position().add(0, GateTravel.leadingHeight(entity, frame), 0));
         final Vec3 v = frame.directionToLocal(entity.position().subtract(t.last));
-        final Vec3 position = there.toWorld(GateTravel.arrival(entity, p, frame.shape(), there.shape()));
+        final Vec3 position = there.toWorld(GateTravel.arrival(entity, p, frame, there))
+                .subtract(0, GateTravel.leadingHeight(entity, there), 0);
         final Vec3 motion = there.directionToWorld(new Vec3(-v.x, v.y, -v.z));
-        final Vec3 look = frame.directionToLocal(Vec3.directionFromRotation(0, entity.getYRot()));
-        final Vec3 facing = there.directionToWorld(new Vec3(-look.x, 0, -look.z));
+        // Looking the same way out as it looked in: turned about the vertical as the bases are turned to each other,
+        // whether either gate stands or lies flat
+        final Vec3 look = frame.upright().directionToLocal(Vec3.directionFromRotation(0, entity.getYRot()));
+        final Vec3 facing = there.upright().directionToWorld(new Vec3(-look.x, 0, -look.z));
         final float yaw = (float) (Mth.atan2(-facing.x, facing.z) * Mth.RAD_TO_DEG);
         GateTravel.playTeleport(level, entity, entity.position());
         final Entity arrived = entity.teleport(new TeleportTransition(destination, position, motion, yaw,
@@ -212,25 +223,47 @@ final class GateTravel {
         }
     }
 
-    // Where a traveler comes out, in the far gate's frame: mirrored across the horizon, as though the two were one.
-    // Into a supergate, or between gates of different sizes, it goes inside the far opening as it looks, as in the
-    // original: a player on foot comes out standing on its floor, anything else at the same place in the opening,
-    // scaled to its size.
-    private static Vec3 arrival(final Entity entity, final Vec3 feet, final GateShape from, final GateShape to) {
-        double x = -feet.x;
-        double y = feet.y;
-        if (from != to || to.isSupergate()) {
-            final boolean onFoot = entity instanceof Player player && !player.getAbilities().flying;
-            final double height = entity.getBbHeight();
+    // How far up a traveler, from its feet, the point of it that goes through a gate first is: its feet, but its head
+    // going up into a gate lying face down
+    private static double leadingHeight(final Entity entity, final GateFrame frame) {
+        return frame.orientation() == GateOrientation.FACE_DOWN ? entity.getBbHeight() : 0;
+    }
+
+    // Where a traveler's leading point comes out, in the far gate's frame: mirrored across the horizon, as though the
+    // two were one. Into a supergate, between gates of different sizes, or between a gate standing and one lying flat,
+    // it goes inside the far opening as it looks, as in the original. Into a standing gate, a player on foot, or
+    // anything out of a flat gate, comes out standing on its floor; anything else at the same place in the opening,
+    // scaled to its size. Out of a flat gate it comes out clear of the horizon, so as not to fall back through it.
+    private static Vec3 arrival(final Entity entity, final Vec3 lead, final GateFrame near, final GateFrame far) {
+        final GateShape from = near.shape();
+        final GateShape to = far.shape();
+        final boolean fromFlat = near.orientation().isFlat();
+        final boolean toFlat = far.orientation().isFlat();
+        double x = -lead.x;
+        double y = lead.y;
+        double z = -lead.z;
+        if (from != to || to.isSupergate() || fromFlat != toFlat) {
+            final boolean onFoot = !toFlat && (fromFlat || entity instanceof Player player
+                    && !player.getAbilities().flying);
+            // How far it reaches up the far gate's ring, and its middle that way
+            final double size = toFlat ? entity.getBbWidth() : entity.getBbHeight();
+            final double half = size / 2;
+            final double middle = fromFlat ? lead.y : lead.y + entity.getBbHeight() / 2;
             final double scale = to.openingRadius() / from.openingRadius();
             final double floor = to.openingFloor();
-            final double middle = feet.y + height / 2;
-            y = onFoot ? floor : to.centerY() + (middle - from.centerY()) * scale - height / 2;
-            y = Mth.clamp(y, floor, Math.max(floor, to.openingTop() - height));
-            final double half = Math.max(0, to.openingHalfWidthAt(y + height / 2) - entity.getBbWidth() / 2);
-            x = Mth.clamp(x * (onFoot ? 1 : scale), -half, half);
+            y = onFoot ? floor : to.centerY() + (middle - from.centerY()) * scale - half;
+            y = Mth.clamp(y, floor, Math.max(floor, to.openingTop() - size));
+            final double across = Math.max(0, to.openingHalfWidthAt(y + half) - entity.getBbWidth() / 2);
+            x = Mth.clamp(x * (onFoot ? 1 : scale), -across, across);
+            if (toFlat) {
+                // Its feet are its edge; its middle is where it goes in the opening
+                y += half;
+            }
         }
-        return new Vec3(x, y, -feet.z);
+        if (toFlat) {
+            z = Math.max(z, 0.1);
+        }
+        return new Vec3(x, y, z);
     }
 
     // Whether a traveler goes through the far gate's shut iris: one holding a Tollan phase shift device in either

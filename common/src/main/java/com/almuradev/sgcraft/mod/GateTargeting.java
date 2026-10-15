@@ -28,6 +28,7 @@ package com.almuradev.sgcraft.mod;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.block.entity.DhdBlockEntity;
 import com.almuradev.sgcraft.gate.GateFrame;
+import com.almuradev.sgcraft.gate.GateShape;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
@@ -120,10 +121,15 @@ public final class GateTargeting {
 
     /** @return whether a point is in the gate's ring or its opening: the blocks across and up from its base */
     public static boolean covers(final Stargate gate, final Vec3 point) {
-        final Vec3 local = new GateFrame(gate.position().pos(), gate.orientation().front()).toLocal(point);
+        final Vec3 local = GateTargeting.frame(gate).toLocal(point);
         final double half = GateTargeting.halfWidth(gate);
         return Math.abs(local.x) <= half && local.y >= -0.5 && local.y <= half * 2 - 0.5
                 && Math.abs(local.z) <= 0.5;
+    }
+
+    // The gate's frame, standing or lying flat; only its orientation counts here, not its shape
+    private static GateFrame frame(final Stargate gate) {
+        return GateFrame.of(gate.position().pos(), gate.orientation(), GateShape.STANDARD);
     }
 
     // Half the gate's width, to the outside of its ring, whatever its size
@@ -133,7 +139,7 @@ public final class GateTargeting {
 
     // How far a point is from the gate's ring and opening
     private static double distance(final Stargate gate, final Vec3 point) {
-        final Vec3 local = new GateFrame(gate.position().pos(), gate.orientation().front()).toLocal(point);
+        final Vec3 local = GateTargeting.frame(gate).toLocal(point);
         final double half = GateTargeting.halfWidth(gate);
         final double dx = Math.max(0, Math.abs(local.x) - half);
         final double dy = Math.max(0, Math.max(-0.5 - local.y, local.y - (half * 2 - 0.5)));

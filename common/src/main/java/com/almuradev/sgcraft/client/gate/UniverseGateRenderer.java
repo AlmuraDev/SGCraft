@@ -74,9 +74,9 @@ public final class UniverseGateRenderer implements GateTypeRenderer {
     // The cool white its lit parts light the gate with; how bright the glow round a lit symbol and a lit chevron is at
     // most, and how far each reaches, in the half size of the symbol or the chevron's lights
     private static final int GLOW = ARGB.color(225, 235, 255);
-    private static final float SYMBOL_GLOW_STRENGTH = 0.15F;
+    private static final float SYMBOL_GLOW_STRENGTH = 0.075F;
     private static final double SYMBOL_REACH = 2.4;
-    private static final float CHEVRON_GLOW_STRENGTH = 0.22F;
+    private static final float CHEVRON_GLOW_STRENGTH = 0.11F;
     private static final double CHEVRON_REACH = 2.0;
 
     @Override

@@ -42,6 +42,7 @@ import com.almuradev.sgcraft.block.SGBlocks;
 import com.almuradev.sgcraft.block.StargateBaseBlock;
 import com.almuradev.sgcraft.gate.GateFormation;
 import com.almuradev.sgcraft.gate.GateFrame;
+import com.almuradev.sgcraft.gate.GateOrientation;
 import com.almuradev.sgcraft.gate.GateShape;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -64,8 +65,8 @@ import java.util.Optional;
 
 /**
  * Builds a whole gate where a {@link GatePlacement} asks, or at the nearest spot within its search radius where it
- * fits: the ring, the base, which forms the gate, and the fixtures. Only standing gates of the standard size can be
- * placed so far.
+ * fits: the ring, the base, which forms the gate, and the fixtures. The gate stands or lies flat as the placement's
+ * orientation says; a flat gate's ring runs out from the base towards the top of its ring.
  */
 final class GatePlacer {
 
@@ -87,25 +88,21 @@ final class GatePlacer {
         if (type.isEmpty() || !placement.type().supports(placement.size())) {
             return Result.of(PlacementResult.Status.UNSUPPORTED_SIZE);
         }
-        if (placement.orientation().top() != Direction.UP || !placement.orientation().front().getAxis()
-                .isHorizontal()) {
-            return Result.failed(Component.translatableWithFallback("placement.sgcraft.flat",
-                    "Gates lying flat can't be placed yet"));
-        }
         final Optional<Player> player = this.cause.first(Player.class);
         if (player.isPresent() && !level.mayInteract(player.get(), placement.position().pos())) {
             return Result.of(PlacementResult.Status.DENIED);
         }
-        final Direction facing = placement.orientation().front();
+        final Direction facing = GateOrientation.facing(placement.orientation());
+        final GateOrientation lying = GateOrientation.of(placement.orientation());
         PlacementResult.Status worst = PlacementResult.Status.INVALID_POSITION;
         Optional<Component> firstReason = Optional.empty();
         for (final BlockPos candidate : GatePlacer.candidates(placement.position().pos(), placement.searchRadius())) {
             final GatePlacement here = placement.withPosition(GlobalPos.of(level.dimension(), candidate));
-            final PlacementResult.Status status = this.check(level, here, facing);
+            final PlacementResult.Status status = this.check(level, here, facing, lying);
             if (status == null) {
                 final Optional<Component> reason = GatePlacer.rules(level, here);
                 if (reason.isEmpty()) {
-                    return this.build(level, here, facing, type.get());
+                    return this.build(level, here, facing, lying, type.get());
                 }
                 if (firstReason.isEmpty()) {
                     firstReason = reason;
@@ -136,11 +133,14 @@ final class GatePlacer {
     }
 
     // Why the gate can't go at a spot, or null if it can, rules aside
-    private PlacementResult.Status check(final ServerLevel level, final GatePlacement here, final Direction facing) {
+    private PlacementResult.Status check(final ServerLevel level, final GatePlacement here, final Direction facing,
+            final GateOrientation lying) {
         final BlockPos base = here.position().pos();
         final GateShape shape = GateShape.of(here.size()).orElse(GateShape.STANDARD);
-        if (!level.isInWorldBounds(base) || !level.isInWorldBounds(base.above(shape.height() - 1))
-                || !level.getWorldBorder().isWithinBounds(base)) {
+        final GateFrame frame = new GateFrame(base, facing, lying, shape);
+        final BlockPos top = frame.block(0, shape.height() - 1, 0);
+        if (!level.isInWorldBounds(base) || !level.isInWorldBounds(top)
+                || !level.getWorldBorder().isWithinBounds(base) || !level.getWorldBorder().isWithinBounds(top)) {
             return PlacementResult.Status.INVALID_POSITION;
         }
         final Optional<AddressTarget> address = this.stargates.addressing()
@@ -150,10 +150,11 @@ final class GatePlacer {
             return PlacementResult.Status.INVALID_POSITION;
         }
         // A gate may share its address cell with another, as in the original; the address then reaches the first
-        final List<BlockPos> spots = new ArrayList<>(GateFormation.footprint(base, facing, shape));
-        final GateFrame frame = new GateFrame(base, facing);
+        final List<BlockPos> spots = new ArrayList<>(GateFormation.footprint(frame));
+        // Fixtures go round the base as for a standing gate, whichever way the gate lies
+        final GateFrame upright = frame.upright();
         for (final BlockPos offset : here.fixtures().states().keySet()) {
-            spots.add(frame.block(offset.getX(), offset.getY(), offset.getZ()));
+            spots.add(upright.block(offset.getX(), offset.getY(), offset.getZ()));
         }
         boolean obstructed = false;
         for (final BlockPos pos : spots) {
@@ -186,11 +187,12 @@ final class GatePlacer {
     }
 
     private PlacementResult build(final ServerLevel level, final GatePlacement here, final Direction facing,
-            final ResourceKey<GateType> type) {
+            final GateOrientation lying, final ResourceKey<GateType> type) {
         final BlockPos base = here.position().pos();
         level.getChunk(base);
         final GateShape shape = GateShape.of(here.size()).orElse(GateShape.STANDARD);
-        GateFormation.buildRing(level, base, facing, shape);
+        final GateFrame frame = new GateFrame(base, facing, lying, shape);
+        GateFormation.buildRing(level, frame);
         final StargateBaseBlock baseBlock = shape.isSupergate() ? SGBlocks.SUPERGATE_BASE : GatePlacer.baseBlock(type);
         level.setBlock(base, baseBlock.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING, facing)
                 .setValue(BlockStateProperties.WATERLOGGED, level.getFluidState(base).is(Fluids.WATER)),
@@ -198,7 +200,7 @@ final class GatePlacer {
         final Optional<SGStargate> gate = this.stargates.gate(here.position());
         if (gate.isEmpty()) {
             // Built but not formed: say which block got in the way, as it is likely one the world put back
-            final String why = GateFormation.mismatch(level, base, facing, shape)
+            final String why = GateFormation.mismatch(level, frame)
                     .orElse("the base at " + base.toShortString() + " is " + level.getBlockState(base));
             SGCraft.LOG.warn("A gate built at {} didn't form: {}", base.toShortString(), why);
             return Result.failed(Component.translatableWithFallback("placement.sgcraft.not_formed",
@@ -210,9 +212,11 @@ final class GatePlacer {
                     .ifPresent(holder -> gate.get().setType(holder, Cause.of(this.stargates.server())));
         }
         gate.get().setChevrons(here.chevrons(), Cause.of(this.stargates.server()));
+        // A flat ring forms facing up, and is turned over after if it is to face down
+        gate.get().setOrientation(here.orientation(), Cause.of(this.stargates.server()));
         final FixtureBuffer fixtures = here.fixtures();
         if (!fixtures.isEmpty()) {
-            Fixtures.build(level, gate.get().frame(), facing, fixtures, PlacementMode.FORCE);
+            Fixtures.build(level, gate.get().frame(), fixtures, PlacementMode.FORCE);
         }
         return new Result(PlacementResult.Status.PLACED, Optional.of(gate.get()), Optional.empty());
     }

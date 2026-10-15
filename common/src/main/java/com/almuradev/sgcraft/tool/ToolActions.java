@@ -43,6 +43,7 @@ import com.almuradev.sgcraft.api.gate.Iris;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.block.entity.PowerUnitBlockEntity;
 import com.almuradev.sgcraft.gate.DialStyle;
+import com.almuradev.sgcraft.gate.GateOrientation;
 import com.almuradev.sgcraft.item.SGDataComponents;
 import com.almuradev.sgcraft.item.SGItems;
 import com.almuradev.sgcraft.mod.DefaultAddresses;
@@ -86,6 +87,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -591,7 +593,8 @@ public final class ToolActions {
         SGNetwork.send(player, new ConfiguratorState(open, ToolActions.info(player, gate), gate.chevrons(), types,
                 gate.position().dimension().identifier().toString(), typeNames,
                 values, players, message,
-                1 / SGCraftApi.get().energy().rate(PowerUnitBlockEntity.FORGE_ENERGY)));
+                1 / SGCraftApi.get().energy().rate(PowerUnitBlockEntity.FORGE_ENERGY),
+                GateOrientation.of(gate.orientation()).getSerializedName()));
     }
 
     private static <T> Property property(final Stargate gate, final Identifier id, final GateProperty<T> property) {
@@ -673,6 +676,9 @@ public final class ToolActions {
         if (apply.chevrons() > 0 && apply.chevrons() != gate.chevrons()) {
             ToolActions.problem(problems, "chevrons", gate.setChevrons(apply.chevrons(), cause));
         }
+        if (!apply.orientation().isEmpty()) {
+            ToolActions.turn(gate, apply.orientation(), cause, problems);
+        }
         final Registry<GateProperty<?>> properties = player.level().getServer().registryAccess()
                 .lookupOrThrow(SGCraftRegistries.GATE_PROPERTY);
         for (final Change change : apply.changes()) {
@@ -689,6 +695,22 @@ public final class ToolActions {
         }
         ToolActions.sendConfigurator(player, gate, false, problems.isEmpty() ? "Changes saved"
                 : String.join("; ", problems));
+    }
+
+    // A gate lying flat turns face up or face down, as in the original; one standing stays as it was built
+    private static void turn(final Stargate gate, final String name, final Cause cause, final List<String> problems) {
+        final Optional<GateOrientation> lying = Arrays.stream(GateOrientation.values())
+                .filter(each -> each.getSerializedName().equals(name)).findFirst();
+        if (lying.isEmpty() || !lying.get().isFlat()) {
+            problems.add("A gate can only be turned face up or face down, not " + name);
+            return;
+        }
+        if (!GateOrientation.of(gate.orientation()).isFlat()) {
+            problems.add("Only a gate lying flat can be turned");
+            return;
+        }
+        ToolActions.problem(problems, "orientation", gate.setOrientation(
+                lying.get().frontAndTop(GateOrientation.facing(gate.orientation())), cause));
     }
 
     private static <T> void change(final ServerPlayer player, final Stargate gate, final GateProperty<T> property,

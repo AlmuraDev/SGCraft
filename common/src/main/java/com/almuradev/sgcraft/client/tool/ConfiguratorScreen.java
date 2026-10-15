@@ -63,13 +63,18 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * The configurator: everything that can be set on a gate, over five pages. Gate holds its type, chevrons and iris;
- * Energy its store and what dialing costs it; Travel how its wormholes behave; Access who may use it and which gates
- * may connect; Other the properties add-ons register, as JSON. Changes wait until Save, which sends only what changed.
+ * The configurator: everything that can be set on a gate, over five pages. Gate holds its type, chevrons and iris,
+ * and whether a gate lying flat faces up or down; Energy its store and what dialing costs it; Travel how its wormholes
+ * behave; Access who may use it and which gates may connect; Other the properties add-ons register, as JSON. Changes
+ * wait until Save, which sends only what changed.
  */
 public final class ConfiguratorScreen extends Screen {
 
     private static final String NS = "sgcraft:";
+    // The gate's orientations, as the server names them
+    private static final String STANDING = "standing";
+    private static final String FACE_UP = "face_up";
+    private static final String FACE_DOWN = "face_down";
     private static final List<String> RIGHTS = List.of("sgcraft:use", "sgcraft:iris", "sgcraft:configure");
     private static final int ROWS = 5;
     // Where the settings start, under the tabs and the gate's address
@@ -94,6 +99,8 @@ public final class ConfiguratorScreen extends Screen {
             Map.entry("chevrons", "How many chevrons the gate has. More chevrons dial longer addresses, such as "
                     + "gates in other worlds"),
             Map.entry("iris", "Whether an iris is fitted. Taking it off gives back the iris upgrade"),
+            Map.entry("orientation", "Whether the gate stands upright or lies flat. A gate lying flat can be turned "
+                    + "face up or face down; one standing stays as it was built"),
             Map.entry("open_ticks", "How many seconds a wormhole stays open before it shuts on its own. 0 for no "
                     + "limit"),
             Map.entry("address_visible", "Whether players can see the gate's address on the gate"),
@@ -174,6 +181,8 @@ public final class ConfiguratorScreen extends Screen {
     private final Map<String, String> playerNames = new LinkedHashMap<>();
     private String type;
     private int chevrons;
+    // Whether the gate stands or lies flat, by its serialized name
+    private String orientation;
     private Page page = Page.GATE;
     private int scroll;
     private String addPlayer = "";
@@ -189,6 +198,7 @@ public final class ConfiguratorScreen extends Screen {
         this.state = state;
         this.type = state.gate().type();
         this.chevrons = state.chevrons();
+        this.orientation = state.orientation();
         this.load(state);
     }
 
@@ -217,6 +227,7 @@ public final class ConfiguratorScreen extends Screen {
         this.state = state;
         this.type = state.gate().type();
         this.chevrons = state.chevrons();
+        this.orientation = state.orientation();
         this.load(state);
         this.rebuildWidgets();
     }
@@ -328,6 +339,31 @@ public final class ConfiguratorScreen extends Screen {
                 b -> { }).bounds(at[0], at[1], 150, 20).build());
         shown.active = false;
         this.tip(shown, "generated");
+        this.orientationButton(this.slot(left, top, i + 1));
+    }
+
+    // Face up or face down for a gate lying flat, as the original's checkboxes; shown but not set for one standing
+    private void orientationButton(final int[] at) {
+        final Component label = Component.translatableWithFallback("screen.sgcraft.configurator.orientation",
+                "Lies");
+        final boolean flat = !ConfiguratorScreen.STANDING.equals(this.state.orientation());
+        final List<String> choices = flat ? List.of(ConfiguratorScreen.FACE_UP, ConfiguratorScreen.FACE_DOWN)
+                : List.of(ConfiguratorScreen.STANDING);
+        final CycleButton<String> button = this.addRenderableWidget(CycleButton.builder(
+                ConfiguratorScreen::orientationName, choices.contains(this.orientation) ? this.orientation
+                        : choices.getFirst()).withValues(choices).create(at[0], at[1], 150, 20, label,
+                (b, value) -> this.orientation = value));
+        button.active = flat;
+        this.tip(button, "orientation");
+    }
+
+    private static Component orientationName(final String orientation) {
+        final String fallback = switch (orientation) {
+            case ConfiguratorScreen.FACE_UP -> "Flat, face up";
+            case ConfiguratorScreen.FACE_DOWN -> "Flat, face down";
+            default -> "Upright";
+        };
+        return Component.translatableWithFallback("screen.sgcraft.configurator.orientation." + orientation, fallback);
     }
 
     // The store, and what dialing costs: each cost a switch and an amount, the server's unless the gate has its own
@@ -656,9 +692,10 @@ public final class ConfiguratorScreen extends Screen {
         }
         final String newType = this.type.equals(this.state.gate().type()) ? "" : this.type;
         final int newChevrons = this.chevrons == this.state.chevrons() ? 0 : this.chevrons;
+        final String newOrientation = this.orientation.equals(this.state.orientation()) ? "" : this.orientation;
         ClientPlatform.get().sendToServer(new ConfiguratorApply(this.state.world(), this.state.gate().pos(), newType,
                 newChevrons,
-                changes, this.addPlayer, false));
+                changes, this.addPlayer, false, newOrientation));
         this.addPlayer = "";
     }
 

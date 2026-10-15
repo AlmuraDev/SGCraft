@@ -44,6 +44,7 @@ import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.command.SGCommands.GateFinder;
 import com.almuradev.sgcraft.gate.DialStyle;
+import com.almuradev.sgcraft.gate.GateOrientation;
 import com.almuradev.sgcraft.gate.GateShape;
 import com.almuradev.sgcraft.gate.GlyphText;
 import com.almuradev.sgcraft.villager.SGVillagers;
@@ -65,7 +66,6 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.FrontAndTop;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -115,7 +115,48 @@ final class SGGateCommands {
                 .then(SGGateCommands.rights(finder))
                 .then(SGGateCommands.rule(finder))
                 .then(SGGateCommands.camouflage(finder))
+                .then(SGGateCommands.orientation(finder))
                 .then(SGGateCommands.tokra(finder));
+    }
+
+    // orientation [face_up | face_down]; only a gate lying flat turns, where it lies
+    private static ArgumentBuilder<CommandSourceStack, ?> orientation(final GateFinder finder) {
+        final ArgumentBuilder<CommandSourceStack, ?> orientation = Commands.literal("orientation")
+                .executes(context -> SGGateCommands.showOrientation(context.getSource(), finder.find(context)));
+        for (final GateOrientation flat : new GateOrientation[] {GateOrientation.FACE_UP, GateOrientation.FACE_DOWN}) {
+            orientation.then(Commands.literal(flat.getSerializedName())
+                    .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                    .executes(context -> SGGateCommands.turn(context.getSource(), finder.find(context), flat)));
+        }
+        return orientation;
+    }
+
+    // Its result numbers the orientations as the original did: 1 standing, 2 face up, 3 face down
+    private static int showOrientation(final CommandSourceStack source, final Stargate gate) {
+        final GateOrientation lying = GateOrientation.of(gate.orientation());
+        final String facing = GateOrientation.facing(gate.orientation()).getSerializedName();
+        source.sendSuccess(() -> switch (lying) {
+            case STANDING -> SGCommands.text("orientation.standing", "The gate at %s stands upright, facing %s",
+                    SGCommands.position(gate), facing);
+            case FACE_UP -> SGCommands.text("orientation.face_up",
+                    "The gate at %s lies flat, face up, its base facing %s", SGCommands.position(gate), facing);
+            case FACE_DOWN -> SGCommands.text("orientation.face_down",
+                    "The gate at %s lies flat, face down, its base facing %s", SGCommands.position(gate), facing);
+        }, false);
+        return lying.ordinal() + 1;
+    }
+
+    private static int turn(final CommandSourceStack source, final Stargate gate, final GateOrientation lying) {
+        if (!GateOrientation.of(gate.orientation()).isFlat()) {
+            source.sendFailure(SGCommands.text("orientation.standing_fixed",
+                    "The gate at %s stands upright; only a gate lying flat can be turned", SGCommands.position(gate)));
+            return 0;
+        }
+        return SGCommands.report(source, gate.setOrientation(lying.frontAndTop(GateOrientation.facing(
+                gate.orientation())), SGCommands.cause(source)), lying == GateOrientation.FACE_UP
+                ? SGCommands.text("orientation.turned_up", "Turned the gate at %s face up", SGCommands.position(gate))
+                : SGCommands.text("orientation.turned_down", "Turned the gate at %s face down",
+                        SGCommands.position(gate)));
     }
 
     private static final SimpleCommandExceptionType NO_ROOM = new SimpleCommandExceptionType(
@@ -132,7 +173,8 @@ final class SGGateCommands {
         if (level == null || !level.isLoaded(gate.position().pos())) {
             throw SGGateCommands.NO_BASE.create();
         }
-        if (SGVillagers.spawnTokra(level, gate.position().pos(), gate.orientation().front()).isEmpty()) {
+        if (SGVillagers.spawnTokra(level, gate.position().pos(),
+                GateOrientation.facing(gate.orientation())).isEmpty()) {
             throw SGGateCommands.NO_ROOM.create();
         }
         source.sendSuccess(() -> SGCommands.text("tokra.spawned", "A Tok'ra stands at the gate at %s",
@@ -509,28 +551,35 @@ final class SGGateCommands {
                 address.toString()));
     }
 
-    // place <type> [chevrons] [radius]: a whole gate where the caller stands, facing them; a radius of 4 or more
-    // makes a supergate of that size
+    // place <type> [chevrons] [radius] [standing | face_up | face_down]: a whole gate where the caller stands, facing
+    // them, or lying flat with its ring running away from them; a radius of 4 or more makes a supergate of that size
     static ArgumentBuilder<CommandSourceStack, ?> place() {
+        final ArgumentBuilder<CommandSourceStack, ?> radius = Commands.argument("radius", IntegerArgumentType.integer(
+                        GateShape.STANDARD.radius(), GateShape.MAX_SUPERGATE_RADIUS))
+                .executes(context -> SGGateCommands.place(context, IntegerArgumentType.getInteger(context, "chevrons"),
+                        IntegerArgumentType.getInteger(context, "radius"), GateOrientation.STANDING));
+        for (final GateOrientation lying : GateOrientation.values()) {
+            radius.then(Commands.literal(lying.getSerializedName())
+                    .executes(context -> SGGateCommands.place(context,
+                            IntegerArgumentType.getInteger(context, "chevrons"),
+                            IntegerArgumentType.getInteger(context, "radius"), lying)));
+        }
         return Commands.literal("place").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .then(Commands.argument("type", IdentifierArgument.id())
                         .suggests((context, builder) -> SharedSuggestionProvider.suggestResource(
                                 context.getSource().getServer().registryAccess()
                                         .lookupOrThrow(SGCraftRegistries.GATE_TYPE).keySet(), builder))
-                        .executes(context -> SGGateCommands.place(context, 9, GateShape.STANDARD.radius()))
+                        .executes(context -> SGGateCommands.place(context, 9, GateShape.STANDARD.radius(),
+                                GateOrientation.STANDING))
                         .then(Commands.argument("chevrons", IntegerArgumentType.integer(1, 9))
                                 .executes(context -> SGGateCommands.place(context,
                                         IntegerArgumentType.getInteger(context, "chevrons"),
-                                        GateShape.STANDARD.radius()))
-                                .then(Commands.argument("radius", IntegerArgumentType.integer(
-                                                GateShape.STANDARD.radius(), GateShape.MAX_SUPERGATE_RADIUS))
-                                        .executes(context -> SGGateCommands.place(context,
-                                                IntegerArgumentType.getInteger(context, "chevrons"),
-                                                IntegerArgumentType.getInteger(context, "radius"))))));
+                                        GateShape.STANDARD.radius(), GateOrientation.STANDING))
+                                .then(radius)));
     }
 
     private static int place(final CommandContext<CommandSourceStack> context, final int chevrons,
-            final int radius) throws CommandSyntaxException {
+            final int radius, final GateOrientation lying) throws CommandSyntaxException {
         final CommandSourceStack source = context.getSource();
         final Optional<Holder.Reference<GateType>> type = source.getServer().registryAccess()
                 .lookupOrThrow(SGCraftRegistries.GATE_TYPE).get(IdentifierArgument.getId(context, "type"));
@@ -550,7 +599,7 @@ final class SGGateCommands {
         final GlobalPos position = GlobalPos.of(source.getLevel().dimension(),
                 BlockPos.containing(source.getPosition()).relative(facing.getOpposite(), 3));
         final GatePlacement placement = GatePlacement.builder().position(position)
-                .orientation(FrontAndTop.fromFrontAndTop(facing, Direction.UP)).type(type.get()).chevrons(chevrons)
+                .orientation(lying.frontAndTop(facing)).type(type.get()).chevrons(chevrons)
                 .size(shape.get().size()).searchRadius(3).build();
         final PlacementResult result = SGCraftApi.get().stargates().place(placement, SGCommands.cause(source));
         if (result.status() == PlacementResult.Status.PLACED) {

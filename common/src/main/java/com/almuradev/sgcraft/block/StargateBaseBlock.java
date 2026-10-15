@@ -30,7 +30,7 @@ import com.almuradev.sgcraft.block.entity.SGBlockEntityTypes;
 import com.almuradev.sgcraft.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.gate.GateBaseActions;
 import com.almuradev.sgcraft.gate.GateFormation;
-import com.almuradev.sgcraft.gate.GateShape;
+import com.almuradev.sgcraft.gate.GateFrame;
 import com.almuradev.sgcraft.item.GateItem;
 import com.almuradev.sgcraft.mod.GateRedstone;
 import com.almuradev.sgcraft.mod.SGServer;
@@ -270,11 +270,12 @@ public final class StargateBaseBlock extends HorizontalDirectionalBlock implemen
     protected void affectNeighborsAfterRemoval(final BlockState state, final ServerLevel level, final BlockPos pos,
             final boolean movedByPiston) {
         super.affectNeighborsAfterRemoval(state, level, pos, movedByPiston);
-        // The gate's size is still known to the server until it is forgotten below
-        final GateShape shape = SGServer.current()
+        // The gate's size, and how it lies, are still known to the server until it is forgotten below
+        final GateFrame frame = SGServer.current()
                 .flatMap(server -> server.stargates().gate(GlobalPos.of(level.dimension(), pos)))
-                .map(SGStargate::shape).orElse(GateShape.STANDARD);
-        GateFormation.releaseRing(level, pos, state.getValue(HorizontalDirectionalBlock.FACING), shape);
+                .map(SGStargate::frame)
+                .orElseGet(() -> new GateFrame(pos, state.getValue(HorizontalDirectionalBlock.FACING)));
+        GateFormation.releaseRing(level, frame);
         if (state.getValue(StargateBaseBlock.FORMED)) {
             GateFormation.unregister(level, pos);
         }

@@ -58,7 +58,7 @@ public final class IrisRenderer {
     // The edge of the ring's opening for each type of gate, which the blades stop at; a type not here lets them run on
     // under its ring
     private static final Map<ResourceKey<GateType>, Double> RIMS = Map.of(GateTypes.MILKY_WAY, 2.0,
-            GateTypes.PEGASUS, 1.95);
+            GateTypes.PEGASUS, 2.0);
 
     private static final int BLADES = 20;
     // A standard gate's ring's inner radius, which the blades are sized for

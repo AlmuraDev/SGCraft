@@ -78,9 +78,9 @@ public final class PegasusGateRenderer implements GateTypeRenderer {
     // The blue its lit parts light the gate with; how bright the glow round a lit glyph and a lit chevron is at most,
     // and how far each reaches, in the half size of the glyph or the chevron's lights
     private static final int GLOW = ARGB.color(90, 160, 255);
-    private static final float GLYPH_GLOW_STRENGTH = 0.28F;
+    private static final float GLYPH_GLOW_STRENGTH = 0.14F;
     private static final double GLYPH_REACH = 2.4;
-    private static final float CHEVRON_GLOW = 0.4F;
+    private static final float CHEVRON_GLOW = 0.2F;
     private static final double CHEVRON_REACH = 2.2;
 
     // The box round a chevron's lights at the top, out to the front of its metal, and the mesh it is worked out for

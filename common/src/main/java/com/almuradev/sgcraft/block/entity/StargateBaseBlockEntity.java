@@ -39,6 +39,7 @@ import com.almuradev.sgcraft.gate.EventHorizon;
 import com.almuradev.sgcraft.gate.FluidSpill;
 import com.almuradev.sgcraft.gate.GateFormation;
 import com.almuradev.sgcraft.gate.GateFrame;
+import com.almuradev.sgcraft.gate.GateOrientation;
 import com.almuradev.sgcraft.gate.GateShape;
 import com.almuradev.sgcraft.gate.IrisView;
 import com.almuradev.sgcraft.item.SGItems;
@@ -46,7 +47,6 @@ import com.almuradev.sgcraft.mod.SGIris;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.SGStargate;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
@@ -98,6 +98,8 @@ public final class StargateBaseBlockEntity extends BlockEntity {
     private ResourceKey<GateType> gateType;
     private int chevrons = StargateBaseBlockEntity.DEFAULT_CHEVRONS;
     private GateShape shape = GateShape.STANDARD;
+    // Whether the gate stands or lies flat; kept while it is broken, so a flat ring turned face down forms so again
+    private GateOrientation orientation = GateOrientation.STANDING;
     // The fluid pouring out of the gate, from a gate standing in it at the other end of its wormhole; only shown
     private @Nullable FluidSpill spill;
     // What the gate is doing, sent to clients but not saved: the server's gates are idle when it starts
@@ -148,6 +150,28 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         this.shape = shape;
         this.setChanged();
         this.sendUpdate();
+    }
+
+    /** @return whether the gate stands or lies flat, or did when it last formed */
+    public GateOrientation orientation() {
+        return this.orientation;
+    }
+
+    /** Stands the gate up or lays it flat, such as turning a flat gate face down; its iris plates go with it. */
+    public void setOrientation(final GateOrientation orientation) {
+        if (this.orientation == orientation) {
+            return;
+        }
+        this.orientation = orientation;
+        this.removePlates();
+        this.setChanged();
+        this.sendUpdate();
+    }
+
+    /** @return the gate's own frame, as its base faces and the gate lies */
+    public GateFrame frame() {
+        return new GateFrame(this.worldPosition, this.getBlockState().getValue(HorizontalDirectionalBlock.FACING),
+                this.orientation, this.shape);
     }
 
     /** @return the fluid pouring out of the gate, if any */
@@ -337,8 +361,7 @@ public final class StargateBaseBlockEntity extends BlockEntity {
             if (gate.isPresent()) {
                 gate.get().sync();
             } else {
-                GateFormation.register(level, pos, base,
-                        base.getBlockState().getValue(HorizontalDirectionalBlock.FACING));
+                GateFormation.register(level, pos, base);
             }
         });
     }
@@ -363,9 +386,8 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         if (!shut) {
             return;
         }
-        final Direction facing = base.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
         final GateShape shape = base.shape();
-        final GateFrame frame = new GateFrame(pos, facing, shape);
+        final GateFrame frame = base.frame();
         final double width = 2 * shape.openingHalfWidth();
         final double height = shape.openingTop() - shape.openingFloor();
         final int across = (int) Math.ceil(width / StargateBaseBlockEntity.PLATE);
@@ -374,8 +396,8 @@ public final class StargateBaseBlockEntity extends BlockEntity {
             for (int j = 0; j < up; j++) {
                 final Vec3 middle = frame.toWorld(new Vec3(-shape.openingHalfWidth() + (i + 0.5) * width / across,
                         shape.openingFloor() + (j + 0.5) * height / up, StargateBaseBlockEntity.PLATE_DEPTH));
-                final IrisPlateEntity plate = IrisPlateEntity.create(level, middle, facing, width / across / 2,
-                        height / up / 2, pos);
+                final IrisPlateEntity plate = IrisPlateEntity.create(level, middle, frame.front(), frame.top(),
+                        width / across / 2, height / up / 2, pos);
                 level.addFreshEntity(plate);
                 base.plates.add(plate);
             }
@@ -412,8 +434,7 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         }
         base.horizon.tick(level.getRandom());
         if (base.spill != null && phase == DialPhase.CONNECTED) {
-            base.spill.spray(level, new GateFrame(pos, base.getBlockState().getValue(HorizontalDirectionalBlock.FACING),
-                    base.shape), level.getRandom());
+            base.spill.spray(level, base.frame(), level.getRandom());
         }
     }
 
@@ -450,6 +471,7 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         input.read("gate_type", ResourceKey.codec(SGCraftRegistries.GATE_TYPE)).ifPresent(type -> this.gateType = type);
         this.chevrons = input.getIntOr("chevrons", StargateBaseBlockEntity.DEFAULT_CHEVRONS);
         this.shape = GateShape.ofRadius(input.getIntOr("radius", GateShape.STANDARD.radius()));
+        this.orientation = input.read("orientation", GateOrientation.CODEC).orElse(GateOrientation.STANDING);
         this.spill = input.getString("spill_fluid").flatMap(id -> Optional.ofNullable(Identifier.tryParse(id)))
                 .flatMap(BuiltInRegistries.FLUID::getOptional)
                 .map(fluid -> new FluidSpill(fluid, input.getFloatOr("spill", 0))).orElse(null);
@@ -472,6 +494,7 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         output.store("gate_type", ResourceKey.codec(SGCraftRegistries.GATE_TYPE), this.gateType);
         output.putInt("chevrons", this.chevrons);
         output.putInt("radius", this.shape.radius());
+        output.store("orientation", GateOrientation.CODEC, this.orientation);
         output.putBoolean("powered", this.powered);
         ContainerHelper.saveAllItems(output, this.camouflage.getItems());
     }

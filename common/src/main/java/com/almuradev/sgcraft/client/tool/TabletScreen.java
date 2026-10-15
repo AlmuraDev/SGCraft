@@ -66,6 +66,10 @@ public final class TabletScreen extends Screen {
     private static final int ROW = 24;
     private static final int STEP = 22;
     private static final int REFRESH_TICKS = 20;
+    // The screen's bottom margin, the space the boxes and buttons take below the lists, and the strip above the boxes
+    // where each list's count is written
+    private static final int BOTTOM = 84;
+    private static final int COUNT_HEIGHT = 12;
 
     private TabletState state;
     private int selected;
@@ -118,11 +122,12 @@ public final class TabletScreen extends Screen {
         final int right = left + gatesWidth + TabletScreen.GAP;
         final int entryColumn = right + entriesWidth + TabletScreen.PAD;
         final int top = 40;
-        final int bottom = this.height - 84;
-        this.gates = this.addRenderableWidget(new Gates(this.minecraft, gatesWidth, bottom - top, top));
+        final int bottom = this.height - TabletScreen.BOTTOM;
+        final int listHeight = bottom - top - TabletScreen.COUNT_HEIGHT;
+        this.gates = this.addRenderableWidget(new Gates(this.minecraft, gatesWidth, listHeight, top));
         this.gates.setX(left);
         this.gates.fill(this.state.gates(), this.selected);
-        this.entries = this.addRenderableWidget(new Entries(this.minecraft, entriesWidth, bottom - top, top));
+        this.entries = this.addRenderableWidget(new Entries(this.minecraft, entriesWidth, listHeight, top));
         this.entries.setX(right);
         this.entries.fill(this.shown(), "");
         // Under each list, its boxes
@@ -351,6 +356,13 @@ public final class TabletScreen extends Screen {
         }
         if (!this.state.message().isEmpty()) {
             graphics.centeredText(this.font, this.state.message(), this.width / 2, this.height - 16, 0xFFFF6060);
+        }
+        if (this.gates != null && this.entries != null) {
+            final int countY = this.height - TabletScreen.BOTTOM - TabletScreen.COUNT_HEIGHT + 2;
+            graphics.text(this.font, Component.translatableWithFallback("screen.sgcraft.tablet.gates_count",
+                    "Gates: %s", this.state.gates().size()), this.gates.getX() + 2, countY, 0xFF808080);
+            graphics.text(this.font, Component.translatableWithFallback("screen.sgcraft.tablet.addresses_count",
+                    "Addresses: %s", this.shown().size()), this.entries.getX() + 2, countY, 0xFF808080);
         }
     }
 

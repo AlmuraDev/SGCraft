@@ -50,7 +50,8 @@ import java.util.Optional;
 
 /**
  * Builds a {@link FixtureBuffer} round a gate: each offset and block turned from a gate facing north to the gate's
- * own facing, lower blocks first, and blocks that need support after the blocks they rest on.
+ * own facing, lower blocks first, and blocks that need support after the blocks they rest on. Round a gate lying flat
+ * they are built as round a gate standing on its base, so they stand on the ground beside it.
  */
 public final class Fixtures {
 
@@ -61,9 +62,10 @@ public final class Fixtures {
      * @return whether the fixtures were built; with {@link PlacementMode#ATTEMPT}, nothing is built unless every spot
      *     is clear. A gate's own blocks are never replaced, in either mode
      */
-    public static boolean build(final ServerLevel level, final GateFrame frame, final Direction facing,
-            final FixtureBuffer fixtures, final PlacementMode mode) {
-        final Rotation rotation = Fixtures.rotation(facing);
+    public static boolean build(final ServerLevel level, final GateFrame gate, final FixtureBuffer fixtures,
+            final PlacementMode mode) {
+        final GateFrame frame = gate.upright();
+        final Rotation rotation = Fixtures.rotation(frame.facing());
         final List<Placed> placed = new ArrayList<>();
         for (final Map.Entry<BlockPos, BlockState> entry : fixtures.states().entrySet()) {
             final BlockPos offset = entry.getKey();

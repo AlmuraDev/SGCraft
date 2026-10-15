@@ -38,9 +38,9 @@ import java.util.Optional;
  * from {@link #MIN_SUPERGATE_RADIUS} to {@link #MAX_SUPERGATE_RADIUS} blocks from its center to its base.
  *
  * <p>Positions are in the gate's own frame (see {@link GateFrame}): the base is at the origin at the bottom center of
- * the ring, x runs to the gate's right as seen from in front, y runs up, and the event horizon is the plane z = 0. A
- * supergate is drawn as a standard gate scaled up to fit its blocks, so its details keep their proportions, but its
- * ring is only as thick as its blocks.</p>
+ * the ring, x runs to the gate's right as seen from in front, y runs up the ring, and the event horizon is the plane
+ * z = 0. A supergate is drawn as a standard gate scaled up to fit its blocks, so its details keep their proportions,
+ * but its ring is only as thick as its blocks.</p>
  */
 public final class GateShape {
 

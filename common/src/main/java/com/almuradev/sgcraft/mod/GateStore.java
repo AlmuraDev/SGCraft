@@ -29,6 +29,8 @@ import com.almuradev.sgcraft.SGCraft;
 import com.almuradev.sgcraft.api.SGCraftRegistries;
 import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.api.gate.GateType;
+import com.almuradev.sgcraft.gate.GateFrame;
+import com.almuradev.sgcraft.gate.GateOrientation;
 import com.almuradev.sgcraft.gate.GateShape;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
@@ -155,12 +157,13 @@ public final class GateStore extends SavedData {
     }
 
     /**
-     * A formed gate as it is saved: where its base is, its type, which way it faces, how many chevrons it has, the
-     * values of its properties that differ from their defaults, by each property's registry name, and what it holds
-     * between restarts, such as where its iris is and the energy it has stored.
+     * A formed gate as it is saved: where its base is, its type, which way its base faces, how many chevrons it has,
+     * the values of its properties that differ from their defaults, by each property's registry name, what it holds
+     * between restarts, such as where its iris is and the energy it has stored, its size, and whether it stands or
+     * lies flat.
      */
     public record GateRecord(GlobalPos position, ResourceKey<GateType> type, Direction facing, int chevrons,
-            CompoundTag properties, CompoundTag state, int radius) {
+            CompoundTag properties, CompoundTag state, int radius, GateOrientation orientation) {
 
         static final Codec<GateRecord> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 GlobalPos.CODEC.fieldOf("position").forGetter(GateRecord::position),
@@ -169,12 +172,15 @@ public final class GateStore extends SavedData {
                 Codec.INT.fieldOf("chevrons").forGetter(GateRecord::chevrons),
                 CompoundTag.CODEC.optionalFieldOf("properties", new CompoundTag()).forGetter(GateRecord::properties),
                 CompoundTag.CODEC.optionalFieldOf("state", new CompoundTag()).forGetter(GateRecord::state),
-                Codec.INT.optionalFieldOf("radius", GateShape.STANDARD.radius()).forGetter(GateRecord::radius)
+                Codec.INT.optionalFieldOf("radius", GateShape.STANDARD.radius()).forGetter(GateRecord::radius),
+                GateOrientation.CODEC.optionalFieldOf("orientation", GateOrientation.STANDING)
+                        .forGetter(GateRecord::orientation)
         ).apply(instance, GateRecord::new));
 
         public GateRecord(final GlobalPos position, final ResourceKey<GateType> type, final Direction facing,
                 final int chevrons, final CompoundTag properties) {
-            this(position, type, facing, chevrons, properties, new CompoundTag(), GateShape.STANDARD.radius());
+            this(position, type, facing, chevrons, properties, new CompoundTag(), GateShape.STANDARD.radius(),
+                    GateOrientation.STANDING);
         }
 
         public GateRecord {
@@ -197,24 +203,34 @@ public final class GateStore extends SavedData {
             return GateShape.ofRadius(this.radius);
         }
 
+        /** @return the gate's own frame */
+        public GateFrame frame() {
+            return new GateFrame(this.position.pos(), this.facing, this.orientation, this.shape());
+        }
+
         public GateRecord withChevrons(final int chevrons) {
             return new GateRecord(this.position, this.type, this.facing, chevrons, this.properties, this.state,
-                    this.radius);
+                    this.radius, this.orientation);
         }
 
         public GateRecord withType(final ResourceKey<GateType> type) {
             return new GateRecord(this.position, type, this.facing, this.chevrons, this.properties, this.state,
-                    this.radius);
+                    this.radius, this.orientation);
         }
 
         public GateRecord withProperties(final CompoundTag properties) {
             return new GateRecord(this.position, this.type, this.facing, this.chevrons, properties, this.state,
-                    this.radius);
+                    this.radius, this.orientation);
         }
 
         public GateRecord withState(final CompoundTag state) {
             return new GateRecord(this.position, this.type, this.facing, this.chevrons, this.properties, state,
-                    this.radius);
+                    this.radius, this.orientation);
+        }
+
+        public GateRecord withOrientation(final GateOrientation orientation) {
+            return new GateRecord(this.position, this.type, this.facing, this.chevrons, this.properties, this.state,
+                    this.radius, orientation);
         }
     }
 }

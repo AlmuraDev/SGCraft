@@ -40,12 +40,12 @@ import com.almuradev.sgcraft.api.gate.PlacementResult;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.api.gate.Stargates;
 import com.almuradev.sgcraft.gate.GateFormation;
+import com.almuradev.sgcraft.gate.GateFrame;
 import com.almuradev.sgcraft.gate.GateShape;
 import com.almuradev.sgcraft.mod.GateStore.GateRecord;
 import com.almuradev.sgcraft.mod.event.SGEventBus;
 import com.almuradev.sgcraft.mod.event.SGEvents;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
@@ -153,14 +153,19 @@ public final class SGStargates implements Stargates {
         return Optional.of(this.live.computeIfAbsent(position, pos -> new SGStargate(this, pos)));
     }
 
-    /** Records a gate that has just formed, keeping its chevrons and properties if it was known before. */
-    public void formed(final GlobalPos position, final ResourceKey<GateType> type, final Direction facing,
-            final int chevrons, final GateShape shape) {
+    /**
+     * Records a gate that has just formed, keeping its chevrons and properties if it was known before.
+     *
+     * @param frame the gate's frame, which gives the way its base faces, how it lies and its size
+     */
+    public void formed(final GlobalPos position, final ResourceKey<GateType> type, final GateFrame frame,
+            final int chevrons) {
         final GateStore store = this.store();
         final Optional<GateRecord> known = store.gate(position);
-        store.put(new GateRecord(position, type, facing, known.map(GateRecord::chevrons).orElse(chevrons),
+        store.put(new GateRecord(position, type, frame.facing(), known.map(GateRecord::chevrons).orElse(chevrons),
                 known.map(GateRecord::properties).orElseGet(CompoundTag::new),
-                known.map(GateRecord::state).orElseGet(CompoundTag::new), shape.radius()));
+                known.map(GateRecord::state).orElseGet(CompoundTag::new), frame.shape().radius(),
+                frame.orientation()));
         this.gate(position).ifPresent(SGStargate::sync);
     }
 
@@ -303,8 +308,7 @@ public final class SGStargates implements Stargates {
     public Optional<Stargate> at(final GlobalPos position) {
         for (final GateRecord gate : this.store().gates()) {
             if (gate.position().dimension().equals(position.dimension())
-                    && GateFormation.isPartOfGate(gate.position().pos(), gate.facing(), gate.shape(),
-                    position.pos())) {
+                    && GateFormation.isPartOfGate(gate.frame(), position.pos())) {
                 return this.gate(gate.position()).map(Stargate.class::cast);
             }
         }

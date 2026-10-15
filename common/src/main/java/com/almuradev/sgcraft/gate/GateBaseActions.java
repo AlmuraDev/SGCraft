@@ -42,7 +42,8 @@ import java.util.OptionalInt;
 
 /**
  * Opens a gate's base screen, as using the base or any block of a formed gate's ring does in the original. A player
- * who may configure the gate gets its camouflage too; anyone else sees only its address.
+ * who may configure a standing gate gets its camouflage too; anyone else, and anyone at a gate lying flat, sees only
+ * its address.
  */
 public final class GateBaseActions {
 
@@ -58,7 +59,9 @@ public final class GateBaseActions {
             return;
         }
         int menu = GateBaseInfo.NO_MENU;
-        if (gate.get().access().allows(ToolActions.cause(player), GateRight.CONFIGURE)) {
+        // A gate lying flat has no bottom row to camouflage, as in the original
+        if (!base.orientation().isFlat()
+                && gate.get().access().allows(ToolActions.cause(player), GateRight.CONFIGURE)) {
             final OptionalInt opened = player.openMenu(new SimpleMenuProvider((id, inventory, opener) ->
                     new GateBaseMenu(id, inventory, base.camouflage()),
                     Component.translatableWithFallback("screen.sgcraft.gate_base", "Stargate Address")));
