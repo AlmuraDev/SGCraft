@@ -26,14 +26,21 @@
 package com.almuradev.sgcraft.fabric;
 
 import com.almuradev.sgcraft.client.ClientPlatform;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.SubmitRenderPhases;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.feature.submit.SubmitNode;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 public final class FabricClientPlatform implements ClientPlatform {
 
     @Override
     public void submitSolid(final SubmitNodeCollector collector, final SubmitNode node) {
         collector.submitCustom(SubmitRenderPhases.SOLID, node);
+    }
+
+    @Override
+    public void sendToServer(final CustomPacketPayload payload) {
+        ClientPlayNetworking.send(payload);
     }
 }

@@ -26,7 +26,17 @@
 package com.almuradev.sgcraft.neoforge;
 
 import com.almuradev.sgcraft.Platform;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
 import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.fml.loading.FMLPaths;
+
+import java.nio.file.Path;
+import java.util.function.BiFunction;
 
 public final class NeoForgePlatform implements Platform {
 
@@ -38,5 +48,20 @@ public final class NeoForgePlatform implements Platform {
     @Override
     public boolean isDevelopmentEnvironment() {
         return !FMLLoader.getCurrent().isProduction();
+    }
+
+    @Override
+    public Path configDir() {
+        return FMLPaths.CONFIGDIR.get();
+    }
+
+    @Override
+    public <T extends AbstractContainerMenu> MenuType<T> menuType(final BiFunction<Integer, Inventory, T> factory) {
+        return new MenuType<>(factory::apply, FeatureFlags.VANILLA_SET);
+    }
+
+    @Override
+    public boolean canSend(final ServerPlayer player, final CustomPacketPayload.Type<?> type) {
+        return player.connection.hasChannel(type);
     }
 }

@@ -28,6 +28,8 @@ package com.almuradev.sgcraft.neoforge;
 import com.almuradev.sgcraft.client.ClientPlatform;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.feature.submit.SubmitNode;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.neoforged.neoforge.client.network.ClientPacketDistributor;
 import net.neoforged.neoforge.client.submit.RenderPhaseKeys;
 
 public final class NeoForgeClientPlatform implements ClientPlatform {
@@ -35,5 +37,10 @@ public final class NeoForgeClientPlatform implements ClientPlatform {
     @Override
     public void submitSolid(final SubmitNodeCollector collector, final SubmitNode node) {
         collector.submitSpecial(RenderPhaseKeys.SOLID, node);
+    }
+
+    @Override
+    public void sendToServer(final CustomPacketPayload payload) {
+        ClientPacketDistributor.sendToServer(payload);
     }
 }

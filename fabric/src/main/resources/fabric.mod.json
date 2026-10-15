@@ -17,6 +17,10 @@
     },
     "license": "${license}",
     "environment": "*",
+    "accessWidener": "sgcraft.accesswidener",
+    "mixins": [
+        "${mod_id}.mixins.json"
+    ],
     "entrypoints": {
         "main": [
             "com.almuradev.sgcraft.fabric.SGCraftFabric"

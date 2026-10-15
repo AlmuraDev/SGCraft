@@ -1,0 +1,8 @@
+{
+  "type": "neoforge:add_table",
+  "condition": {
+    "type": "neoforge:loot_table_id",
+    "loot_table_id": "minecraft:chests/village/village_toolsmith"
+  },
+  "table": "sgcraft:chests/village_blacksmith"
+}

@@ -25,33 +25,57 @@
 
 package com.almuradev.sgcraft.fabric;
 
-import com.almuradev.sgcraft.api.address.AddressReach;
-import com.almuradev.sgcraft.api.gate.GateProperty;
-import com.almuradev.sgcraft.command.SGCommands;
-import com.almuradev.sgcraft.mod.SGBuiltIns;
-import com.almuradev.sgcraft.mod.SGServer;
-import com.almuradev.sgcraft.sound.SGSounds;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import com.almuradev.sgcraft.SGCraft;
 import com.almuradev.sgcraft.api.SGCraftRegistries;
+import com.almuradev.sgcraft.api.address.AddressReach;
+import com.almuradev.sgcraft.api.addressbook.AddressBookProvider;
+import com.almuradev.sgcraft.api.energy.EnergyBridge;
+import com.almuradev.sgcraft.api.energy.EnergySourceProvider;
+import com.almuradev.sgcraft.api.gate.GateProperty;
 import com.almuradev.sgcraft.api.gate.GateType;
+import com.almuradev.sgcraft.api.gate.IrisType;
 import com.almuradev.sgcraft.block.SGBlocks;
 import com.almuradev.sgcraft.block.entity.SGBlockEntityTypes;
+import com.almuradev.sgcraft.command.SGCommands;
+import com.almuradev.sgcraft.entity.SGEntityTypes;
 import com.almuradev.sgcraft.gate.SGGateTypes;
+import com.almuradev.sgcraft.item.SGDataComponents;
 import com.almuradev.sgcraft.item.SGItems;
+import com.almuradev.sgcraft.mod.ChestLoot;
+import com.almuradev.sgcraft.mod.GateProtection;
+import com.almuradev.sgcraft.mod.SGBuiltIns;
+import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.network.SGNetwork;
 import com.almuradev.sgcraft.registry.SGRegistries;
+import com.almuradev.sgcraft.sound.SGSounds;
+import com.almuradev.sgcraft.villager.SGVillagers;
+import com.almuradev.sgcraft.worldgen.StructureGates;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
+import net.fabricmc.fabric.api.biome.v1.BiomeModifications;
+import net.fabricmc.fabric.api.biome.v1.BiomeSelectors;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.creativetab.v1.FabricCreativeModeTab;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
+import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
+import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.object.builder.v1.world.poi.PoiHelper;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.levelgen.GenerationStep;
+import team.reborn.energy.api.EnergyStorage;
 
 import java.util.HashMap;
 import java.util.Map;
-import net.minecraft.world.item.ItemStack;
 
 public final class SGCraftFabric implements ModInitializer {
 
@@ -75,19 +99,67 @@ public final class SGCraftFabric implements ModInitializer {
         final Registry<GateProperty<?>> properties =
                 (Registry<GateProperty<?>>) created.get(SGCraftRegistries.GATE_PROPERTY);
         SGBuiltIns.registerProperties((key, property) -> Registry.register(properties, key, property));
+        @SuppressWarnings("unchecked")
+        final Registry<IrisType> irisTypes = (Registry<IrisType>) created.get(SGCraftRegistries.IRIS_TYPE);
+        SGBuiltIns.registerIrisTypes((key, type) -> Registry.register(irisTypes, key, type));
+        @SuppressWarnings("unchecked")
+        final Registry<EnergySourceProvider> energy =
+                (Registry<EnergySourceProvider>) created.get(SGCraftRegistries.ENERGY_SOURCE_PROVIDER);
+        SGBuiltIns.registerEnergySources((key, provider) -> Registry.register(energy, key, provider));
+        final Registry<AddressBookProvider> books =
+                (Registry<AddressBookProvider>) created.get(SGCraftRegistries.ADDRESS_BOOK_PROVIDER);
+        SGBuiltIns.registerAddressBooks((key, provider) -> Registry.register(books, key, provider));
+        final Registry<EnergyBridge> bridges = (Registry<EnergyBridge>) created.get(SGCraftRegistries.ENERGY_BRIDGE);
+        SGBuiltIns.registerEnergyBridges((key, bridge) -> Registry.register(bridges, key, bridge));
+        SGBuiltIns.registerMenus((key, menu) -> Registry.register(BuiltInRegistries.MENU, key, menu));
         SGBlocks.register((key, block) -> Registry.register(BuiltInRegistries.BLOCK, key, block));
         SGSounds.register((key, sound) -> Registry.register(BuiltInRegistries.SOUND_EVENT, key, sound));
+        StructureGates.register((key, type) -> Registry.register(BuiltInRegistries.STRUCTURE_PIECE, key, type));
+        SGDataComponents.register((key, type) -> Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE, key, type));
         SGItems.register((key, item) -> Registry.register(BuiltInRegistries.ITEM, key, item));
         SGBlockEntityTypes.register((key, type) -> Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, type));
+        SGEntityTypes.register((key, type) -> Registry.register(BuiltInRegistries.ENTITY_TYPE, key, type));
+        // Power units take FE from Team Reborn Energy's cables
+        EnergyStorage.SIDED.registerForBlockEntity((unit, side) -> unit.handler(PowerUnitEnergy::new),
+                SGBlockEntityTypes.POWER_UNIT);
+        // Fabric's helper also tells the world which block states are the DHD's
+        PoiHelper.register(SGVillagers.DHD.identifier(), 1, 1, SGVillagers.dhdStates());
+        SGVillagers.registerProfessions((key, profession) ->
+                Registry.register(BuiltInRegistries.VILLAGER_PROFESSION, key, profession));
         Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, SGItems.tabKey(), FabricCreativeModeTab.builder()
                 .title(SGItems.tabTitle())
                 .icon(() -> new ItemStack(SGItems.STARGATE_CHEVRON))
                 .displayItems((parameters, output) -> SGItems.tabItems().forEach(output::accept))
                 .build());
+        // Every payload, both ways; the client side sets its receivers in SGCraftFabricClient
+        SGNetwork.serverbound().forEach(SGCraftFabric::serverbound);
+        SGNetwork.clientbound().forEach(spec -> SGCraftFabric.clientbound(spec));
+        // Formed gates are kept whole unless they may be broken
+        PlayerBlockBreakEvents.BEFORE.register((level, player, pos, state, blockEntity) ->
+                !(player instanceof ServerPlayer serverPlayer && level instanceof ServerLevel serverLevel)
+                        || GateProtection.mayBreak(serverPlayer, serverLevel, pos));
+        // Naquadah ore in the overworld's biomes; NeoForge reads the same from its biome modifier
+        // SGCraft's loot in vanilla's chests; NeoForge does the same with loot modifiers
+        LootTableEvents.MODIFY_DROPS.register(ChestLoot::addTo);
+        BiomeModifications.addFeature(BiomeSelectors.foundInOverworld(), GenerationStep.Decoration.UNDERGROUND_ORES,
+                ResourceKey.create(Registries.PLACED_FEATURE, SGCraft.id("naquadah_ore")));
+        // Fabric starts a server before it makes its worlds, so their structures have gates from the first chunk
+        ServerLifecycleEvents.SERVER_STARTING.register(StructureGates::prepare);
         ServerLifecycleEvents.SERVER_STARTING.register(SGServer::starting);
         ServerTickEvents.END_SERVER_TICK.register(SGServer::tick);
         ServerLifecycleEvents.SERVER_STOPPED.register(SGServer::stopped);
         CommandRegistrationCallback.EVENT.register((dispatcher, registries, environment) ->
                 SGCommands.register(dispatcher));
+    }
+
+    // Fabric runs these receivers on the server thread
+    private static <T extends CustomPacketPayload> void serverbound(final SGNetwork.Serverbound<T> spec) {
+        PayloadTypeRegistry.serverboundPlay().register(spec.type(), spec.codec());
+        ServerPlayNetworking.registerGlobalReceiver(spec.type(),
+                (payload, context) -> spec.handler().accept(context.player(), payload));
+    }
+
+    private static <T extends CustomPacketPayload> void clientbound(final SGNetwork.Clientbound<T> spec) {
+        PayloadTypeRegistry.clientboundPlay().register(spec.type(), spec.codec());
     }
 }

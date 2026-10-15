@@ -26,7 +26,17 @@
 package com.almuradev.sgcraft.fabric;
 
 import com.almuradev.sgcraft.Platform;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuType;
+
+import java.nio.file.Path;
+import java.util.function.BiFunction;
 
 public final class FabricPlatform implements Platform {
 
@@ -38,5 +48,20 @@ public final class FabricPlatform implements Platform {
     @Override
     public boolean isDevelopmentEnvironment() {
         return FabricLoader.getInstance().isDevelopmentEnvironment();
+    }
+
+    @Override
+    public Path configDir() {
+        return FabricLoader.getInstance().getConfigDir();
+    }
+
+    @Override
+    public <T extends AbstractContainerMenu> MenuType<T> menuType(final BiFunction<Integer, Inventory, T> factory) {
+        return new MenuType<>(factory::apply, FeatureFlags.VANILLA_SET);
+    }
+
+    @Override
+    public boolean canSend(final ServerPlayer player, final CustomPacketPayload.Type<?> type) {
+        return ServerPlayNetworking.canSend(player, type);
     }
 }
