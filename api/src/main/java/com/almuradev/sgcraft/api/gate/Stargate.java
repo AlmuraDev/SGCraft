@@ -37,6 +37,7 @@ import net.minecraft.core.Holder;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CompletionStage;
 
 /**
@@ -97,10 +98,36 @@ public interface Stargate {
 
     /**
      * @param property a property
-     * @return the gate's value of it; the property's default if the gate has never had a value set; or empty if
+     * @return the gate's value of it; the default if the gate has never had a value set, which is the property's
+     *     own unless the server's configuration sets another (see {@link GateProperty#defaultValue()}); or empty if
      *     there is neither, or the property isn't registered
      */
     <T> Optional<T> get(final GateProperty<T> property);
+
+    /**
+     * The player the gate belongs to. Implementations must make the player who built a gate its owner: the one who
+     * finished its ring, or who placed it through {@link Stargates#place(GatePlacement, Cause)} with a player in the
+     * cause. A gate world generation placed, or one placed with no player in the cause, has no owner until one is
+     * {@linkplain #setOwner(Optional, Cause) set}.
+     *
+     * <p>The owner has every {@linkplain com.almuradev.sgcraft.api.access.GateRight right} on the gate, and
+     * {@linkplain GateAccess#mayManage(Cause) manages} it.</p>
+     *
+     * @return the owner's UUID, or empty if the gate has none
+     */
+    Optional<UUID> owner();
+
+    /**
+     * Hands the gate to another player, or leaves it with no owner. Fires a
+     * {@link com.almuradev.sgcraft.api.event.gate.ChangeGateOwnerEvent.Pre} first.
+     *
+     * @param owner the new owner's UUID, or empty for none
+     * @param cause who is handing it over
+     * @return {@link ActionResult#NO_CHANGE} if the gate already has that owner, {@link ActionResult#DENIED} if the
+     *     cause may not {@linkplain GateAccess#mayManage(Cause) manage} the gate, {@link ActionResult#CANCELED} if a
+     *     listener canceled it, or {@link ActionResult#NOT_POSSIBLE} if the gate no longer exists
+     */
+    ActionResult setOwner(final Optional<UUID> owner, final Cause cause);
 
     /**
      * Dials an address. Dialing takes many ticks, so the result arrives later.
@@ -175,11 +202,18 @@ public interface Stargate {
     ActionResult disconnect(final Cause cause);
 
     /**
+     * Sets the gate's own value of a property. The cause needs the
+     * {@link com.almuradev.sgcraft.api.access.GateRight#CONFIGURE} right, and for the properties that decide who may
+     * do what with the gate, {@link GateProperties#DEFAULT_RIGHTS},
+     * {@link GateProperties#PLAYER_RIGHTS}, {@link GateProperties#BREAKABLE} and {@link GateProperties#GENERATED},
+     * it must {@linkplain GateAccess#mayManage(Cause) manage} the gate instead.
+     *
      * @param property a property
      * @param value its new value
      * @param cause who is changing it
-     * @return {@link ActionResult#NO_CHANGE} if the gate already has that value, or
-     *     {@link ActionResult#NOT_POSSIBLE} if the property isn't registered or the gate no longer exists
+     * @return {@link ActionResult#NO_CHANGE} if the gate already has that value, {@link ActionResult#DENIED} if the
+     *     cause may not change it, or {@link ActionResult#NOT_POSSIBLE} if the property isn't registered or the gate
+     *     no longer exists
      */
     <T> ActionResult set(final GateProperty<T> property, final T value, final Cause cause);
 

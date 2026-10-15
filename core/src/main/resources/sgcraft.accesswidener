@@ -1,0 +1,8 @@
+classTweaker	v1	official
+# Fabric API has no way to register an item's special renderer, so the DHD's goes into vanilla's own list
+accessible	field	net/minecraft/client/renderer/special/SpecialModelRenderers	ID_MAPPER	Lnet/minecraft/util/ExtraCodecs$LateBoundIdMapper;
+# Fabric API has no way to submit a mod's picture in picture, so it goes into the screen's render state, clipped as
+# the screen clips
+accessible	field	net/minecraft/client/gui/GuiGraphicsExtractor	guiRenderState	Lnet/minecraft/client/renderer/state/gui/GuiRenderState;
+accessible	field	net/minecraft/client/gui/GuiGraphicsExtractor	scissorStack	Lnet/minecraft/client/gui/GuiGraphicsExtractor$ScissorStack;
+accessible	class	net/minecraft/client/gui/GuiGraphicsExtractor$ScissorStack

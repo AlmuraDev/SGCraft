@@ -12,7 +12,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-OUT = Path('common/src/main/resources/assets/sgcraft/textures/gui/dhd')
+OUT = Path('core/src/main/resources/assets/sgcraft/textures/gui/dhd')
 SIZE = 512
 OUTER, BETWEEN, INNER = 0.94, 0.58, 0.28
 OUTER_BUTTONS, INNER_BUTTONS = 26, 11

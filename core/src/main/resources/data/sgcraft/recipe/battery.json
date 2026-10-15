@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "r": "minecraft:redstone",
+    "i": "minecraft:iron_ingot",
+    "N": "sgcraft:naquadah_ingot"
+  },
+  "pattern": [
+    " r ",
+    "iNi",
+    "iNi"
+  ],
+  "result": {
+    "id": "sgcraft:battery"
+  }
+}

@@ -13,8 +13,8 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-OUT = Path('common/src/main/resources/assets/sgcraft/textures/gui/dhd')
-BLOCK = Path('common/src/main/resources/assets/sgcraft/textures/block')
+OUT = Path('core/src/main/resources/assets/sgcraft/textures/gui/dhd')
+BLOCK = Path('core/src/main/resources/assets/sgcraft/textures/block')
 # How many of the face's pixels each of the block texture's pixels takes
 PIXEL = 4
 SIZE = 512

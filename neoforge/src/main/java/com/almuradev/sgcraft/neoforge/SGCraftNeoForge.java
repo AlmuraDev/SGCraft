@@ -25,24 +25,27 @@
 
 package com.almuradev.sgcraft.neoforge;
 
-import com.almuradev.sgcraft.SGCraft;
 import com.almuradev.sgcraft.api.SGCraftRegistries;
-import com.almuradev.sgcraft.block.SGBlocks;
-import com.almuradev.sgcraft.block.entity.SGBlockEntityTypes;
-import com.almuradev.sgcraft.command.SGCommands;
-import com.almuradev.sgcraft.entity.SGEntityTypes;
-import com.almuradev.sgcraft.gate.SGGateTypes;
-import com.almuradev.sgcraft.item.SGDataComponents;
-import com.almuradev.sgcraft.item.SGItems;
-import com.almuradev.sgcraft.mod.GateProtection;
 import com.almuradev.sgcraft.mod.SGBuiltIns;
+import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.SGServer;
-import com.almuradev.sgcraft.neoforge.test.SGGameTests;
-import com.almuradev.sgcraft.network.SGNetwork;
-import com.almuradev.sgcraft.registry.SGRegistries;
-import com.almuradev.sgcraft.sound.SGSounds;
-import com.almuradev.sgcraft.villager.SGVillagers;
-import com.almuradev.sgcraft.worldgen.StructureGates;
+import com.almuradev.sgcraft.mod.block.SGBlocks;
+import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
+import com.almuradev.sgcraft.mod.command.SGCommands;
+import com.almuradev.sgcraft.mod.entity.SGEntityTypes;
+import com.almuradev.sgcraft.mod.gate.GateProtection;
+import com.almuradev.sgcraft.mod.gate.SGGateTypes;
+import com.almuradev.sgcraft.mod.item.SGDataComponents;
+import com.almuradev.sgcraft.mod.item.SGItems;
+import com.almuradev.sgcraft.mod.malp.MalpLinks;
+import com.almuradev.sgcraft.mod.network.SGNetwork;
+import com.almuradev.sgcraft.mod.registry.SGRegistries;
+import com.almuradev.sgcraft.mod.sound.SGSounds;
+import com.almuradev.sgcraft.mod.villager.SGVillagers;
+import com.almuradev.sgcraft.mod.worldgen.NaquadahOre;
+import com.almuradev.sgcraft.mod.worldgen.StructureGates;
+import com.almuradev.sgcraft.neoforge.test.RemoteViewGameTestsNeoForge;
+import com.almuradev.sgcraft.neoforge.test.SGGameTestsNeoForge;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -57,6 +60,7 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
@@ -73,7 +77,8 @@ public final class SGCraftNeoForge {
 
     public SGCraftNeoForge(final IEventBus modBus) {
         SGCraft.init();
-        SGGameTests.register(modBus);
+        SGGameTestsNeoForge.register(modBus);
+        RemoteViewGameTestsNeoForge.register(modBus);
         modBus.addListener(SGCraftNeoForge::createRegistries);
         modBus.addListener(SGCraftNeoForge::register);
         modBus.addListener(SGCraftNeoForge::registerPayloads);
@@ -83,6 +88,15 @@ public final class SGCraftNeoForge {
                 StructureGates.prepare(event.getServer()));
         NeoForge.EVENT_BUS.addListener((final ServerStartingEvent event) -> SGServer.starting(event.getServer()));
         NeoForge.EVENT_BUS.addListener((final ServerTickEvent.Post event) -> SGServer.tick(event.getServer()));
+        // Naquadah ore takes its settings before the worlds are made, and is added to old chunks as they load
+        NeoForge.EVENT_BUS.addListener((final ServerAboutToStartEvent event) ->
+                NaquadahOre.prepare(event.getServer()));
+        NeoForge.EVENT_BUS.addListener((final ChunkEvent.Load event) -> {
+            if (event.getLevel() instanceof ServerLevel level) {
+                NaquadahOre.onChunkLoad(level, event.getChunk(), event.isNewChunk());
+            }
+        });
+        NeoForge.EVENT_BUS.addListener((final ServerTickEvent.Post event) -> NaquadahOre.tick(event.getServer()));
         NeoForge.EVENT_BUS.addListener((final ServerStoppedEvent event) -> SGServer.stopped(event.getServer()));
         NeoForge.EVENT_BUS.addListener((final RegisterCommandsEvent event) ->
                 SGCommands.register(event.getDispatcher()));
@@ -126,7 +140,12 @@ public final class SGCraftNeoForge {
     // Power units take FE from cables
     private static void registerCapabilities(final RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.Energy.BLOCK, SGBlockEntityTypes.POWER_UNIT,
-                (unit, side) -> unit.handler(PowerUnitEnergy::new));
+                (unit, side) -> unit.handler(PowerUnitEnergyNeoForge::new));
+        // Battery chargers take FE from cables too, and batteries are energy items any charger fills
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, SGBlockEntityTypes.BATTERY_CHARGER,
+                (charger, side) -> charger.handler(BatteryChargerEnergyNeoForge::new));
+        event.registerItem(Capabilities.Energy.ITEM, (stack, access) -> new BatteryEnergyNeoForge(access),
+                SGItems.BATTERY);
     }
 
     private static void register(final RegisterEvent event) {
@@ -141,6 +160,7 @@ public final class SGCraftNeoForge {
         event.register(SGCraftRegistries.GATE_TYPE, helper -> SGGateTypes.register(helper::register));
         event.register(Registries.SOUND_EVENT, helper -> SGSounds.register(helper::register));
         event.register(Registries.STRUCTURE_PIECE, helper -> StructureGates.register(helper::register));
+        event.register(Registries.FEATURE_TYPE, helper -> NaquadahOre.register(helper::register));
         event.register(SGCraftRegistries.ADDRESS_REACH, helper -> SGBuiltIns.registerReaches(helper::register));
         event.register(SGCraftRegistries.GATE_PROPERTY, helper -> SGBuiltIns.registerProperties(helper::register));
         event.register(SGCraftRegistries.IRIS_TYPE, helper -> SGBuiltIns.registerIrisTypes(helper::register));
@@ -150,6 +170,8 @@ public final class SGCraftNeoForge {
                 helper -> SGBuiltIns.registerAddressBooks(helper::register));
         event.register(SGCraftRegistries.ENERGY_BRIDGE, helper -> SGBuiltIns.registerEnergyBridges(helper::register));
         event.register(Registries.MENU, helper -> SGBuiltIns.registerMenus(helper::register));
+        event.register(Registries.RECIPE_SERIALIZER, helper -> SGItems.registerRecipeSerializers(helper::register));
+        event.register(Registries.TICKET_TYPE, helper -> MalpLinks.registerTickets(helper::register));
         event.register(Registries.CREATIVE_MODE_TAB, helper -> helper.register(SGItems.tabKey(),
                 CreativeModeTab.builder()
                         .title(SGItems.tabTitle())

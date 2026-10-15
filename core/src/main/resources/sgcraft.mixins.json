@@ -1,0 +1,31 @@
+{
+    "required": true,
+    "minVersion": "0.8",
+    "package": "com.almuradev.sgcraft.mod.mixin",
+    "compatibilityLevel": "JAVA_25",
+    "mixins": [
+        "ChunkMapAccessor",
+        "ChunkMapMixin",
+        "LocalMobCapCalculatorMixin",
+        "MobMixin",
+        "NaturalSpawnerMixin",
+        "ScatteredFeaturePieceAccessor",
+        "ServerChunkCacheMixin",
+        "ServerEntityMixin",
+        "ServerPlayerMixin",
+        "StructureMixin",
+        "StructurePiecesBuilderAccessor",
+        "StructureTemplatePoolAccessor"
+    ],
+    "client": [
+        "client.AvatarRendererMixin",
+        "client.GameRendererMixin",
+        "client.PlayerModelMixin",
+        "client.RenderTypeInvoker",
+        "client.ScreenshotMixin",
+        "client.SoundEngineMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

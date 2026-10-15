@@ -73,7 +73,8 @@ public interface GateAccess {
     /**
      * @param player a player's UUID
      * @param right a right
-     * @return whether the player has the right on this gate: their own rights if the gate lists them, otherwise
+     * @return whether the player has the right on this gate: every right if they are the gate's
+     *     {@linkplain Stargate#owner() owner}, otherwise their own rights if the gate lists them, otherwise
      *     {@link com.almuradev.sgcraft.api.gate.GateProperties#DEFAULT_RIGHTS}
      */
     boolean allows(final UUID player, final GateRight right);
@@ -88,4 +89,19 @@ public interface GateAccess {
      * @return whether the cause has the right on this gate
      */
     boolean allows(final Cause cause, final GateRight right);
+
+    /**
+     * Whether a cause manages the gate: changes which players have which rights, decides whether others may break it,
+     * and hands it to a new {@linkplain Stargate#owner() owner}. No right grants this, so a player with
+     * {@link GateRight#CONFIGURE} alone doesn't manage the gate.
+     *
+     * <p>Implementations must answer for the most direct player in the cause: yes for the gate's owner, and no for any
+     * other player unless they may manage every gate, such as a server operator or a player the platform's permission
+     * system allows. For a cause with no player in it, the answer is up to the implementation. This answer fires no
+     * event; listeners stop the changes it allows through those changes' own events.</p>
+     *
+     * @param cause who wants to act
+     * @return whether the cause manages the gate
+     */
+    boolean mayManage(final Cause cause);
 }

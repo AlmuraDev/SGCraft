@@ -10,8 +10,8 @@ import sys
 from pathlib import Path
 
 ORIGINAL = Path(sys.argv[1]) / 'assets/sgcraft/textures/blocks'
-ASSETS = Path('common/src/main/resources/assets/sgcraft')
-DATA = Path('common/src/main/resources/data')
+ASSETS = Path('core/src/main/resources/assets/sgcraft')
+DATA = Path('core/src/main/resources/data')
 
 
 def write(path, value):

@@ -13,7 +13,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-ASSETS = Path('common/src/main/resources/assets/sgcraft')
+ASSETS = Path('core/src/main/resources/assets/sgcraft')
 CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@'
 CELL = 64
 COLUMNS = 10

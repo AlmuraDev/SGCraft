@@ -18,8 +18,8 @@ Earlier versions for Minecraft 1.7 to 1.12 are on the other branches of this rep
 ## Projects
 
 - `api`: the Stargate API. Add-ons build against this alone; its contracts are versioned on their own.
-- `common`: the mod, written against vanilla Minecraft only.
-- `neoforge`, `fabric`: thin layers that load `common` on each loader.
+- `core`: the mod, written against vanilla Minecraft only.
+- `neoforge`, `fabric`: thin layers that load `core` on each loader.
 
 SGCraft does not depend on or know about any other mod. Integrations with other mods belong in add-ons built on
 the API.

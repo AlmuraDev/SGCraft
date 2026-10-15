@@ -29,7 +29,7 @@ includeBuild('build-logic')
 // The Stargate API that add-ons build against
 include('api')
 // The mod itself, written against vanilla Minecraft only
-include('common')
-// Thin layers that load common on each mod loader
+include('core')
+// Thin layers that load core on each mod loader
 include('fabric')
 include('neoforge')

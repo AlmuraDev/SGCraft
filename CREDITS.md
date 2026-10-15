@@ -11,7 +11,7 @@ design say so in their header.
 
 SGCraft's gates are built from measurements of these models. The data measured from each one
 (the files listed under it) is under that model's licence, as given on its page, not SGCraft's.
-The paths are where the data lives in this remake, under `common/src/main/resources/assets/sgcraft`.
+The paths are where the data lives in this remake, under `core/src/main/resources/assets/sgcraft`.
 
 ### Milky Way Stargate | Stargate SG-1
 
@@ -43,8 +43,8 @@ The paths are where the data lives in this remake, under `common/src/main/resour
 
 ## Sounds and the event horizon
 
-The gates' sounds (`sounds`) and the event horizon's texture (`textures/gate/event_horizon.png`) come from the
-1.12 mod as they were, along with the timings, the order chevrons lock in and the wave simulation of the
+The gates' sounds (`sounds`) and the event horizon's textures (`textures/gate/event_horizon.png`, and
+`event_horizon_plain.png`, the 1.12 mod's `eventhorizon.png`) come from the 1.12 mod as they were, along with the timings, the order chevrons lock in and the wave simulation of the
 wormhole's surface, which gcewing designed.
 
 ## Iris, items and naquadah

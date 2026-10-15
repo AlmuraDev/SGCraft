@@ -26,7 +26,7 @@
             "com.almuradev.sgcraft.fabric.SGCraftFabric"
         ],
         "client": [
-            "com.almuradev.sgcraft.fabric.SGCraftFabricClient"
+            "com.almuradev.sgcraft.fabric.SGCraftClientFabric"
         ]
     },
     "depends": {

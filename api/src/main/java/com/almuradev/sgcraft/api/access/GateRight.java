@@ -52,7 +52,10 @@ public record GateRight(Identifier id) {
     /** Opening and closing the gate's iris. */
     public static final GateRight IRIS = GateRight.of("iris");
 
-    /** Changing the gate's type, chevrons, properties and access. */
+    /**
+     * Changing the gate's type, chevrons, properties and address rules. The properties that decide who may do what
+     * with the gate need more: see {@link GateAccess#mayManage(com.almuradev.sgcraft.api.Cause)}.
+     */
     public static final GateRight CONFIGURE = GateRight.of("configure");
 
     public GateRight {

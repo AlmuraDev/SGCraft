@@ -1,0 +1,20 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "g": "minecraft:glass_pane",
+    "o": "minecraft:observer",
+    "l": "minecraft:lightning_rod",
+    "i": "minecraft:iron_ingot",
+    "N": "sgcraft:naquadah_ingot",
+    "r": "minecraft:redstone"
+  },
+  "pattern": [
+    "gol",
+    "iNi",
+    "iri"
+  ],
+  "result": {
+    "id": "sgcraft:malp"
+  }
+}

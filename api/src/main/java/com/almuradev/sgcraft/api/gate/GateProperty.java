@@ -79,7 +79,8 @@ public final class GateProperty<T> {
 
     /**
      * @return the value of a gate that has never had one set, if the property has a default; implementations may
-     *     let the server's configuration choose another default for the properties in {@link GateProperties}
+     *     let the server's configuration choose another default, which {@link Stargate#get(GateProperty)} then
+     *     gives in place of this one
      */
     public Optional<T> defaultValue() {
         return this.defaultValue;

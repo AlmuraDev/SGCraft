@@ -1,0 +1,19 @@
+{
+  "type": "sgcraft:naquadah_ore",
+  "state": "sgcraft:naquadah_ore",
+  "replaceable": {
+    "type": "minecraft:all_of",
+    "predicates": [
+      {
+        "type": "minecraft:solid"
+      },
+      {
+        "type": "minecraft:not",
+        "predicate": {
+          "type": "minecraft:matching_block_tag",
+          "tag": "minecraft:features_cannot_replace"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "sgcraft:block/malp_console"
+    },
+    "facing=east": {
+      "model": "sgcraft:block/malp_console",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "sgcraft:block/malp_console",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "sgcraft:block/malp_console",
+      "y": 270
+    }
+  }
+}

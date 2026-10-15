@@ -8,8 +8,8 @@ import json
 import re
 from pathlib import Path
 
-LANG = Path('common/src/main/resources/assets/sgcraft/lang/en_us.json')
-SOURCES = [Path('common/src/main/java'), Path('neoforge/src/main/java'), Path('fabric/src/main/java')]
+LANG = Path('core/src/main/resources/assets/sgcraft/lang/en_us.json')
+SOURCES = [Path('core/src/main/java'), Path('neoforge/src/main/java'), Path('fabric/src/main/java')]
 CALL = re.compile(r'translatableWithFallback\(\s*"([^"]+)"\s*,\s*"((?:[^"\\]|\\.)*)"', re.S)
 # SGCommands builds its keys from a prefix
 COMMAND = re.compile(r'SGCommands\.text\(\s*"([^"]+)"\s*,\s*"((?:[^"\\]|\\.)*)"', re.S)

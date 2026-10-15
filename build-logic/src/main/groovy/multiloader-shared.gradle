@@ -1,4 +1,4 @@
-// The api and common projects: handed to each loader as sources. Each applies ModDevGradle itself
+// The api and core projects: handed to each loader as sources. Each applies ModDevGradle itself
 // to compile against vanilla Minecraft, since a convention plugin here cannot carry its version
 plugins {
     id 'multiloader-common'

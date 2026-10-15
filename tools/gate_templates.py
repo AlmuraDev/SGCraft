@@ -3,7 +3,7 @@ temple's roof, platforms beside swamp huts and igloos, village plazas, a nether 
 shrine for the monument's top. Each holds a gate spawner, which builds its gate once the world runs, and a
 DHD with some naquadah, as the original SGCraft's generated gates had.
 
-Run from the repository root: python tools/gate_templates.py common/src/main/resources/data/sgcraft/structure/stargate
+Run from the repository root: python tools/gate_templates.py core/src/main/resources/data/sgcraft/structure/stargate
 """
 import gzip
 import io

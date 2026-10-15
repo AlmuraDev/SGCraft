@@ -2,8 +2,8 @@ plugins {
     id 'multiloader-common'
 }
 
-// Each loader compiles the api and common sources into its own jar, so the mod is one jar per loader
-def sharedProjects = [':api', ':common']
+// Each loader compiles the api and core sources into its own jar, so the mod is one jar per loader
+def sharedProjects = [':api', ':core']
 
 configurations {
     commonJava {

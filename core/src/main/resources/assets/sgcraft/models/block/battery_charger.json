@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "sgcraft:block/battery_charger_top",
+    "bottom": "sgcraft:block/battery_charger_bottom",
+    "side": "sgcraft:block/battery_charger_side"
+  }
+}

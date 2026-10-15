@@ -1,0 +1,127 @@
+{
+  "milkyway.gate_roll": {
+    "sounds": [
+      "sgcraft:milkyway/gate_roll"
+    ]
+  },
+  "milkyway.chevron_outgoing": {
+    "sounds": [
+      "sgcraft:milkyway/chev_usual1",
+      "sgcraft:milkyway/chev_usual2",
+      "sgcraft:milkyway/chev_usual3",
+      "sgcraft:milkyway/chev_usual4",
+      "sgcraft:milkyway/chev_usual5",
+      "sgcraft:milkyway/chev_usual6",
+      "sgcraft:milkyway/chev_usual7"
+    ]
+  },
+  "milkyway.chevron_incoming": {
+    "sounds": [
+      "sgcraft:milkyway/chev_incoming1",
+      "sgcraft:milkyway/chev_incoming2",
+      "sgcraft:milkyway/chev_incoming3",
+      "sgcraft:milkyway/chev_incoming4",
+      "sgcraft:milkyway/chev_incoming5",
+      "sgcraft:milkyway/chev_incoming6",
+      "sgcraft:milkyway/chev_incoming7"
+    ]
+  },
+  "milkyway.gate_open": {
+    "sounds": [
+      "sgcraft:milkyway/gate_open_long"
+    ]
+  },
+  "milkyway.dial_fail": {
+    "sounds": [
+      "sgcraft:milkyway/dial_fail"
+    ]
+  },
+  "pegasus.gate_roll": {
+    "sounds": [
+      "sgcraft:pegasus/gate_roll"
+    ]
+  },
+  "pegasus.chevron_outgoing": {
+    "sounds": [
+      "sgcraft:pegasus/lock_outgoing"
+    ]
+  },
+  "pegasus.chevron_incoming": {
+    "sounds": [
+      "sgcraft:pegasus/lock_incoming"
+    ]
+  },
+  "pegasus.gate_open": {
+    "sounds": [
+      "sgcraft:pegasus/gate_open_long"
+    ]
+  },
+  "pegasus.dial_fail": {
+    "sounds": [
+      "sgcraft:pegasus/dial_fail"
+    ]
+  },
+  "event_horizon": {
+    "sounds": [
+      "sgcraft:event_horizon"
+    ]
+  },
+  "gate_close": {
+    "sounds": [
+      "sgcraft:gate_close"
+    ]
+  },
+  "teleport": {
+    "sounds": [
+      "sgcraft:teleport1",
+      "sgcraft:teleport2",
+      "sgcraft:teleport3",
+      "sgcraft:teleport4",
+      "sgcraft:teleport5",
+      "sgcraft:teleport6",
+      "sgcraft:teleport7",
+      "sgcraft:teleport8"
+    ]
+  },
+  "milkyway.dhd_press": {
+    "sounds": [
+      "sgcraft:milkyway/dhd_usual1",
+      "sgcraft:milkyway/dhd_usual2",
+      "sgcraft:milkyway/dhd_usual3",
+      "sgcraft:milkyway/dhd_usual4",
+      "sgcraft:milkyway/dhd_usual5",
+      "sgcraft:milkyway/dhd_usual6",
+      "sgcraft:milkyway/dhd_usual7"
+    ]
+  },
+  "milkyway.dhd_dial": {
+    "sounds": [
+      "sgcraft:milkyway/dhd_usual_dial"
+    ]
+  },
+  "pegasus.dhd_press": {
+    "sounds": [
+      "sgcraft:pegasus/dhd_usual1"
+    ]
+  },
+  "iris_open": {
+    "sounds": [
+      "sgcraft:iris_open"
+    ]
+  },
+  "iris_close": {
+    "sounds": [
+      "sgcraft:iris_close"
+    ]
+  },
+  "iris_hit": {
+    "sounds": [
+      "sgcraft:iris_hit"
+    ]
+  },
+  "malfunction": {
+    "sounds": [
+      "sgcraft:malfunction"
+    ]
+  }
+}

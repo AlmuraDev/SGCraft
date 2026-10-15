@@ -114,6 +114,34 @@ public final class GateProperties {
             GateProperties.register("tick_cost", GateProperties.ENERGY_CODEC);
 
     /**
+     * How much energy one piece of naquadah gives the gate when it is burned for fuel, such as in a DHD linked to it.
+     * With no value, the server's setting applies.
+     */
+    public static final GateProperty<Double> ENERGY_PER_NAQUADAH =
+            GateProperties.register("energy_per_naquadah", GateProperties.ENERGY_CODEC);
+
+    /**
+     * How much more a wormhole the gate dials costs the further it reaches; 0 makes distance cost nothing extra. With
+     * no value, the server's setting applies.
+     */
+    public static final GateProperty<Double> DISTANCE_FACTOR_MULTIPLIER =
+            GateProperties.register("distance_factor_multiplier", GateProperties.ENERGY_CODEC);
+
+    /**
+     * How many times more a wormhole the gate dials costs when it reaches another world. With no value, the server's
+     * setting applies.
+     */
+    public static final GateProperty<Double> INTER_WORLD_MULTIPLIER =
+            GateProperties.register("inter_world_multiplier", GateProperties.ENERGY_CODEC);
+
+    /**
+     * Whether a storm can disturb a wormhole the gate dials. While it rains on the gate as the wormhole opens,
+     * lightning may strike it and send the wormhole to another gate, which the implementation chooses.
+     */
+    public static final GateProperty<Boolean> LIGHTNING_MALFUNCTION =
+            GateProperties.register("lightning_malfunction", Codec.BOOL, true);
+
+    /**
      * Whether a DHD or a PDD dialing out from the gate locks every chevron at once, rather than turning the ring for
      * each symbol in turn.
      */
@@ -208,7 +236,8 @@ public final class GateProperties {
 
     /**
      * The iris fitted to the gate. A gate has no iris until this is set, and setting it fits one, starting open.
-     * Removing it takes the iris off. {@link Stargate#iris()} works the fitted iris.
+     * Removing it takes the iris off. {@link Stargate#iris()} works the fitted iris. Implementations may set it as a
+     * gate forms, when the server's configuration asks for new gates to have an iris.
      */
     public static final GateProperty<ResourceKey<IrisType>> IRIS =
             GateProperties.register("iris", ResourceKey.codec(SGCraftRegistries.IRIS_TYPE));
@@ -232,10 +261,14 @@ public final class GateProperties {
     public static final GateProperty<Map<Address, AddressRule>> ADDRESS_RULES =
             GateProperties.register("address_rules", Codec.unboundedMap(Address.CODEC, AddressRule.CODEC), Map.of());
 
-    /** The rights of players {@link #PLAYER_RIGHTS} doesn't list. */
+    /**
+     * The rights of players {@link #PLAYER_RIGHTS} doesn't list, other than the gate's
+     * {@linkplain Stargate#owner() owner}, who has every right. By default they may use the gate and its iris, but
+     * not change its settings.
+     */
     public static final GateProperty<Set<GateRight>> DEFAULT_RIGHTS =
             GateProperties.register("default_rights", GateProperties.RIGHTS_CODEC,
-                    Set.of(GateRight.USE, GateRight.IRIS, GateRight.CONFIGURE));
+                    Set.of(GateRight.USE, GateRight.IRIS));
 
     /** The rights of particular players, by UUID, in place of {@link #DEFAULT_RIGHTS}. */
     public static final GateProperty<Map<UUID, Set<GateRight>>> PLAYER_RIGHTS =
@@ -246,7 +279,11 @@ public final class GateProperties {
     public static final GateProperty<Boolean> ADDRESS_VISIBLE =
             GateProperties.register("address_visible", Codec.BOOL, true);
 
-    /** Whether players can break the gate. */
+    /**
+     * Whether any player may break the gate. Implementations may let some players break it whatever this says, such
+     * as its owner or server operators, and may give a {@link #GENERATED} gate with no value of its own a default
+     * from the server's configuration.
+     */
     public static final GateProperty<Boolean> BREAKABLE =
             GateProperties.register("breakable", Codec.BOOL, false);
 

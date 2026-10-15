@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "g": "minecraft:glass_pane",
+    "x": "sgcraft:controller_crystal",
+    "i": "minecraft:iron_ingot",
+    "N": "sgcraft:naquadah_ingot",
+    "r": "minecraft:redstone"
+  },
+  "pattern": [
+    "igi",
+    "ixi",
+    "NrN"
+  ],
+  "result": {
+    "id": "sgcraft:malp_tablet"
+  }
+}
