@@ -35,12 +35,17 @@ import com.almuradev.sgcraft.api.gate.DialMode;
 import com.almuradev.sgcraft.api.gate.DialResult;
 import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.api.gate.Stargate;
+import com.almuradev.sgcraft.gate.DialStyle;
 import com.almuradev.sgcraft.gate.GateFrame;
+import com.almuradev.sgcraft.gate.GlyphText;
+import com.almuradev.sgcraft.mod.GateTargeting;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
@@ -52,6 +57,7 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.coordinates.BlockPosArgument;
+import net.minecraft.commands.arguments.coordinates.Coordinates;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
@@ -71,11 +77,11 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.Optional;
-import java.util.UUID;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * The {@code /sgcraft} commands, which work gates without any screens, so a server's admins can run gates from the
@@ -90,11 +96,9 @@ import java.util.Map;
  */
 public final class SGCommands {
 
-    // How far a gate can be looked at to select it, and how finely the view is followed; and how far a gate reaches
-    // either side of its base's centre
+    // How far a gate can be looked at to select it, and how finely the view is followed
     private static final int LOOK_BLOCKS = 64;
     private static final double LOOK_STEP = 0.25;
-    private static final double GATE_HALF_WIDTH = 2.5;
     // What goes on the end of an address to dial it quickly, locking every chevron at once
     private static final String QUICK_FLAG = "--quick";
     private static final String QUICK_SHORT = "-q";
@@ -121,7 +125,8 @@ public final class SGCommands {
     }
 
     public static void register(final CommandDispatcher<CommandSourceStack> dispatcher) {
-        dispatcher.register(Commands.literal("sgcraft")
+        final LiteralArgumentBuilder<CommandSourceStack> root = Commands.literal("sgcraft");
+        root
                 .then(Commands.literal("address")
                         .executes(context -> SGCommands.address(context.getSource(),
                                 SGCommands.lookedAt(context.getSource())))
@@ -162,25 +167,34 @@ public final class SGCommands {
                 .then(Commands.literal("type")
                         .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .then(SGCommands.type(SGCommands::chosen)))
-                .then(Commands.literal("gate")
-                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                        .then(Commands.argument("pos", BlockPosArgument.blockPos())
-                                .then(Commands.literal("address")
-                                        .executes(context -> SGCommands.address(context.getSource(),
-                                                SGCommands.at(context))))
-                                .then(Commands.literal("info")
-                                        .executes(context -> SGCommands.info(context.getSource(),
-                                                SGCommands.at(context))))
-                                .then(SGCommands.dial(SGCommands::at))
-                                .then(Commands.literal("disconnect")
-                                        .executes(context -> SGCommands.disconnect(context.getSource(),
-                                                SGCommands.at(context))))
-                                .then(Commands.literal("chevrons").then(SGCommands.chevrons(SGCommands::at)))
-                                .then(Commands.literal("type").then(SGCommands.type(SGCommands::at))))));
+                .then(SGGateCommands.place())
+                .then(SGGateCommands.book())
+                .then(SGWorldgenCommands.worldgen())
+                .then(SGPowerCommands.power())
+                .then(SGCostCommands.costs())
+                .then(SGDefaultAddressCommands.defaultAddresses());
+        final RequiredArgumentBuilder<CommandSourceStack, Coordinates> gate =
+                Commands.argument("pos", BlockPosArgument.blockPos());
+        gate.then(Commands.literal("address")
+                        .executes(context -> SGCommands.address(context.getSource(),
+                                SGCommands.at(context))))
+                .then(Commands.literal("info")
+                        .executes(context -> SGCommands.info(context.getSource(),
+                                SGCommands.at(context))))
+                .then(SGCommands.dial(SGCommands::at))
+                .then(Commands.literal("disconnect")
+                        .executes(context -> SGCommands.disconnect(context.getSource(),
+                                SGCommands.at(context))))
+                .then(Commands.literal("chevrons").then(SGCommands.chevrons(SGCommands::at)))
+                .then(Commands.literal("type").then(SGCommands.type(SGCommands::at)));
+        SGGateCommands.gateCommands(root, SGCommands::chosen);
+        SGGateCommands.gateCommands(gate, SGCommands::at);
+        root.then(Commands.literal("gate").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(gate));
+        dispatcher.register(root);
     }
 
     @FunctionalInterface
-    private interface GateFinder {
+    interface GateFinder {
         Stargate find(CommandContext<CommandSourceStack> context) throws CommandSyntaxException;
     }
 
@@ -233,7 +247,7 @@ public final class SGCommands {
 
     // For commands that act on a gate: the gate the caller selected, wherever they are; or, with none selected, the
     // gate they are looking at
-    private static Stargate chosen(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static Stargate chosen(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         final CommandSourceStack source = context.getSource();
         if (SGServer.require().selection(SGCommands.caller(source)).isEmpty()) {
             return SGCommands.lookedAt(source);
@@ -321,12 +335,9 @@ public final class SGCommands {
         throw SGCommands.NOT_LOOKING.create();
     }
 
-    // Whether a point is in the gate's ring or its opening: the five blocks across and up from its base, in its plane
+    // Whether a point is in the gate's ring or its opening, whatever the gate's size
     private static boolean covers(final Stargate gate, final Vec3 point) {
-        final GateFrame frame = new GateFrame(gate.position().pos(), gate.orientation().front());
-        final Vec3 local = frame.toLocal(point);
-        return Math.abs(local.x) <= SGCommands.GATE_HALF_WIDTH && local.y >= -0.5
-                && local.y <= SGCommands.GATE_HALF_WIDTH * 2 - 0.5 && Math.abs(local.z) <= 0.5;
+        return GateTargeting.covers(gate, point);
     }
 
     // The gate whose address cell holds the given position, in the caller's world: the regions addresses name
@@ -345,7 +356,7 @@ public final class SGCommands {
         throw SGCommands.NO_GATE_IN_CELL.create(cell);
     }
 
-    private static Stargate at(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+    static Stargate at(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
         final BlockPos pos = BlockPosArgument.getBlockPos(context, "pos");
         return SGCraftApi.get().stargates().at(GlobalPos.of(context.getSource().getLevel().dimension(), pos))
                 .orElseThrow(SGCommands.NO_GATE_THERE::create);
@@ -358,7 +369,7 @@ public final class SGCommands {
                 gate.type().value().name(), SGCommands.position(gate)), false);
         addressing.addressOf(gate.position(), world).ifPresent(address ->
                 source.sendSuccess(() -> SGCommands.text("address.same_world", "  From this world: %s %s",
-                        SGCommands.copyable(address), SGCommands.dialLink(address)), false));
+                        SGCommands.copyable(address, gate), SGCommands.dialLink(address)), false));
         // From any other world of its group, its address is the same, so the first world that reaches it will do
         addressing.groupOf(world).worlds().stream()
                 .filter(other -> !other.equals(world))
@@ -366,7 +377,7 @@ public final class SGCommands {
                 .flatMap(Optional::stream)
                 .findFirst()
                 .ifPresent(address -> source.sendSuccess(() -> SGCommands.text("address.other_world",
-                        "  From other worlds: %s %s", SGCommands.copyable(address), SGCommands.dialLink(address)),
+                        "  From other worlds: %s %s", SGCommands.copyable(address, gate), SGCommands.dialLink(address)),
                         false));
         return 1;
     }
@@ -381,10 +392,10 @@ public final class SGCommands {
                 gate.state().name().toLowerCase(Locale.ROOT), gate.chevrons()), false);
         gate.connection().ifPresent(connection -> {
             final Stargate other = connection.other(gate).orElseThrow();
-            final boolean dialling = connection.dialler().equals(gate);
-            source.sendSuccess(() -> SGCommands.text(dialling ? "info.dialled" : "info.dialled_by",
-                    dialling ? "  Dialled %s, the gate at %s" : "  Dialled by the gate at %2$s, with %1$s",
-                    SGCommands.copyable(connection.address()), SGCommands.position(other)), false);
+            final boolean dialing = connection.dialer().equals(gate);
+            source.sendSuccess(() -> SGCommands.text(dialing ? "info.dialed" : "info.dialed_by",
+                    dialing ? "  Dialed %s, the gate at %s" : "  Dialed by the gate at %2$s, with %1$s",
+                    SGCommands.copyable(connection.address(), gate), SGCommands.position(other)), false);
         });
         return 1;
     }
@@ -393,14 +404,14 @@ public final class SGCommands {
             final DialMode mode) throws CommandSyntaxException {
         final Address address = Address.parse(text).orElseThrow(SGCommands.NOT_AN_ADDRESS::create);
         final Cause cause = SGCommands.cause(source);
-        source.sendSuccess(() -> SGCommands.text("dial.start", "Dialling %s from the gate at %s",
-                SGCommands.copyable(address), SGCommands.position(gate)), false);
+        source.sendSuccess(() -> SGCommands.text("dial.start", "Dialing %s from the gate at %s",
+                SGCommands.copyable(address, gate), SGCommands.position(gate)), false);
         gate.dial(address, mode, cause).whenComplete((result, error) -> {
             if (error != null) {
-                source.sendFailure(SGCommands.text("dial.error", "Dialling failed: %s", String.valueOf(error)));
+                source.sendFailure(SGCommands.text("dial.error", "Dialing failed: %s", String.valueOf(error)));
             } else if (result == DialResult.CONNECTED) {
                 source.sendSuccess(() -> SGCommands.text("dial.connected", "The wormhole to %s is open",
-                        SGCommands.copyable(address)), false);
+                        SGCommands.copyable(address, gate)), false);
             } else {
                 source.sendFailure(SGCommands.dialFailure(result));
             }
@@ -430,7 +441,7 @@ public final class SGCommands {
                     final MutableComponent line = SGCommands.text("list.gate", "  %s at %s",
                             gate.type().value().name(), SGCommands.position(gate));
                     SGCraftApi.get().addressing().addressOf(gate.position(), world).ifPresent(address ->
-                            line.append(" ").append(SGCommands.copyable(address)));
+                            line.append(" ").append(SGCommands.copyable(address, gate)));
                     line.append(" ").append(SGCommands.selectLink(gate));
                     source.sendSuccess(() -> line, false);
                 });
@@ -460,7 +471,7 @@ public final class SGCommands {
         return byId;
     }
 
-    private static int report(final CommandSourceStack source, final ActionResult result, final Component done) {
+    static int report(final CommandSourceStack source, final ActionResult result, final Component done) {
         switch (result) {
             case DONE -> {
                 source.sendSuccess(() -> done, true);
@@ -468,7 +479,7 @@ public final class SGCommands {
             }
             case NO_CHANGE -> source.sendFailure(SGCommands.text("result.no_change", "Nothing changed"));
             case DENIED -> source.sendFailure(SGCommands.text("result.denied", "You aren't allowed to do that"));
-            case CANCELLED -> source.sendFailure(SGCommands.text("result.cancelled", "Something stopped it"));
+            case CANCELED -> source.sendFailure(SGCommands.text("result.canceled", "Something stopped it"));
             default -> source.sendFailure(SGCommands.text("result.not_possible",
                     "That isn't possible now. A gate must be idle to change it"));
         }
@@ -488,20 +499,20 @@ public final class SGCommands {
             case TARGET_BUSY -> SGCommands.text("dial.target_busy", "The gate at that address is busy");
             case NOT_ENOUGH_ENERGY -> SGCommands.text("dial.not_enough_energy", "This gate doesn't have the energy");
             case DENIED -> SGCommands.text("dial.denied", "You aren't allowed to dial that");
-            case CANCELLED -> SGCommands.text("dial.cancelled", "Something stopped the dial");
+            case CANCELED -> SGCommands.text("dial.canceled", "Something stopped the dial");
             case INTERRUPTED -> SGCommands.text("dial.interrupted", "The dial was interrupted");
-            case GATE_GONE -> SGCommands.text("dial.gate_gone", "A gate was broken while dialling");
+            case GATE_GONE -> SGCommands.text("dial.gate_gone", "A gate was broken while dialing");
             default -> SGCommands.text("dial.failed", "The dial failed: %s", result.name());
         };
     }
 
-    private static Cause cause(final CommandSourceStack source) {
+    static Cause cause(final CommandSourceStack source) {
         return source.getEntity() != null
                 ? Cause.of(source.getEntity(), source.getServer())
                 : Cause.of(source.getServer());
     }
 
-    private static Component position(final Stargate gate) {
+    static Component position(final Stargate gate) {
         final BlockPos pos = gate.position().pos();
         final String text = pos.getX() + ", " + pos.getY() + ", " + pos.getZ();
         return Component.literal(text).withStyle(style -> style
@@ -521,6 +532,29 @@ public final class SGCommands {
                 .withHoverEvent(new HoverEvent.ShowText(SGCommands.text("hover.copy", "Click to copy"))));
     }
 
+    // The address, which copies itself when clicked, followed by its symbols as the Milky Way and Pegasus DHDs
+    // show them, and as a Universe gate does when the gate is one
+    private static Component copyable(final Address address, final Stargate gate) {
+        final MutableComponent text = Component.empty().append(SGCommands.copyable(address))
+                .append(" ").append(SGCommands.glyphs(address, DialStyle.MILKY_WAY))
+                .append("  ").append(SGCommands.glyphs(address, DialStyle.PEGASUS));
+        if (gate.type().unwrapKey().map(DialStyle::of).orElse(DialStyle.MILKY_WAY) == DialStyle.UNIVERSE) {
+            text.append("  ").append(SGCommands.glyphs(address, DialStyle.UNIVERSE));
+        }
+        return text;
+    }
+
+    // The address's symbols in one style's glyphs, which name the DHD they are on when hovered
+    private static Component glyphs(final Address address, final DialStyle style) {
+        final Component hover = SGCommands.text("hover.glyphs." + style.name().toLowerCase(Locale.ROOT),
+                switch (style) {
+                    case PEGASUS -> "%s on a Pegasus DHD";
+                    case UNIVERSE -> "%s on a Universe gate";
+                    default -> "%s on a Milky Way DHD";
+                }, address.toString());
+        return GlyphText.of(address, style).withStyle(s -> s.withHoverEvent(new HoverEvent.ShowText(hover)));
+    }
+
     // A link that puts a dial command for the address in the chat box
     private static Component dialLink(final Address address) {
         return SGCommands.text("dial_link", "[Dial]").withStyle(style -> style
@@ -530,7 +564,7 @@ public final class SGCommands {
                         "Click to dial it from your selected gate, or the one you look at"))));
     }
 
-    private static MutableComponent text(final String key, final String fallback, final Object... args) {
+    static MutableComponent text(final String key, final String fallback, final Object... args) {
         return Component.translatableWithFallback("command.sgcraft." + key, fallback, args);
     }
 }
