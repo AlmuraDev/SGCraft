@@ -48,19 +48,19 @@ public interface AddressReach {
     int symbolCount();
 
     /**
-     * The address of a gate at {@code target}, dialled from a gate in {@code from}.
+     * The address of a gate at {@code target}, dialed from a gate in {@code from}.
      *
      * @param target the base of the gate to reach
-     * @param from the world of the dialling gate
+     * @param from the world of the dialing gate
      * @return the address, or empty if this reach can't reach {@code target} from {@code from}
      */
     Optional<Address> addressOf(final GlobalPos target, final ResourceKey<Level> from);
 
     /**
-     * Where an address of this reach dialled from {@code from} points.
+     * Where an address of this reach dialed from {@code from} points.
      *
      * @param address an address
-     * @param from the world of the dialling gate
+     * @param from the world of the dialing gate
      * @return the chunk it points to, or empty if it points nowhere or doesn't have {@link #symbolCount()} symbols
      */
     Optional<AddressTarget> resolve(final Address address, final ResourceKey<Level> from);

@@ -25,7 +25,7 @@
 
 package com.almuradev.sgcraft.api.event.gate;
 
-import com.almuradev.sgcraft.api.event.Cancellable;
+import com.almuradev.sgcraft.api.event.Cancelable;
 import com.almuradev.sgcraft.api.event.Event;
 import com.almuradev.sgcraft.api.gate.GateSize;
 import com.almuradev.sgcraft.api.gate.GateType;
@@ -40,10 +40,10 @@ import net.minecraft.core.GlobalPos;
 public interface FormGateEvent extends Event {
 
     /**
-     * Fired when the last block of a gate is in place, before the gate forms. Cancelling it leaves the blocks
+     * Fired when the last block of a gate is in place, before the gate forms. Canceling it leaves the blocks
      * unformed.
      */
-    interface Pre extends FormGateEvent, Cancellable {
+    interface Pre extends FormGateEvent, Cancelable {
 
         /** @return where the gate's base block is */
         GlobalPos position();

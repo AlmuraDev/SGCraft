@@ -25,7 +25,7 @@
 
 package com.almuradev.sgcraft.api.event.gate;
 
-import com.almuradev.sgcraft.api.event.Cancellable;
+import com.almuradev.sgcraft.api.event.Cancelable;
 import com.almuradev.sgcraft.api.event.Event;
 import com.almuradev.sgcraft.api.gate.GatePlacement;
 import com.almuradev.sgcraft.api.gate.Stargates;
@@ -38,10 +38,10 @@ import com.almuradev.sgcraft.api.gate.Stargates;
 public interface PlaceGateEvent extends Event {
 
     /**
-     * Fired before anything is placed, and before the search for a spot. Cancelling it fails the placement with
-     * {@link com.almuradev.sgcraft.api.gate.PlacementResult.Status#CANCELLED}.
+     * Fired before anything is placed, and before the search for a spot. Canceling it fails the placement with
+     * {@link com.almuradev.sgcraft.api.gate.PlacementResult.Status#CANCELED}.
      */
-    interface Pre extends PlaceGateEvent, Cancellable {
+    interface Pre extends PlaceGateEvent, Cancelable {
 
         /** @return the placement as it will be carried out */
         GatePlacement placement();

@@ -37,7 +37,7 @@ import java.util.Optional;
  * Turns gate positions into addresses and back, through the registered {@linkplain AddressReach reaches}, and
  * reports how worlds are grouped.
  *
- * <p>Addresses are relative, so each method takes the world the address is dialled from.</p>
+ * <p>Addresses are relative, so each method takes the world the address is dialed from.</p>
  *
  * @since 0.1.0
  */
@@ -63,16 +63,16 @@ public interface Addressing {
      * ask the {@linkplain #reaches() reaches} in order, fewest symbols first, and return the first answer.
      *
      * @param target the base of the gate to reach
-     * @param from the world of the dialling gate
+     * @param from the world of the dialing gate
      * @return the address, or empty if no reach can reach {@code target} from {@code from}
      */
     Optional<Address> addressOf(final GlobalPos target, final ResourceKey<Level> from);
 
     /**
-     * Where an address dialled from {@code from} points, as its {@linkplain #reachOf(Address) reach} reads it.
+     * Where an address dialed from {@code from} points, as its {@linkplain #reachOf(Address) reach} reads it.
      *
      * @param address the address
-     * @param from the world of the dialling gate
+     * @param from the world of the dialing gate
      * @return the chunk it points to, or empty if no reach is registered for its length or it points nowhere
      */
     Optional<AddressTarget> resolve(final Address address, final ResourceKey<Level> from);

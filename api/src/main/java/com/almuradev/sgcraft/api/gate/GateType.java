@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.api.gate;
 
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceKey;
 
 import java.util.List;
 
@@ -50,7 +51,7 @@ public interface GateType {
     boolean supports(final GateSize size);
 
     /**
-     * The blocks this type builds around a gate, such as a DHD. A type with none, such as one dialled only
+     * The blocks this type builds around a gate, such as a DHD. A type with none, such as one dialed only
      * remotely, returns an empty buffer.
      *
      * @param size the size of the gate's ring
@@ -61,5 +62,16 @@ public interface GateType {
     /** @return the conditions on where gates of this type can be placed, beyond the space being free */
     default List<PlacementRule> placementRules() {
         return List.of();
+    }
+
+    /**
+     * Whether a DHD can dial gates of this type. Each DHD is made for one type of gate, its style. A type that accepts
+     * no DHD is dialed some other way, such as through the API.
+     *
+     * @param style the type of gate the DHD is made for
+     * @return whether that DHD can dial a gate of this type
+     */
+    default boolean acceptsDhd(final ResourceKey<GateType> style) {
+        return false;
     }
 }

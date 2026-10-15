@@ -25,7 +25,7 @@
 
 package com.almuradev.sgcraft.api.event.gate;
 
-import com.almuradev.sgcraft.api.event.Cancellable;
+import com.almuradev.sgcraft.api.event.Cancelable;
 import com.almuradev.sgcraft.api.event.Event;
 import com.almuradev.sgcraft.api.gate.Connection;
 
@@ -44,10 +44,10 @@ public interface ConnectionEvent extends Event {
     }
 
     /**
-     * Fired before the wormhole closes because someone asked it to. Cancelling it keeps the wormhole open. A wormhole
+     * Fired before the wormhole closes because someone asked it to. Canceling it keeps the wormhole open. A wormhole
      * that closes because its time ran out or a gate broke fires only {@link Close}.
      */
-    interface Disconnect extends ConnectionEvent, Cancellable {
+    interface Disconnect extends ConnectionEvent, Cancelable {
     }
 
     /** Fired once the wormhole has closed, for any reason. */

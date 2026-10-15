@@ -25,7 +25,7 @@
 
 package com.almuradev.sgcraft.api.event.gate;
 
-import com.almuradev.sgcraft.api.event.Cancellable;
+import com.almuradev.sgcraft.api.event.Cancelable;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import net.minecraft.world.entity.Entity;
 
@@ -36,28 +36,28 @@ import net.minecraft.world.entity.Entity;
  */
 public interface TravelEvent extends GateEvent {
 
-    /** @return what is travelling */
-    Entity traveller();
+    /** @return what is traveling */
+    Entity traveler();
 
     /**
-     * Fired when something enters the wormhole, before it moves. Cancelling it leaves the traveller where it was.
+     * Fired when something enters the wormhole, before it moves. Canceling it leaves the traveler where it was.
      */
-    interface Pre extends TravelEvent, Cancellable {
+    interface Pre extends TravelEvent, Cancelable {
 
-        /** @return the gate the traveller will come out of */
+        /** @return the gate the traveler will come out of */
         Stargate destination();
 
         /**
-         * @param destination the gate to send the traveller to instead; it need not be the other end of the
+         * @param destination the gate to send the traveler to instead; it need not be the other end of the
          *     connection
          */
         void setDestination(final Stargate destination);
     }
 
-    /** Fired once the traveller has come out of the destination gate. */
+    /** Fired once the traveler has come out of the destination gate. */
     interface Post extends TravelEvent {
 
-        /** @return the gate the traveller came out of */
+        /** @return the gate the traveler came out of */
         Stargate destination();
     }
 }

@@ -25,7 +25,7 @@
 
 package com.almuradev.sgcraft.api.event.gate;
 
-import com.almuradev.sgcraft.api.event.Cancellable;
+import com.almuradev.sgcraft.api.event.Cancelable;
 import com.almuradev.sgcraft.api.gate.Iris;
 import com.almuradev.sgcraft.api.gate.IrisState;
 
@@ -42,8 +42,8 @@ public interface IrisEvent extends GateEvent {
     /** @return {@link IrisState#OPEN} if the iris is opening, or {@link IrisState#CLOSED} if it is closing */
     IrisState target();
 
-    /** Fired before the iris starts to move. Cancelling it leaves the iris as it is. */
-    interface Pre extends IrisEvent, Cancellable {
+    /** Fired before the iris starts to move. Canceling it leaves the iris as it is. */
+    interface Pre extends IrisEvent, Cancelable {
     }
 
     /** Fired once the iris has finished moving. */

@@ -26,7 +26,7 @@
 /**
  * The event bus and the types every event shares.
  *
- * <p>Events that come before an action are named {@code Pre} and can be {@linkplain Cancellable cancelled}; some
+ * <p>Events that come before an action are named {@code Pre} and can be {@linkplain Cancelable canceled}; some
  * also let listeners change what will happen. Events named {@code Post} come after and only tell listeners what
  * happened.</p>
  */

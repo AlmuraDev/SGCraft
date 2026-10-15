@@ -50,7 +50,7 @@ public interface Stargates {
 
     /**
      * @param address an address
-     * @param from the world it is dialled from
+     * @param from the world it is dialed from
      * @return the gate the address reaches from that world, if there is one
      */
     Optional<Stargate> byAddress(final Address address, final ResourceKey<Level> from);
@@ -62,7 +62,7 @@ public interface Stargates {
     Collection<Stargate> in(final ResourceKey<Level> world);
 
     /**
-     * The gate best suited to {@code position}, such as the one to dial from or send a traveller to. How the gate is
+     * The gate best suited to {@code position}, such as the one to dial from or send a traveler to. How the gate is
      * chosen is up to the implementation.
      *
      * @param position a position

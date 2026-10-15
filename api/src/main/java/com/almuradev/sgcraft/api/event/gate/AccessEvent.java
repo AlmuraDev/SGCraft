@@ -28,7 +28,7 @@ package com.almuradev.sgcraft.api.event.gate;
 import com.almuradev.sgcraft.api.access.AddressRule;
 import com.almuradev.sgcraft.api.access.GateRight;
 import com.almuradev.sgcraft.api.address.Address;
-import com.almuradev.sgcraft.api.event.Cancellable;
+import com.almuradev.sgcraft.api.event.Cancelable;
 import com.almuradev.sgcraft.api.gate.Stargate;
 
 import java.util.Optional;
@@ -72,7 +72,7 @@ public interface AccessEvent extends GateEvent {
         /** @return the gate at the other end */
         Stargate other();
 
-        /** @return true if {@link #other()} is dialling {@link #gate()}, false if {@link #gate()} is dialling it */
+        /** @return true if {@link #other()} is dialing {@link #gate()}, false if {@link #gate()} is dialing it */
         boolean incoming();
 
         /** @return whether the connection is allowed */
@@ -101,10 +101,10 @@ public interface AccessEvent extends GateEvent {
         Optional<AddressRule> newRule();
 
         /**
-         * Fired before the change. Cancelling it keeps the old rule; other changes made at the same time still
+         * Fired before the change. Canceling it keeps the old rule; other changes made at the same time still
          * apply.
          */
-        interface Pre extends ChangeAddressRule, Cancellable {
+        interface Pre extends ChangeAddressRule, Cancelable {
 
             /**
              * @param rule the rule to set instead, or empty to remove the address's rule; for the defaults, empty
@@ -136,10 +136,10 @@ public interface AccessEvent extends GateEvent {
         Optional<Set<GateRight>> newRights();
 
         /**
-         * Fired before the change. Cancelling it keeps the old rights; other changes made at the same time still
+         * Fired before the change. Canceling it keeps the old rights; other changes made at the same time still
          * apply.
          */
-        interface Pre extends ChangeRights, Cancellable {
+        interface Pre extends ChangeRights, Cancelable {
 
             /**
              * @param rights the rights to set instead, or empty to take the player off the list; for the defaults,

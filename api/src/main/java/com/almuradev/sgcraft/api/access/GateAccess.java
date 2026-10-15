@@ -55,7 +55,7 @@ import java.util.UUID;
 public interface GateAccess {
 
     /**
-     * An address rule applies to {@code from} when the rule's address, dialled from this gate's world, reaches it.
+     * An address rule applies to {@code from} when the rule's address, dialed from this gate's world, reaches it.
      *
      * @param from a gate that wants to dial this one
      * @return whether this gate accepts the connection: the rule for {@code from} if there is one, otherwise

@@ -31,20 +31,20 @@ import java.util.Optional;
 import java.util.OptionalInt;
 
 /**
- * A link between two gates, from the moment dialling starts until the wormhole closes. Both gates return the same
+ * A link between two gates, from the moment dialing starts until the wormhole closes. Both gates return the same
  * connection.
  *
  * @since 0.1.0
  */
 public interface Connection {
 
-    /** @return the gate that dialled */
-    Stargate dialler();
+    /** @return the gate that dialed */
+    Stargate dialer();
 
-    /** @return the gate that was dialled */
+    /** @return the gate that was dialed */
     Stargate target();
 
-    /** @return the address the dialling gate dialled */
+    /** @return the address the dialing gate dialed */
     Address address();
 
     /**

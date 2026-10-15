@@ -41,7 +41,7 @@ public enum DialResult {
     /** No reach is registered for the address's length. */
     INVALID_ADDRESS,
 
-    /** No address reaches the chosen gate from the dialling gate. */
+    /** No address reaches the chosen gate from the dialing gate. */
     UNREACHABLE,
 
     /** The gate has fewer chevrons than the address has symbols. */
@@ -50,23 +50,23 @@ public enum DialResult {
     /** The address points nowhere, or no gate is there. */
     NO_GATE,
 
-    /** The address points back at the dialling gate. */
+    /** The address points back at the dialing gate. */
     SAME_GATE,
 
-    /** The dialling gate isn't {@linkplain GateState#IDLE idle}. */
+    /** The dialing gate isn't {@linkplain GateState#IDLE idle}. */
     BUSY,
 
     /** The gate at the address isn't idle. */
     TARGET_BUSY,
 
-    /** The dialling gate doesn't have the energy to make the connection. */
+    /** The dialing gate doesn't have the energy to make the connection. */
     NOT_ENOUGH_ENERGY,
 
     /** The cause isn't allowed to dial this gate, or to reach the gate at the address. */
     DENIED,
 
-    /** A listener cancelled the dial's event. */
-    CANCELLED,
+    /** A listener canceled the dial's event. */
+    CANCELED,
 
     /** Either gate {@linkplain Stargate#disconnect disconnected} before the wormhole opened. */
     INTERRUPTED,

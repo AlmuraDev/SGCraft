@@ -28,16 +28,16 @@ package com.almuradev.sgcraft.api.event;
 /**
  * An event fired before something happens, which a listener can stop.
  *
- * <p>Once every listener has run, implementations must not go ahead with the action if the event is cancelled, and
- * must report it as cancelled to whoever asked for it. A later listener may un-cancel an event.</p>
+ * <p>Once every listener has run, implementations must not go ahead with the action if the event is canceled, and
+ * must report it as canceled to whoever asked for it. A later listener may un-cancel an event.</p>
  *
  * @since 0.1.0
  */
-public interface Cancellable {
+public interface Cancelable {
 
     /** @return whether the action will be stopped */
-    boolean isCancelled();
+    boolean isCanceled();
 
-    /** @param cancelled whether to stop the action */
-    void setCancelled(final boolean cancelled);
+    /** @param canceled whether to stop the action */
+    void setCanceled(final boolean canceled);
 }

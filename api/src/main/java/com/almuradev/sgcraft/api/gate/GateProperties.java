@@ -56,11 +56,14 @@ public final class GateProperties {
     private static final Codec<Set<GateRight>> RIGHTS_CODEC =
             GateRight.CODEC.listOf().xmap(Set::copyOf, List::copyOf);
 
+    private static final Codec<Double> ENERGY_CODEC = Codec.DOUBLE.validate(value -> value >= 0
+            ? DataResult.success(value) : DataResult.error(() -> "Must not be negative: " + value));
+
     /** How many ticks the wormhole stays open before it closes on its own, or 0 for no limit. */
     public static final GateProperty<Integer> OPEN_TICKS =
             GateProperties.register("open_ticks", ExtraCodecs.NON_NEGATIVE_INT, 6000);
 
-    /** Whether dialling draws energy from the gate's {@linkplain Stargate#energy() store}. */
+    /** Whether dialing draws energy from the gate's {@linkplain Stargate#energy() store}. */
     public static final GateProperty<Boolean> REQUIRES_POWER =
             GateProperties.register("requires_power", Codec.BOOL, true);
 
@@ -68,21 +71,128 @@ public final class GateProperties {
     public static final GateProperty<Long> ENERGY_CAPACITY =
             GateProperties.register("energy_capacity", Codec.LONG.validate(GateProperties::nonNegative), 1000L);
 
-    /** Whether travellers can only pass from the dialling gate to the dialled gate. */
+    /**
+     * Whether the gate pays {@link #CHEVRON_COST} as each chevron locks when it dials. With no value, the server's
+     * setting applies.
+     */
+    public static final GateProperty<Boolean> CHEVRON_COST_ENABLED =
+            GateProperties.register("chevron_cost_enabled", Codec.BOOL);
+
+    /**
+     * The energy the gate pays as each chevron locks when it dials, before distance. With no value, the server's
+     * setting applies.
+     */
+    public static final GateProperty<Double> CHEVRON_COST =
+            GateProperties.register("chevron_cost", GateProperties.ENERGY_CODEC);
+
+    /**
+     * Whether the gate pays {@link #OPEN_COST} as a wormhole it dialed forms. With no value, the server's setting
+     * applies.
+     */
+    public static final GateProperty<Boolean> OPEN_COST_ENABLED =
+            GateProperties.register("open_cost_enabled", Codec.BOOL);
+
+    /**
+     * The energy the gate pays as a wormhole it dialed forms, before distance. With no value, the server's setting
+     * applies.
+     */
+    public static final GateProperty<Double> OPEN_COST =
+            GateProperties.register("open_cost", GateProperties.ENERGY_CODEC);
+
+    /**
+     * Whether the gate pays {@link #TICK_COST} each tick a wormhole it dialed stays open. With no value, the
+     * server's setting applies.
+     */
+    public static final GateProperty<Boolean> TICK_COST_ENABLED =
+            GateProperties.register("tick_cost_enabled", Codec.BOOL);
+
+    /**
+     * The energy the gate pays each tick a wormhole it dialed stays open, before distance. With no value, the
+     * server's setting applies.
+     */
+    public static final GateProperty<Double> TICK_COST =
+            GateProperties.register("tick_cost", GateProperties.ENERGY_CODEC);
+
+    /**
+     * Whether a DHD or a PDD dialing out from the gate locks every chevron at once, rather than turning the ring for
+     * each symbol in turn.
+     */
+    public static final GateProperty<Boolean> CHEVRONS_LOCK_ON_DIAL =
+            GateProperties.register("chevrons_lock_on_dial", Codec.BOOL, false);
+
+    /**
+     * How fast the gate dials, in degrees a tick: how fast its ring turns, or for a gate whose light runs round its
+     * ring instead, how fast the light runs. With no value, the gate's type sets it.
+     */
+    public static final GateProperty<Double> RING_SPEED =
+            GateProperties.register("ring_speed", GateProperties.between(0.1, 360));
+
+    /** How far from the gate's base, in blocks, a DHD can stand and still link to it. */
+    public static final GateProperty<Double> DHD_RANGE =
+            GateProperties.register("dhd_range", GateProperties.between(0, 32), 6.0);
+
+    /**
+     * How much harm the burst of a wormhole opening does each tick to what stands in front of the gate, when
+     * {@link #OPENING_DAMAGE} is on.
+     */
+    public static final GateProperty<Double> OPENING_DAMAGE_AMOUNT =
+            GateProperties.register("opening_damage_amount", GateProperties.ENERGY_CODEC, 5000.0);
+
+    /** Whether the naquadah in the DHDs linked to the gate powers it. */
+    public static final GateProperty<Boolean> DHD_FUEL =
+            GateProperties.register("dhd_fuel", Codec.BOOL, true);
+
+    /** Whether the open wormhole's surface lets a little of what is behind it show through. */
+    public static final GateProperty<Boolean> HORIZON_TRANSPARENT =
+            GateProperties.register("horizon_transparent", Codec.BOOL, true);
+
+    /**
+     * Whether a player killed by the gate, against its shut iris or entering its wormhole backwards while travel is
+     * one way, keeps what they carry. When false, what they carry is lost rather than dropped, unless the
+     * {@code keepInventory} game rule keeps it.
+     */
+    public static final GateProperty<Boolean> PRESERVE_INVENTORY =
+            GateProperties.register("preserve_inventory", Codec.BOOL, false);
+
+    /** Whether travelers can only pass from the dialing gate to the dialed gate. */
     public static final GateProperty<Boolean> ONE_WAY_TRAVEL =
             GateProperties.register("one_way_travel", Codec.BOOL, true);
 
-    /** Whether a traveller who enters the dialled gate's wormhole while travel is one way dies. */
+    /** Whether a traveler who enters the dialed gate's wormhole while travel is one way dies. */
     public static final GateProperty<Boolean> REVERSE_TRAVEL_KILLS =
             GateProperties.register("reverse_travel_kills", Codec.BOOL, false);
 
-    /** Whether the dialled gate, as well as the dialling gate, can close the wormhole. */
+    /** Whether the dialed gate, as well as the dialing gate, can close the wormhole. */
     public static final GateProperty<Boolean> CLOSE_FROM_EITHER_END =
             GateProperties.register("close_from_either_end", Codec.BOOL, true);
 
     /** Whether the burst of the wormhole opening harms what is in front of the gate. */
     public static final GateProperty<Boolean> OPENING_DAMAGE =
             GateProperties.register("opening_damage", Codec.BOOL, true);
+
+    /**
+     * Whether this gate moves real fluid through the wormhole while it is open. Fluid coming from a gate at the other
+     * end, standing in it, pours out of this gate; fluid this gate stands in is drawn from its side, and a body of it
+     * small enough to empty, such as a pond, drains away. Implementations must take the fluid a gate poured away again
+     * when the wormhole closes. The fluid pouring is shown either way.
+     */
+    public static final GateProperty<Boolean> SPILLS_FLUID =
+            GateProperties.register("spills_fluid", Codec.BOOL, true);
+
+    /**
+     * How strong an explosion goes off in the middle of the gate's ring when it is broken while its wormhole is open,
+     * as TNT is 4. 0 for none.
+     */
+    public static final GateProperty<Double> BREACH_EXPLOSION =
+            GateProperties.register("breach_explosion", GateProperties.between(0, 32), 10.0);
+
+    /** Whether the explosion of {@link #BREACH_EXPLOSION} sets fires. */
+    public static final GateProperty<Boolean> BREACH_FIRE =
+            GateProperties.register("breach_fire", Codec.BOOL, true);
+
+    /** Whether the explosion of {@link #BREACH_EXPLOSION} breaks blocks, or only harms what stands near. */
+    public static final GateProperty<Boolean> BREACH_BREAKS_BLOCKS =
+            GateProperties.register("breach_breaks_blocks", Codec.BOOL, true);
 
     /** Whether the iris goes back to how it was before the connection once the wormhole closes. */
     public static final GateProperty<Boolean> IRIS_RESTORES_STATE =
@@ -102,6 +212,13 @@ public final class GateProperties {
      */
     public static final GateProperty<ResourceKey<IrisType>> IRIS =
             GateProperties.register("iris", ResourceKey.codec(SGCraftRegistries.IRIS_TYPE));
+
+    /**
+     * Whether a traveler carrying a phase shift device passes through this gate's shut iris, coming out in front of
+     * it, instead of meeting the iris. What counts as carrying one is up to the implementation.
+     */
+    public static final GateProperty<Boolean> PHASE_SHIFT_PASSES_IRIS =
+            GateProperties.register("phase_shift_passes_iris", Codec.BOOL, true);
 
     /** Whether other gates may dial this gate, unless {@link #ADDRESS_RULES} says otherwise for their address. */
     public static final GateProperty<Boolean> ALLOW_INCOMING =
@@ -143,6 +260,11 @@ public final class GateProperties {
     /** @return every property here, by the identifier it must be registered under */
     public static Map<Identifier, GateProperty<?>> all() {
         return Collections.unmodifiableMap(GateProperties.ALL);
+    }
+
+    private static Codec<Double> between(final double min, final double max) {
+        return Codec.DOUBLE.validate(value -> value >= min && value <= max ? DataResult.success(value)
+                : DataResult.error(() -> "Must be from " + min + " to " + max + ": " + value));
     }
 
     private static DataResult<Long> nonNegative(final Long value) {

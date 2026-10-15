@@ -33,7 +33,7 @@ import java.util.Optional;
  * Every object that had a hand in an action, from the most direct to the least.
  *
  * <p>The first object is the {@linkplain #root() root}, the most direct cause, and each object after it acted
- * through the ones before it. A player dialling with a DHD, for example, gives the DHD's block entity and then the
+ * through the ones before it. A player dialing with a DHD, for example, gives the DHD's block entity and then the
  * player. Listeners should look up the types they care about with {@link #first(Class)} and the other lookups, so
  * that a cause holding types they don't know about still works for them.</p>
  *
@@ -94,7 +94,7 @@ public interface Cause extends Iterable<Object> {
     List<Object> objects();
 
     /**
-     * @param direct an object acting through this cause, such as an add-on's own object dialling for a player
+     * @param direct an object acting through this cause, such as an add-on's own object dialing for a player
      * @return a new cause with {@code direct} as its root, followed by this cause's objects
      * @throws NullPointerException if {@code direct} is null
      */

@@ -25,7 +25,7 @@
 
 package com.almuradev.sgcraft.api.event.gate;
 
-import com.almuradev.sgcraft.api.event.Cancellable;
+import com.almuradev.sgcraft.api.event.Cancelable;
 import com.almuradev.sgcraft.api.gate.GateProperty;
 
 import java.util.Optional;
@@ -56,8 +56,8 @@ public interface ChangeGatePropertyEvent extends GateEvent {
      */
     <T> Optional<T> newValue(final GateProperty<T> property);
 
-    /** Fired before the change. Cancelling it keeps the old value. */
-    interface Pre extends ChangeGatePropertyEvent, Cancellable {
+    /** Fired before the change. Canceling it keeps the old value. */
+    interface Pre extends ChangeGatePropertyEvent, Cancelable {
 
         /**
          * @param property this event's property

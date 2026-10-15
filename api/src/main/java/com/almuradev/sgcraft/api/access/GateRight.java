@@ -46,7 +46,7 @@ public record GateRight(Identifier id) {
     /** How a right is saved: as its identifier. */
     public static final Codec<GateRight> CODEC = Identifier.CODEC.xmap(GateRight::new, GateRight::id);
 
-    /** Dialling the gate, through its DHD or otherwise, and closing its wormhole. */
+    /** Dialing the gate, through its DHD or otherwise, and closing its wormhole. */
     public static final GateRight USE = GateRight.of("use");
 
     /** Opening and closing the gate's iris. */

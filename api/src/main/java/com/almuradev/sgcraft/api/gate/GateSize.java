@@ -28,7 +28,7 @@ package com.almuradev.sgcraft.api.gate;
 import java.util.Optional;
 
 /**
- * How big a gate's ring is, as its radius in blocks from the centre of the ring to its edge.
+ * How big a gate's ring is, as its radius in blocks from the center of the ring to its edge.
  *
  * <p>The API defines the standard size, which is also the smallest. It sets no maximum. Which sizes a gate can be
  * built at is up to its {@linkplain GateType#supports(GateSize) type}, and implementations may let the server's

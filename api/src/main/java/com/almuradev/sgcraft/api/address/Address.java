@@ -35,7 +35,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A gate address: the symbols dialled to reach a gate, in dialling order.
+ * A gate address: the symbols dialed to reach a gate, in dialing order.
  *
  * <p>An address is only symbols. What they mean is up to the {@link AddressReach} with that many symbols, which
  * {@link Addressing#reachOf(Address)} returns. An address is always relative to the gate that dials it: the same
@@ -44,7 +44,7 @@ import java.util.Optional;
  * <p>Written down, an address is grouped as {@code XXXX-XXX}, then a dash before any symbols after the seventh,
  * such as {@code XXXX-XXX-XX}. {@link #parse(String)} reads any grouping and ignores case, dashes and spaces.</p>
  *
- * @param symbols the symbols in dialling order; at least one
+ * @param symbols the symbols in dialing order; at least one
  * @since 0.1.0
  */
 public record Address(List<Symbol> symbols) implements Iterable<Symbol> {
@@ -91,15 +91,15 @@ public record Address(List<Symbol> symbols) implements Iterable<Symbol> {
     }
 
     /**
-     * @param index a position in dialling order, from 0
-     * @return the symbol dialled there
+     * @param index a position in dialing order, from 0
+     * @return the symbol dialed there
      * @throws IndexOutOfBoundsException if {@code index} is outside 0 to {@link #size()} - 1
      */
     public Symbol get(final int index) {
         return this.symbols.get(index);
     }
 
-    /** @return the symbols in dialling order */
+    /** @return the symbols in dialing order */
     @Override
     public Iterator<Symbol> iterator() {
         return this.symbols.iterator();

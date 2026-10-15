@@ -29,11 +29,13 @@ import com.almuradev.sgcraft.api.ActionResult;
 import com.almuradev.sgcraft.api.Cause;
 import com.almuradev.sgcraft.api.access.GateAccess;
 import com.almuradev.sgcraft.api.address.Address;
+import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.api.energy.GateEnergy;
 import net.minecraft.core.FrontAndTop;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
@@ -75,7 +77,7 @@ public interface Stargate {
     /** @return what the gate is doing */
     GateState state();
 
-    /** @return the gate's connection while it dials, is dialled, or is open */
+    /** @return the gate's connection while it dials, is dialed, or is open */
     Optional<Connection> connection();
 
     /** @return the gate's iris, present while its {@link GateProperties#IRIS} property is set */
@@ -95,14 +97,14 @@ public interface Stargate {
     <T> Optional<T> get(final GateProperty<T> property);
 
     /**
-     * Dials an address. Dialling takes many ticks, so the result arrives later.
+     * Dials an address. Dialing takes many ticks, so the result arrives later.
      *
      * <p>The returned stage completes on the server thread, with {@link DialResult#CONNECTED} once the wormhole is
-     * open, or with the reason dialling failed. A dial refused at the start, such as one to a gate that is
+     * open, or with the reason dialing failed. A dial refused at the start, such as one to a gate that is
      * {@linkplain DialResult#BUSY busy}, returns a stage that is already complete.</p>
      *
      * @param address the address to dial
-     * @param cause why the gate is dialling
+     * @param cause why the gate is dialing
      * @return the result, once known
      */
     default CompletionStage<DialResult> dial(final Address address, final Cause cause) {
@@ -114,7 +116,7 @@ public interface Stargate {
      *
      * @param address the address to dial
      * @param mode how to dial it
-     * @param cause why the gate is dialling
+     * @param cause why the gate is dialing
      * @return the result, once known
      */
     CompletionStage<DialResult> dial(final Address address, final DialMode mode, final Cause cause);
@@ -124,19 +126,45 @@ public interface Stargate {
      * shortest address that reaches it from this gate. Otherwise this is the same as {@link #dial(Address, Cause)}.
      *
      * @param target where to dial
-     * @param cause why the gate is dialling
+     * @param cause why the gate is dialing
      * @return the result, once known; {@link DialResult#NO_GATE} if there is no gate to choose, or
      *     {@link DialResult#UNREACHABLE} if no address reaches it from here
      */
     CompletionStage<DialResult> dial(final GlobalPos target, final Cause cause);
 
     /**
-     * Stops dialling, or closes the wormhole, from either end. A dial in progress completes with
-     * {@link DialResult#INTERRUPTED}.
+     * Locks the gate's next chevron on a symbol at once, as a DHD does when a player presses it. The symbols locked
+     * this way build up until they are {@linkplain #dialEngaged(Cause) dialed} or the gate
+     * {@linkplain #disconnect(Cause) disconnects}. The gate is {@linkplain GateState#DIALING dialing} while it has
+     * any. Implementations may release them after a while with no symbol locked.
+     *
+     * @param symbol the symbol to lock
+     * @param cause who is locking it
+     * @return {@link ActionResult#NOT_POSSIBLE} if the gate is doing anything other than locking symbols this way,
+     *     every chevron is already locked, or the gate no longer exists
+     */
+    ActionResult engage(final Symbol symbol, final Cause cause);
+
+    /** @return the symbols locked so far by {@link #engage(Symbol, Cause)}, in order; empty if there are none */
+    List<Symbol> engaged();
+
+    /**
+     * Dials the symbols locked so far by {@link #engage(Symbol, Cause)} as an address. Their chevrons are already
+     * locked, so the wormhole forms straight away, as with {@link DialMode#QUICK}. The symbols are released whatever
+     * the result.
+     *
+     * @param cause who is dialing
+     * @return the result, once known; {@link DialResult#INVALID_ADDRESS} if no symbols are locked
+     */
+    CompletionStage<DialResult> dialEngaged(final Cause cause);
+
+    /**
+     * Stops dialing, or closes the wormhole, from either end. A dial in progress completes with
+     * {@link DialResult#INTERRUPTED}. Symbols locked by {@link #engage(Symbol, Cause)} are released too.
      *
      * @param cause why the gate is disconnecting
-     * @return {@link ActionResult#NO_CHANGE} if the gate has no connection, or {@link ActionResult#NOT_POSSIBLE}
-     *     if the gate no longer exists
+     * @return {@link ActionResult#NO_CHANGE} if the gate has no connection and no symbols locked, or
+     *     {@link ActionResult#NOT_POSSIBLE} if the gate no longer exists
      */
     ActionResult disconnect(final Cause cause);
 

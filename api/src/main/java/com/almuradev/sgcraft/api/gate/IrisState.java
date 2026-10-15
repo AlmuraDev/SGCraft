@@ -32,13 +32,13 @@ package com.almuradev.sgcraft.api.gate;
  */
 public enum IrisState {
 
-    /** Fully open. Travellers pass through. */
+    /** Fully open. Travelers pass through. */
     OPEN,
 
     /** Moving from open to closed. */
     CLOSING,
 
-    /** Fully closed. Travellers who arrive are stopped at the iris. */
+    /** Fully closed. Travelers who arrive are stopped at the iris. */
     CLOSED,
 
     /** Moving from closed to open. */

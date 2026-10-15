@@ -28,11 +28,11 @@ package com.almuradev.sgcraft.api.address;
 import java.util.Optional;
 
 /**
- * How a world is divided into addresses: how big each addressed cell is, and whether addresses dialled from the world
+ * How a world is divided into addresses: how big each addressed cell is, and whether addresses dialed from the world
  * end with a point of origin.
  *
  * <p>Every gate in one cell has the same position symbols, so a cell holds at most one gate. Bigger cells reach
- * further from the world's centre with the same symbols, at the cost of more space between gates.</p>
+ * further from the world's center with the same symbols, at the cost of more space between gates.</p>
  *
  * <p>Implementations must let the server's configuration set both values, for all worlds and for single worlds. They
  * must record the values in use when the server first starts. If the configuration differs from the recorded values
@@ -47,7 +47,7 @@ public interface AddressPartition {
     int cellChunks();
 
     /**
-     * When present, every address dialled from this world ends with this symbol, and the
+     * When present, every address dialed from this world ends with this symbol, and the
      * {@linkplain AddressReach reaches} count it among their symbols, leaving one fewer for the position.
      *
      * @return the world's point of origin, or empty if its addresses don't use one

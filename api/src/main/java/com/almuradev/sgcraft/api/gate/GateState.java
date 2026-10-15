@@ -35,13 +35,13 @@ package com.almuradev.sgcraft.api.gate;
  */
 public enum GateState {
 
-    /** Doing nothing, and free to dial or be dialled. */
+    /** Doing nothing, and free to dial or be dialed. */
     IDLE,
 
     /** Locking chevrons while it dials out. */
-    DIALLING,
+    DIALING,
 
-    /** Locking chevrons because another gate is dialling it. */
+    /** Locking chevrons because another gate is dialing it. */
     INCOMING,
 
     /** All chevrons are locked and the wormhole is forming. */

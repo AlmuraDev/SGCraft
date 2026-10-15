@@ -41,8 +41,8 @@ public enum ActionResult {
     /** The cause isn't allowed to do this. */
     DENIED,
 
-    /** A listener cancelled the action's event. */
-    CANCELLED,
+    /** A listener canceled the action's event. */
+    CANCELED,
 
     /** The action can't happen in the gate's current state, such as closing an iris the gate doesn't have. */
     NOT_POSSIBLE

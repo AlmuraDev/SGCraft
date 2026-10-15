@@ -35,7 +35,7 @@ package com.almuradev.sgcraft.api.gate;
  */
 public enum DialMode {
 
-    /** Each symbol in turn, every chevron locking as its symbol is dialled. */
+    /** Each symbol in turn, every chevron locking as its symbol is dialed. */
     STANDARD,
 
     /** Every chevron locks at once, and the wormhole forms straight after. */

@@ -41,15 +41,15 @@ public interface EventBus {
     /**
      * @param type the type of event
      * @param priority when the listener runs
-     * @param ignoreCancelled whether to skip the listener when a {@link Cancellable} event is already cancelled
+     * @param ignoreCanceled whether to skip the listener when a {@link Cancelable} event is already canceled
      * @param listener the listener
      * @return the registration, which can remove the listener later
      */
     <E extends Event> Registration register(final Class<E> type, final EventPriority priority,
-            final boolean ignoreCancelled, final EventListener<? super E> listener);
+            final boolean ignoreCanceled, final EventListener<? super E> listener);
 
     /**
-     * Registers a listener at {@link EventPriority#NORMAL} that also runs for cancelled events.
+     * Registers a listener at {@link EventPriority#NORMAL} that also runs for canceled events.
      *
      * @param type the type of event
      * @param listener the listener

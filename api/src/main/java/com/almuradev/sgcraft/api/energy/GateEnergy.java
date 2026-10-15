@@ -28,7 +28,7 @@ package com.almuradev.sgcraft.api.energy;
 /**
  * A gate's energy store, in the API's own unit (see the package documentation).
  *
- * <p>Dialling draws from the store. {@linkplain EnergySource Sources} and {@linkplain EnergyBridge bridges} to
+ * <p>Dialing draws from the store. {@linkplain EnergySource Sources} and {@linkplain EnergyBridge bridges} to
  * other energy systems fill it. A gate whose {@link com.almuradev.sgcraft.api.gate.GateProperties#REQUIRES_POWER}
  * property is false dials without drawing anything.</p>
  *

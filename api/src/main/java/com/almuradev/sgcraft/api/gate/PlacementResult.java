@@ -59,7 +59,11 @@ public interface PlacementResult {
         /** Blocks are in the way everywhere it was tried, and the mode was {@link PlacementMode#ATTEMPT}. */
         OBSTRUCTED,
 
-        /** Another gate is in the way, or already has the address the new gate would have. */
+        /**
+         * Another gate's blocks are in the way. Only a finished gate is in the way so: the blocks of an unfinished or
+         * broken one are in the way as any other block is. A gate near another, even one with the same address, is
+         * not in the way; that address then reaches whichever gate the implementation finds first.
+         */
         GATE_IN_THE_WAY,
 
         /** The gate's type can't be built at the requested size. */
@@ -74,7 +78,7 @@ public interface PlacementResult {
         /** The cause isn't allowed to place a gate there. */
         DENIED,
 
-        /** A listener cancelled the placement's event. */
-        CANCELLED
+        /** A listener canceled the placement's event. */
+        CANCELED
     }
 }

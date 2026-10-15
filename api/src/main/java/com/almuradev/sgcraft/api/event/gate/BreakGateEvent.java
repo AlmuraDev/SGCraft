@@ -25,7 +25,7 @@
 
 package com.almuradev.sgcraft.api.event.gate;
 
-import com.almuradev.sgcraft.api.event.Cancellable;
+import com.almuradev.sgcraft.api.event.Cancelable;
 
 /**
  * A gate being broken, by a player, an explosion or anything else that removes one of its blocks.
@@ -35,10 +35,10 @@ import com.almuradev.sgcraft.api.event.Cancellable;
 public interface BreakGateEvent extends GateEvent {
 
     /**
-     * Fired before the gate breaks. Cancelling it keeps the gate whole, where the cause of the break allows that;
+     * Fired before the gate breaks. Canceling it keeps the gate whole, where the cause of the break allows that;
      * implementations must document any cause they can't stop, such as a block removed by a command.
      */
-    interface Pre extends BreakGateEvent, Cancellable {
+    interface Pre extends BreakGateEvent, Cancelable {
     }
 
     /** Fired once the gate is broken. {@link com.almuradev.sgcraft.api.gate.Stargate#exists()} is false by then. */

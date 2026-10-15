@@ -27,7 +27,7 @@
  * Gate energy: each gate's store, the sources it draws from, and the bridges that fill it from other energy
  * systems.
  *
- * <p>All amounts are in the API's own unit. What dialling costs and what sources give are up to the implementation
+ * <p>All amounts are in the API's own unit. What dialing costs and what sources give are up to the implementation
  * and the server's configuration. Bridges convert other systems' units into this one at a configurable rate.</p>
  *
  * <p>Callers must use these types on the server thread.</p>

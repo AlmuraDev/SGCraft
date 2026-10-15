@@ -37,11 +37,11 @@ import net.minecraft.resources.ResourceKey;
  */
 public final class AddressReaches {
 
-    /** Seven symbols: a gate in the same world as the dialling gate, by its position. */
+    /** Seven symbols: a gate in the same world as the dialing gate, by its position. */
     public static final ResourceKey<AddressReach> SAME_WORLD = AddressReaches.key("same_world");
 
     /**
-     * Eight symbols: a gate in another world of the dialling gate's {@linkplain WorldGroup group}. The position,
+     * Eight symbols: a gate in another world of the dialing gate's {@linkplain WorldGroup group}. The position,
      * then the world's symbol.
      */
     public static final ResourceKey<AddressReach> SAME_GROUP = AddressReaches.key("same_group");
