@@ -1,5 +1,5 @@
 // Draws the fronts of the stargate base blocks for each type of gate but the Milky Way, from the
-// Milky Way one (blocks/stargatebase_front.png), recoloured to show which gate the base builds.
+// Milky Way one (blocks/stargatebase_front.png), recolored to show which gate the base builds.
 // Run from the project root with a JDK:
 //
 //   javac -d build/tools tools/BaseBlockTextures.java && java -cp build/tools BaseBlockTextures
@@ -19,15 +19,15 @@ public class BaseBlockTextures {
         BufferedImage milkyWay = ImageIO.read(new File(DIR + "stargatebase_front.png"));
         // As on the show: a Pegasus gate's chevrons glow blue, and its ring is a cooler, bluer
         // silver
-        write(recolour(milkyWay, 210, 1.0f, 1.1f, 215, 0.18f, 1.05f), "pegasus");
+        write(recolor(milkyWay, 210, 1.0f, 1.1f, 215, 0.18f, 1.05f), "pegasus");
         // A Universe gate's chevrons are white lights in its dark, almost black metal
-        write(recolour(milkyWay, 45, 0.12f, 1.35f, 30, 0.04f, 0.62f), "universe");
+        write(recolor(milkyWay, 45, 0.12f, 1.35f, 30, 0.04f, 0.62f), "universe");
     }
 
     // The picture with its orange chevron lights turned to the given hue, saturation (times) and
-    // brightness (times), and its grey metal tinted the given hue and saturation, brightness times
+    // brightness (times), and its gray metal tinted the given hue and saturation, brightness times
     // the given amount. The blue of the event horizon in the middle is left as it is.
-    static BufferedImage recolour(BufferedImage src, float lightHue, float lightSat, float lightBright,
+    static BufferedImage recolor(BufferedImage src, float lightHue, float lightSat, float lightBright,
             float metalHue, float metalSat, float metalBright) {
         BufferedImage out = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
         for (int y = 0; y < src.getHeight(); y++) {
@@ -41,7 +41,7 @@ public class BaseBlockTextures {
                     hsb[1] = Math.min(1, hsb[1] * lightSat);
                     hsb[2] = Math.min(1, hsb[2] * lightBright);
                 } else if (hsb[1] < 0.2f) {
-                    // The grey metal of the ring
+                    // The gray metal of the ring
                     hsb[0] = metalHue / 360;
                     hsb[1] = metalSat;
                     hsb[2] = Math.min(1, hsb[2] * metalBright);

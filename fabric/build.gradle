@@ -6,6 +6,9 @@ dependencies {
     minecraft("com.mojang:minecraft:${minecraft_version}")
     implementation("net.fabricmc:fabric-loader:${fabric_loader_version}")
     implementation("net.fabricmc.fabric-api:fabric-api:${fabric_version}")
+    // Team Reborn Energy, the energy Fabric's tech mods share, so cables can charge power units; bundled in the jar
+    implementation("teamreborn:energy:${tr_energy_version}")
+    include("teamreborn:energy:${tr_energy_version}")
 }
 
 loom {

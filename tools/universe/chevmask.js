@@ -1,6 +1,6 @@
 // Measures where the Destiny gate reference model's chevron lights up: its emissive parts, seen
 // from its symbol side (the gate's front; the model turned round, x and z negated), laid out over
-// the chevron in (degrees clockwise from its centre, radius). Writes a greyscale mask, white where
+// the chevron in (degrees clockwise from its center, radius). Writes a grayscale mask, white where
 // it glows: left to right from -D_HALF to D_HALF degrees, top to bottom from R1 down to R0.
 // jjs chevmask.js -- <scratch> <glb> <texdir> <out png> [width]
 var file = arguments[1], out = arguments[0];

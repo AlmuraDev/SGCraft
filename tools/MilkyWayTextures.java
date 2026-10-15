@@ -19,7 +19,7 @@ public class MilkyWayTextures {
 
     public static void main(String[] args) throws Exception {
         new File(DIR).mkdirs();
-        // As on the show, a weathered dark grey, like dark stone, with soft patches of darker: the
+        // As on the show, a weathered dark gray, like dark stone, with soft patches of darker: the
         // fixed ring; the detail on it, much the same; the symbol ring and its glyphs, a little
         // paler and cooler; the chevrons, a little darker
         repeating("ring", 71, 0.22, 0.07, 0.12, new double[] {0.99, 1.0, 0.98});
@@ -66,7 +66,7 @@ public class MilkyWayTextures {
         ImageIO.write(img, "png", new File(DIR + "slats.png"));
     }
 
-    // The colour the given fraction (0 to 1) of the way along a ramp of colours
+    // The color the given fraction (0 to 1) of the way along a ramp of colors
     static int along(double[][] ramp, double d) {
         double k = Math.max(0, Math.min(1, d)) * (ramp.length - 1);
         int i = Math.min(ramp.length - 2, (int) k);

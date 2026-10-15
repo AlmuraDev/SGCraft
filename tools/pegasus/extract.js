@@ -2,7 +2,7 @@
 // PegasusGateModel), and draws the textures of its fixed ring. The data is groups of triangles:
 //
 //   g <name>                 the start of a group; the triangles after it are in it
-//   v x y z u v              a corner, in the gate's frame (metres), with its texture coordinates
+//   v x y z u v              a corner, in the gate's frame (meters), with its texture coordinates
 //   t a b c                  a triangle of the group's corners (counting from 0 in the group),
 //                            anticlockwise seen from outside
 //
@@ -226,7 +226,7 @@ function bilinear(a, cols, fx, fy) {
     return a[i] * (1 - u) * (1 - v) + a[i + 1] * u * (1 - v) + a[i + cols] * (1 - u) * v + a[i + cols + 1] * u * v;
 }
 // How bright the gate's metal is drawn, against the reference's (to sit beside the Milky Way gate),
-// and its tint, a cool blue-grey
+// and its tint, a cool blue-gray
 var LINE_CELLS = 2;
 var TONE = 0.6, METAL_TINT = [0.9, 0.97, 1.1], PATINA_TINT = [0.8, 0.94, 1.16];
 // The largest of the values within r cells of each, along rows (dx 1) or columns (dx cols), or the
@@ -265,7 +265,7 @@ function blur(a, cols, rows, r) {
     }
     return out;
 }
-// The metal's colour, from how bright it is (v) and how pale the reference has it (p): its
+// The metal's color, from how bright it is (v) and how pale the reference has it (p): its
 // engraving tinted with a blue patina
 function metalRGB(v, p) {
     var f = Math.max(0, Math.min(1, (0.55 - p) / 0.15)), c = [0, 1, 2].map(function (i) {
@@ -372,7 +372,7 @@ function metalRGB(v, p) {
     // How bright each point is. The carved band round the middle of the edge is made of small
     // facets, each its own material in the reference, which drawn as they are break up into
     // shards: it is shaded by its relief, the facets' paleness evened out over a couple of
-    // centimetres
+    // centimeters
     var vv = new Float64Array(cols * H);
     p = blur(p, cols, H, Math.round(0.01 / DZ));
     for (var i = 0; i < cols * H; i++) vv[i] = soften(p[i]) * (1 + Math.max(-0.4, Math.min(0.25, (r[i] - avg[i]) * 45))) * 0.9;

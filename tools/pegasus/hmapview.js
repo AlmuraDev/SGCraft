@@ -20,7 +20,7 @@ var img = new BufferedImage(cols, H * 2 + 10, BufferedImage.TYPE_INT_RGB);
     for (var y = 0; y < H; y++) for (var x = 0; x < cols; x++) {
         var k = y * W + a0 + x, z = m[k];
         if (z != z) continue;
-        // Height across and up, from the neighbours
+        // Height across and up, from the neighbors
         var r = R0 + y * DR, dxw = r * DA * Math.PI / 180;
         var zl = m[y * W + a0 + Math.max(0, x - 1)], zr = m[y * W + a0 + Math.min(cols - 1, x + 1)];
         var zd = m[Math.max(0, y - 1) * W + a0 + x], zu = m[Math.min(H - 1, y + 1) * W + a0 + x];

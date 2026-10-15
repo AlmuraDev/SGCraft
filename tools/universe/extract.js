@@ -3,7 +3,7 @@
 // middle of one post between arches (70 degrees) and the post as far the other side (110), so a whole chevron
 // (at 90) in the middle, merged with the faces
 // it continues flat into. Writes one line per face: its part and its outline as
-// (degrees from the chevron's centre, radius, z).
+// (degrees from the chevron's center, radius, z).
 // jjs extract.js -- <scratch> <glb> <out file>
 var file = arguments[1], out = arguments[0];
 load(arguments[0] + "/glbcore.js");

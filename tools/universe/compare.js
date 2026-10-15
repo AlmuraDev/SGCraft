@@ -61,9 +61,9 @@ var img = new BufferedImage(W * 3, H, BufferedImage.TYPE_INT_RGB);
 var total = 0, sum = 0, bad = 0, worst = 0, missing = 0, extra = 0;
 for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
     var i = y * W + x, a = ref[i], b = mine[i];
-    function grey(z) { if (z < -1e8) return 0; var g = Math.max(0, Math.min(255, Math.floor((z - 0.05) / 0.25 * 230 + 25))); return (g << 16) | (g << 8) | g; }
-    img.setRGB(x, y, grey(a));
-    img.setRGB(W + x, y, grey(b));
+    function gray(z) { if (z < -1e8) return 0; var g = Math.max(0, Math.min(255, Math.floor((z - 0.05) / 0.25 * 230 + 25))); return (g << 16) | (g << 8) | g; }
+    img.setRGB(x, y, gray(a));
+    img.setRGB(W + x, y, gray(b));
     var c = 0;
     if (a < -1e8 && b < -1e8) c = 0;
     else if (a < -1e8) { c = 0x0000ff; extra++; }

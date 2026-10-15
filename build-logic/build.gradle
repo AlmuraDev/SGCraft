@@ -11,6 +11,6 @@ repositories {
 }
 
 dependencies {
-    // Checks and adds the licence header (HEADER.txt) on every source file
+    // Checks and adds the license header (HEADER.txt) on every source file
     implementation 'net.neoforged.licenser:net.neoforged.licenser.gradle.plugin:0.7.5'
 }

@@ -1,6 +1,6 @@
 // Measures where the Destiny gate reference model's chevron is painted bronze (its studs), seen
 // from its symbol side (the gate's front; the model turned round, x and z negated), laid out over
-// the chevron in (degrees clockwise from its centre, radius). Writes a greyscale mask, white where
+// the chevron in (degrees clockwise from its center, radius). Writes a grayscale mask, white where
 // it is bronze: left to right from -D_HALF to D_HALF degrees, top to bottom from R1 down to R0.
 // jjs chevmask.js -- <scratch> <glb> <texdir> <out png> [width]
 var file = arguments[1], out = arguments[0];
@@ -46,7 +46,7 @@ for (var t = 0; t < I.length; t += 3) {
         u -= Math.floor(u); v -= Math.floor(v);
         var c = base.getRGB(Math.min(base.getWidth() - 1, Math.floor(u * base.getWidth())), Math.min(base.getHeight() - 1, Math.floor(v * base.getHeight())));
         var cr = (c >> 16) & 0xff, cg = (c >> 8) & 0xff, cb = c & 0xff;
-        // bronze: clearly warmer than grey
+        // bronze: clearly warmer than gray
         var em = cr - cb > 35 && cr > 80 ? 255 : 0;
         lit[yy * w + xx] = em;
     }

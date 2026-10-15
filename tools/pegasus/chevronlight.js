@@ -1,5 +1,5 @@
 // Draws the texture of the blue light above a Pegasus gate's chevrons, as on the show: not a flat
-// colour, but lit from within, a pale spot of light towards its wide outer edge, fading
+// color, but lit from within, a pale spot of light towards its wide outer edge, fading
 // out to deep blue at its edges. Laid across the light from in front (see
 // SGBaseTERenderer.pegasusLists), u across it and v down it.
 // jjs chevronlight.js -- <out.png>
@@ -7,7 +7,7 @@ var BufferedImage = Java.type("java.awt.image.BufferedImage"), ImageIO = Java.ty
 var N = 128;
 // Where the spot is (u, v), and how far it spreads (fraction of the light's width)
 var SPOT = [0.5, 0.32], SPREAD = 0.42;
-// Its colour in the middle, and at the edges
+// Its color in the middle, and at the edges
 var CORE = [0.85, 0.95, 1.0], EDGE = [0.05, 0.22, 0.62];
 var img = new BufferedImage(N, N, BufferedImage.TYPE_INT_RGB);
 for (var y = 0; y < N; y++) for (var x = 0; x < N; x++) {

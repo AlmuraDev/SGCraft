@@ -3,7 +3,7 @@
 Stargates for Minecraft: build a gate, dial another one from its DHD and step through the event horizon.
 Milky Way, Pegasus and Universe gates, from standard size up to supergates.
 
-SGCraft was created by **gcewing**, who wrote the original mod and the gates, DHD, dialling and addressing that
+SGCraft was created by **gcewing**, who wrote the original mod and the gates, DHD, dialing and addressing that
 everything here grew from. This version is a remake for Minecraft 26.3 by AlmuraDev, built on that work.
 
 ## Loaders
@@ -28,9 +28,11 @@ the API.
 
 Needs JDK 25. `./gradlew build` puts one jar per loader in `neoforge/build/libs` and `fabric/build/libs`.
 `./gradlew :neoforge:runClient` or `./gradlew :fabric:runClient` starts a development client.
+`./gradlew :neoforge:runGameTestServer` runs the game tests, which place, dial and travel through real gates on a
+test server and check the API's contracts.
 
-## Licence
+## License
 
-The source code is under the MIT licence; see [LICENSE](LICENSE). The released mod also contains gate model data
-under the Creative Commons Attribution-NonCommercial licence (see [CREDITS.md](CREDITS.md)), so the mod as
+The source code is under the MIT license; see [LICENSE](LICENSE). The released mod also contains gate model data
+under the Creative Commons Attribution-NonCommercial license (see [CREDITS.md](CREDITS.md)), so the mod as
 distributed may not be sold or used commercially.

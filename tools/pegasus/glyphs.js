@@ -9,15 +9,15 @@
 // frame, with texture coordinates across each dome for star.png.
 //
 //   star.png                 a dome's texture: bright in the middle, with a crystal grain
-//   crystal.png              the screens' blue crystal (Blue_Crystal_Color.jpg, 2 metres square),
+//   crystal.png              the screens' blue crystal (Blue_Crystal_Color.jpg, 2 meters square),
 //                            made smaller
 //
-// jjs glyphs.js -- <pegasus_gate.txt> <glyph dir> <crystal colour jpg> <glyph model out> <texture dir>
+// jjs glyphs.js -- <pegasus_gate.txt> <glyph dir> <crystal color jpg> <glyph model out> <texture dir>
 var Files = Java.type("java.nio.file.Files"), Paths = Java.type("java.nio.file.Paths");
 var BufferedImage = Java.type("java.awt.image.BufferedImage"), ImageIO = Java.type("javax.imageio.ImageIO"), File = Java.type("java.io.File");
 var JMath = Java.type("java.lang.Math");
 var modelFile = arguments[0], glyphDir = arguments[1], crystalFile = arguments[2], outFile = arguments[3], texDir = arguments[4];
-// Discs larger than STAR_SIZE (radius, metres) are stars
+// Discs larger than STAR_SIZE (radius, meters) are stars
 var STAR_SIZE = 0.002, STAR_SCALE = 1.7, DOT_SCALE = 3.2;
 // How far the domes stand out, against their radius; how far they sink into the screen, so that
 // they meet it without a gap

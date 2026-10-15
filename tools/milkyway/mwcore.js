@@ -1,4 +1,4 @@
-// The Milky Way gate reference model in the gate's own frame and units: metres, the ring in the
+// The Milky Way gate reference model in the gate's own frame and units: meters, the ring in the
 // x-y plane, +y up, the front (the side with the chevron lights) towards +z, so that seen from in
 // front +x is to the right. The file has the front towards -z, so this is it turned half a turn
 // about y. Loaded after fbxcore.js. parts: {static, chevrons, lights, ring}, each a list of

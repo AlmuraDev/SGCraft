@@ -11,9 +11,9 @@ var cx = arguments.length > 6 ? +arguments[6] : 0, cy = arguments.length > 7 ? +
 var half = arguments.length > 8 ? +arguments[8] : 6.2;
 var L = [-0.45, 0.55, 0.7], ll = Math.sqrt(L[0] * L[0] + L[1] * L[1] + L[2] * L[2]);
 L = L.map(function (q) { return q / ll; });
-var colours = [[200, 200, 200], [190, 200, 190], [200, 205, 215], [215, 220, 230], [170, 170, 170], [255, 140, 40]];
+var colors = [[200, 200, 200], [190, 200, 190], [200, 205, 215], [215, 220, 230], [170, 170, 170], [255, 140, 40]];
 
-// Rasters triangles given by each(f), f(part, a, b, c), into depth and colour, culling those
+// Rasters triangles given by each(f), f(part, a, b, c), into depth and color, culling those
 // facing away as the game does (corners anticlockwise seen from in front)
 function raster(each, cull) {
     var zb = new DoubleArray(S * S), col = new IntArray(S * S);
@@ -36,7 +36,7 @@ function raster(each, cull) {
         if (minx > maxx || miny > maxy) return;
         var den = (sy[1] - sy[2]) * (sx[0] - sx[2]) + (sx[2] - sx[1]) * (sy[0] - sy[2]);
         if (Math.abs(den) < 1e-12) return;
-        var cc = colours[part];
+        var cc = colors[part];
         var rgb = ((cc[0] * shade) | 0) << 16 | ((cc[1] * shade) | 0) << 8 | ((cc[2] * shade) | 0);
         for (var y = miny; y <= maxy; y++) for (var x = minx; x <= maxx; x++) {
             var X = x + 0.5, Y = y + 0.5;

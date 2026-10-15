@@ -10,8 +10,8 @@
 //                                                   UniverseGateRenderer.renderUniverseRing)
 // Its symbols, tileentity/universe/glyphs.png, are measured from the Destiny gate model by
 // tools/universe/glyphsheet.js.
-//   blocks/gatespawner_universe_{stargate,supergate}.png   (the Pegasus ones, recoloured)
-//   items/universe_upgrade.png                              (the Pegasus one, recoloured)
+//   blocks/gatespawner_universe_{stargate,supergate}.png   (the Pegasus ones, recolored)
+//   items/universe_upgrade.png                              (the Pegasus one, recolored)
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -36,7 +36,7 @@ public class UniverseTextures {
         new File(ROOT + "tileentity/universe").mkdirs();
         gateSheet();
         iris();
-        // As on the model, all close greys: the ring, gunmetal mottled with black; the frames round
+        // As on the model, all close grays: the ring, gunmetal mottled with black; the frames round
         // its arches and the posts between them, much the same; the panels inside the arches, where
         // the symbols are, a little darker; its chevrons, a little paler; its pipes and lattice,
         // dark bronze
@@ -45,9 +45,9 @@ public class UniverseTextures {
         repeating("panel", 65, 0.26, 0.06, 0.3, new double[] {0.97, 1.0, 1.04});
         repeating("detail", 62, 0.30, 0.08, 0.2, new double[] {1.10, 0.93, 0.76});
         repeating("chevron", 63, 0.33, 0.07, 0.25, new double[] {0.98, 1.0, 1.04});
-        recolour("blocks/gatespawner_pegasus_stargate.png", "blocks/gatespawner_universe_stargate.png");
-        recolour("blocks/gatespawner_pegasus_supergate.png", "blocks/gatespawner_universe_supergate.png");
-        recolour("items/pegasus_upgrade.png", "items/universe_upgrade.png");
+        recolor("blocks/gatespawner_pegasus_stargate.png", "blocks/gatespawner_universe_stargate.png");
+        recolor("blocks/gatespawner_pegasus_supergate.png", "blocks/gatespawner_universe_supergate.png");
+        recolor("items/pegasus_upgrade.png", "items/universe_upgrade.png");
     }
 
     // ---- Gate sheet ----------------------------------------------------------------------
@@ -70,7 +70,7 @@ public class UniverseTextures {
     static final double GLYPH_WIDTH = 0.34, GLYPH_HEIGHT = 0.42;
 
 
-    // Gunmetal grey with a fine brushed grain, mottled with patches of black, as Destiny's gates are
+    // Gunmetal gray with a fine brushed grain, mottled with patches of black, as Destiny's gates are
     static int metal(Random r, double base, double grain, int x, int y, long seed) {
         double n = noise(x * 0.04, y * 0.9, seed) * 0.6 + noise(x * 0.3, y * 0.3, seed + 7) * 0.4;
         double v = base + grain * (n - 0.5) + (r.nextDouble() - 0.5) * 0.025;
@@ -272,10 +272,10 @@ public class UniverseTextures {
         ImageIO.write(img, "png", new File(ROOT + "tileentity/universe/iris.png"));
     }
 
-    // ---- Recolouring an existing image ------------------------------------------------------
+    // ---- Recoloring an existing image ------------------------------------------------------
 
-    // Swings the blues and greens of an existing image to amber, leaving other colours alone
-    static void recolour(String from, String to) throws Exception {
+    // Swings the blues and greens of an existing image to amber, leaving other colors alone
+    static void recolor(String from, String to) throws Exception {
         BufferedImage src = ImageIO.read(new File(ROOT + from));
         BufferedImage out = new BufferedImage(src.getWidth(), src.getHeight(), BufferedImage.TYPE_INT_ARGB);
         for (int y = 0; y < src.getHeight(); y++) {

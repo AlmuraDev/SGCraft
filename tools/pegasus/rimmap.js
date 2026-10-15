@@ -1,5 +1,5 @@
 // Rasterises the outer edge of the Pegasus gate reference model's fixed ring (everything beyond
-// RIM_FROM metres out) into a map over (angle, z): how far out the surface is there (largest
+// RIM_FROM meters out) into a map over (angle, z): how far out the surface is there (largest
 // radius), and how pale it is. Seen from outside, the ring's outer edge (the step down at the edge
 // of its face, the lip below it and the rim itself) is a surface over (angle, z), which its faces'
 // height maps (heightmap.js) can't show. Writes them as big-endian floats as heightmap.js does,

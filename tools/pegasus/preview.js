@@ -2,7 +2,7 @@
 // groups turned into place as the mod does, lit from the upper left, with the fixed ring's faces
 // textured with front.png and back.png, to check it against the reference.
 // jjs preview.js -- <pegasus_gate.txt> <texture dir> <out.png> <size> [front|back] [cx cy halfWidth [tilt]]
-// (tilt: degrees the gate leans back about the view's centre, to see its faces at a slant)
+// (tilt: degrees the gate leans back about the view's center, to see its faces at a slant)
 var Files = Java.type("java.nio.file.Files"), Paths = Java.type("java.nio.file.Paths");
 var BufferedImage = Java.type("java.awt.image.BufferedImage"), ImageIO = Java.type("javax.imageio.ImageIO"), File = Java.type("java.io.File");
 var lines = String(new java.lang.String(Files.readAllBytes(Paths.get(arguments[0])), "UTF-8")).split("\n");
@@ -18,7 +18,7 @@ lines.forEach(function (l) {
 });
 var tex = {};
 ["front", "back", "outer"].forEach(function (n) { tex[n] = ImageIO.read(new File(texDir + "/" + n + ".png")); });
-var colour = {rim: 0xa8acb0, wall: 0xa8acb0, separator: 0xa8acb0, screen: 0x223050, chevron: 0xb0b4b8, chevron_dark: 0x505258,
+var color = {rim: 0xa8acb0, wall: 0xa8acb0, separator: 0xa8acb0, screen: 0x223050, chevron: 0xb0b4b8, chevron_dark: 0x505258,
     light_block: 0x4aa0e0, light_bars: 0xc8d0d8};
 var zb = new Float64Array(S * S), img = new BufferedImage(S, S, BufferedImage.TYPE_INT_RGB);
 for (var i = 0; i < S * S; i++) zb[i] = -1e9;
@@ -57,7 +57,7 @@ Object.keys(groups).forEach(function (name) {
                 var z = w0 * sz[0] + w1 * sz[1] + w2 * sz[2];
                 if (z <= zb[y * S + x]) continue;
                 zb[y * S + x] = z;
-                var col = colour[name] || 0x808080;
+                var col = color[name] || 0x808080;
                 if (tex[name]) {
                     var u = w0 * p[0][3] + w1 * p[1][3] + w2 * p[2][3], v = w0 * p[0][4] + w1 * p[1][4] + w2 * p[2][4];
                     var T = tex[name], tx = Math.min(T.getWidth() - 1, Math.max(0, Math.floor(u * T.getWidth()))), ty = Math.min(T.getHeight() - 1, Math.max(0, Math.floor(v * T.getHeight())));

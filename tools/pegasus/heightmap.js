@@ -2,7 +2,7 @@
 // inner ring's screens) into height maps over (angle, radius): for the front, how far forward the
 // surface is (largest z), and for the back, how far back (smallest z). Writes them as big-endian
 // floats, row by row (radius, out from R0) of columns (angle, anticlockwise from +x), with NaN
-// where there is nothing; then, the same way, how pale the surface seen is (its material's colour,
+// where there is nothing; then, the same way, how pale the surface seen is (its material's color,
 // 0 to 1), front and back.
 // Materials named in the optional last argument (comma separated) are taken as polished metal: the
 // fine lines scratched across its faces, which break up into grain at any distance in Minecraft.

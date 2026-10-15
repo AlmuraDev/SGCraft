@@ -1,4 +1,4 @@
-// The Pegasus gate reference model in the gate's own frame and units: metres, the ring in the x-y
+// The Pegasus gate reference model in the gate's own frame and units: meters, the ring in the x-y
 // plane, +y up, the front (the side with the inner ring's screens) towards +z, so that seen from in
 // front +x is to the right. The file has the front towards -z, so this is it turned half a turn
 // about y. Loaded after objcore.js. parts: {static, chevrons, lights, screens, separators, rim},

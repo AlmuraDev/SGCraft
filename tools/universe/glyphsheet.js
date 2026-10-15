@@ -2,7 +2,7 @@
 // into a glyph sheet: a 6 by 6 grid of cells, the symbol of arch k (clockwise from the top
 // chevron, four after each chevron) in cell k, white where it is cut into the ring's face, on
 // black. Each cell covers the arch's symbol panel: from GLYPH_HALF degrees anticlockwise of the
-// arch's centre (left) to as far clockwise (right), and from R1 (top) down to R0 (bottom). The back
+// arch's center (left) to as far clockwise (right), and from R1 (top) down to R0 (bottom). The back
 // is turned round to face front, so each symbol reads as it does to someone looking at it.
 // jjs glyphsheet.js -- <scratch> <glb> <out png> [cell pixels]
 var file = arguments[1], out = arguments[0];
@@ -29,12 +29,12 @@ for (var t = 0; t < I.length; t += 3) {
 var W = C * SS, H = C * SS;
 var img = new BufferedImage(6 * C, 6 * C, BufferedImage.TYPE_INT_RGB);
 for (var k = 0; k < 36; k++) {
-    var sec = Math.floor(k / 4), j = k % 4, centre = 90 - (sec * 40 + 8 * (j + 1));
+    var sec = Math.floor(k / 4), j = k % 4, center = 90 - (sec * 40 + 8 * (j + 1));
     var hz = new Float64Array(W * H);
     for (var i = 0; i < W * H; i++) hz[i] = -1e9;
     tris.forEach(function (tr) {
         var px = [], py = [];
-        var d0 = ((centre - tr.a[0]) % 360 + 540) % 360 - 180;
+        var d0 = ((center - tr.a[0]) % 360 + 540) % 360 - 180;
         if (Math.abs(d0) > 90) return;
         for (var e = 0; e < 3; e++) {
             // round from the first corner the short way, so a triangle never wraps

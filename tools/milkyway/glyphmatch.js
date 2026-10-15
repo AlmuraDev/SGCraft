@@ -12,7 +12,7 @@ var RING = [[4.8436, 0.0663], [5.4408, 0.2243]];
 var slope = (RING[1][1] - RING[0][1]) / (RING[1][0] - RING[0][0]);
 function coneZ(r) { return RING[0][1] + (r - RING[0][0]) * slope; }
 
-// Fits a list of filled points into an N x N mask, scaled evenly to fill it, centred
+// Fits a list of filled points into an N x N mask, scaled evenly to fill it, centered
 function fit(points) {
     var x0 = 1e9, x1 = -1e9, y0 = 1e9, y1 = -1e9;
     points.forEach(function (p) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); });
@@ -28,15 +28,15 @@ function fit(points) {
 // The reference's glyphs: where the ring stands out of its cone, looked at from in front
 var glyphs = [];
 for (var k = 0; k < SLOTS; k++) {
-    var centre = 90 - k * SLOT, pts = [];
+    var center = 90 - k * SLOT, pts = [];
     parts.ring.forEach(function (v) {
         var c = [(v[0][0] + v[1][0] + v[2][0]) / 3, (v[0][1] + v[1][1] + v[2][1]) / 3, (v[0][2] + v[1][2] + v[2][2]) / 3];
-        var da = ((angleOf(c) - centre) % 360 + 540) % 360 - 180;
+        var da = ((angleOf(c) - center) % 360 + 540) % 360 - 180;
         // Short of the dividers between slots
         if (Math.abs(da) > SLOT * 0.4 || c[2] - coneZ(radius(c)) < 0.006) return;
         // Fill the triangle, in (across to the right, outwards)
         var q = v.map(function (p) {
-            var a = (centre - angleOf(p)) * Math.PI / 180, r = radius(p);
+            var a = (center - angleOf(p)) * Math.PI / 180, r = radius(p);
             return [r * Math.sin(a), -r * Math.cos(a)];
         });
         for (var i = 0; i <= 12; i++) for (var j = 0; i + j <= 12; j++) {

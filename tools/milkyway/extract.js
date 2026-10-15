@@ -2,7 +2,7 @@
 // (see MilkyWayGateModel): the profiles its two bodies are turned from, and as polygons, what
 // stands out of or is cut into them:
 //
-//   p static|ring  r z r z ...        a body's profile, in (radius, z) metres
+//   p static|ring  r z r z ...        a body's profile, in (radius, z) meters
 //   s x y z x y z ...                 the fixed ring's detail, for the ninth of it round the top
 //                                     chevron (70 to 110 degrees); the rest is that, turned
 //   c column segment                  a cell of the fixed body (column j from 70 + 4j to 74 + 4j

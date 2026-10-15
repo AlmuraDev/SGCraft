@@ -2,7 +2,7 @@
 // meshes of their broad shapes (see cleanFace): bands split where the face steps, each a quadtree
 // over (angle, radius), each cell split into four until the shape is within TOL of a flat surface
 // over it, and the leaves fanned into triangles from their middles, taking in the corners of
-// smaller neighbours so that there are no cracks; joined by upright walls. Loaded by the other
+// smaller neighbors so that there are no cracks; joined by upright walls. Loaded by the other
 // scripts with `hmapFile` set; meshFace(side, tol, minSize) gives {verts: [[col, row, z]],
 // tris: [[i, j, k]]}, in height map cells from the ninth's start (70 degrees) and from R0.
 var Files = Java.type("java.nio.file.Files"), Paths = Java.type("java.nio.file.Paths");
@@ -24,7 +24,7 @@ var ROW0 = HH, ROW1 = 0;
 for (var y = 0; y < HH; y++) for (var x = 0; x < HW; x++) {
     if (!isNaN(hFront[y * HW + x])) { ROW0 = Math.min(ROW0, y); ROW1 = Math.max(ROW1, y); }
 }
-// The faces stop short of the outer edge if FACE_TO (metres out) is set; the edge is drawn
+// The faces stop short of the outer edge if FACE_TO (meters out) is set; the edge is drawn
 // another way (see rimmap.js)
 if (typeof FACE_TO == "number") ROW1 = Math.min(ROW1, Math.round((FACE_TO - HR0) / HDR));
 
@@ -46,7 +46,7 @@ function heightAt(m, c, r) {
 // ---- The faces' broad shapes -----------------------------------------------------------------
 //
 // Seen in Minecraft, the faces' fine carving (the arches, the zigzags, the ornate band at the
-// outer edge, about a centimetre deep) is drawn in their textures; meshed, it crumples the
+// outer edge, about a centimeter deep) is drawn in their textures; meshed, it crumples the
 // surface into creases and slivers. So the faces are meshed from their height maps cleaned of
 // it: each a turned profile (its typical height at each radius, away from the chevrons), with
 // only the broad features that stand out of it by more than KEEP_DEPTH and are wider than
@@ -167,7 +167,7 @@ function meshFace(side, tol, minSize) {
     bands.forEach(function (band) {
         var ra = band[0], rb = band[1];
         if (rb <= ra) {
-            // A band a single row deep: nothing but its edge, joined to its neighbours by walls
+            // A band a single row deep: nothing but its edge, joined to its neighbors by walls
             var list = [];
             for (var c = 0; c < SECW; c += MAX_CELL) list.push(c);
             list.push(SECW);

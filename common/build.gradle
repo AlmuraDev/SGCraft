@@ -7,6 +7,24 @@ neoForge {
     neoFormVersion = neo_form_version
 }
 
+repositories {
+    mavenCentral()
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'Fabric'
+                url = uri('https://maven.fabricmc.net')
+            }
+        }
+        filter {
+            includeGroupAndSubgroups('net.fabricmc')
+        }
+    }
+}
+
 dependencies {
     compileOnly(project(':api'))
+    // Mixin as both loaders ship it, to compile the mixins that add gates to vanilla's structures
+    compileOnly('net.fabricmc:sponge-mixin:0.17.4+mixin.0.8.7')
+    compileOnly('io.github.llamalad7:mixinextras-common:0.5.5')
 }

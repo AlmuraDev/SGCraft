@@ -46,3 +46,40 @@ The paths are where the data lives in this remake, under `common/src/main/resour
 The gates' sounds (`sounds`) and the event horizon's texture (`textures/gate/event_horizon.png`) come from the
 1.12 mod as they were, along with the timings, the order chevrons lock in and the wave simulation of the
 wormhole's surface, which gcewing designed.
+
+## Iris, items and naquadah
+
+The iris's textures (`textures/gate/*/iris.png`) and sounds (`sounds/iris_open.ogg`, `iris_close.ogg` and
+`iris_hit.ogg`, made mono), the textures of the items and of naquadah (`textures/item`, and `naquadah_ore.png` and
+`naquadah_block.png` in `textures/block`) and the recipes come from the 1.12 mod. The iris's blades are drawn
+with gcewing's geometry, and its timing, the energy costs and the DHD's fuel follow the original's.
+
+## The gate base screen
+
+The base screen's art (`textures/gui/gate/base.png` and `address.png`) comes from the 1.12 mod's `sg_gui.png` and
+`sg_gui_noinventory.png`, and the screen and its camouflage slots are laid out as gcewing's were.
+
+## Supergates
+
+The supergate blocks' textures (`supergateblock.png`, `supergatering.png`, `supergatechevron.png` and
+`supergatebase_front.png` in `textures/block`) and recipes come from the 1.12 mod. A supergate's ring of blocks, its
+sizes, the way it is drawn as a standard gate scaled up, its opening, its kawoosh and its extra energy cost follow
+the original's `GateShape`.
+
+The gate spawners' textures (`textures/block/*_spawner.png`) come from the 1.12 mod's `gatespawner_*.png`, and the
+spawners work as its gate spawner blocks did.
+
+The chevron upgrade's texture (`textures/item/chevron_upgrade.png`) and recipe come from the 1.12 mod's
+`sgchevronupgrade`. It adds one chevron at a time, where the original's added two at once.
+
+The Tollan phase shift device's texture (`textures/item/tollan_phase_shift_device.png`) comes from the 1.12 mod, and
+the device takes its holder through a shut iris as the original's did, held in either hand where the original
+took the off hand only.
+
+The power unit's textures (`textures/block/power_unit_*.png`), its screen's art (`textures/gui/power_unit.png`,
+widened to the width the original's screen drew it at) and its recipe come from the 1.12 mod's `sgpowerunit` and
+`power_gui.png`, and it stores and gives energy as the original's did.
+
+The Tok'ra's skin (`textures/entity/villager/profession/tokra.png`, and the same in `zombie_villager`) comes from
+the 1.12 mod's `textures/skins/tokra.png`, and the Tok'ra trade the crystals the original's did, at the original's
+prices.
