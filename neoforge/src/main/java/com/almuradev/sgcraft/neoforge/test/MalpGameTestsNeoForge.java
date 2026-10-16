@@ -824,7 +824,7 @@ final class MalpGameTestsNeoForge {
     private static void relayedSignal(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final Stargate a = SGGameTestsNeoForge.place(helper, origin, 9);
-        final Stargate b = SGGameTestsNeoForge.place(helper, origin.east(48), 9);
+        final Stargate b = SGGameTestsNeoForge.place(helper, origin.east(128), 9);
         a.set(GateProperties.REQUIRES_POWER, false, SGGameTestsNeoForge.server(helper));
         a.set(GateProperties.OPENING_DAMAGE, false, SGGameTestsNeoForge.server(helper));
         b.set(GateProperties.IRIS, IrisTypes.METAL, SGGameTestsNeoForge.server(helper));
@@ -1269,7 +1269,7 @@ final class MalpGameTestsNeoForge {
     private static void tabletSignalRelays(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final Stargate a = SGGameTestsNeoForge.place(helper, origin, 9);
-        final Stargate b = SGGameTestsNeoForge.place(helper, origin.east(48), 9);
+        final Stargate b = SGGameTestsNeoForge.place(helper, origin.east(128), 9);
         a.set(GateProperties.REQUIRES_POWER, false, SGGameTestsNeoForge.server(helper));
         a.set(GateProperties.OPENING_DAMAGE, false, SGGameTestsNeoForge.server(helper));
         final ServerPlayer player = helper.makeMockServerPlayerInLevel();

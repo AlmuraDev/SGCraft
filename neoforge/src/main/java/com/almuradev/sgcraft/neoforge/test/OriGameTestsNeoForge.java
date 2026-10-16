@@ -80,7 +80,7 @@ final class OriGameTestsNeoForge {
     // An Ori supergate and a Milky Way gate can't connect, either way; and an Ori gate can't be a standard gate
     private static void onlyOri(final GameTestHelper helper, final BlockPos origin) {
         final Stargate ori = OriGameTestsNeoForge.placeOri(helper, origin);
-        final Stargate milkyWay = SGGameTestsNeoForge.place(helper, origin.offset(48, 0, 0), 9);
+        final Stargate milkyWay = SGGameTestsNeoForge.place(helper, origin.offset(128, 0, 0), 9);
         ori.set(GateProperties.REQUIRES_POWER, false, SGGameTestsNeoForge.server(helper));
         milkyWay.set(GateProperties.REQUIRES_POWER, false, SGGameTestsNeoForge.server(helper));
         final AtomicReference<DialResult> out = new AtomicReference<>();
@@ -101,7 +101,7 @@ final class OriGameTestsNeoForge {
     // Two Ori supergates connect, their rings linking symbol by symbol, though asked to dial at once
     private static void dialsOri(final GameTestHelper helper, final BlockPos origin) {
         final Stargate a = OriGameTestsNeoForge.placeOri(helper, origin);
-        final Stargate b = OriGameTestsNeoForge.placeOri(helper, origin.offset(48, 0, 0));
+        final Stargate b = OriGameTestsNeoForge.placeOri(helper, origin.offset(128, 0, 0));
         a.set(GateProperties.REQUIRES_POWER, false, SGGameTestsNeoForge.server(helper));
         b.set(GateProperties.REQUIRES_POWER, false, SGGameTestsNeoForge.server(helper));
         final AtomicReference<DialResult> result = new AtomicReference<>();
@@ -135,7 +135,7 @@ final class OriGameTestsNeoForge {
     // Only gates world generation built count as visits
     private static void explorerVisits(final GameTestHelper helper, final BlockPos origin) {
         final Stargate built = SGGameTestsNeoForge.place(helper, origin, 9);
-        final Stargate generated = SGGameTestsNeoForge.place(helper, origin.offset(48, 0, 0), 9);
+        final Stargate generated = SGGameTestsNeoForge.place(helper, origin.offset(128, 0, 0), 9);
         generated.set(GateProperties.GENERATED, true, SGGameTestsNeoForge.server(helper));
         final ServerPlayer player = helper.makeMockServerPlayerInLevel();
         ExplorerData.visit(player, built.position());

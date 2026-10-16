@@ -45,7 +45,7 @@ public record AddressLayout(int cellChunks, String pointOfOrigin) {
     /** The most chunks wide and long a cell can be. */
     public static final int MAX_CELL_CHUNKS = 256;
 
-    public static final AddressLayout DEFAULTS = new AddressLayout(1, "@");
+    public static final AddressLayout DEFAULTS = new AddressLayout(8, "@");
 
     /** Reads a point of origin: one symbol, or {@code ""} for none. */
     public static final Codec<String> ORIGIN_CODEC = Codec.STRING.validate(AddressLayout::validOrigin);

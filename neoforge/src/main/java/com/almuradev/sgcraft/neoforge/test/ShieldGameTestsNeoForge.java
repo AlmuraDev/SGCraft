@@ -157,7 +157,7 @@ final class ShieldGameTestsNeoForge {
     // A pig walked into a wormhole whose far end has its shield raised dies against it
     private static void shieldStopsTravel(final GameTestHelper helper, final BlockPos origin) {
         final Stargate a = SGGameTestsNeoForge.place(helper, origin, 9);
-        final Stargate b = SGGameTestsNeoForge.place(helper, origin.offset(48, 0, 0), 9);
+        final Stargate b = SGGameTestsNeoForge.place(helper, origin.offset(128, 0, 0), 9);
         a.set(GateProperties.REQUIRES_POWER, false, SGGameTestsNeoForge.server(helper));
         a.set(GateProperties.OPENING_DAMAGE, false, SGGameTestsNeoForge.server(helper));
         b.set(GateProperties.REQUIRES_POWER, false, SGGameTestsNeoForge.server(helper));

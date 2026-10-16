@@ -179,14 +179,14 @@ import java.util.function.Consumer;
 public final class SGGameTestsNeoForge {
 
     private static final Identifier STRUCTURE = SGCraft.id("gate_test");
-    // Gate A and gate B, from a test's origin: three chunks apart, so in different address cells
+    // Gate A and gate B, from a test's origin: eight chunks apart, so in different address cells
     private static final BlockPos A = BlockPos.ZERO;
-    private static final BlockPos B = new BlockPos(48, 0, 0);
+    private static final BlockPos B = new BlockPos(128, 0, 0);
     // A third gate, three chunks along the other way, for wormholes that go astray
     private static final BlockPos C = new BlockPos(0, 0, 48);
     // Tests run far out, where gates have no address, so each builds its gates near the world's center instead, high
     // up, a little apart from the others
-    private static final int SPACING = 128;
+    private static final int SPACING = 256;
     private static final int HEIGHT = 200;
     private static final Map<String, BiConsumer<GameTestHelper, BlockPos>> TESTS = new LinkedHashMap<>();
 
@@ -373,7 +373,7 @@ public final class SGGameTestsNeoForge {
     // the short address instead
     private static void keptAddressDials(final GameTestHelper helper, final BlockPos origin) {
         final Stargate a = SGGameTestsNeoForge.place(helper, origin, 7);
-        final Stargate b = SGGameTestsNeoForge.place(helper, origin.east(48), 7);
+        final Stargate b = SGGameTestsNeoForge.place(helper, origin.east(128), 7);
         a.set(GateProperties.REQUIRES_POWER, false, SGGameTestsNeoForge.server(helper));
         a.set(GateProperties.OPENING_DAMAGE, false, SGGameTestsNeoForge.server(helper));
         final SGAddressing addressing = SGServer.require().addressing();

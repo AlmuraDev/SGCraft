@@ -98,7 +98,7 @@ public final class RemoteViewGameTestsNeoForge {
     // A row of its own, apart from the other tests, each well apart from the next so their loaded chunks never meet;
     // near the world's center, where gates have addresses, and in the middle of a section, so what a test builds
     // about its origin is in the origin's section
-    private static final int SPACING = 128;
+    private static final int SPACING = 256;
     private static final int HEIGHT = 168;
     private static final int ROW_Z = 1048;
     private static final RemoteViewConfig REACH = RemoteViewConfig.DEFAULTS;
@@ -439,7 +439,7 @@ public final class RemoteViewGameTestsNeoForge {
     // A probe walked through gate A comes out of gate B, and the view goes with it
     private static void followsThroughGate(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
-        final BlockPos atB = origin.east(48);
+        final BlockPos atB = origin.east(128);
         RemoteViewGameTestsNeoForge.forceLoad(level, origin);
         RemoteViewGameTestsNeoForge.forceLoad(level, atB);
         final Cause server = Cause.of(level.getServer());

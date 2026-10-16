@@ -81,7 +81,7 @@ import java.util.Set;
 final class SGAccessGameTestsNeoForge {
 
     // Where a test's second and third gates go, clear of its first
-    private static final BlockPos B = new BlockPos(48, 0, 0);
+    private static final BlockPos B = new BlockPos(128, 0, 0);
     private static final BlockPos C = new BlockPos(0, 0, 48);
 
     private SGAccessGameTestsNeoForge() {

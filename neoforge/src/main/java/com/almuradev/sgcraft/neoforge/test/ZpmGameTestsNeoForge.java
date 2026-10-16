@@ -127,7 +127,7 @@ final class ZpmGameTestsNeoForge {
     // A supergate with no stored energy dials on the ZPMs in its base, and draws on them
     private static void supergateDrawsOnZpms(final GameTestHelper helper, final BlockPos origin) {
         final Stargate a = ZpmGameTestsNeoForge.supergate(helper, origin);
-        final Stargate b = SGGameTestsNeoForge.place(helper, origin.offset(48, 0, 0), 9);
+        final Stargate b = SGGameTestsNeoForge.place(helper, origin.offset(128, 0, 0), 9);
         final Container zpms = ZpmGameTestsNeoForge.fillBase(helper, a);
         SGGameTestsNeoForge.expectDial(helper, a, b, SGGameTestsNeoForge.server(helper), DialResult.CONNECTED, () ->
                 helper.assertTrue(Zpms.energy(Zpms.charged(zpms)) < zpms.getContainerSize() * ZpmItem.capacity(),
@@ -137,7 +137,7 @@ final class ZpmGameTestsNeoForge {
     // A supergate with no ZPMs at all dials on any other power it has
     private static void supergateTakesAnyPower(final GameTestHelper helper, final BlockPos origin) {
         final Stargate a = ZpmGameTestsNeoForge.supergate(helper, origin);
-        final Stargate b = SGGameTestsNeoForge.place(helper, origin.offset(48, 0, 0), 9);
+        final Stargate b = SGGameTestsNeoForge.place(helper, origin.offset(128, 0, 0), 9);
         a.set(GateProperties.ENERGY_CAPACITY, 10_000_000L, SGGameTestsNeoForge.server(helper));
         a.energy().insert(10_000_000, false);
         SGGameTestsNeoForge.expectDial(helper, a, b, SGGameTestsNeoForge.server(helper), DialResult.CONNECTED, () ->
@@ -180,7 +180,7 @@ final class ZpmGameTestsNeoForge {
     // A ZPM console near a gate powers its dial
     private static void consolePowersGate(final GameTestHelper helper, final BlockPos origin) {
         final Stargate a = SGGameTestsNeoForge.place(helper, origin, 9);
-        final Stargate b = SGGameTestsNeoForge.place(helper, origin.offset(48, 0, 0), 9);
+        final Stargate b = SGGameTestsNeoForge.place(helper, origin.offset(128, 0, 0), 9);
         final ZpmDeviceBlockEntity console = ZpmGameTestsNeoForge.device(helper, origin.north(3).east(3),
                 SGBlocks.ZPM_CONSOLE);
         SGGameTestsNeoForge.expectDial(helper, a, b, SGGameTestsNeoForge.server(helper), DialResult.CONNECTED, () ->
