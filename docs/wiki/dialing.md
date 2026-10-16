@@ -6,6 +6,7 @@ Dialing locks one chevron for each symbol of an address and opens a wormhole to 
 
 - A [DHD](dhd.md) next to the gate. Milky Way and Pegasus gates each have their own.
 - A [PDD or gate control tablet](tools.md), from an address book.
+- An [Explorer Dialer Device](items/edd.md), to the gates the world built.
 - The command `/sgcraft dial <address>`, at the gate you look at or have selected. See [Commands](commands.md).
 
 ## Dial modes
@@ -15,7 +16,7 @@ Dialing locks one chevron for each symbol of an address and opens a wormhole to 
 | Standard | The gate dials one symbol at a time. A Milky Way gate turns its glyph ring to bring each symbol to the top, a Universe gate turns its whole ring, and a Pegasus gate runs a light around its screens. Each chevron locks in turn. |
 | Quick | Every chevron locks at once and no ring moves. All the chevron costs are paid together. |
 
-The DHD, the PDD and the tablet dial in standard mode, or in quick mode when the gate's `chevrons_lock_on_dial` property is on (**Chevrons lock at once** in the [configurator](tools.md)). With the command, add `--quick` or `-q` for quick mode.
+The DHD, the PDD and the tablet dial in standard mode, or in quick mode when the gate's `chevrons_lock_on_dial` property is on (**Chevrons lock at once** in the [configurator](tools.md)). With the command, add `--quick` or `-q` for quick mode. An [Ori supergate](building-gates.md#ori-supergates) always dials in standard mode, linking its ring segments one after another.
 
 Both gates lock each chevron in the same tick. A dialed Pegasus gate fills with light as the dial goes on, and is full when the last chevron locks.
 
@@ -50,11 +51,12 @@ The gate checks these in order. The first one that fails stops the dial, and the
 | A gate stands at that address | `NO_GATE` | There is no gate at that address |
 | The address isn't the dialing gate's own | `SAME_GATE` | That is this gate's own address |
 | The gate at that address is idle | `TARGET_BUSY` | The gate at that address is busy |
+| The two gates' types can connect (an Ori supergate connects only to another) | `INCOMPATIBLE` | This gate can't connect to that type of gate |
 | The dialing gate may call out to it, and it takes calls from the dialing gate | `DENIED` | You aren't allowed to dial that |
 | No add-on stopped the dial | `CANCELED` | Something stopped the dial |
 | The gate has the energy for every chevron and the opening | `NOT_ENOUGH_ENERGY` | This gate doesn't have the energy |
 
-An address that doesn't end with the point of origin reaches no gate, so it fails with `NO_GATE`. The energy check is skipped for a gate that needs no power, and for creative players when the server's `free_in_creative` is on. See [Power](power.md) and [Access](access.md).
+An address that doesn't end with the point of origin reaches no gate, so it fails with `NO_GATE`. The energy check is skipped for a gate that needs no power, and for creative players when the server's `energy.free_in_creative` is on. See [Power](power.md) and [Access](access.md).
 
 A dial can also end after it starts:
 
@@ -73,7 +75,7 @@ A dial that works ends with "The wormhole to ... is open".
 As the wormhole opens, it bursts out of the front of both gates for 20 ticks. While the gate's `opening_damage` property is on (the default):
 
 - Every living thing and every MALP in front of the gate takes 5000 damage a tick (`opening_damage_amount`), with the death message "was torn apart by an event horizon". For a standard gate the area is 3 blocks wide, 3 tall and 5 deep in front of the opening.
-- On its first tick the kawoosh clears the blocks in its way: 3 across, 3 up and 4 deep from the ring for a standard gate, at most 4096 blocks for a supergate. It never clears gate blocks or fluids. It clears unbreakable blocks only when the server setting `kawoosh_breaks_unbreakable` is on.
+- On its first tick the kawoosh clears the blocks in its way: 3 across, 3 up and 4 deep from the ring for a standard gate, at most 4096 blocks for a supergate. It never clears gate blocks or fluids. It clears unbreakable blocks only when the server setting `gates.kawoosh_breaks_unbreakable` is on.
 
 A shut iris keeps the kawoosh in. See [The iris](iris.md).
 
@@ -127,10 +129,10 @@ A gate standing in water, lava or another fluid sends it through the wormhole. T
 
 ## Chunk loading
 
-While a gate is busy, from the first chevron until the wormhole closes, both gates keep their chunks loaded. Each keeps `chunk_loading_range` chunks around its own loaded too (1 by default, 0 to 8), plus enough to cover a supergate's ring.
+While a gate is busy, from the first chevron until the wormhole closes, both gates keep their chunks loaded. Each keeps `gates.chunk_loading_range` chunks around its own loaded too (1 by default, 0 to 8), plus enough to cover a supergate's ring.
 
 ### Server admins
 
 - `/sgcraft chunk_loading_range` shows or sets the range.
-- `/sgcraft log_events` turns on the server log of gate events, including lightning reroutes (`log_stargate_events`).
-- `/sgcraft settings <key> <bool>` sets the server's switches, such as `kawoosh_breaks_unbreakable`. See [Settings](settings.md).
+- `/sgcraft log_events` turns on the server log of gate events, including lightning reroutes (`gates.log_events`).
+- `/sgcraft settings <key> <bool>` sets the server's switches, such as `gates.kawoosh_breaks_unbreakable`. See [Settings](settings.md).

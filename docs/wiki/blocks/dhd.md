@@ -69,9 +69,9 @@ While the gate is active, the buttons show the address it dialed and the dome is
 
 Sneak and right-click the DHD with an empty hand to open **DHD Fuel**. It has 5 slots that take only {{item:sgcraft:naquadah}}. The title shows how full the linked gate's own reserve is, as `Gate %`, or `No gate` when the DHD isn't linked.
 
-- One naquadah gives the gate 96000 gate energy, the gate's `energy_per_naquadah` property (default: the server setting of the same name).
+- One naquadah gives the gate 96000 gate energy, the gate's `energy_per_naquadah` property (default: the server setting `energy.per_naquadah`).
 - The DHD burns a piece only when the gate needs more than what is left of the last one, taking from the last slot first. What a piece gives beyond the gate's need stays in the DHD for the next payment.
-- A gate draws DHD fuel before power units and its own reserve.
+- A gate draws on DHD fuel first, then power units, then ZPMs, the nearest of each first. It draws on its own reserve only for what they can't give.
 
 The fuel reaches the gate only when all of these hold:
 

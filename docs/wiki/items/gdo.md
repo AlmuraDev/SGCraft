@@ -8,7 +8,7 @@ ID: sgcraft:gdo
 Category: Tools
 Type: Item
 Stackable: No
-Range: The gate near you, 6 blocks (`tool_range`), and the far end of its open wormhole
+Range: The gate near you, 6 blocks (`tools.range`), and the far end of its open wormhole
 Right needed: `iris` on each gate for its iris, `use` to disconnect
 ```
 
@@ -28,13 +28,13 @@ sgcraft:gdo
 
 The GDO finds the gate near you the same way every tool does:
 
-1. The gate you look at, through its ring or its opening, up to 6 blocks away (or `tool_range` if that is more).
-2. The gate whose base or {{item:sgcraft:dhd}} is nearest your feet, within `tool_range` blocks (6) along each axis. A DHD stands for the gate it is linked to.
-3. The gate whose ring is nearest your eyes, within `tool_range` blocks.
+1. The gate you look at, through its ring or its opening, up to 6 blocks away (or `tools.range` if that is more).
+2. The gate whose base or {{item:sgcraft:dhd}} is nearest your feet, within `tools.range` blocks (6) along each axis. A DHD stands for the gate it is linked to.
+3. The gate whose ring is nearest your eyes, within `tools.range` blocks.
 
 With no gate near you, the GDO says "Could not detect a gate near you" and opens nothing.
 
-The screen stays on the gate it opened on. Its buttons stop working once you are more than 16 blocks from that gate's base (`tool_range` plus 10), and the GDO says "Could not detect a gate near you".
+The screen stays on the gate it opened on. Its buttons stop working once you are more than 16 blocks from that gate's base (`tools.range` plus 10), and the GDO says "Could not detect a gate near you".
 
 ## Screen
 
@@ -42,6 +42,8 @@ The screen has two sides:
 
 - **This gate**: the near gate's address in letters and glyphs ("????-???-??" when hidden), its iris state ("Iris: open", "Iris: closing", "Iris: closed" or "Iris: opening"), and what the gate is doing. A gate without an iris shows "No iris".
 - **The other end**: the same for the far gate, shown once the wormhole is connected. Until then the side says "No wormhole open".
+
+For a gate with a [shield](../iris.md#the-shield), the side shows **Shield Active**, **Raising Shield...**, **Lowering Shield...** or **Shield Inactive**, and the buttons read **Activate Shield** and **Deactivate Shield**.
 
 The screen updates twice a second.
 

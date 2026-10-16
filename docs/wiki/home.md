@@ -22,7 +22,7 @@ Coming from SGCraft 2 on Minecraft 1.12? [Changes since SGCraft 2](changes.md) l
 - Dial with a DHD, a handheld dialer, a tablet or a command. Each gate has an address made of glyphs, such as {{glyphs:XOBF-R3@}}.
 - Travel between worlds. Mobs, items, minecarts and riders travel too.
 - Fit an iris that stops anything coming through, and open it from a distance.
-- Power gates with naquadah or with FE from cables.
+- Power gates with naquadah, or with FE from other mods' cables, which SGCraft turns into gate energy.
 - Find gates already built at desert pyramids, jungle temples, ocean monuments, Nether fortresses, swamp huts, igloos and villages.
 - Send a MALP through a gate and drive it from a console while you watch its camera.
 

@@ -96,7 +96,7 @@ A `Stargate` has these getters: `position()` (the base block, which the address 
 - `engage(symbol, cause)` locks the next chevron at once, as a DHD button does. `engaged()` lists the symbols locked so far, and `dialEngaged(cause)` dials them.
 - `disconnect(cause)` stops a dial (which ends `INTERRUPTED`) or closes the wormhole, from either end.
 
-`DialResult` values: `CONNECTED`, `INVALID_ADDRESS`, `UNREACHABLE`, `NOT_ENOUGH_CHEVRONS`, `NO_GATE`, `SAME_GATE`, `BUSY`, `TARGET_BUSY`, `NOT_ENOUGH_ENERGY`, `DENIED`, `CANCELED`, `INTERRUPTED`, `GATE_GONE`. See [Dialing](dialing.md) for what players see for each.
+`DialResult` values: `CONNECTED`, `INVALID_ADDRESS`, `UNREACHABLE`, `NOT_ENOUGH_CHEVRONS`, `NO_GATE`, `SAME_GATE`, `BUSY`, `TARGET_BUSY`, `INCOMPATIBLE`, `NOT_ENOUGH_ENERGY`, `DENIED`, `CANCELED`, `INTERRUPTED`, `GATE_GONE`. `INCOMPATIBLE` means the two gates can't connect because one of their types refuses the other (see `GateType.connectsTo` under [Registries](#registries)). See [Dialing](dialing.md) for what players see for each.
 
 ### Changing a gate
 
@@ -152,8 +152,8 @@ All amounts are in the API's own energy unit.
 
 - `GateEnergy` (from `gate.energy()`) is the gate's store: `stored()`, `capacity()`, `insert(amount, simulate)` and `extract(amount, simulate)`.
 - An `EnergySource` is something a gate draws from: `available()` and `draw(wanted, simulate)`. When not simulating, the source changes what backs it, such as using up an item.
-- An `EnergySourceProvider` in `sgcraft:energy_source_provider` returns the sources a gate can reach right now. SGCraft asks every provider each time a gate needs energy, so don't keep sources. SGCraft's own are `sgcraft:dhd_fuel` and `sgcraft:power_unit`.
-- An `EnergyBridge` in `sgcraft:energy_bridge` links an outside energy system. A bridge does its own work: it makes gates reachable from its system and moves energy in through `GateEnergy.insert`, at the rate `SGCraftApi.get().energy().rate(bridge)` gives. That is the server's `bridge_rates` value for the bridge, or else its `defaultRate()`. SGCraft's own bridges are `sgcraft:direct` (1.0) and `sgcraft:forge_energy` (80 FE to one unit).
+- An `EnergySourceProvider` in `sgcraft:energy_source_provider` returns the sources a gate can reach right now. SGCraft asks every provider each time a gate needs energy, so don't keep sources. SGCraft's own are `sgcraft:dhd_fuel`, `sgcraft:power_unit` and `sgcraft:zpm`. A gate draws from one source after another, in the order each provider returns them, and moves on only when a source runs short. SGCraft asks its own providers in the order `dhd_fuel`, `power_unit`, `zpm`, and each returns its sources nearest the gate's base first.
+- An `EnergyBridge` in `sgcraft:energy_bridge` links an outside energy system. A bridge does its own work: it makes gates reachable from its system and moves energy in through `GateEnergy.insert`, at the rate `SGCraftApi.get().energy().rate(bridge)` gives. That is the server's `energy.bridge_rates` value for the bridge, or else its `defaultRate()`. SGCraft's own bridges are `sgcraft:direct` (1.0) and `sgcraft:forge_energy` (80 FE to one GE).
 
 A gate whose `requires_power` is false dials without drawing anything. See [Power](power.md).
 
@@ -178,14 +178,21 @@ The rights are `GateRight.USE` (dial, close, travel), `GateRight.IRIS` and `Gate
 | Key | Entries | SGCraft's own |
 | --- | --- | --- |
 | `sgcraft:address_reach` | `AddressReach` | `same_world`, `same_group`, `other_group` |
-| `sgcraft:gate_type` | `GateType` | `milky_way`, `pegasus`, `universe` (`GateTypes`) |
-| `sgcraft:iris_type` | `IrisType` | `metal` (`IrisTypes`) |
+| `sgcraft:gate_type` | `GateType` | `milky_way`, `pegasus`, `universe`, `ori` (`GateTypes`) |
+| `sgcraft:iris_type` | `IrisType` | `metal`, `shield` (`IrisTypes`) |
 | `sgcraft:energy_source_provider` | `EnergySourceProvider` | `dhd_fuel`, `power_unit` |
 | `sgcraft:energy_bridge` | `EnergyBridge` | `direct`, `forge_energy` |
 | `sgcraft:gate_property` | `GateProperty<?>` | Every property in `GateProperties` |
 | `sgcraft:address_book_provider` | `AddressBookProvider` | `player`, `pdd` |
 
 A `GateType` gives its `name()`, whether it `supports(size)`, the `fixtures(size)` it builds around a gate, its `placementRules()`, and whether it `acceptsDhd(style)`. A type that accepts no DHD is dialed some other way, as the Universe gate is.
+
+Two more methods have defaults that allow everything, so a type overrides them only to refuse:
+
+- `connectsTo(other)` answers whether a gate of this type can connect to a gate of type `other`. A wormhole forms only if both types allow it, each asked about the other's type, so either type can refuse. A refused dial ends `INCOMPATIBLE`. The default is `true`.
+- `acceptsIris(iris)` answers whether a gate of this type can have an iris of that kind fitted. The default is `true`.
+
+`GateTypes.ORI`, the Ori supergate, is built only as a supergate, connects only to other Ori supergates and takes no iris. `IrisTypes.METAL` is the metal iris, which closes like a camera shutter. `IrisTypes.SHIELD` is an energy shield, which rises and falls in moments and needs energy to stay raised. A raised shield stops travelers as a shut iris does. Both are irises to the API: `gate.iris()` returns an `Iris` whose `type()` names the kind, and `close(cause)` raises a shield as `open(cause)` lowers it.
 
 ## Events
 

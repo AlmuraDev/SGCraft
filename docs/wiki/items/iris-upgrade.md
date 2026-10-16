@@ -35,15 +35,19 @@ You need the `sgcraft:configure` right on the gate. The gate's owner and operato
 | --- | --- |
 | Iris fitted | The iris is on. |
 | This gate already has an iris | The gate has one. |
+| Open the iris or lower the shield before replacing it | The gate has a raised shield. Lower it first. |
+| This type of gate takes no iris or shield | The gate is an Ori supergate. |
 | You can't fit an iris to this gate | You lack the right, or something stopped it. |
+
+The upgrade also replaces a gate's [shield](../iris.md#swapping-the-iris-and-the-shield), while the shield is lowered. You get the {{item:sgcraft:shield_upgrade}} back, unless the gate came with its shield.
 
 Once fitted, open and close the iris with a {{item:sgcraft:gdo}}, a {{item:sgcraft:gate_control_tablet}}, `/sgcraft iris open` and `/sgcraft iris close`, or redstone at the base. It takes 70 ticks (3.5 seconds) to open or close. See [The iris](../iris.md#opening-and-closing).
 
 ## The upgrade rule
 
-In survival, a gate owner or a player with the configure right fits an iris only with this item. The configurator's **Iris fitted** setting is locked for them.
+In survival, a gate owner or a player with the configure right fits an iris only with this item. The configurator's **Iris** setting is locked for them.
 
-Operators and players in creative mode can fit or take off an iris freely with **Iris fitted** on the configurator's **Gate** page. An iris fitted that way gives no upgrade back.
+Operators and players in creative mode can fit or take off an iris freely with **Iris** on the configurator's **Gate** page, which chooses **None**, **Metal Iris** or **Shield**. An iris fitted that way gives no upgrade back.
 
 ## Getting the upgrade back
 

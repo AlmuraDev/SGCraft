@@ -1,6 +1,6 @@
 # Battery Charger
 
-The Battery Charger charges a battery from naquadah it burns or from FE that cables bring it. Batteries power the MALP and the MALP tablet.
+The Battery Charger charges a battery with gate energy (GE) from naquadah it burns or from FE that cables bring it. Batteries power the MALP and the MALP tablet.
 
 ```infobox
 Battery Charger
@@ -16,8 +16,8 @@ Waterloggable: No
 Drops: Itself and the items in its slots
 Block entity: Yes
 Slots: 1 battery, 1 naquadah
-Capacity: 200,000 FE
-Charge rate: 1000 FE a tick (charger_charge_rate)
+Capacity: 192,000 GE
+Charge rate: 12.5 GE a tick (charger_charge_rate)
 ```
 
 ## Obtaining
@@ -34,7 +34,7 @@ sgcraft:battery_charger
 2. Put a {{item:sgcraft:battery}} in the bay on the right.
 3. Put {{item:sgcraft:naquadah}} in the slot on the left, or connect FE cables to the charger, or both.
 
-The charger passes FE from its store into the battery at up to 1000 FE a tick. A battery holds 1,000,000 FE, so an empty battery fills in 1000 ticks (50 seconds) while the store has FE to give.
+The charger passes GE from its store into the battery at up to 12.5 GE a tick. A battery holds 12,500 GE, so an empty battery fills in 1000 ticks (50 seconds) while the store has GE to give.
 
 ## Screen
 
@@ -47,28 +47,29 @@ The charger passes FE from its store into the battery at up to 1000 FE a tick. A
 
 ## Store and fuel
 
-The charger has its own store of 200,000 FE, two naquadah's worth (twice `fe_per_naquadah`).
+The charger has its own store of 192,000 GE, two naquadah's worth (twice `energy.per_naquadah`).
 
-- It burns one naquadah whenever its store has room for all 100,000 FE of that piece, so no FE is wasted. It burns at most one piece a tick. Filling an empty battery from naquadah alone takes 10 pieces.
-- FE cables can fill the store too. On NeoForge it takes NeoForge energy, and on Fabric energy from cables that use Team Reborn Energy, on any side.
-- It gives no FE back to cables. Only the battery in its bay takes its charge.
+- It burns one naquadah only when its store has room for all 96,000 GE of that piece, so none is wasted. It burns at most one piece a tick. One piece fills an empty battery more than seven times over.
+- FE cables can fill the store too, 80 FE for each GE. On NeoForge it takes NeoForge energy, and on Fabric energy from cables that use Team Reborn Energy, on any side.
+- It gives no FE back to cables. The battery in its bay and an [Energy Converter](energy-converter.md) placed against it take its charge.
 
 ## Breaking
 
-Breaking the charger drops it, the battery and the naquadah in its slots. The FE in its store is lost.
+Breaking the charger drops it, the battery and the naquadah in its slots. The GE in its store is lost.
 
 ## Settings
 
-The battery settings are in the `malp` object of `config/sgcraft-server.json`:
+The charger's settings are in `config/sgcraft-server.json`:
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `charger_charge_rate` | 1000 | FE a tick a battery charger puts into its battery |
-| `fe_per_naquadah` | 100000 | FE one naquadah gives a charger. A charger holds twice this |
-| `battery_capacity` | 1000000 | FE a battery holds |
+| `malp.charger_charge_rate` | 12.5 | GE a tick a battery charger puts into its battery |
+| `energy.per_naquadah` | 96000 | GE one naquadah gives a charger, the same as a DHD. A charger holds twice this |
+| `malp.battery_capacity` | 12500 | GE a battery holds |
 
 ## See also
 
 - [Power](../power.md#batteries-and-the-battery-charger)
 - [The MALP](../malp.md#batteries-and-charging)
 - [Stargate Power Unit](power-unit.md)
+- [Energy Converter](energy-converter.md)

@@ -8,7 +8,7 @@ ID: sgcraft:pdd
 Category: Tools
 Type: Item
 Stackable: No
-Range: The gate near you, 6 blocks (`tool_range`)
+Range: The gate near you, 6 blocks (`tools.range`)
 Right needed: `use` on the gate, to dial or disconnect
 Holds: Its own address book
 ```
@@ -29,9 +29,9 @@ sgcraft:pdd
 
 The PDD works from either hand. It looks for a gate the same way every tool does:
 
-1. The gate you look at, through its ring or its opening, up to 6 blocks away (or `tool_range` if that is more).
-2. The gate whose base or {{item:sgcraft:dhd}} is nearest your feet, within `tool_range` blocks (6) along each axis. A DHD stands for the gate it is linked to.
-3. The gate whose ring is nearest your eyes, within `tool_range` blocks.
+1. The gate you look at, through its ring or its opening, up to 6 blocks away (or `tools.range` if that is more).
+2. The gate whose base or {{item:sgcraft:dhd}} is nearest your feet, within `tools.range` blocks (6) along each axis. A DHD stands for the gate it is linked to.
+3. The gate whose ring is nearest your eyes, within `tools.range` blocks.
 
 The PDD finds the gate again each time you press a button, so you can walk from gate to gate with the screen open. You can change the PDD's addresses with no gate near you.
 
@@ -91,7 +91,7 @@ The ring turns for each symbol, unless the gate has **Chevrons lock at once** on
 
 ## Server admins
 
-- `tool_range` (default 6) sets how far from a player the tools look for a gate.
+- `tools.range` (default 6) sets how far from a player the tools look for a gate.
 - The default addresses are in `config/sgcraft-default-addresses.json`. Operators change them with `/sgcraft default_addresses add|remove|lock|unlock`. Changes reach PDDs used for the first time after the change.
 
 ## See also

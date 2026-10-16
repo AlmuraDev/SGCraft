@@ -96,8 +96,8 @@ Operators can also use commands:
 A player may break a block of a formed gate when one of these holds:
 
 - They are an operator.
-- They own the gate and `owners_break_gates` is on (it is by default).
-- The gate's **Breakable** setting (`sgcraft:breakable`) is on. It is off by default. A generated gate with no value of its own uses `generated_gates_breakable`, off by default.
+- They own the gate and `gates.owners_break_gates` is on (it is by default).
+- The gate's **Breakable** setting (`sgcraft:breakable`) is on. It is off by default. A generated gate with no value of its own uses `gates.generated_gates_breakable`, off by default.
 
 Anyone else is told "This gate can't be broken". Explosions and commands still break gates. Breaking a gate while its wormhole is open sets off a breach explosion: see [Building gates](building-gates.md#breach-explosion).
 
@@ -117,7 +117,7 @@ Changes wait until you press **Save**. **List player** saves at once, with any o
 ## Server admins
 
 - `/sgcraft settings owners_break_gates <true|false>` and `/sgcraft settings generated_gates_breakable <true|false>` change the breaking rules and write the settings file.
-- `gate_defaults` gives gates values without their own. For example, to let players without their own entry only dial and travel:
+- `gates.defaults` gives gates values without their own. For example, to let players without their own entry only dial and travel:
 
 ```
 /sgcraft gate_defaults sgcraft:default_rights ["sgcraft:use"]

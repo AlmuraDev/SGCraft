@@ -64,9 +64,9 @@ While the gate is active, the buttons show the address it dialed and the dome is
 
 Sneak and right-click the DHD with an empty hand to open **DHD Fuel**. It has 5 slots that take only naquadah. The title shows how full the linked gate's own energy store is, as `Gate %`, or `No gate`.
 
-- One naquadah gives the gate 96000 energy: the gate's `energy_per_naquadah` property, which defaults to the server setting of the same name.
+- One naquadah gives the gate 96000 energy: the gate's `energy_per_naquadah` property, which defaults to the server setting `energy.per_naquadah`.
 - The DHD burns a piece only when the gate needs more than what is left of the last one, taking from the last slot first. What a piece gives beyond the gate's need stays in the DHD for next time.
-- The gate draws from its sources, such as DHDs and power units, before its own store.
+- The gate draws from its sources one after another: DHD fuel first, then power units, then ZPMs, the nearest of each first. It draws from its own store only for what they can't give.
 
 The fuel reaches the gate only when:
 
@@ -74,7 +74,7 @@ The fuel reaches the gate only when:
 - the DHD is within the gate's DHD range of the base horizontally, and no more than 2 blocks above or below it, and
 - the gate's `dhd_fuel` property is on (the default, **DHD fuel powers it** in the configurator).
 
-A dial to a gate nearby costs 4700 energy (7 chevrons at 100 and 4000 to open) plus 1 a tick while open, so one piece covers several dials. See [Power](power.md) for distance, other worlds and FE power.
+A dial to a gate nearby costs 4700 energy (7 chevrons at 100 and 4000 to open) plus 1 a tick while open, so one piece covers several dials. A dial to another world costs 10 times as much, and to another group of worlds 100 times. See [Power](power.md) for distance, other worlds and power from other mods.
 
 ## Tok'ra
 

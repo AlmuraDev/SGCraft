@@ -40,7 +40,7 @@ Chat output is clickable. A gate's position puts a teleport command in your chat
 | `/sgcraft deselect` | All | No | Clear your selection |
 | `/sgcraft list [<world>]` | Op | No | Every gate in your world, or in another, with addresses and **[Select]** links |
 | `/sgcraft place <type> [<chevrons>] [<radius>] [<lying>]` | Op | No | Build a whole gate 3 blocks in front of you, facing you |
-| `/sgcraft type <type>` | Op | Yes | Change the gate's type: `sgcraft:milky_way`, `sgcraft:pegasus` or `sgcraft:universe` |
+| `/sgcraft type <type>` | Op | Yes | Change the gate's type: `sgcraft:milky_way`, `sgcraft:pegasus`, `sgcraft:universe` or, for a supergate, `sgcraft:ori` |
 | `/sgcraft chevrons <1-9>` | Op | Yes | Set how many chevrons the gate has |
 | `/sgcraft orientation` | All | Yes | Whether the gate stands or lies flat, and which way it faces |
 | `/sgcraft orientation face_up` | Op | Yes | Turn a flat gate face up |
@@ -50,7 +50,7 @@ Chat output is clickable. A gate's position puts a teleport command in your chat
 | `/sgcraft camouflage clear [<slot>]` | Op | Yes | Clear one slot, or every slot; what was there is lost |
 | `/sgcraft tokra` | Op | Yes | A Tok'ra stands in front of the gate |
 
-`place` takes up to 9 chevrons (9 unless given) and a radius of `2` for a standard gate, or `4` to `30` for a [supergate](building-gates.md). The last word is `standing` (the default), `face_up` or `face_down`. A flat gate's ring runs away from you. If the spot isn't clear, the gate goes in the nearest clear spot within 3 blocks. You own the gate you place.
+`place` takes up to 9 chevrons (9 unless given) and a radius of `2` for a standard gate, or `4` to `30` for a [supergate](building-gates.md). `sgcraft:ori` builds an [Ori supergate](building-gates.md#ori-supergates), radius 7 unless given. A type built at a size it doesn't come in fails with a message naming the type, such as "Ori gates can't be built at that size". `type` gives the same message when it would turn a standard gate Ori. The last word is `standing` (the default), `face_up` or `face_down`. A flat gate's ring runs away from you. If the spot isn't clear, the gate goes in the nearest clear spot within 3 blocks. You own the gate you place.
 
 `type`, `chevrons` and `orientation` changes need the gate to be idle. Only a gate lying flat can turn. `/sgcraft orientation` returns 1 for standing, 2 for face up and 3 for face down, for command blocks to test.
 
@@ -68,13 +68,14 @@ Type the address with or without dashes, in any case, such as `/sgcraft dial ab1
 
 | Command | Level | Gate | What it does |
 | --- | --- | --- | --- |
-| `/sgcraft iris` | All | Yes | Whether the gate has an iris, and its state |
-| `/sgcraft iris open` | All | Yes | Open the iris |
-| `/sgcraft iris close` | All | Yes | Close the iris |
-| `/sgcraft iris fit` | Op | Yes | Fit a metal iris |
-| `/sgcraft iris remove` | Op | Yes | Take the iris off |
+| `/sgcraft iris` | All | Yes | Whether the gate has an iris or a shield, and its state |
+| `/sgcraft iris open` | All | Yes | Open the iris, or lower the shield |
+| `/sgcraft iris close` | All | Yes | Close the iris, or raise the shield |
+| `/sgcraft iris fit`, `/sgcraft iris fit metal` | Op | Yes | Fit a metal iris |
+| `/sgcraft iris fit shield` | Op | Yes | Fit a shield |
+| `/sgcraft iris remove` | Op | Yes | Take the iris or shield off |
 
-See [Iris](iris.md).
+A shield is raised by closing it and lowered by opening it. See [Iris](iris.md) and [The shield](iris.md#the-shield).
 
 ## Energy and power
 
@@ -83,13 +84,18 @@ See [Iris](iris.md).
 | `/sgcraft energy` | All | Yes | How much energy the gate holds, of how much, and whether it dials without it |
 | `/sgcraft energy add <amount>` | Op | Yes | Add energy to the gate's store, up to its capacity |
 | `/sgcraft energy set <amount>` | Op | Yes | Set the energy in the gate's store |
-| `/sgcraft power [<pos>]` | Op | No | The FE and gate energy in the power unit you look at (within 8 blocks), or at a position |
-| `/sgcraft power [<pos>] set <fe>` | Op | No | Set a power unit's FE, kept within its capacity |
-| `/sgcraft costs` | Op | No | The server's dial costs for gates without their own |
+| `/sgcraft power [<pos>]` | Op | No | The gate energy (GE) in the power unit you look at (within 8 blocks), or at a position, with the FE that is worth: "The power unit at <pos> holds <held> of <capacity> GE (<fe> FE)" |
+| `/sgcraft power [<pos>] set <ge>` | Op | No | Set a power unit's GE, kept within its capacity. It replies "The power unit at <pos> now holds <held> GE" |
+| `/sgcraft costs` | Op | No | The server's dial costs for gates without their own, the eighth and ninth chevron multipliers, the FE rates and the energy converter's rate |
 | `/sgcraft costs <kind> enabled <bool>` | Op | No | Turn one cost on or off |
 | `/sgcraft costs <kind> energy <amount>` | Op | No | Set how much one cost takes, before distance |
+| `/sgcraft costs inter_world_multiplier <times>` | Op | No | Set how many times more a dial with an eighth chevron costs |
+| `/sgcraft costs other_group_multiplier <times>` | Op | No | Set how many times more again a dial with a ninth chevron costs |
+| `/sgcraft costs fe_in_per_ge <fe>` | Op | No | Set how many FE buy one gate energy coming in (saved to `energy.bridge_rates.fe_in_per_ge`) |
+| `/sgcraft costs fe_out_per_ge <fe>` | Op | No | Set how many FE one gate energy gives going out (saved to `energy.bridge_rates.fe_out_per_ge`) |
+| `/sgcraft costs converter_rate <ge>` | Op | No | Set the most gate energy an [energy converter](blocks/energy-converter.md) turns into FE each tick (saved to `energy.converter_rate`) |
 
-The cost kinds are `per_chevron`, `open` and `per_tick`. Cost changes apply to dials from then on and are saved to the settings file. See [Power](power.md).
+The cost kinds are `per_chevron`, `open` and `per_tick`. Cost changes apply to dials from then on and are saved to the settings file. The multipliers show as "An eighth chevron costs 10 times as much, and a ninth 10 times as much again" with the defaults. The FE rates show as "80 FE buy one gate energy coming in, and one gate energy gives 80 FE going out", and the converter as "An energy converter turns up to 62.5 gate energy a tick into FE". See [Power](power.md#other-worlds-and-supergates).
 
 ## Properties and rights
 
@@ -141,6 +147,9 @@ Ore changes apply to chunks generated or loaded from then on and are saved. See 
 | `/sgcraft book` | All | Your own address book |
 | `/sgcraft book add <name> <address>` | All | Add an address to your book; put a name with spaces in quotes |
 | `/sgcraft book remove <address>` | All | Remove an address from your book |
+| `/sgcraft explorer` | All | The generated gates, and which of them you have visited, as the [Explorer Dialer Device](items/edd.md) lists them |
+| `/sgcraft explorer <player>` | Op | Another player's list |
+| `/sgcraft explorer forget <player>` | Op | Forget what a player has found: their visits and their names for gates |
 | `/sgcraft default_addresses` | Op | The addresses new PDDs and tablets start with |
 | `/sgcraft default_addresses add <name> <address>` | Op | Add a default address, or rename it if it is there |
 | `/sgcraft default_addresses remove <address>` | Op | Remove a default address |
@@ -148,6 +157,34 @@ Ore changes apply to chunks generated or loaded from then on and are saved. See 
 | `/sgcraft default_addresses unlock <address>` | Op | Holders may rename or remove it |
 
 Your book keeps each address in the form that names its world, so it dials from any world. Default address changes reach PDDs and tablets used for the first time after the change. See [Addresses](addresses.md).
+
+## Shields
+
+Every command here needs level 2.
+
+| Command | What it does |
+| --- | --- |
+| `/sgcraft shields` | The server's shield settings |
+| `/sgcraft shields <name> <value>` | Set one: `gate_energy_per_tick`, `console_range`, `city_energy_per_million_blocks`, `city_max_radius`, `city_power_reach` or `city_keeps_chunks_loaded` (saved) |
+| `/sgcraft shields city <pos>` | The city shield generator at a position in your world: whether its shield is up, its size, its cost and the energy in its power units |
+| `/sgcraft shields city <pos> raise` | Raise its shield |
+| `/sgcraft shields city <pos> lower` | Lower its shield |
+| `/sgcraft shields city <pos> size <width> <above> <below>` | Set how far its shield reaches out all round, up and down |
+
+A position with no generator says "There is no city shield generator there". `raise` without the energy says "There isn't enough energy round the generator to raise a shield that size". A gate's shield is worked with the [iris commands](#iris). See [City Shield Generator](blocks/city-shield-generator.md) and [Settings](settings.md#shields).
+
+## ZPMs
+
+Every command here needs level 2.
+
+| Command | What it does |
+| --- | --- |
+| `/sgcraft zpm` | The server's ZPM settings |
+| `/sgcraft zpm <name> <value>` | Set one: `capacity`, `search_range`, `tainted_explosion`, `chest_chance` or `tainted_chance` (saved) |
+| `/sgcraft zpm give [tainted]` | Give you a full ZPM, or a tainted one |
+| `/sgcraft zpm energy <ge>` | Set the GE in the ZPM in your main hand, from 0 up to `zpm.capacity`. It replies "The ZPM holds N GE" |
+
+`energy` without a ZPM in your main hand says "Hold a ZPM in your main hand". See [Power](power.md#zpms) and [Settings](settings.md#zpms).
 
 ## MALP and views
 
@@ -158,7 +195,7 @@ Every command here needs level 2. Name a MALP by its name or the start of its UU
 | `/sgcraft malp list` | Every MALP: where it was last seen, its battery or that it needs no power, its console and its owner |
 | `/sgcraft malp pair <malp> <pos>` | Pair a MALP with the console at a position in your world |
 | `/sgcraft malp unpair <malp>` | Unpair a MALP from its console |
-| `/sgcraft malp battery <malp> <fe>` | Set the charge of a MALP's battery, giving it one if it has none |
+| `/sgcraft malp battery <malp> <ge>` | Set the charge of a MALP's battery in GE, giving it one if it has none. It replies "<malp>'s battery holds <held> of <capacity> GE" |
 | `/sgcraft malp power_required <malp> [<bool>]` | Show or set whether a MALP runs on its battery |
 | `/sgcraft malp poweroff <malp>` | Power down the feed of everyone watching a MALP |
 | `/sgcraft malp recall <malp>` | Bring a MALP to you |
@@ -169,9 +206,9 @@ Every command here needs level 2. Name a MALP by its name or the start of its UU
 | `/sgcraft malp console_damage_interrupts [<bool>]` | Show or set whether damage takes a player off a console or tablet (saved) |
 | `/sgcraft malp console_spectators [<0-64>]` | Show or set how many players near a driven console see its monitor (saved) |
 | `/sgcraft malp spectator_range [<1-64>]` | Show or set how near a console those players must be, in blocks (saved) |
-| `/sgcraft malp tablet_drain [<fe>]` | Show or set the FE a tick a tablet uses while its feed is live (saved) |
-| `/sgcraft battery` | The charge of the battery in your main hand |
-| `/sgcraft battery set <fe>` | Set the charge of the battery in your main hand |
+| `/sgcraft malp tablet_drain [<ge>]` | Show or set the GE a tick a tablet uses while its feed is live (saved) |
+| `/sgcraft battery` | The charge of the battery in your main hand: "Your battery holds <held> of <capacity> GE" |
+| `/sgcraft battery set <ge>` | Set the charge of the battery in your main hand, in GE |
 | `/sgcraft view list` | Who is watching a remote view, what, where, and on which display |
 | `/sgcraft view stop <players>` | Stop every remote view those players have |
 
@@ -181,7 +218,7 @@ See [MALP](malp.md).
 
 | Command | Level | What it does |
 | --- | --- | --- |
-| `/sgcraft settings` | Op | `kawoosh_breaks_unbreakable`, `owners_break_gates` and `generated_gates_breakable` |
+| `/sgcraft settings` | Op | `gates.kawoosh_breaks_unbreakable`, `gates.owners_break_gates` and `gates.generated_gates_breakable` |
 | `/sgcraft settings <name> <bool>` | Op | Set one of those three |
 | `/sgcraft gate_defaults` | Op | The values gates have when they have none of their own |
 | `/sgcraft gate_defaults <property> <json>` | Op | Set one, such as `sgcraft:open_ticks 12000` |
@@ -189,7 +226,7 @@ See [MALP](malp.md).
 | `/sgcraft chunk_loading_range [<0-8>]` | Op | Show or set how many chunks around a busy gate stay loaded |
 | `/sgcraft log_events [<bool>]` | Op | Show or set whether gate events go to the server log |
 
-These changes apply at once and are saved to `config/sgcraft-server.json`. `gate_defaults` also takes `sgcraft:chevrons` (7 to 9), and `sgcraft:iris` and `sgcraft:chevrons` reach gates as they first form. See [Settings](settings.md).
+These changes apply at once and are saved to `config/sgcraft-server.json`. `/sgcraft gate_defaults` also takes `sgcraft:chevrons` (7 to 9), and `sgcraft:iris` and `sgcraft:chevrons` reach gates as they first form. See [Settings](settings.md).
 
 ## Shared results
 

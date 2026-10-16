@@ -8,8 +8,7 @@ ID: sgcraft:naquadah
 Category: Materials
 Type: Item
 Stackable: Yes (64)
-Gate energy: 96000 a piece in a DHD (energy_per_naquadah)
-FE: 100,000 a piece for a battery or charger (fe_per_naquadah)
+Energy: 96000 GE a piece in a DHD, battery or charger (energy.per_naquadah)
 ```
 
 ## Obtaining
@@ -48,11 +47,11 @@ The fuel reaches the gate only when the DHD is linked to it, stands within the g
 
 ### Battery charger fuel
 
-Put naquadah in the naquadah slot of a {{item:sgcraft:battery_charger}}. The charger holds 200,000 FE and burns a piece whenever its store has room for all 100,000 FE of it. It passes the charge to the battery in its bay at up to 1000 FE a tick. See [Power](../power.md#batteries-and-the-battery-charger).
+Put naquadah in the naquadah slot of a {{item:sgcraft:battery_charger}}. The charger holds 192,000 gate energy (GE) and burns a piece only when its store has room for all 96,000 GE of it. It passes the charge to the battery in its bay at up to 12.5 GE a tick. See [Power](../power.md#batteries-and-the-battery-charger).
 
 ### Charging a battery in the grid
 
-Craft a {{item:sgcraft:battery}} that isn't full with naquadah, in any arrangement. Each naquadah adds 100,000 FE, up to the battery's capacity of 1,000,000 FE. A full battery doesn't craft.
+Craft a {{item:sgcraft:battery}} that isn't full with naquadah, in any arrangement. Each naquadah adds 96,000 GE, up to the battery's capacity of 12,500 GE, so one piece fills it and the rest is lost. A full battery doesn't craft.
 
 ```recipe
 sgcraft:battery_recharge
@@ -66,8 +65,7 @@ Craft naquadah with an {{item:minecraft:iron_ingot}} to make a {{item:sgcraft:na
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `energy_per_naquadah` | 96000 | Gate energy one naquadah gives in a DHD |
-| `malp.fe_per_naquadah` | 100000 | FE one naquadah gives a battery, crafted in or burned in a charger. A charger holds twice this |
+| `energy.per_naquadah` | 96000 | GE one naquadah gives in a DHD, crafted into a battery or burned in a charger. A charger holds twice this |
 
 A gate can have its own value with the `sgcraft:energy_per_naquadah` property, shown as **Per naquadah** on the configurator's **Energy** page, or with `/sgcraft property sgcraft:energy_per_naquadah set <json>` (operators). See [Power](../power.md#per-gate-settings).
 

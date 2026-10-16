@@ -37,7 +37,7 @@ sgcraft:stargate_ring
 
 ### Generated gates
 
-The standard gates the world builds in structures and villages are made of these blocks. Players can't break a generated gate unless its **Breakable** setting (`sgcraft:breakable`) is on, or the server setting `generated_gates_breakable` is on for gates without a setting of their own. See [World generation](../worldgen.md#generated-gates).
+The standard gates the world builds in structures and villages are made of these blocks. Players can't break a generated gate unless its **Breakable** setting (`sgcraft:breakable`) is on, or the server setting `gates.generated_gates_breakable` is on for gates without a setting of their own. See [World generation](../worldgen.md#generated-gates).
 
 ## Usage
 
@@ -73,7 +73,7 @@ Each lit chevron lights the ring block it stands on, at level 12. The drawn chev
 
 Breaking any block of a formed gate breaks the gate apart. The other blocks stay where they are, and the gate forms again when you put the ring back.
 
-A player may break a block of a formed gate if they are an operator, if they own the gate and the server setting `owners_break_gates` is on (the default), or if the gate's **Breakable** setting is on. Anyone else sees "This gate can't be broken". Explosions and commands still break gates. Breaking a gate while its wormhole is open sets off a breach explosion. See [Building gates](../building-gates.md#breaking-a-gate).
+A player may break a block of a formed gate if they are an operator, if they own the gate and the server setting `gates.owners_break_gates` is on (the default), or if the gate's **Breakable** setting is on. Anyone else sees "This gate can't be broken". Explosions and commands still break gates. Breaking a gate while its wormhole is open sets off a breach explosion. See [Building gates](../building-gates.md#breaking-a-gate).
 
 ## See also
 

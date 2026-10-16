@@ -40,15 +40,15 @@ To see a gate's address, right-click its base or any of its ring blocks, or look
 
 A gate locks one chevron for each symbol, so it can't dial an address with more symbols than it has chevrons. A gate forms with 7 chevrons, so it reaches only its own world. It fails a longer address with "This gate doesn't have enough chevrons for that address".
 
-Add a [chevron upgrade](building-gates.md#chevrons-and-upgrades) for each extra symbol: 8 chevrons to reach other worlds of the group, 9 to reach other groups.
+Add a [chevron upgrade](building-gates.md#chevrons-and-upgrades) for each extra symbol: 8 chevrons to reach other worlds of the group, 9 to reach other groups. A dial with an eighth chevron costs 10 times as much energy, and one with a ninth 100 times. See [Power](power.md#other-worlds-and-supergates).
 
 ## Point of origin
 
-Every address ends with the point of origin, `@`, which the top chevron locks last. The server setting `point_of_origin` sets it. An address that doesn't end with it reaches no gate.
+Every address ends with the point of origin, `@`, which the top chevron locks last. The server setting `gates.point_of_origin` sets it. An address that doesn't end with it reaches no gate.
 
 ### Server admins
 
-- `point_of_origin` is `"@"` by default. Set it to `""` for addresses without one: the seventh symbol then becomes a position symbol, and the grid is 6 times as wide each way.
+- `gates.point_of_origin` is `"@"` by default. Set it to `""` for addresses without one: the seventh symbol then becomes a position symbol, and the grid is 6 times as wide each way.
 - Changing the point of origin changes every address. The server log warns about it, listing each world whose addresses changed.
 
 ## Cells and the grid

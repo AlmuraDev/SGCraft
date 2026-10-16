@@ -44,6 +44,7 @@ You need the `sgcraft:configure` right on the gate. The gate's owner and operato
 | This gate is already a Pegasus gate | Nothing to change. |
 | You aren't allowed to change this gate | You lack the right to configure it. |
 | You can't change this gate while it's in use | The gate is busy. |
+| An Ori supergate takes no upgrades | The gate is an Ori supergate. |
 
 A Pegasus gate keeps its ring still while it dials: a light runs around its screens to each chevron. It is dialed with a {{item:sgcraft:dhd_pegasus}}. A Milky Way DHD linked to the gate stops dialing it and links to the next nearest Milky Way gate in range. See [Building gates](../building-gates.md#gate-types).
 

@@ -67,7 +67,7 @@ Pressing the dome dials the address. If the dial fails, the reason shows above y
 
 Sneak and right-click the DHD with an empty hand to open **DHD Fuel**. It has 5 slots that take only {{item:sgcraft:naquadah}}. The title shows how full the linked gate's own reserve is, as `Gate %`, or `No gate`.
 
-One naquadah gives the gate 96000 gate energy (`energy_per_naquadah`). The DHD burns a piece only when the gate needs more than what is left of the last one, last slot first. The fuel reaches the gate only when the DHD is linked to it, stands within the gate's DHD range of the base across and no more than 2 blocks above or below it, and the gate's `dhd_fuel` property is on (default `true`). See [The DHD](../dhd.md#fuel).
+One naquadah gives the gate 96000 gate energy (`energy.per_naquadah`). The DHD burns a piece only when the gate needs more than what is left of the last one, last slot first. The fuel reaches the gate only when the DHD is linked to it, stands within the gate's DHD range of the base across and no more than 2 blocks above or below it, and the gate's `dhd_fuel` property is on (default `true`). See [The DHD](../dhd.md#fuel).
 
 ## Tok'ra workstation
 

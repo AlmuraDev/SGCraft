@@ -138,7 +138,7 @@ SGCraft keeps its settings in the `config` folder of the game directory, or of t
 | `config/sgcraft-client.json` | Your own display and sound settings. Clients only. |
 | `config/sgcraft-default-addresses.json` | The addresses every new PDD and gate control tablet starts with. |
 
-SGCraft writes each file with its defaults if it is missing, and a missing setting takes its default. Server admins can change server settings in game with `/sgcraft settings` and other commands, without editing the file. See [Settings](settings.md) for every setting and [Commands](commands.md) for the commands.
+SGCraft writes each file if it is missing, and a missing setting takes its default. The server file holds only the settings that differ from their defaults, so a fresh one is `{}`. Server admins can change server settings in game with `/sgcraft settings` and other commands, without editing the file. See [Settings](settings.md) for every setting and [Commands](commands.md) for the commands.
 
 ## Upgrading from older SGCraft
 

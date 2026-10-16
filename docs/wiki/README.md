@@ -43,7 +43,7 @@ ID: sgcraft:malp
 Category: MALP
 Type: Entity and item
 Stackable: No
-Power: Battery, FE
+Power: Battery, GE
 ```
 
 An infobox with an `ID` row shows that item's icon; an `Icon: sgcraft:malp` row picks another.

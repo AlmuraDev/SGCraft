@@ -69,7 +69,7 @@ See [The MALP](../malp.md#signal).
 
 One player drives at a console at a time. A player who opens a console someone else is at sees that player's feed, with **VIEW ONLY** in the header. A watcher can only take snapshots and close the screen, and doesn't step up to the console.
 
-While the driver has a live feed, the console's monitor shows that feed as a faint green picture to the players nearest it: up to 4 players (`console_spectators`, 0 to 64) within 16 blocks (`spectator_range`, 1 to 64). A spectator can step 2 blocks past the range before the picture stops. The server checks every 10 ticks. Watching costs no FE.
+While the driver has a live feed, the console's monitor shows that feed as a faint green picture to the players nearest it: up to 4 players (`console_spectators`, 0 to 64) within 16 blocks (`spectator_range`, 1 to 64). A spectator can step 2 blocks past the range before the picture stops. The server checks every 10 ticks. Watching costs no energy.
 
 A player at the console who takes damage is taken off it, as if they closed the screen, while `console_damage_interrupts` is on (default `true`).
 

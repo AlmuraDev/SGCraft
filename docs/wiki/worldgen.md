@@ -1,6 +1,6 @@
 # World generation
 
-The world makes naquadah ore deep underground and builds gates at some of its structures and villages, each with a DHD and often a Tok'ra keeping watch. SGCraft also adds naquadah, crystals and ingots to some vanilla chests.
+The world makes naquadah ore deep underground and builds gates at some of its structures and villages, each with a DHD and often a Tok'ra keeping watch. Some generated gates have a chest beside them holding a ZPM. SGCraft also adds naquadah, crystals and ingots to some vanilla chests.
 
 ## Naquadah ore
 
@@ -40,7 +40,7 @@ Chunks made before SGCraft was added have no naquadah ore. With `add_ores_to_exi
 
 ### Server admins
 
-The `naquadah_ore` object in `config/sgcraft-server.json`:
+The `worldgen.naquadah_ore` object in `config/sgcraft-server.json`:
 
 | Setting | Default | What it does |
 | --- | --- | --- |
@@ -83,7 +83,19 @@ The world builds its gates from gate spawners in the templates, once the world r
 
 - It has no owner, so operators manage it. See [Access](access.md).
 - The configurator shows "Built by: World".
-- Players can't break it unless its **Breakable** setting is on, or `generated_gates_breakable` is on for gates without a setting of their own.
+- Players can't break it unless its **Breakable** setting is on, or `gates.generated_gates_breakable` is on for gates without a setting of their own.
+
+## ZPM chests
+
+When the world builds a gate, in a structure or a village, there is a 15% chance (`zpm.chest_chance`) that a chest stands beside it holding one full {{item:sgcraft:zpm}}. The chest stands 2 blocks in front of the base and 4 to one side, clear of the ring, where there is room on firm ground. This is the only place ZPMs are found.
+
+One chest ZPM in ten is tainted (`zpm.tainted_chance`). A tainted ZPM shines like an enchanted item, and a ZPM console, interface cart or hub holding one explodes when it is drawn on. It is safe in a supergate's base or a city shield generator. See [Tainted ZPMs](items/zpm.md#tainted-zpms).
+
+### Server admins
+
+- `zpm.chest_chance` (15) is the percent of generated gates with a ZPM chest, 0 to 100. 0 turns the chests off.
+- `zpm.tainted_chance` (10) is the percent of chest ZPMs that are tainted, 0 to 100.
+- `/sgcraft zpm chest_chance <value>` and `/sgcraft zpm tainted_chance <value>` change them. See [Settings](settings.md#zpms).
 
 ## Tok'ra villagers
 
@@ -100,7 +112,7 @@ Each trade gives the Tok'ra 5 experience. A data pack can change the trades thro
 
 ### Server admins
 
-- `tokra_worlds` turns the Tok'ra on or off for each world's generated gates, by the world's identifier. The default is `{"minecraft:overworld": true}`. A world left out has Tok'ra wherever its structures' settings say.
+- `worldgen.tokra_worlds` turns the Tok'ra on or off for each world's generated gates, by the world's identifier. The default is `{"minecraft:overworld": true}`. A world left out has Tok'ra wherever its structures' settings say.
 - `/sgcraft worldgen tokra` lists the worlds set off. `/sgcraft worldgen tokra <world> <true|false>` sets one.
 - `/sgcraft tokra` puts a Tok'ra in front of your selected gate, or the one you look at.
 
@@ -126,7 +138,7 @@ The tables are `sgcraft:chests/simple_dungeon`, `spawn_bonus_chest`, `stronghold
 
 ### Structure gates
 
-`structure_gates` in `config/sgcraft-server.json` lists the structures that get gates, by the structure's identifier. A structure left out gets none. Each entry has:
+`worldgen.structure_gates` in `config/sgcraft-server.json` lists the structures that get gates, by the structure's identifier. A structure left out gets none. Each entry has:
 
 | Field | Default | What it does |
 | --- | --- | --- |
@@ -143,7 +155,7 @@ The tables are `sgcraft:chests/simple_dungeon`, `spawn_bonus_chest`, `stronghold
 
 The defaults for the swamp hut and igloo use 10 to 29 blocks.
 
-`village_gates` sets the plazas:
+`worldgen.village_gates` sets the plazas:
 
 | Field | Default | What it does |
 | --- | --- | --- |

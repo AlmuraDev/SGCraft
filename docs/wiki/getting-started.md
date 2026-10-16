@@ -88,7 +88,7 @@ Place the DHD less than 6 blocks from the base, and no more than 2 blocks above 
 
 Sneak and right-click the DHD with an empty hand to open **DHD Fuel**. Put naquadah in its 5 slots. The title shows how full the gate's own energy store is, as `Gate %`.
 
-A dial to a gate nearby costs 100 energy for each chevron and 4000 to open the wormhole, then 1 a tick while it stays open. One naquadah gives 96000 energy, and the DHD burns a piece only when the gate needs more. See [Power](power.md) for distance and other worlds.
+A dial to a gate nearby costs 100 energy for each chevron and 4000 to open the wormhole, then 1 a tick while it stays open. One naquadah gives 96000 energy, and the DHD burns a piece only when the gate needs more. A dial to another world costs 10 times as much, and to another group of worlds 100 times. See [Power](power.md) for distance and other worlds.
 
 ## 7. Build a second gate
 

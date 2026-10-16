@@ -8,7 +8,7 @@ ID: sgcraft:gate_control_tablet
 Category: Tools
 Type: Item
 Stackable: No
-Range: Any gate on its list, in any world. Adding a gate: 6 blocks (`tool_range`)
+Range: Any gate on its list, in any world. Adding a gate: 6 blocks (`tools.range`)
 Right needed: `use` to add, dial or disconnect, `iris` for the iris, `configure` to configure
 Holds: A list of gates and its own address book
 ```
@@ -29,7 +29,7 @@ sgcraft:gate_control_tablet
 2. Press **Add this gate** to put the gate near you on the list. Do this at each gate you want to work.
 3. Later, from anywhere, choose a gate on the left and an address on the right, then press **Dial**.
 
-The tablet works from either hand. **Add this gate** finds the gate near you the same way every tool does: the gate you look at within 6 blocks (or `tool_range` if that is more), else the gate whose base or {{item:sgcraft:dhd}} is nearest your feet, else the gate whose ring is nearest your eyes, each within `tool_range` blocks (6). Every other button works on the gate chosen in the list, however far away it is.
+The tablet works from either hand. **Add this gate** finds the gate near you the same way every tool does: the gate you look at within 6 blocks (or `tools.range` if that is more), else the gate whose base or {{item:sgcraft:dhd}} is nearest your feet, else the gate whose ring is nearest your eyes, each within `tools.range` blocks (6). Every other button works on the gate chosen in the list, however far away it is.
 
 ## Screen
 
@@ -52,7 +52,7 @@ The top gate is chosen when the screen opens. The state of each gate shows as a 
 | **Up**, **Down** | Move the chosen gate one place in the list |
 | **Save address** | Adds the chosen gate's address to the address book, under the gate's name. It works only when the gate's address is shown |
 | **Configure** | Opens the chosen gate's {{item:sgcraft:configurator}} screen, wherever the gate is. It needs the `configure` right |
-| **Open iris**, **Close iris** | Open or shut the chosen gate's iris. They work only on a gate with an iris and need the `iris` right |
+| **Open iris**, **Close iris** | Open or shut the chosen gate's iris. They work only on a gate with an iris and need the `iris` right. For a gate with a [shield](../iris.md#the-shield) they read **Deactivate Shield** and **Activate Shield**, and the list shows "Shield up" while it is raised |
 
 Gate names are cut to 48 characters. A gate can be on the list once: a second add says "This tablet already has that gate".
 

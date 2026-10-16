@@ -82,30 +82,33 @@ Yes, with a Tollan Phase Shift Device in your hand, while the gate's `phase_shif
 
 ### How do I power a gate
 
-Use one of these, or both:
+Use any of these. The gate draws on them in this order, the nearest of each first:
 
-- Naquadah in the DHD. Sneak and use the DHD to open its fuel slots. One naquadah gives 96,000 gate energy.
+- Naquadah in the DHD. Sneak and use the DHD to open its fuel slots. One naquadah gives 96,000 gate energy (GE).
 - A Stargate Power Unit within 4 blocks of the gate's base, charged by cables.
+- A ZPM in a ZPM console, interface cart or hub within 6 blocks of the gate's base.
 
-A standard dial in one world costs 100 energy per chevron, 4000 to open and 1 a tick while open, more over long distances and to other worlds. See [Power](power.md).
+A supergate takes the same power and needs no ZPMs. ZPMs in its base's three slots add to what it can draw on. See [ZPMs and supergates](power.md#zpms-and-supergates).
+
+A standard dial in one world costs 100 energy per chevron, 4000 to open and 1 a tick while open, more over long distances. A dial to another world costs 10 times as much, and to another group of worlds 100 times. See [Power](power.md#other-worlds-and-supergates).
 
 ### Can I turn power off
 
-Yes. Set the gate's `requires_power` property to `false` with the configurator or `/sgcraft property`, or set it for every new gate in `gate_defaults`. See [Free dialing](power.md#free-dialing).
+Yes. Set the gate's `requires_power` property to `false` with the configurator or `/sgcraft property`, or set it for every new gate in `gates.defaults`. See [Free dialing](power.md#free-dialing).
 
 ### Does it work with other mods' power
 
-Yes, through the power unit. On NeoForge it takes FE (NeoForge energy) from other mods' cables. On Fabric it takes energy from cables that use Team Reborn Energy, which SGCraft bundles. 80 FE makes one gate energy by default. Batteries for the MALP are FE items on both loaders, so other mods' chargers can fill them. See [FE and gate energy](power.md#fe-and-gate-energy).
+Yes, through the power unit. On NeoForge it takes FE (NeoForge energy) from other mods' cables. On Fabric it takes energy from cables that use Team Reborn Energy, which SGCraft bundles. Each 80 FE adds one GE by default. Inside SGCraft everything stores and spends GE, and FE only moves at the edges. Batteries for the MALP are FE items on both loaders, so other mods' chargers can fill them at the same rate. To get FE out, place an [Energy Converter](blocks/energy-converter.md) against a ZPM console, interface cart, hub, power unit or battery charger. It gives 80 FE for each GE by default. See [FE and gate energy](power.md#fe-and-gate-energy).
 
 ## Breaking and building
 
 ### Can I break generated gates
 
-Not by default. Gates the world built have no owner, and only operators can break them while the server setting `generated_gates_breakable` is `false`. Explosions and commands still break them. See [Breaking a gate](building-gates.md#breaking-a-gate).
+Not by default. Gates the world built have no owner, and only operators can break them while the server setting `gates.generated_gates_breakable` is `false`. Explosions and commands still break them. See [Breaking a gate](building-gates.md#breaking-a-gate).
 
 ### Can I break my own gate
 
-Yes, while the server setting `owners_break_gates` is `true` (the default). Breaking a gate with an open wormhole sets off a breach explosion at its center. See [Breach explosion](building-gates.md#breach-explosion).
+Yes, while the server setting `gates.owners_break_gates` is `true` (the default). Breaking a gate with an open wormhole sets off a breach explosion at its center. See [Breach explosion](building-gates.md#breach-explosion).
 
 ### Where do I find naquadah
 
@@ -131,7 +134,7 @@ Yes. The `/sgcraft` commands cover dialing, the iris, energy, properties, rights
 
 ### Do gates keep chunks loaded
 
-A gate keeps the chunks around it loaded while it is dialing or connected, so the far end works with no player near it. The server setting `chunk_loading_range` (1 by default) sets how far. See [Chunk loading](dialing.md#chunk-loading).
+A gate keeps the chunks around it loaded while it is dialing or connected, so the far end works with no player near it. The server setting `gates.chunk_loading_range` (1 by default) sets how far. See [Chunk loading](dialing.md#chunk-loading).
 
 ## Add-ons
 

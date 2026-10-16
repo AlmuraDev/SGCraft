@@ -38,7 +38,7 @@ sgcraft:stargate_base
 
 ### Generated gates
 
-The world builds Milky Way gates with this base in desert pyramids, jungle temples, ocean monuments, Nether fortresses, on swamp hut platforms and in villages. Players can't break a generated gate unless its **Breakable** setting (`sgcraft:breakable`) is on, or the server setting `generated_gates_breakable` is on for gates without a setting of their own. See [World generation](../worldgen.md#structure-gates).
+The world builds Milky Way gates with this base in desert pyramids, jungle temples, ocean monuments, Nether fortresses, on swamp hut platforms and in villages. Players can't break a generated gate unless its **Breakable** setting (`sgcraft:breakable`) is on, or the server setting `gates.generated_gates_breakable` is on for gates without a setting of their own. See [World generation](../worldgen.md#structure-gates).
 
 ## Usage
 
@@ -81,7 +81,7 @@ Right-click the base, or any ring block of the formed gate, to open the **Starga
 
 A gate's address is the address of the cell holding its base. A cell is 1 chunk across. Two gates in one chunk share an address and a dial reaches only one of them, so build one gate per chunk. A base beyond the address grid, about 373,248 blocks out from x 0, z 0, gives its gate no address. See [Addresses](../addresses.md#cells-and-the-grid).
 
-The gate forms with 7 chevrons, which dial gates in the same world. Each {{item:sgcraft:chevron_upgrade}} adds one, up to 9: 8 reach other worlds of the same group, 9 reach other groups. The server's `gate_defaults` setting `sgcraft:chevrons` can give new gates more. See [Building gates](../building-gates.md#chevrons-and-upgrades).
+The gate forms with 7 chevrons, which dial gates in the same world. Each {{item:sgcraft:chevron_upgrade}} adds one, up to 9: 8 reach other worlds of the same group, 9 reach other groups. The server's `gates.defaults` setting `sgcraft:chevrons` can give new gates more. See [Building gates](../building-gates.md#chevrons-and-upgrades).
 
 ## Redstone
 
@@ -94,7 +94,7 @@ See [Dialing](../dialing.md#redstone) and [The iris](../iris.md#redstone).
 
 ## Breaking
 
-Breaking the base, or any block of the gate, breaks the gate apart. A player may break it if they are an operator, if they own the gate and the server setting `owners_break_gates` is on (the default), or if the gate's **Breakable** setting is on. Anyone else sees "This gate can't be broken". Explosions and commands still break gates.
+Breaking the base, or any block of the gate, breaks the gate apart. A player may break it if they are an operator, if they own the gate and the server setting `gates.owners_break_gates` is on (the default), or if the gate's **Breakable** setting is on. Anyone else sees "This gate can't be broken". Explosions and commands still break gates.
 
 When the base breaks, it drops:
 

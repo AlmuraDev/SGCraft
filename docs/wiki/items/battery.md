@@ -1,6 +1,6 @@
 # Battery
 
-The Battery stores FE for the MALP and the MALP tablet. You charge it in a power unit, a battery charger or the crafting grid.
+The Battery stores gate energy (GE) for the MALP and the MALP tablet. You charge it in a power unit, a battery charger or the crafting grid.
 
 ```infobox
 Battery
@@ -8,7 +8,7 @@ ID: sgcraft:battery
 Category: Power
 Type: Item
 Stackable: No
-Capacity: 1,000,000 FE (`battery_capacity`)
+Capacity: 12,500 GE (`battery_capacity`)
 Used by: MALP, MALP tablet
 Charged by: Power unit, battery charger, naquadah, other mods' chargers
 ```
@@ -31,16 +31,16 @@ The SGCraft creative tab has two batteries: an empty one, and right after it a f
 
 Put a charged battery in the battery slot of a {{item:sgcraft:malp}} (use the MALP with an empty hand) or of a {{item:sgcraft:malp_tablet}} (sneak and use the tablet in the air). Gates don't use batteries.
 
-A battery shows its charge as a green bar on the item. Its tooltip shows the exact charge as "<held> / <capacity> FE (<percent>%)".
+A battery shows its charge as a green bar on the item. Its tooltip shows the exact charge as "<held> / <capacity> GE (<percent>%)", such as "6,250 / 12,500 GE (50%)".
 
 ## Charging
 
 | Where | How fast | Notes |
 | --- | --- | --- |
-| A {{item:sgcraft:power_unit}}'s battery slot | 1000 FE a tick (`power_unit_charge_rate`) | Takes FE from the unit's store |
-| A {{item:sgcraft:battery_charger}} | 1000 FE a tick (`charger_charge_rate`) | The charger burns naquadah or takes FE from cables |
-| The crafting grid | At once | 100,000 FE for each {{item:sgcraft:naquadah}} (`fe_per_naquadah`) |
-| Other mods' chargers | As fast as they charge | On NeoForge it is a NeoForge energy item. On Fabric it is a Team Reborn Energy item |
+| A {{item:sgcraft:power_unit}}'s battery slot | 12.5 GE a tick (`power_unit_charge_rate`) | Takes GE from the unit's store |
+| A {{item:sgcraft:battery_charger}} | 12.5 GE a tick (`charger_charge_rate`) | The charger burns naquadah or takes FE from cables |
+| The crafting grid | At once | 96,000 GE for each {{item:sgcraft:naquadah}} (`energy.per_naquadah`), so one piece fills it |
+| Other mods' chargers | As fast as they charge | On NeoForge it is a NeoForge energy item. On Fabric it is a Team Reborn Energy item. Each 80 FE adds 1 GE |
 
 ### Recharging with naquadah
 
@@ -48,15 +48,15 @@ A battery shows its charge as a green bar on the item. Its tooltip shows the exa
 sgcraft:battery_recharge
 ```
 
-Put one battery and any number of naquadah in the crafting grid, in any arrangement. Nothing else may be in the grid. The battery comes out holding 100,000 FE more for each naquadah, up to its capacity, and the naquadah is used up.
+Put one battery and any number of naquadah in the crafting grid, in any arrangement. Nothing else may be in the grid. The battery comes out holding 96,000 GE more for each naquadah, up to its capacity, and the naquadah is used up. One naquadah fills an empty battery.
 
 - A full battery doesn't craft, so no naquadah is lost on it.
-- FE past the capacity is lost. A battery holding 950,000 FE gains only 50,000 FE from one naquadah, so add only as many as it has room for.
+- Energy past the capacity is lost. One naquadah gives far more than a battery holds, so use one piece at a time.
 - Two batteries in the grid don't craft.
 
 ## Behavior
 
-- Other mods can take FE out of a battery as well as put it in.
+- Other mods see a battery's charge as FE, 80 FE for each GE it holds. They can take FE out of a battery as well as put it in.
 - The capacity is the server's `battery_capacity` setting. If the server lowers it, a battery counts as holding no more than the new capacity.
 - A MALP that is destroyed drops its battery. A MALP you pick up keeps its battery in the item.
 
@@ -64,26 +64,26 @@ Put one battery and any number of naquadah in the crafting grid, in any arrangem
 
 | Component | What it holds |
 | --- | --- |
-| `sgcraft:energy` | The FE the battery holds. A battery without it holds none |
+| `sgcraft:energy` | The GE the battery holds. A battery without it holds none |
 
 ## Commands
 
 These need permission level 2.
 
-- `/sgcraft battery` shows the charge of the battery in your main hand: "Your battery holds <held> of <capacity> FE".
-- `/sgcraft battery set <fe>` sets it, kept within the capacity.
-- `/sgcraft malp battery <malp> <fe>` sets the charge of a MALP's battery, giving it one if it has none.
+- `/sgcraft battery` shows the charge of the battery in your main hand: "Your battery holds <held> of <capacity> GE".
+- `/sgcraft battery set <ge>` sets it in GE, kept within the capacity.
+- `/sgcraft malp battery <malp> <ge>` sets the charge of a MALP's battery in GE, giving it one if it has none. It replies "<malp>'s battery holds <held> of <capacity> GE".
 
 ## Server admins
 
-The battery settings are in the `malp` object of `config/sgcraft-server.json`:
+The battery settings are in the `malp` section of `config/sgcraft-server.json`, except what naquadah gives, which is `energy.per_naquadah`:
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `battery_capacity` | 1000000 | FE a battery holds |
-| `power_unit_charge_rate` | 1000 | FE a tick a power unit puts into its battery |
-| `charger_charge_rate` | 1000 | FE a tick a battery charger puts into its battery |
-| `fe_per_naquadah` | 100000 | FE one naquadah gives a battery, crafted in or burned in a charger |
+| `malp.battery_capacity` | 12500 | GE a battery holds |
+| `malp.power_unit_charge_rate` | 12.5 | GE a tick a power unit puts into its battery |
+| `malp.charger_charge_rate` | 12.5 | GE a tick a battery charger puts into its battery |
+| `energy.per_naquadah` | 96000 | GE one naquadah gives a battery, crafted in or burned in a charger, the same as it gives a gate |
 
 ## See also
 

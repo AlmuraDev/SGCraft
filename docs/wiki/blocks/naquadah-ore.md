@@ -57,7 +57,7 @@ Chunks made before SGCraft was added have no naquadah ore. With `add_ores_to_exi
 
 ## Settings
 
-The `naquadah_ore` object in `config/sgcraft-server.json`:
+The `worldgen.naquadah_ore` object in `config/sgcraft-server.json`:
 
 | Setting | Default | What it does |
 | --- | --- | --- |

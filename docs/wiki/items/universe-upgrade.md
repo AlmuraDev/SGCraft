@@ -38,6 +38,7 @@ You need the `sgcraft:configure` right on the gate. The gate's owner and operato
 | This gate is already a Universe gate | Nothing to change. |
 | You aren't allowed to change this gate | You lack the right to configure it. |
 | You can't change this gate while it's in use | The gate is busy. |
+| An Ori supergate takes no upgrades | The gate is an Ori supergate. |
 
 A Universe gate turns its whole ring while it dials, and every chevron stays lit while the gate is active. It has no DHD: dial it with a {{item:sgcraft:pdd}}, a {{item:sgcraft:gate_control_tablet}} or `/sgcraft dial`. A DHD linked to the gate stops dialing it and links to the next nearest gate of its own type in range. See [Building gates](../building-gates.md#gate-types).
 

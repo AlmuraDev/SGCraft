@@ -71,7 +71,7 @@ Each lit chevron lights the ring block nearest it, at level 12, which is most of
 
 ## Breaking
 
-Breaking any block of a formed supergate breaks the gate apart, and the gate forms again when you put the ring back. A player may break a block of a formed gate if they are an operator, if they own the gate and `owners_break_gates` is on (the default), or if the gate's **Breakable** setting is on. Anyone else sees "This gate can't be broken". Explosions and commands still break gates. See [Building gates](../building-gates.md#breaking-a-gate).
+Breaking any block of a formed supergate breaks the gate apart, and the gate forms again when you put the ring back. A player may break a block of a formed gate if they are an operator, if they own the gate and `gates.owners_break_gates` is on (the default), or if the gate's **Breakable** setting is on. Anyone else sees "This gate can't be broken". Explosions and commands still break gates. See [Building gates](../building-gates.md#breaking-a-gate).
 
 ## See also
 

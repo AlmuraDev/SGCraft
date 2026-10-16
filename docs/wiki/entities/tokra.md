@@ -49,7 +49,7 @@ A data pack can change the trades. The trade set reads the trades from the tag `
 
 ## Server admins
 
-- `tokra_worlds` (default `{"minecraft:overworld": true}`) turns Tok'ra on or off at each world's generated gates, by world ID. A world set to `false` gets none. A world left out gets them wherever its structure settings say.
+- `worldgen.tokra_worlds` (default `{"minecraft:overworld": true}`) turns Tok'ra on or off at each world's generated gates, by world ID. A world set to `false` gets none. A world left out gets them wherever its structure settings say.
 - Each structure gate and the village gates have a `tokra` field (default `true`). See [Structure gates](../settings.md#structure-gates) and [Village gates](../settings.md#village-gates).
 - `/sgcraft worldgen tokra` lists the worlds set off. `/sgcraft worldgen tokra <world> <true|false>` sets one and saves it.
 - `/sgcraft tokra` (permission level 2) puts a Tok'ra in front of your selected gate, or the one you look at. It says "There's no room in front of the gate for a Tok'ra to stand" when no spot fits.

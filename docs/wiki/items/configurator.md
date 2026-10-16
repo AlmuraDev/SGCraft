@@ -8,7 +8,7 @@ ID: sgcraft:configurator
 Category: Tools
 Type: Item
 Stackable: No
-Range: The gate near you, 6 blocks (`tool_range`). A MALP within your reach
+Range: The gate near you, 6 blocks (`tools.range`). A MALP within your reach
 Right needed: `configure` on the gate. For a MALP, its owner or an operator
 ```
 
@@ -28,13 +28,13 @@ sgcraft:configurator
 
 The configurator finds the gate near you the same way every tool does:
 
-1. The gate you look at, through its ring or its opening, up to 6 blocks away (or `tool_range` if that is more).
-2. The gate whose base or {{item:sgcraft:dhd}} is nearest your feet, within `tool_range` blocks (6) along each axis. A DHD stands for the gate it is linked to.
-3. The gate whose ring is nearest your eyes, within `tool_range` blocks.
+1. The gate you look at, through its ring or its opening, up to 6 blocks away (or `tools.range` if that is more).
+2. The gate whose base or {{item:sgcraft:dhd}} is nearest your feet, within `tools.range` blocks (6) along each axis. A DHD stands for the gate it is linked to.
+3. The gate whose ring is nearest your eyes, within `tools.range` blocks.
 
 With no gate near you it says "Could not detect a gate near you". Without the right it says "You aren't allowed to configure this gate".
 
-The screen stays on the gate it opened on. **Save** stops working once you are more than 16 blocks from the gate's base (`tool_range` plus 10). A {{item:sgcraft:gate_control_tablet}} can open the configurator of any gate on its list, and then **Save** works from anywhere while you hold the tablet.
+The screen stays on the gate it opened on. **Save** stops working once you are more than 16 blocks from the gate's base (`tools.range` plus 10). A {{item:sgcraft:gate_control_tablet}} can open the configurator of any gate on its list, and then **Save** works from anywhere while you hold the tablet.
 
 ## Screen
 
@@ -52,17 +52,17 @@ The gate must be idle to change its type, chevrons or orientation.
 
 ## Upgrades and the configurator
 
-In survival you change a gate's type, chevrons and iris with upgrade items: a {{item:sgcraft:pegasus_upgrade}} or {{item:sgcraft:universe_upgrade}}, a {{item:sgcraft:chevron_upgrade}}, or a {{item:sgcraft:iris_upgrade}}. In the configurator these three show as locked, and the tip names the item that changes them.
+In survival you change a gate's type, chevrons and iris with upgrade items: a {{item:sgcraft:pegasus_upgrade}} or {{item:sgcraft:universe_upgrade}}, a {{item:sgcraft:chevron_upgrade}}, or a {{item:sgcraft:iris_upgrade}} or {{item:sgcraft:shield_upgrade}}. In the configurator these three show as locked, and the tip names the item that changes them.
 
-Operators and players in creative mode set them freely. Taking off an iris that was fitted with an iris upgrade gives the upgrade back, unless you are in creative mode. An iris set with the configurator gives nothing back.
+Operators and players in creative mode set them freely. Taking off an iris or shield that was fitted with its upgrade, or swapping one for the other, gives the upgrade back, unless you are in creative mode. An iris or shield set with the configurator gives nothing back.
 
 ## Gate page
 
 | Setting | Property | Default | What it does |
 | --- | --- | --- | --- |
-| Type | | | Milky Way, Pegasus or Universe. Operators and creative players only |
-| Chevrons | | | 7, 8 or 9. Operators and creative players only |
-| Iris fitted | `sgcraft:iris` | off | Fits a metal iris or takes it off. Operators and creative players only |
+| Type | | | Milky Way, Pegasus or Universe, and Ori for a supergate. Operators and creative players only |
+| Chevrons | | | 7, 8 or 9. Operators and creative players only. An Ori supergate always has 9 |
+| Iris | `sgcraft:iris` | None | **None**, **Metal Iris** or **Shield**, the kinds the gate's type takes. An Ori supergate takes none. Operators and creative players only |
 | Open seconds | `sgcraft:open_ticks` | 300 (6000 ticks) | How long a wormhole stays open before it shuts on its own. 0 for no limit |
 | Address shown | `sgcraft:address_visible` | on | Whether players see the gate's address on the gate and in tools |
 | Breakable | `sgcraft:breakable` | off | Whether any player can break the gate. Only the owner or an operator changes it |
@@ -85,9 +85,9 @@ Operators and players in creative mode set them freely. Taking off an iris that 
 | DHD fuel powers it | `sgcraft:dhd_fuel` | on | Whether naquadah in linked DHDs powers the gate |
 | Per naquadah | `sgcraft:energy_per_naquadah` | 96000 | Gate energy one naquadah gives in a linked DHD |
 | Distance factor | `sgcraft:distance_factor_multiplier` | 1.0 | How much more a wormhole costs the further it reaches. 0 for no extra |
-| Other worlds | `sgcraft:inter_world_multiplier` | 4.0 | How many times more a wormhole to another world costs |
+| Other worlds | `sgcraft:inter_world_multiplier` | 10.0 | How many times more a dial with an eighth chevron costs, to another world of the group |
 
-The cost defaults are the server's. **Use server's costs** clears the gate's own costs, per naquadah, distance factor and other worlds values. Under the settings the page says "Amounts are gate energy, before distance: one is 80 FE from a power unit", with the rate the server uses. See [Power](../power.md#per-gate-settings).
+The cost defaults are the server's. **Use server's costs** clears the gate's own costs, per naquadah, distance factor and other worlds values. Under the settings the page says "Amounts are gate energy, before distance: one is worth 80 FE from other mods", with the rate the server uses. See [Power](../power.md#per-gate-settings).
 
 ## Travel page
 
@@ -132,7 +132,7 @@ The screen shows the owner ("Owner: <name>", or "Owner: none, so only operators 
 
 | Control | What it does |
 | --- | --- |
-| **Requires power** | Whether the MALP runs on its battery. Off, it uses no FE and works with a flat battery or none |
+| **Requires power** | Whether the MALP runs on its battery. Off, it uses no energy and works with a flat battery or none |
 | **Save** | Applies the change |
 | **Revert** | Goes back to the saved settings |
 | **Unpair** | Unpairs the MALP from its console at once, without waiting for **Save**. Anyone driving it from there loses it |

@@ -10,14 +10,14 @@ Type: Entity and item
 Stacks: 1
 Size: 1.0 wide, 0.9 tall
 Speed: 0.15 blocks a tick (3 blocks a second)
-Power: Battery (FE)
+Power: Battery (GE)
 Recipe: [Crafting](#crafting)
 Dictionary: [MALP](entities/malp.md)
 ```
 
 ## What it is
 
-The MALP has a camera mast that pans 120 degrees either way and tilts 45 degrees up or down, a dish, a grapple arm and two headlights. It never moves by itself, only while someone drives it from a [MALP console](#the-malp-console) or a [MALP tablet](#the-malp-tablet), and only while its battery holds FE (unless it is set to need no power).
+The MALP has a camera mast that pans 120 degrees either way and tilts 45 degrees up or down, a dish, a grapple arm and two headlights. It never moves by itself, only while someone drives it from a [MALP console](#the-malp-console) or a [MALP tablet](#the-malp-tablet), and only while its battery holds gate energy (GE), unless it is set to need no power.
 
 It goes through gates like any other traveler. It keeps its battery, its console pairing, its name, its owner and its settings on the far side. The server remembers where each MALP was last seen, so a console finds it even while its chunk is unloaded.
 
@@ -26,7 +26,7 @@ It goes through gates like any other traveler. It keeps its battery, its console
 - To place a MALP, use the MALP item on a block face. It goes down on that face, facing the way you face, and won't go down where it doesn't fit.
 - The player who first puts a MALP down owns it. A MALP item that already has an owner keeps that owner.
 - A new MALP is called `MALP` and the first four characters of its UUID, such as `MALP 3F2A`. Use a name tag on it to rename it.
-- Use the MALP with an empty hand to open its battery slot. The screen shows the battery's charge (or "Needs no FE") and the console it is paired with. Stay within 8 blocks to keep it open.
+- Use the MALP with an empty hand to open its battery slot. The screen shows the battery's charge (or "Needs no power") and the console it is paired with. Stay within 8 blocks to keep it open.
 - To pick it up, sneak and use the MALP with an empty hand. The item keeps its battery, console pairing, name, owner and settings. Its tooltip shows the paired console and the battery's charge, or that it needs no power.
 
 > **Note:** A MALP you pick up and put down again is a new entity to tablets. Pair your [tablets](#the-malp-tablet) with it again. Its console pairing stays.
@@ -39,20 +39,20 @@ Icon: sgcraft:battery
 ID: sgcraft:battery
 Type: Item
 Stacks: 1
-Holds: 1,000,000 FE
+Holds: 12,500 GE
 Recipe: [Crafting](#crafting)
 Dictionary: [Battery](items/battery.md)
 ```
 
-A battery holds up to 1,000,000 FE (`battery_capacity`). A green bar on the item shows its charge, and the tooltip shows the exact FE. The creative tab has an empty battery and a full one. On NeoForge and Fabric a battery is an ordinary FE item, so other mods' chargers can fill it.
+A battery holds up to 12,500 GE (`malp.battery_capacity`). A green bar on the item shows its charge, and the tooltip shows the exact GE. The creative tab has an empty battery and a full one. On NeoForge and Fabric a battery is an ordinary FE item, so other mods' chargers can fill it, 80 FE for each GE.
 
 You can charge a battery three ways:
 
 | Where | How fast | Notes |
 | --- | --- | --- |
-| [Power unit](power.md) battery slot | 1000 FE a tick (`power_unit_charge_rate`) | Takes FE from the unit's store. |
-| Battery charger | 1000 FE a tick (`charger_charge_rate`) | See below. |
-| Crafting grid | At once | A battery with naquadah in any arrangement. Each naquadah adds 100,000 FE (`fe_per_naquadah`). A full battery isn't topped up, so no naquadah is wasted. |
+| [Power unit](power.md) battery slot | 12.5 GE a tick (`power_unit_charge_rate`) | Takes GE from the unit's store. |
+| Battery charger | 12.5 GE a tick (`charger_charge_rate`) | See below. |
+| Crafting grid | At once | A battery with naquadah in any arrangement. Each naquadah adds 96,000 GE (`energy.per_naquadah`), so one piece fills a battery and the rest is lost. A full battery doesn't craft, so no naquadah is wasted on it. |
 
 ### Battery charger
 
@@ -62,25 +62,25 @@ Icon: sgcraft:battery_charger
 ID: sgcraft:battery_charger
 Type: Block
 Slots: 1 battery, 1 naquadah
-Store: 200,000 FE
+Store: 192,000 GE
 Recipe: [Crafting](#crafting)
 Dictionary: [Battery Charger](blocks/battery-charger.md)
 ```
 
-The battery charger has a bay for a battery and a slot for naquadah. Its own store holds two naquadah's worth of FE (200,000 FE by default). It burns one naquadah whenever its store has room for all 100,000 FE of it, and it passes FE from the store into the battery. FE cables can fill the store too.
+The battery charger has a bay for a battery and a slot for naquadah. Its own store holds two naquadah's worth of GE (192,000 GE by default). It burns one naquadah only when its store has room for all 96,000 GE of it, and it passes GE from the store into the battery. FE cables can fill the store too, 80 FE for each GE.
 
 ### What a MALP uses
 
 | Use | Cost |
 | --- | --- |
-| A live feed from its driver | 10 FE a tick (`idle_drain`), once per MALP however many people watch |
-| Driving | 100 FE for each block covered (`drive_drain`) |
+| A live feed from its driver | 0.125 GE a tick (`idle_drain`), once per MALP however many people watch |
+| Driving | 1.25 GE for each block covered (`drive_drain`) |
 | Watchers and monitor spectators | Nothing extra |
-| A tablet showing a live feed | 2 FE a tick from the tablet's own battery (`tablet_drain`), paid every 20 ticks |
+| A tablet showing a live feed | 0.025 GE a tick from the tablet's own battery (`tablet_drain`), paid every 20 ticks |
 
 Rolling on after you let go, or being pushed, costs nothing. A MALP with a flat battery or no battery shows **NO POWER** and doesn't move.
 
-A MALP's **Requires power** setting is on by default. Turned off (with the [configurator](#the-configurator) or `/sgcraft malp power_required`), the MALP uses no FE and works with a flat battery or none. Its readout then says **NEEDS NO POWER**.
+A MALP's **Requires power** setting is on by default. Turned off (with the [configurator](#the-configurator) or `/sgcraft malp power_required`), the MALP uses no energy and works with a flat battery or none. Its readout then says **NEEDS NO POWER**.
 
 ## The MALP console
 
@@ -176,7 +176,7 @@ One player drives each MALP at a time. Other players can watch:
 
 When the player you watch leaves or switches MALP, your feed goes to **FEED OFFLINE**.
 
-While the driver at a console has a live feed, the console's monitor shows that feed to the players nearest it as a faint green picture. Up to 4 players (`console_spectators`, 0 to 64) within 16 blocks (`spectator_range`, 1 to 64) see it. A spectator can step 2 blocks past the range before the picture stops. The server checks every 10 ticks. Watching costs no FE. A tablet has no monitor.
+While the driver at a console has a live feed, the console's monitor shows that feed to the players nearest it as a faint green picture. Up to 4 players (`console_spectators`, 0 to 64) within 16 blocks (`spectator_range`, 1 to 64) see it. A spectator can step 2 blocks past the range before the picture stops. The server checks every 10 ticks. Watching costs no energy. A tablet has no monitor.
 
 ## The world around a watched MALP
 
@@ -246,7 +246,7 @@ Every MALP command needs permission level 2. MALPs are named by their name or th
 | `/sgcraft malp list` | Every MALP: where it was last seen, battery or "needs no power", console and owner |
 | `/sgcraft malp pair <malp> <pos>` | Pair a MALP with the console at a position |
 | `/sgcraft malp unpair <malp>` | Unpair a MALP from its console |
-| `/sgcraft malp battery <malp> <fe>` | Set its battery's charge, giving it a battery if it has none |
+| `/sgcraft malp battery <malp> <ge>` | Set its battery's charge in GE, giving it a battery if it has none |
 | `/sgcraft malp power_required <malp> [<true/false>]` | Show or set whether it runs on its battery |
 | `/sgcraft malp poweroff <malp>` | Power down the feed of everyone watching it |
 | `/sgcraft malp recall <malp>` | Bring it to you |
@@ -254,27 +254,26 @@ Every MALP command needs permission level 2. MALPs are named by their name or th
 | `/sgcraft malp signal <malp> [<pos>]` | How its console, or the console at a position, reaches it |
 | `/sgcraft malp pair_tablet <malp>` | Pair it with the tablet in your hand, whoever owns it |
 | `/sgcraft malp unpair_tablet <malp>` | Take it off the tablet in your hand |
-| `/sgcraft battery [set <fe>]` | Show or set the charge of the battery in your main hand |
+| `/sgcraft battery [set <ge>]` | Show or set the charge of the battery in your main hand |
 
 `/sgcraft malp console_damage_interrupts`, `console_spectators`, `spectator_range` and `tablet_drain` show or change those settings and save them to the file. See [Commands](commands.md#malp-and-views) for the full list, including `/sgcraft view`.
 
 ### Settings
 
-The `malp` group of `config/sgcraft-server.json`:
+The `malp` section of `config/sgcraft-server.json`. What one naquadah gives a battery or a charger is `energy.per_naquadah` (96000), the same as a DHD.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `battery_capacity` | `1000000` | Most FE a battery holds |
-| `power_unit_charge_rate` | `1000` | FE a tick a power unit puts into a battery |
-| `charger_charge_rate` | `1000` | FE a tick a battery charger puts into a battery |
-| `fe_per_naquadah` | `100000` | FE one naquadah gives a battery, crafted or burned |
-| `idle_drain` | `10` | FE a tick a MALP uses while its feed is live |
-| `drive_drain` | `100` | FE a MALP uses for each block it drives |
+| `battery_capacity` | `12500` | Most GE a battery holds |
+| `power_unit_charge_rate` | `12.5` | GE a tick a power unit puts into a battery |
+| `charger_charge_rate` | `12.5` | GE a tick a battery charger puts into a battery |
+| `idle_drain` | `0.125` | GE a tick a MALP uses while its feed is live |
+| `drive_drain` | `1.25` | GE a MALP uses for each block it drives |
 | `signal_range` | `256` | Blocks a radio reaches, directly or to a gate |
 | `linger_ticks` | `600` | Ticks a MALP's chunks stay loaded after the last watcher leaves |
 | `console_damage_interrupts` | `true` | Damage takes a player off a console or tablet |
 | `console_spectators` | `4` | Players near a driven console who see its monitor (0 to 64) |
 | `spectator_range` | `16` | Blocks from a console to see its monitor (1 to 64) |
-| `tablet_drain` | `2` | FE a tick a tablet uses while its feed is live |
+| `tablet_drain` | `0.025` | GE a tick a tablet uses while its feed is live |
 
 The `remote_view` group sets how much of the world the feed shows. See [Settings](settings.md#malp) and [Remote view](settings.md#remote-view).

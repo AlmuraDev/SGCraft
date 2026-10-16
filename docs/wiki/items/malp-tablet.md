@@ -8,7 +8,7 @@ ID: sgcraft:malp_tablet
 Category: MALP
 Type: Item
 Stackable: No
-Power: Its own battery, 2 FE a tick while it shows a live feed (`tablet_drain`)
+Power: Its own battery, 0.025 gate energy (GE) a tick while it shows a live feed (`tablet_drain`)
 Range: 256 blocks to the MALP, or to a gate that relays (`signal_range`)
 Pairs: Any number of MALPs
 ```
@@ -67,7 +67,7 @@ See [Driving](../malp.md#driving) and [The feed and readouts](../malp.md#the-fee
 
 ## Power
 
-The tablet needs a charged battery to show a feed. While its screen shows a live feed it uses 2 FE a tick from its own battery (`tablet_drain`), whether you drive or watch. It pays every 20 ticks. This is separate from what the MALP uses from its own battery.
+The tablet needs a charged battery to show a feed. While its screen shows a live feed it uses 0.025 GE a tick from its own battery (`tablet_drain`), whether you drive or watch. It pays every 20 ticks. This is separate from what the MALP uses from its own battery.
 
 The feed screen shows **TABLET BATTERY** with its percent, or **NO TABLET BATTERY**. With a flat battery the feed shows **NO TABLET POWER**.
 
@@ -104,7 +104,7 @@ These need permission level 2.
 | --- | --- |
 | `/sgcraft malp pair_tablet <malp>` | Pair a MALP with the tablet in your hand, whoever owns the MALP |
 | `/sgcraft malp unpair_tablet <malp>` | Take a MALP off the tablet in your hand |
-| `/sgcraft malp tablet_drain [<fe>]` | Show or set the FE a tick a tablet uses while its feed is live, saved to the settings file |
+| `/sgcraft malp tablet_drain [<ge>]` | Show or set the GE a tick a tablet uses while its feed is live, saved to the settings file. It replies "A MALP tablet uses <ge> GE a tick while it shows a live feed" |
 | `/sgcraft malp console_damage_interrupts [<bool>]` | Show or set whether damage takes a player off a console or tablet |
 
 ## See also

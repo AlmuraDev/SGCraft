@@ -1,16 +1,16 @@
 # Tools
 
-Four handheld tools work gates: the PDD dials from your pocket, the gate control tablet works gates from anywhere, the GDO works irises, and the configurator changes a gate's settings. The Tollan Phase Shift Device takes you through a shut iris.
+Five handheld tools work gates: the PDD dials from your pocket, the gate control tablet works gates from anywhere, the Explorer Dialer Device dials the gates the world built, the GDO works irises and shields, and the configurator changes a gate's settings. The Tollan Phase Shift Device takes you through a shut iris.
 
 ## How a tool finds its gate
 
-Use a tool in the air or on a block to open its screen. The PDD, the tablet's **Add this gate**, the GDO and the configurator work on the gate near you, found in this order:
+Use a tool in the air or on a block to open its screen. The PDD, the tablet's **Add this gate**, the Explorer Dialer Device, the GDO and the configurator work on the gate near you, found in this order:
 
-1. The gate you look at, through its ring or its opening, up to 6 blocks away (or `tool_range` if that is more).
-2. The gate whose base or [DHD](dhd.md) is nearest your feet, within `tool_range` blocks (6) along each axis. A DHD stands for the gate it is linked to.
-3. The gate whose ring is nearest your eyes, within `tool_range` blocks.
+1. The gate you look at, through its ring or its opening, up to 6 blocks away (or `tools.range` if that is more).
+2. The gate whose base or [DHD](dhd.md) is nearest your feet, within `tools.range` blocks (6) along each axis. A DHD stands for the gate it is linked to.
+3. The gate whose ring is nearest your eyes, within `tools.range` blocks.
 
-The GDO and the configurator stay on the gate they opened on. Their buttons stop working if you move more than 16 blocks from the gate's base (`tool_range` plus 10), and the tool says "Could not detect a gate near you".
+The GDO and the configurator stay on the gate they opened on. Their buttons stop working if you move more than 16 blocks from the gate's base (`tools.range` plus 10), and the tool says "Could not detect a gate near you".
 
 Each tool shows what a gate is doing with a colored word: **Idle** (green), **Dialing** (yellow), **Incoming** (gold), **Opening** (yellow), **Connected** (aqua), **Closing** (gray), or **No gate** (red) when no gate is at an address.
 
@@ -21,7 +21,7 @@ Personal Dialing Device
 Icon: sgcraft:pdd
 Type: Item
 Stacks: 1
-Range: 6 blocks (tool_range)
+Range: 6 blocks (tools.range)
 Holds: Its own address book
 Dictionary: [Personal Dialing Device](items/pdd.md)
 ```
@@ -64,7 +64,7 @@ Buttons beside the gates:
 - **Rename**, **Remove**, **Up**, **Down** work on the chosen gate.
 - **Save address** adds the chosen gate's address to the addresses on the right, under its name.
 - **Configure** opens the chosen gate's [configurator](#stargate-configurator), wherever the gate is. It needs the `configure` right.
-- **Open iris** and **Close iris** work the chosen gate's iris. They need the `iris` right.
+- **Open iris** and **Close iris** work the chosen gate's iris. They need the `iris` right. For a gate with a shield they read **Deactivate Shield** and **Activate Shield**, and the list shows "Shield up" while its shield is raised.
 
 Beside the addresses: **Add**, **Rename**, **Remove**, **Up** and **Down**, as on the PDD.
 
@@ -76,6 +76,33 @@ The screen also shows the gate near you ("Near you: <address>, <state>"), "Gates
 sgcraft:gate_control_tablet
 ```
 
+## Explorer Dialer Device
+
+```infobox
+Explorer Dialer Device
+Icon: sgcraft:edd
+Type: Item
+Stacks: 1
+Range: 6 blocks (tools.range), to dial from
+Lists: Every generated gate, in every world
+Dictionary: [Explorer Dialer Device](items/edd.md)
+```
+
+The Explorer Dialer Device lists every gate that world generation built, in every world, sorted by world and then by address. You don't add gates to it: the list comes from the world.
+
+The header reads "Generated Addresses: (N) - Visited: V". Each row shows the name you gave the gate (or "Unnamed gate"), its address in letters and glyphs, its world, and **Visited** in green or **Not visited**. The list refreshes every 3 seconds.
+
+- **Dial** dials the chosen gate from the gate near you. Double-clicking an entry dials it too. With no gate near, the screen says "No gate near you to dial from".
+- **Disconnect** closes the near gate's wormhole or stops its dial.
+- **Rename** gives the chosen gate the name in the **Name** box, up to 40 characters. A blank name clears it.
+- **Close** closes the screen.
+
+A generated gate counts as visited when you use the device at it, or when you go through any gate as a player (both ends count, if they are generated). Your visits and names are kept with the world, and survive death. `/sgcraft explorer` shows your list in chat.
+
+```recipe
+sgcraft:edd
+```
+
 ## Garage Door Opener
 
 ```infobox
@@ -83,17 +110,21 @@ Garage Door Opener
 Icon: sgcraft:gdo
 Type: Item
 Stacks: 1
-Range: 6 blocks (tool_range), and the far end of an open wormhole
+Range: 6 blocks (tools.range), and the far end of an open wormhole
 Dictionary: [Garage Door Opener](items/gdo.md)
 ```
 
-The GDO works the [iris](iris.md) of the gate near you and, once its wormhole is open, the iris of the gate at the other end.
+The GDO works the [iris](iris.md) of the gate near you and, once its wormhole is open, the iris of the gate at the other end. It works a [shield](iris.md#the-shield) the same way.
 
 - **This gate**: the near gate's iris state, with **Open Iris** and **Close Iris**. A gate without an iris shows "No iris".
 - **The other end**: the same for the far gate, shown once the wormhole is connected. Until then the screen says "No wormhole open".
 - **Disconnect** closes the wormhole or stops a dial. It works while the gate is dialing or open.
 
+For a gate with a shield, the buttons read **Activate Shield** and **Deactivate Shield**, and the state shows as **Shield Active**, **Raising Shield...**, **Lowering Shield...** or **Shield Inactive**.
+
 Each iris needs the `iris` right on its own gate. **Disconnect** needs the `use` right. With no gate near you, the GDO says "Could not detect a gate near you".
+
+To work a shield from a fixed place, use a [Shield Console](blocks/shield-console.md), a block that works the nearest shielded gate within 40 blocks.
 
 ```recipe
 sgcraft:gdo
@@ -106,7 +137,7 @@ Stargate Configurator
 Icon: sgcraft:configurator
 Type: Item
 Stacks: 1
-Range: 6 blocks (tool_range)
+Range: 6 blocks (tools.range)
 Needs: The configure right on the gate
 Dictionary: [Stargate Configurator](items/configurator.md)
 ```
@@ -120,16 +151,16 @@ A setting the gate has no value of its own for shows in gray, with what applies 
 The gate must be idle to change its type, chevrons or orientation.
 
 > **Note:** In survival you change a gate's type, chevrons and iris with the upgrade items: a gate upgrade, a chevron
-> upgrade or an iris upgrade. Only operators and players in creative mode set these three freely in the configurator;
+> upgrade, an iris upgrade or a shield upgrade. Only operators and players in creative mode set these three freely in the configurator;
 > for everyone else they show as locked.
 
 ### Gate page
 
 | Setting | Property | Default | What it does |
 | --- | --- | --- | --- |
-| Type | | | Milky Way, Pegasus or Universe. Operators and creative players only |
-| Chevrons | | | 7, 8 or 9. Operators and creative players only |
-| Iris fitted | `sgcraft:iris` | off | Fits a metal iris, or takes it off. Operators and creative players only. Taking off an iris fitted with an Iris Upgrade gives the upgrade back, unless you are in creative mode |
+| Type | | | Milky Way, Pegasus or Universe, and Ori for a supergate. Operators and creative players only |
+| Chevrons | | | 7, 8 or 9. Operators and creative players only. An Ori supergate always has 9 |
+| Iris | `sgcraft:iris` | None | **None**, **Metal Iris** or **Shield**, the kinds the gate's type takes. An Ori supergate takes none. Operators and creative players only. Taking off an iris or shield fitted with its upgrade, or swapping it, gives the upgrade back, unless you are in creative mode |
 | Open seconds | `sgcraft:open_ticks` | 300 (6000 ticks) | How long a wormhole stays open before it shuts on its own. 0 for no limit |
 | Address shown | `sgcraft:address_visible` | on | Whether players see the gate's address on the gate and in tools |
 | Breakable | `sgcraft:breakable` | off | Whether any player can break the gate. Only the owner or an operator can change it |
@@ -152,9 +183,9 @@ The gate must be idle to change its type, chevrons or orientation.
 | DHD fuel powers it | `sgcraft:dhd_fuel` | on | Whether naquadah in linked DHDs powers the gate |
 | Per naquadah | `sgcraft:energy_per_naquadah` | 96000 | Gate energy one naquadah gives in a linked DHD |
 | Distance factor | `sgcraft:distance_factor_multiplier` | 1.0 | How much more a wormhole costs the further it reaches. 0 for no extra |
-| Other worlds | `sgcraft:inter_world_multiplier` | 4.0 | How many times more a wormhole to another world costs |
+| Other worlds | `sgcraft:inter_world_multiplier` | 10.0 | How many times more a dial with an eighth chevron costs, to another world of the group |
 
-The cost defaults are the server's. **Use server's costs** clears the gate's own costs, per naquadah, distance factor and other worlds values. Under the settings, the page shows how many FE from a power unit make one gate energy. See [Power](power.md).
+The cost defaults are the server's. **Use server's costs** clears the gate's own costs, per naquadah, distance factor and other worlds values. Under the settings, the page shows how many FE from other mods one gate energy is worth. See [Power](power.md).
 
 ### Travel page
 
@@ -208,6 +239,6 @@ The device has no recipe. Get it from the creative tab, or have an operator give
 
 ## Server admins
 
-- `tool_range` (6) sets how far from a player the tools look for a gate.
+- `tools.range` (6) sets how far from a player the tools look for a gate.
 - The default addresses that new PDDs and tablets start with are in `config/sgcraft-default-addresses.json`. Operators change them with `/sgcraft default_addresses add|remove|lock|unlock`. See [Addresses](addresses.md).
 - Every configurator setting is also a gate property: `/sgcraft property <id> set <json>` and `/sgcraft property <id> reset` set and clear it, and `/sgcraft gate_defaults` gives gates values without their own. See [Settings](settings.md) and [Commands](commands.md).

@@ -11,7 +11,7 @@ Size: 1.0 wide, 0.9 tall
 Health: Breaks when its damage passes 40 (each hit adds 10 times its damage, and the count falls by 1 a tick)
 Speed: 0.15 blocks a tick (3 blocks a second), turns 4 degrees a tick
 Stackable: No
-Power: Battery (FE)
+Power: Battery (GE)
 Step height: 1 block
 ```
 
@@ -46,19 +46,19 @@ The player who first puts a MALP down owns it. A MALP item that already has an o
 
 ## Power
 
-The MALP runs on the battery in its slot. A battery holds 1,000,000 FE (`battery_capacity`).
+The MALP runs on the battery in its slot. A battery holds 12,500 gate energy (GE), set by `battery_capacity`.
 
 | Use | Cost |
 | --- | --- |
-| A live feed from its driver | 10 FE a tick (`idle_drain`) |
-| Driving | 100 FE for each block covered (`drive_drain`) |
+| A live feed from its driver | 0.125 GE a tick (`idle_drain`) |
+| Driving | 1.25 GE for each block covered (`drive_drain`) |
 | Watchers and monitor spectators | Nothing extra |
 
-Rolling on or being pushed costs nothing. With a flat battery or none, the MALP shows **NO POWER** and doesn't move. Its **Requires power** setting (on by default) can be turned off with the configurator or `/sgcraft malp power_required`, and then it uses no FE and works with a flat battery or none. See [Batteries and charging](../malp.md#batteries-and-charging).
+Rolling on or being pushed costs nothing. With a flat battery or none, the MALP shows **NO POWER** and doesn't move. Its **Requires power** setting (on by default) can be turned off with the configurator or `/sgcraft malp power_required`, and then it uses no energy and works with a flat battery or none. See [Batteries and charging](../malp.md#batteries-and-charging).
 
 ## Camera feed
 
-A driver at a console or tablet sees a live picture from the MALP's camera while three things hold: the console or tablet reaches the MALP, the MALP has power, and a tablet has FE in its own battery.
+A driver at a console or tablet sees a live picture from the MALP's camera while three things hold: the console or tablet reaches the MALP, the MALP has power, and a tablet has GE in its own battery.
 
 - The radio reaches 256 blocks (`signal_range`), directly in the same world, or relayed through an open wormhole between a gate near the radio and a gate near the MALP. The signal passes a shut iris. See [Signal](../malp.md#signal).
 - One player drives a MALP at a time. Others can watch from their own console or tablet, and up to 4 players within 16 blocks of a driven console see the feed on its monitor. See [Watchers and the console monitor](../malp.md#watchers-and-the-console-monitor).
@@ -117,7 +117,7 @@ Every MALP command needs permission level 2. Name a MALP by its name or the star
 | `/sgcraft malp list` | Every MALP, where it was last seen, its battery, console and owner |
 | `/sgcraft malp pair <malp> <pos>` | Pair it with the console at a position |
 | `/sgcraft malp unpair <malp>` | Unpair it from its console |
-| `/sgcraft malp battery <malp> <fe>` | Set its battery's charge, giving it a battery if it has none |
+| `/sgcraft malp battery <malp> <ge>` | Set its battery's charge in GE, giving it a battery if it has none |
 | `/sgcraft malp power_required <malp> [<true/false>]` | Show or set whether it runs on its battery |
 | `/sgcraft malp poweroff <malp>` | Power down the feed of everyone watching it |
 | `/sgcraft malp recall <malp>` | Bring it to you |
