@@ -37,11 +37,13 @@ import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.gate.GateStore;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -49,45 +51,95 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Addresses on a running server.
  *
- * <p>Until the server's configuration exists, every world is in the default group, whose symbol is {@code @}, and
- * every world is divided into cells one chunk across, with no point of origin.</p>
+ * <p>Every world is in the default group, whose symbol is {@code @}. Each world is divided into cells as the server's
+ * {@code addresses} settings lay it out, for every world or for that one.</p>
  */
 public final class SGAddressing implements Addressing {
 
+    private static final String RULE = "*".repeat(100);
+
     private final MinecraftServer server;
-    private final AddressPartition partition;
+    private final AddressSettings settings;
+    private final Map<ResourceKey<Level>, AddressPartition> partitions = new ConcurrentHashMap<>();
     private final List<AddressReach> reaches;
     private final DefaultGroup defaultGroup = new DefaultGroup();
 
     public SGAddressing(final MinecraftServer server, final SGConfig config) {
         this.server = server;
-        this.partition = new SimplePartition(1, config.originSymbol());
-        this.recordOrigin(config.pointOfOrigin());
+        this.settings = config.addresses();
+        this.recordLayouts();
         this.reaches = server.registryAccess().lookupOrThrow(SGCraftRegistries.ADDRESS_REACH).stream()
                 .sorted(Comparator.comparingInt(AddressReach::symbolCount))
                 .toList();
         this.assignWorldSymbols();
     }
 
-    // Records the point of origin in use, warning loudly if it isn't the one the gates' addresses were made with,
-    // since every address then changes
-    private void recordOrigin(final String origin) {
+    // Records the layout each world's addresses are made with, warning loudly about each world with gates whose layout
+    // isn't the one its gates' addresses were made with, since every address there has changed
+    private void recordLayouts() {
         final GateStore store = this.store();
-        final Optional<String> recorded = store.pointOfOrigin();
-        if (recorded.isPresent() && !recorded.get().equals(origin)) {
-            SGCraft.LOG.warn("**********************************************************************");
-            SGCraft.LOG.warn("The point of origin has changed from \"{}\" to \"{}\". Every address in these worlds "
-                    + "has changed:", recorded.get(), origin);
-            for (final ServerLevel level : this.server.getAllLevels()) {
-                SGCraft.LOG.warn("  {}", level.dimension().identifier());
+        final List<String> changed = new ArrayList<>();
+        for (final ServerLevel level : this.server.getAllLevels()) {
+            final ResourceKey<Level> world = level.dimension();
+            final AddressLayout layout = this.layoutOf(world);
+            final Optional<AddressLayout> recorded = store.layout(world);
+            final Optional<String> change = SGAddressing.describeChange(world.identifier(), recorded, layout,
+                    store.gateCount(world));
+            if (change.isPresent()) {
+                changed.add(change.get());
+            } else if (recorded.isPresent() && !recorded.get().equals(layout)) {
+                SGCraft.LOG.info("World {} has no gates, so its new address layout changes nothing: {}",
+                        world.identifier(), layout.describe());
             }
-            SGCraft.LOG.warn("**********************************************************************");
+            store.putLayout(world, layout);
         }
-        store.setPointOfOrigin(origin);
+        store.dropLegacyOrigin();
+        if (!changed.isEmpty()) {
+            SGAddressing.warnChanged(changed);
+        }
+    }
+
+    /**
+     * @return a line for the warning about a world whose addresses changed, naming it, its gates, and its layout
+     *     before and now; empty when nothing was recorded for it, its layout is the recorded one, or it has no gates
+     */
+    public static Optional<String> describeChange(final Identifier world, final Optional<AddressLayout> recorded,
+            final AddressLayout layout, final long gates) {
+        if (recorded.isEmpty() || recorded.get().equals(layout) || gates <= 0) {
+            return Optional.empty();
+        }
+        return Optional.of(world + " (" + gates + (gates == 1 ? " gate" : " gates") + "): "
+                + recorded.get().describe() + " is now " + layout.describe());
+    }
+
+    private static void warnChanged(final List<String> worlds) {
+        SGCraft.LOG.warn(SGAddressing.RULE);
+        SGCraft.LOG.warn(SGAddressing.RULE);
+        SGCraft.LOG.warn("**");
+        SGCraft.LOG.warn("**  SGCRAFT: STARGATE ADDRESSES HAVE CHANGED");
+        SGCraft.LOG.warn("**");
+        SGCraft.LOG.warn("**  The address settings (cell_chunks or point_of_origin) changed for worlds that already");
+        SGCraft.LOG.warn("**  have gates. EVERY gate address in these worlds is now different:");
+        SGCraft.LOG.warn("**");
+        for (final String world : worlds) {
+            SGCraft.LOG.warn("**    {}", world);
+        }
+        SGCraft.LOG.warn("**");
+        SGCraft.LOG.warn("**  Address books, default addresses, PDDs, tablets, signs and anything else holding an old");
+        SGCraft.LOG.warn("**  address now reach another gate or none. Changing the cell size can also put two gates");
+        SGCraft.LOG.warn("**  in one cell, where only one of them can be dialed.");
+        SGCraft.LOG.warn("**");
+        SGCraft.LOG.warn("**  To get the old addresses back, stop the server, set the addresses section of");
+        SGCraft.LOG.warn("**  config/sgcraft-server.json back to the old values and start it again. The new layout");
+        SGCraft.LOG.warn("**  has been recorded, so this warning shows once.");
+        SGCraft.LOG.warn("**");
+        SGCraft.LOG.warn(SGAddressing.RULE);
+        SGCraft.LOG.warn(SGAddressing.RULE);
     }
 
     // Gives each world without a symbol the first one not yet used; a world's symbol never changes once given
@@ -184,7 +236,20 @@ public final class SGAddressing implements Addressing {
 
     @Override
     public AddressPartition partition(final ResourceKey<Level> world) {
-        return this.partition;
+        return this.partitions.computeIfAbsent(world, key -> {
+            final AddressLayout layout = this.layoutOf(key);
+            return new SimplePartition(layout.cellChunks(), layout.originSymbol());
+        });
+    }
+
+    /** @return the address layout a world has while the server runs */
+    public AddressLayout layoutOf(final ResourceKey<Level> world) {
+        return this.settings.layoutOf(world);
+    }
+
+    /** @return how many formed gates a world has, each of whose addresses its layout decides */
+    public long gateCount(final ResourceKey<Level> world) {
+        return this.store().gateCount(world);
     }
 
     @Override

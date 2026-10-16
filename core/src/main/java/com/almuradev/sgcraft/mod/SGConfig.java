@@ -25,9 +25,9 @@
 
 package com.almuradev.sgcraft.mod;
 
-import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.api.gate.GateProperties;
 import com.almuradev.sgcraft.api.gate.Stargate;
+import com.almuradev.sgcraft.mod.address.AddressSettings;
 import com.almuradev.sgcraft.mod.energy.DialCosts;
 import com.almuradev.sgcraft.mod.malp.MalpSettings;
 import com.almuradev.sgcraft.mod.shield.ShieldSettings;
@@ -62,8 +62,8 @@ import java.util.Optional;
  * with the defaults, and a missing setting takes its default. The energy settings are the original SGCraft's.
  *
  * <p>The file keeps its settings in sections: {@code energy} (naquadah, power units, the energy bridges' rates, dial
- * costs and their {@code multipliers}), {@code gates}, {@code tools}, {@code worldgen}, {@code remote_view},
- * {@code malp}, {@code shields} and {@code zpm}. The records here keep the shape the rest of the mod reads them in.</p>
+ * costs and their {@code multipliers}), {@code addresses}, {@code gates}, {@code tools}, {@code worldgen},
+ * {@code remote_view}, {@code malp}, {@code shields} and {@code zpm}. The records here keep the shape the rest of the mod reads them in.</p>
  *
  * @param energyPerNaquadah how much energy one naquadah gives
  * @param dialCosts what a wormhole costs the gate that dials it, before distance: as each chevron locks, as it opens,
@@ -81,8 +81,8 @@ import java.util.Optional;
  *     bridge's registry identifier, in place of the bridge's own rate
  * @param toolRange how far from a player the handheld tools look for a gate, in blocks
  * @param supergateEnergyMultiplier how many times more a wormhole to or from a supergate costs, as in the original
- * @param pointOfOrigin the symbol every address ends with, which the last chevron locks, as on the show; {@code @}
- *     (Giza) by default, or empty for addresses without one
+ * @param addresses how worlds are laid out into addresses: the size of each addressed cell and the point of origin
+ *     addresses end with, for every world and for single worlds
  * @param structureGates the gates added beside generated structures, by the structure's identifier; a structure
  *     left out gets none
  * @param villageGates the gate plazas villages build
@@ -98,7 +98,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         double interWorldMultiplier, boolean freeInCreative,
         double fePerGeIn, double fePerGeOut, double converterRate, Map<Identifier, Double> bridgeRates, int toolRange,
         double supergateEnergyMultiplier,
-        String pointOfOrigin, Map<Identifier, StructureGate> structureGates, VillageGates villageGates,
+        AddressSettings addresses, Map<Identifier, StructureGate> structureGates, VillageGates villageGates,
         long powerUnitCapacity, NaquadahOreSettings naquadahOre, RemoteViewConfig remoteView, MalpSettings malp,
         Options options) {
 
@@ -107,7 +107,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
 
     public static final SGConfig DEFAULTS = new SGConfig(96000, DialCosts.DEFAULTS, 1.0, 10.0, false, 80.0, 80.0, 62.5,
             Map.of(), 6,
-            8.0, "@", StructureGates.DEFAULT_STRUCTURES, StructureGates.DEFAULT_VILLAGES, 50_000L,
+            8.0, AddressSettings.DEFAULTS, StructureGates.DEFAULT_STRUCTURES, StructureGates.DEFAULT_VILLAGES, 50_000L,
             NaquadahOreSettings.DEFAULTS, RemoteViewConfig.DEFAULTS, MalpSettings.DEFAULTS, Options.DEFAULTS);
 
     private static final String FILE = "sgcraft-server.json";
@@ -120,6 +120,8 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
     public static final Codec<SGConfig> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             EnergySection.CODEC.optionalFieldOf("energy", EnergySection.of(SGConfig.DEFAULTS))
                     .forGetter(EnergySection::of),
+            AddressSettings.CODEC.optionalFieldOf("addresses", SGConfig.DEFAULTS.addresses)
+                    .forGetter(SGConfig::addresses),
             GatesSection.CODEC.optionalFieldOf("gates", GatesSection.of(SGConfig.DEFAULTS))
                     .forGetter(GatesSection::of),
             ToolsSection.CODEC.optionalFieldOf("tools", ToolsSection.of(SGConfig.DEFAULTS))
@@ -133,13 +135,13 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
                     .forGetter(config -> config.options.shields()),
             ZpmSettings.CODEC.optionalFieldOf("zpm", SGConfig.DEFAULTS.options.zpm())
                     .forGetter(config -> config.options.zpm())
-    ).apply(instance, (energy, gates, tools, worldgen, remoteView, malp, shields, zpm) -> new SGConfig(
+    ).apply(instance, (energy, addresses, gates, tools, worldgen, remoteView, malp, shields, zpm) -> new SGConfig(
             energy.energyPerNaquadah(), energy.dialCosts(), energy.multipliers().distanceFactor(),
             energy.multipliers().interWorld(), energy.freeInCreative(), energy.rates().fePerGeIn(),
             energy.rates().fePerGeOut(),
             energy.converterRate(), energy.rates().others(),
             tools.range(),
-            energy.multipliers().supergate(), gates.pointOfOrigin(), worldgen.structureGates(), worldgen.villageGates(),
+            energy.multipliers().supergate(), addresses, worldgen.structureGates(), worldgen.villageGates(),
             energy.powerUnitCapacity(), worldgen.naquadahOre(), remoteView, malp,
             new Options(gates.kawooshBreaksUnbreakable(), gates.chunkLoadingRange(), gates.logEvents(),
                     worldgen.tokraWorlds(), gates.defaults(), gates.ownersBreakGates(),
@@ -242,14 +244,12 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         }
     }
 
-    // The file's gates section: addresses, chunk loading, the kawoosh, breaking gates, logging, and gates' defaults
-    private record GatesSection(String pointOfOrigin, int chunkLoadingRange, boolean kawooshBreaksUnbreakable,
+    // The file's gates section: chunk loading, the kawoosh, breaking gates, logging, and gates' defaults
+    private record GatesSection(int chunkLoadingRange, boolean kawooshBreaksUnbreakable,
             boolean ownersBreakGates, boolean generatedGatesBreakable, boolean logEvents,
             Map<Identifier, JsonElement> defaults) {
 
         static final Codec<GatesSection> CODEC = RecordCodecBuilder.create(instance -> instance.group(
-                Codec.STRING.optionalFieldOf("point_of_origin", SGConfig.DEFAULTS.pointOfOrigin)
-                        .forGetter(GatesSection::pointOfOrigin),
                 Codec.intRange(0, SGConfig.MAX_CHUNK_LOADING_RANGE)
                         .optionalFieldOf("chunk_loading_range", SGConfig.DEFAULTS.chunkLoadingRange())
                         .forGetter(GatesSection::chunkLoadingRange),
@@ -266,8 +266,8 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         ).apply(instance, GatesSection::new));
 
         static GatesSection of(final SGConfig config) {
-            return new GatesSection(config.pointOfOrigin, config.chunkLoadingRange(),
-                    config.kawooshBreaksUnbreakable(), config.ownersBreakGates(), config.generatedGatesBreakable(),
+            return new GatesSection(config.chunkLoadingRange(), config.kawooshBreaksUnbreakable(),
+                    config.ownersBreakGates(), config.generatedGatesBreakable(),
                     config.logStargateEvents(), config.gateDefaults());
         }
     }
@@ -413,11 +413,6 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         return this.options.generatedGatesBreakable();
     }
 
-    /** @return the symbol every address ends with, if addresses have one; a setting that names none has none */
-    public Optional<Symbol> originSymbol() {
-        return this.pointOfOrigin.length() == 1 ? Symbol.of(this.pointOfOrigin.charAt(0)) : Optional.empty();
-    }
-
     /** @return whether a kawoosh clears blocks that can't be broken */
     public boolean kawooshBreaksUnbreakable() {
         return this.options.kawooshBreaksUnbreakable();
@@ -458,7 +453,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         return new SGConfig(this.energyPerNaquadah, this.dialCosts, this.distanceFactorMultiplier, interWorld,
                 this.freeInCreative, this.fePerGeIn, this.fePerGeOut, this.converterRate, this.bridgeRates,
                 this.toolRange, this.supergateEnergyMultiplier,
-                this.pointOfOrigin, this.structureGates, this.villageGates, this.powerUnitCapacity, this.naquadahOre,
+                this.addresses, this.structureGates, this.villageGates, this.powerUnitCapacity, this.naquadahOre,
                 this.remoteView, this.malp, this.options.withOtherGroupMultiplier(otherGroup));
     }
 
@@ -471,7 +466,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
     public SGConfig withFeRates(final double fePerGeIn, final double fePerGeOut, final double converterRate) {
         return new SGConfig(this.energyPerNaquadah, this.dialCosts, this.distanceFactorMultiplier,
                 this.interWorldMultiplier, this.freeInCreative, fePerGeIn, fePerGeOut, converterRate,
-                this.bridgeRates, this.toolRange, this.supergateEnergyMultiplier, this.pointOfOrigin,
+                this.bridgeRates, this.toolRange, this.supergateEnergyMultiplier, this.addresses,
                 this.structureGates, this.villageGates, this.powerUnitCapacity, this.naquadahOre, this.remoteView,
                 this.malp, this.options);
     }
@@ -493,7 +488,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         return new SGConfig(this.energyPerNaquadah, costs, this.distanceFactorMultiplier,
                 this.interWorldMultiplier, this.freeInCreative, this.fePerGeIn, this.fePerGeOut, this.converterRate,
                 this.bridgeRates,
-                this.toolRange, this.supergateEnergyMultiplier, this.pointOfOrigin, this.structureGates,
+                this.toolRange, this.supergateEnergyMultiplier, this.addresses, this.structureGates,
                 this.villageGates, this.powerUnitCapacity, this.naquadahOre, this.remoteView, this.malp,
                 this.options);
     }
@@ -503,7 +498,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         return new SGConfig(this.energyPerNaquadah, this.dialCosts, this.distanceFactorMultiplier,
                 this.interWorldMultiplier, this.freeInCreative, this.fePerGeIn, this.fePerGeOut, this.converterRate,
                 this.bridgeRates,
-                this.toolRange, this.supergateEnergyMultiplier, this.pointOfOrigin, this.structureGates,
+                this.toolRange, this.supergateEnergyMultiplier, this.addresses, this.structureGates,
                 this.villageGates, this.powerUnitCapacity, this.naquadahOre, this.remoteView, this.malp, options);
     }
 
@@ -512,7 +507,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         return new SGConfig(this.energyPerNaquadah, this.dialCosts, this.distanceFactorMultiplier,
                 this.interWorldMultiplier, this.freeInCreative, this.fePerGeIn, this.fePerGeOut, this.converterRate,
                 this.bridgeRates,
-                this.toolRange, this.supergateEnergyMultiplier, this.pointOfOrigin, this.structureGates,
+                this.toolRange, this.supergateEnergyMultiplier, this.addresses, this.structureGates,
                 this.villageGates, this.powerUnitCapacity, this.naquadahOre, this.remoteView, malp, this.options);
     }
 
@@ -702,8 +697,53 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         return SGConfig.save(Codec.DOUBLE, drain, "malp", "tablet_drain");
     }
 
+    /**
+     * Writes how many chunks wide and long each addressed cell is to the settings file, for every world or for one,
+     * leaving the rest of the file as it is. It takes effect when the server next starts.
+     *
+     * @return whether the file was written
+     */
+    public static boolean saveCellChunks(final Optional<Identifier> world, final int chunks) {
+        return SGConfig.save(Codec.INT, chunks, SGConfig.addressPath(world, "cell_chunks"));
+    }
+
+    /**
+     * Writes the point of origin to the settings file, for every world or for one, leaving the rest of the file as it
+     * is. It takes effect when the server next starts.
+     *
+     * @return whether the file was written
+     */
+    public static boolean savePointOfOrigin(final Optional<Identifier> world, final String origin) {
+        return SGConfig.save(Codec.STRING, origin, SGConfig.addressPath(world, "point_of_origin"));
+    }
+
+    /**
+     * Removes a world's own address layout from the settings file, so it takes the server's when the server next
+     * starts, leaving the rest of the file as it is.
+     *
+     * @return whether the file was written
+     */
+    public static boolean clearWorldLayout(final Identifier world) {
+        return SGConfig.write(null, "addresses", "worlds", world.toString());
+    }
+
+    private static String[] addressPath(final Optional<Identifier> world, final String key) {
+        return world.map(id -> new String[] {"addresses", "worlds", id.toString(), key})
+                .orElseGet(() -> new String[] {"addresses", key});
+    }
+
     // Writes one setting at its place in the file's sections, leaving the rest of the file as it is
     private static <T> boolean save(final Codec<T> codec, final T value, final String... path) {
+        try {
+            return SGConfig.write(codec.encodeStart(JsonOps.INSTANCE, value).getOrThrow(), path);
+        } catch (final RuntimeException e) {
+            SGCraft.LOG.error("Couldn't write {}", String.join(".", path), e);
+            return false;
+        }
+    }
+
+    // Puts a value at its place in the file's sections, or removes what is there when the value is null
+    private static boolean write(final JsonElement value, final String... path) {
         final Path file = Platform.get().configDir().resolve(SGConfig.FILE);
         try {
             final JsonObject json = Files.exists(file) && JsonParser.parseString(Files.readString(file))
@@ -714,7 +754,11 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
                 into.add(path[part], section);
                 into = section;
             }
-            into.add(path[path.length - 1], codec.encodeStart(JsonOps.INSTANCE, value).getOrThrow());
+            if (value == null) {
+                into.remove(path[path.length - 1]);
+            } else {
+                into.add(path[path.length - 1], value);
+            }
             Files.createDirectories(file.getParent());
             Files.writeString(file, SGConfig.GSON.toJson(json));
             return true;

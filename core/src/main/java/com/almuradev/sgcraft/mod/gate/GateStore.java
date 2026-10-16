@@ -29,6 +29,7 @@ import com.almuradev.sgcraft.api.SGCraftRegistries;
 import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.mod.SGCraft;
+import com.almuradev.sgcraft.mod.address.AddressLayout;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -52,7 +53,8 @@ import java.util.UUID;
 
 /**
  * Every formed gate on the server, kept with the server's data so gates in unloaded chunks can still be found and
- * dialed, and the symbol each world was given within its group.
+ * dialed, the symbol each world was given within its group, and the address layout each world's addresses were made
+ * with.
  */
 public final class GateStore extends SavedData {
 
@@ -71,7 +73,10 @@ public final class GateStore extends SavedData {
                     .forGetter(store -> store.worldSymbols),
             CompoundTag.CODEC.listOf().optionalFieldOf("connections", List.of())
                     .forGetter(store -> List.copyOf(store.connections.values())),
-            Codec.STRING.optionalFieldOf("point_of_origin").forGetter(store -> store.pointOfOrigin)
+            Codec.STRING.optionalFieldOf("point_of_origin").forGetter(store -> store.legacyOrigin),
+            Codec.unboundedMap(ResourceKey.codec(Registries.DIMENSION), AddressLayout.CODEC)
+                    .optionalFieldOf("address_layouts", Map.of())
+                    .forGetter(store -> store.layouts)
     ).apply(instance, GateStore::new));
 
     public static final SavedDataType<GateStore> TYPE =
@@ -81,15 +86,20 @@ public final class GateStore extends SavedData {
     private final Map<ResourceKey<Level>, Symbol> worldSymbols = new LinkedHashMap<>();
     // Each connection under way, by its dialing gate, as the connection saves itself
     private final Map<GlobalPos, CompoundTag> connections = new LinkedHashMap<>();
-    // The point of origin addresses were made with, as the setting gave it, or empty before any was recorded
-    private Optional<String> pointOfOrigin = Optional.empty();
+    // The address layout each world's addresses were made with
+    private final Map<ResourceKey<Level>, AddressLayout> layouts = new LinkedHashMap<>();
+    // The point of origin every world's addresses were made with, as saved before layouts were kept by world; with
+    // cells one chunk across, as they then were
+    private Optional<String> legacyOrigin = Optional.empty();
 
     private GateStore() {
     }
 
     private GateStore(final List<GateRecord> gates, final Map<ResourceKey<Level>, Symbol> worldSymbols,
-            final List<CompoundTag> connections, final Optional<String> pointOfOrigin) {
-        this.pointOfOrigin = pointOfOrigin;
+            final List<CompoundTag> connections, final Optional<String> legacyOrigin,
+            final Map<ResourceKey<Level>, AddressLayout> layouts) {
+        this.legacyOrigin = legacyOrigin;
+        this.layouts.putAll(layouts);
         gates.forEach(gate -> this.gates.put(gate.position(), gate));
         this.worldSymbols.putAll(worldSymbols);
         connections.forEach(tag -> tag.read("dialer", GlobalPos.CODEC)
@@ -132,16 +142,33 @@ public final class GateStore extends SavedData {
         }
     }
 
-    /** @return the point of origin addresses were last made with, as the setting gave it, if one was recorded */
-    public Optional<String> pointOfOrigin() {
-        return this.pointOfOrigin;
+    /** @return the address layout a world's addresses were last made with, if one was recorded */
+    public Optional<AddressLayout> layout(final ResourceKey<Level> world) {
+        final AddressLayout layout = this.layouts.get(world);
+        if (layout != null) {
+            return Optional.of(layout);
+        }
+        return this.legacyOrigin.map(origin -> new AddressLayout(1, origin));
     }
 
-    public void setPointOfOrigin(final String pointOfOrigin) {
-        if (!this.pointOfOrigin.equals(Optional.of(pointOfOrigin))) {
-            this.pointOfOrigin = Optional.of(pointOfOrigin);
+    /** Records the address layout a world's addresses are made with. */
+    public void putLayout(final ResourceKey<Level> world, final AddressLayout layout) {
+        if (!layout.equals(this.layouts.put(world, layout))) {
             this.setDirty();
         }
+    }
+
+    /** Forgets the point of origin saved before layouts were kept by world, once every world has its own. */
+    public void dropLegacyOrigin() {
+        if (this.legacyOrigin.isPresent()) {
+            this.legacyOrigin = Optional.empty();
+            this.setDirty();
+        }
+    }
+
+    /** @return how many formed gates a world has */
+    public long gateCount(final ResourceKey<Level> world) {
+        return this.gates.keySet().stream().filter(position -> position.dimension().equals(world)).count();
     }
 
     /** @return the symbol each world has been given, in the order they were given */

@@ -179,6 +179,7 @@ public final class SGCommands {
                 .then(SGOptionCommands.logEvents())
                 .then(SGOreCommands.ore())
                 .then(SGDefaultAddressCommands.defaultAddresses())
+                .then(SGAddressCommands.addresses())
                 .then(SGMalpCommands.malp())
                 .then(SGMalpCommands.battery())
                 .then(SGShieldCommands.shields())

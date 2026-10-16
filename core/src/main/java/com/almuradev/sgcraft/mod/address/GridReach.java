@@ -195,8 +195,11 @@ public final class GridReach implements AddressReach {
                 .findFirst();
     }
 
-    // The cell's column and row on the grid, scrambled, written in base 36 with the most significant symbol first
-    private static Optional<List<Symbol>> encode(final ChunkPos chunk, final AddressPartition partition,
+    /**
+     * @return the position symbols of the cell holding a chunk: the cell's column and row on the grid, scrambled,
+     *     written in base 36 with the most significant symbol first; empty if the cell is off the grid
+     */
+    public static Optional<List<Symbol>> encode(final ChunkPos chunk, final AddressPartition partition,
             final int positions) {
         final long side = GridReach.side(positions);
         final long column = Math.floorDiv(chunk.x(), partition.cellChunks()) + side / 2;
@@ -217,7 +220,8 @@ public final class GridReach implements AddressReach {
         return Optional.of(List.of(symbols));
     }
 
-    private static Optional<ChunkPos> decode(final List<Symbol> symbols, final AddressPartition partition) {
+    /** @return the chunk with the lowest x and z of the cell some position symbols name, if they name one */
+    public static Optional<ChunkPos> decode(final List<Symbol> symbols, final AddressPartition partition) {
         final int positions = symbols.size();
         final BigInteger base = BigInteger.valueOf(GridReach.BASE);
         BigInteger code = BigInteger.ZERO;

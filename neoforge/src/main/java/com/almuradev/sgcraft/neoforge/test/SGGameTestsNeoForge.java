@@ -258,6 +258,10 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("horizon_lies_in_flat_opening", SGGameTestsNeoForge::flatHorizon);
         SGGameTestsNeoForge.TESTS.put("kawoosh_can_break_unbreakable", SGGameTestsNeoForge::kawooshBreaksUnbreakable);
         SGGameTestsNeoForge.TESTS.put("tokra_worlds_set_off_have_none", SGSettingGameTestsNeoForge::tokraWorlds);
+        SGGameTestsNeoForge.TESTS.put("address_settings_by_world", SGSettingGameTestsNeoForge::addressSettings);
+        SGGameTestsNeoForge.TESTS.put("cell_size_groups_chunks", SGSettingGameTestsNeoForge::cellSize);
+        SGGameTestsNeoForge.TESTS.put("layout_change_warns_with_gates",
+                SGSettingGameTestsNeoForge::layoutChangeWarning);
         SGGameTestsNeoForge.TESTS.put("gate_defaults_fill_missing_values", SGAccessGameTestsNeoForge::gateDefaults);
         SGGameTestsNeoForge.TESTS.put("gate_defaults_reach_new_gates", SGAccessGameTestsNeoForge::formationDefaults);
         SGGameTestsNeoForge.TESTS.put("builder_owns_gate", SGAccessGameTestsNeoForge::builderOwns);
