@@ -1,0 +1,109 @@
+# Addresses
+
+Every gate has an address: the symbols you dial to reach it. An address has 7, 8 or 9 symbols, and the longer forms reach gates in other worlds.
+
+## Symbols
+
+There are 37 symbols: the letters `A` to `Z`, the digits `0` to `9`, and `@`, the point of origin (Giza). Gates and DHDs draw them as glyphs. Each gate type has its own:
+
+| Type | Glyphs |
+| --- | --- |
+| Milky Way | {{glyphs:ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@}} |
+| Pegasus | {{glyphs-pegasus:ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789}} |
+| Universe | {{glyphs-universe:ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789}} |
+
+The Pegasus gate has no `@` glyph of its own, so it borrows the Milky Way one.
+
+An address is written in groups: 4 symbols, a dash, 3 symbols, then a dash before any symbols after the seventh. For example `XOBF-R3@` or `XOBF-R3A-@@`. When you type an address, case, dashes and spaces don't matter: `xobf r3a@` is the same as `XOBF-R3A-@`.
+
+## Address lengths
+
+| Symbols | Made of | Reaches |
+| --- | --- | --- |
+| 7 | 6 position symbols, `@` | A gate in the dialing gate's own world |
+| 8 | 6 position symbols, the world's symbol, `@` | A gate in any world of the dialing gate's group, its own world included |
+| 9 | 6 position symbols, the world's symbol, the group's symbol, `@` | A gate in any world of any group |
+
+For a gate whose position symbols are `XOBFR3`, in the world with symbol `A`:
+
+| Form | Address | Dials from |
+| --- | --- | --- |
+| 7 symbols | {{glyphs:XOBF-R3@}} `XOBF-R3@` | World `A` only |
+| 8 symbols | {{glyphs:XOBF-R3A-@}} `XOBF-R3A-@` | Any world in the default group |
+| 9 symbols | {{glyphs:XOBF-R3A-@@}} `XOBF-R3A-@@` | Any world |
+
+The same 7 symbols reach a different gate from another world. The 8 and 9 symbol forms name their world, so they reach the same gate from anywhere they work, including the gate's own world.
+
+To see a gate's address, right-click its base or any of its ring blocks, or look at it and run `/sgcraft address`. The command shows the address from this world and from other worlds.
+
+## Why a gate can't dial a longer address
+
+A gate locks one chevron for each symbol, so it can't dial an address with more symbols than it has chevrons. A gate forms with 7 chevrons, so it reaches only its own world. It fails a longer address with "This gate doesn't have enough chevrons for that address".
+
+Add a [chevron upgrade](building-gates.md#chevrons-and-upgrades) for each extra symbol: 8 chevrons to reach other worlds of the group, 9 to reach other groups.
+
+## Point of origin
+
+Every address ends with the point of origin, `@`, which the top chevron locks last. The server setting `point_of_origin` sets it. An address that doesn't end with it reaches no gate.
+
+### Server admins
+
+- `point_of_origin` is `"@"` by default. Set it to `""` for addresses without one: the seventh symbol then becomes a position symbol, and the grid is 6 times as wide each way.
+- Changing the point of origin changes every address. The server log warns about it, listing each world whose addresses changed.
+
+## Cells and the grid
+
+Each world is divided into cells, 1 chunk across. A gate's address is the address of the cell holding its base.
+
+- The 6 position symbols give 36 to the power 6 codes, a grid 46,656 cells square, centered on x 0, z 0. That covers about 373,248 blocks out from the center in each direction.
+- A gate beyond the grid has no address.
+- The codes are scrambled, so gates near each other don't get addresses that look alike.
+- `@` is never a position symbol.
+- Two gates in one chunk share an address, and a dial reaches only one of them. Build one gate per chunk.
+
+## World symbols and groups
+
+Worlds are sorted into groups. SGCraft has one group, `default`, whose symbol is `@`. That is why a 9 symbol address in the default group ends in `@@`.
+
+Each world gets a symbol within its group, `A`, `B`, `C` and so on, in the order the server first sees the worlds. A world's symbol never changes once given. The server log records each one, as "World ... has the symbol ...".
+
+## Address books
+
+You keep addresses in address books.
+
+| Book | Where it lives | How to use it |
+| --- | --- | --- |
+| Your own book | The server's data, so it lasts whether you are online or not | `/sgcraft book`, `/sgcraft book add <name> <address>`, `/sgcraft book remove <address>` |
+| A PDD's book | On the PDD item, so it travels with it | The PDD screen |
+| A gate control tablet's book | On the tablet item | The tablet screen |
+
+Names are up to 48 characters. See [Tools](tools.md) for the PDD and tablet screens.
+
+A book keeps each address in its lasting form: the shortest form that names its world, so it dials from any world. When you dial an entry with a tool, the tool sends the shortest address that reaches the same gate from the dialing gate's world. A 7 chevron gate can dial an entry for a gate in its own world this way. An address you type is dialed as you typed it.
+
+### Hidden addresses
+
+When a gate's `address_visible` property is off (**Address shown** in the configurator), its base screen shows "... Gate Address Hidden ..." and the PDD shows "address hidden". The gate can still be dialed by anyone who knows the address.
+
+### Default addresses
+
+Every new PDD and gate control tablet starts with the server's default addresses. It takes them the first time it is used. After that its addresses are its holder's, and emptying it leaves it empty.
+
+A locked default address stays on the item: its holder can move it in the list, but can't rename or remove it.
+
+#### Server admins
+
+The list lives in `config/sgcraft-default-addresses.json`, a list of entries:
+
+```json
+[
+  { "address": "XOBF-R3A-@", "name": "Home base", "locked": true }
+]
+```
+
+`locked` is optional and `false` by default. Operators can change the list in game:
+
+- `/sgcraft default_addresses` lists it.
+- `/sgcraft default_addresses add <name> <address>`
+- `/sgcraft default_addresses remove <address>`
+- `/sgcraft default_addresses lock <address>` and `unlock <address>`
