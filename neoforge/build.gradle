@@ -26,6 +26,14 @@ neoForge {
             // Specify the modid for data generation, where to output the resulting resource, and where to look for existing resources.
             programArguments.addAll '--mod', project.mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
         }
+        // Saves every item's icon as the game draws it, for the wiki: "./gradlew :neoforge:runIconExport". It needs GUI
+        // scale 4, so its window is large enough for that
+        iconExport {
+            client()
+            gameDirectory = this.mkdir(this.file('runs/icons'))
+            systemProperty('sgcraft.exportIcons', rootProject.file('build/icons').absolutePath)
+            programArguments.addAll '--width', '1600', '--height', '1200'
+        }
         gameTestServer {
             type = 'gameTestServer'
             gameDirectory = this.mkdir(this.file('runs/gametest'))

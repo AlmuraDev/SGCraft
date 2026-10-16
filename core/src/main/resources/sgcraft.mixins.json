@@ -20,10 +20,12 @@
     "client": [
         "client.AvatarRendererMixin",
         "client.GameRendererMixin",
+        "client.MinecraftMixin",
         "client.PlayerModelMixin",
         "client.RenderTypeInvoker",
         "client.ScreenshotMixin",
-        "client.SoundEngineMixin"
+        "client.SoundEngineMixin",
+        "client.TitleScreenMixin"
     ],
     "injectors": {
         "defaultRequire": 1
