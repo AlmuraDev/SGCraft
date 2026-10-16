@@ -9,11 +9,9 @@
           "name": "sgcraft:supergate_ring"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "sgcraft:blocks/supergate_ring"

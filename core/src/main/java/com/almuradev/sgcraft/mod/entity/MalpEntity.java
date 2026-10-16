@@ -503,10 +503,8 @@ public final class MalpEntity extends VehicleEntity implements RemoteViewSource 
     protected void destroy(final ServerLevel level, final DamageSource source) {
         this.kill(level);
         if (level.getGameRules().get(GameRules.ENTITY_DROPS)) {
-            final ItemStack malp = new ItemStack(SGItems.MALP);
-            malp.set(DataComponents.CUSTOM_NAME, this.getCustomName());
-            MalpItem.keepOwnerAndOptions(malp, this);
-            this.spawnAtLocation(level, malp);
+            // Its battery drops on its own, beside the MALP, which stays paired with its console
+            this.spawnAtLocation(level, MalpItem.withoutBattery(this));
             if (!this.battery().isEmpty()) {
                 this.spawnAtLocation(level, this.battery().copy());
                 this.setBattery(ItemStack.EMPTY);

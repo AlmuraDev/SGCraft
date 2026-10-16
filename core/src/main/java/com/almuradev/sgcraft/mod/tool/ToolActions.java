@@ -43,6 +43,7 @@ import com.almuradev.sgcraft.api.gate.Iris;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGGateAccess;
 import com.almuradev.sgcraft.mod.addressbook.DefaultAddresses;
 import com.almuradev.sgcraft.mod.addressbook.ItemAddressBook;
 import com.almuradev.sgcraft.mod.block.entity.PowerUnitBlockEntity;
@@ -191,7 +192,8 @@ public final class ToolActions {
         final Optional<AddressBook> book = ToolActions.pddBook(player);
         // Each address as the gate it would be dialed from sees it, or as the holder's world does
         final ResourceKey<Level> from = gate.map(g -> g.position().dimension()).orElse(player.level().dimension());
-        final List<BookEntry> entries = book.map(b -> ToolActions.entries(b, from)).orElse(List.of());
+        final Optional<GlobalPos> dialer = gate.map(Stargate::position);
+        final List<BookEntry> entries = book.map(b -> ToolActions.entries(b, from, dialer)).orElse(List.of());
         SGNetwork.send(player, new PddState(open, gate.map(g -> ToolActions.info(player, g)), entries,
                 book.isPresent(), book.isPresent() || !message.isEmpty() ? message : "You aren't holding a PDD"));
     }
@@ -267,11 +269,17 @@ public final class ToolActions {
         ToolActions.sendPdd(player, false, message);
     }
 
-    // A book's entries, each with what the gate its address reaches from a world is doing
-    private static List<BookEntry> entries(final AddressBook book, final ResourceKey<Level> from) {
+    // A book's entries, each with what the gate its address reaches from a world is doing, and whether that is the
+    // gate dialing, matched by place so an address in any of its forms counts
+    private static List<BookEntry> entries(final AddressBook book, final ResourceKey<Level> from,
+            final Optional<GlobalPos> dialer) {
         final List<BookEntry> entries = new ArrayList<>();
-        book.forEach(entry -> entries.add(new BookEntry(entry.name().getString(), entry.address().toString(),
-                ToolActions.status(entry.address(), from))));
+        book.forEach(entry -> {
+            final Optional<Stargate> target = SGCraftApi.get().stargates().byAddress(entry.address(), from);
+            final boolean own = dialer.isPresent() && target.map(Stargate::position).equals(dialer);
+            entries.add(new BookEntry(entry.name().getString(), entry.address().toString(),
+                    ToolActions.status(target), own));
+        });
         return entries;
     }
 
@@ -334,8 +342,10 @@ public final class ToolActions {
         // The addresses as the chosen gate sees them, or as the holder's world does
         final ResourceKey<Level> from = selected < 0 ? player.level().dimension()
                 : listed.get(selected).position().dimension();
-        final List<BookEntry> entries = tablet.map(stack -> ToolActions.entries(ItemAddressBook.of(stack), from))
-                .orElse(List.of());
+        final Optional<GlobalPos> dialer = selected < 0 ? Optional.empty()
+                : Optional.of(listed.get(selected).position());
+        final List<BookEntry> entries = tablet.map(stack -> ToolActions.entries(ItemAddressBook.of(stack), from,
+                dialer)).orElse(List.of());
         final Optional<GateInfo> near = GateTargeting.find(player, ToolActions.range())
                 .map(gate -> ToolActions.info(player, gate));
         SGNetwork.send(player, new TabletState(open, gates, selected, entries, near, tablet.isPresent(),
@@ -613,7 +623,13 @@ public final class ToolActions {
                 values, players, message,
                 1 / SGCraftApi.get().energy().rate(PowerUnitBlockEntity.FORGE_ENERGY),
                 GateOrientation.of(gate.orientation()).getSerializedName(), owner,
-                gate.access().mayManage(ToolActions.cause(player))));
+                gate.access().mayManage(ToolActions.cause(player)), ToolActions.fitsFreely(player)));
+    }
+
+    // Operators and players in creative mode change a gate's type, chevrons and iris with the configurator; anyone
+    // else fits upgrade items, as in 1.12
+    private static boolean fitsFreely(final ServerPlayer player) {
+        return player.isCreative() || SGGateAccess.isOperator(player);
     }
 
     // A player's name when last seen, or their UUID if they never were
@@ -701,6 +717,9 @@ public final class ToolActions {
             return;
         }
         final List<String> problems = new ArrayList<>();
+        final boolean free = ToolActions.fitsFreely(player);
+        // Set when a change only upgrade items may make was asked for, and refused
+        boolean upgradesOnly = false;
         if (!apply.gateType().isEmpty()) {
             final Identifier id = Identifier.tryParse(apply.gateType());
             final Optional<Holder.Reference<GateType>> type = id == null ? Optional.empty() : player.level().getServer()
@@ -708,11 +727,19 @@ public final class ToolActions {
             if (type.isEmpty()) {
                 problems.add("There is no gate type " + apply.gateType());
             } else if (!gate.type().equals(type.get())) {
-                ToolActions.problem(problems, "type", gate.setType(type.get(), cause));
+                if (free) {
+                    ToolActions.problem(problems, "type", gate.setType(type.get(), cause));
+                } else {
+                    upgradesOnly = true;
+                }
             }
         }
         if (apply.chevrons() > 0 && apply.chevrons() != gate.chevrons()) {
-            ToolActions.problem(problems, "chevrons", gate.setChevrons(apply.chevrons(), cause));
+            if (free) {
+                ToolActions.problem(problems, "chevrons", gate.setChevrons(apply.chevrons(), cause));
+            } else {
+                upgradesOnly = true;
+            }
         }
         if (!apply.orientation().isEmpty()) {
             ToolActions.turn(gate, apply.orientation(), cause, problems);
@@ -726,7 +753,15 @@ public final class ToolActions {
                 problems.add("There is no property " + change.id());
                 continue;
             }
+            if (property == GateProperties.IRIS && !free) {
+                upgradesOnly = true;
+                continue;
+            }
             ToolActions.change(player, gate, property, change, cause, problems);
+        }
+        if (upgradesOnly) {
+            problems.add("Use a gate upgrade, a chevron upgrade or an iris upgrade to change the gate's type, "
+                    + "chevrons or iris");
         }
         if (!apply.addPlayer().isBlank()) {
             ToolActions.addPlayer(player, gate, apply.addPlayer().strip(), cause, problems);
@@ -754,7 +789,8 @@ public final class ToolActions {
     private static <T> void change(final ServerPlayer player, final Stargate gate, final GateProperty<T> property,
             final Change change, final Cause cause, final List<String> problems) {
         final Optional<T> before = gate.get(property);
-        // An iris the gate came with as it formed gives no upgrade back
+        // Only an iris fitted with an iris upgrade gives one back: not one the gate came with, nor one set without
+        // the item
         final boolean included = gate instanceof final SGStargate built && built.irisIncluded();
         if (change.json().isEmpty()) {
             final ActionResult result = gate.remove(property, cause);
@@ -786,7 +822,7 @@ public final class ToolActions {
         }
     }
 
-    // An iris taken off with the configurator comes back as an iris upgrade
+    // An iris fitted with an iris upgrade, taken off with the configurator, comes back as the upgrade
     private static void irisChanged(final ServerPlayer player, final GateProperty<?> property, final Optional<?> before,
             final Optional<?> after) {
         if (property == GateProperties.IRIS && before.isPresent() && after.isEmpty() && !player.isCreative()) {

@@ -54,6 +54,8 @@ import com.almuradev.sgcraft.mod.energy.SGGateEnergy;
 import com.almuradev.sgcraft.mod.event.SGEventBus;
 import com.almuradev.sgcraft.mod.event.SGEvents;
 import com.almuradev.sgcraft.mod.gate.GateStore.GateRecord;
+import com.almuradev.sgcraft.mod.item.GateTypeUpgradeItem;
+import com.almuradev.sgcraft.mod.item.SGItems;
 import com.almuradev.sgcraft.mod.sound.SGSounds;
 import net.minecraft.core.Direction;
 import net.minecraft.core.FrontAndTop;
@@ -68,6 +70,8 @@ import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -306,7 +310,11 @@ public final class SGStargate implements Stargate {
         return ActionResult.DONE;
     }
 
-    /** @return whether the gate's iris came with it as it formed, so taking it off gives no iris upgrade back */
+    /**
+     * @return whether the gate's iris was set without an iris upgrade: it came with the gate as it formed, or a
+     *     command, an operator or a player in creative mode set it. Taking such an iris off, or breaking the base,
+     *     gives no iris upgrade back.
+     */
     public boolean irisIncluded() {
         return this.saved().getBooleanOr(SGStargate.IRIS_INCLUDED, false);
     }
@@ -533,11 +541,12 @@ public final class SGStargate implements Stargate {
         if (property == GateProperties.IRIS) {
             if (wanted.isPresent() && old.isEmpty()) {
                 this.iris.fitted();
+                // Only an iris fitted with an iris upgrade gives the upgrade back; one set any other way is included
+                this.includeIris(!SGStargate.fittedWith(cause, SGItems.IRIS_UPGRADE));
             } else if (wanted.isEmpty()) {
                 this.iris.removed();
+                this.includeIris(false);
             }
-            // Fitted or taken off since, it no longer counts as the one the gate came with
-            this.includeIris(false);
         }
         // What the base shows may depend on it
         this.sync();
@@ -576,7 +585,12 @@ public final class SGStargate implements Stargate {
             return ActionResult.DENIED;
         }
         this.stargates.store().put(record.get().withType(type));
-        this.withBase(base -> base.setGateType(type));
+        final boolean upgraded = cause.first(ItemStack.class)
+                .filter(stack -> stack.getItem() instanceof GateTypeUpgradeItem).isPresent();
+        this.withBase(base -> {
+            base.setGateType(type);
+            base.setTypeFitted(upgraded);
+        });
         return ActionResult.DONE;
     }
 
@@ -593,8 +607,21 @@ public final class SGStargate implements Stargate {
             return ActionResult.DENIED;
         }
         this.stargates.store().put(record.get().withChevrons(chevrons));
-        this.withBase(base -> base.setChevrons(chevrons));
+        // Only chevrons fitted with chevron upgrades give upgrades back as the base breaks; any others are included
+        final boolean upgraded = SGStargate.fittedWith(cause, SGItems.CHEVRON_UPGRADE);
+        this.withBase(base -> {
+            if (upgraded) {
+                base.setChevrons(chevrons);
+            } else {
+                base.giveChevrons(chevrons);
+            }
+        });
         return ActionResult.DONE;
+    }
+
+    // Whether an upgrade item made a change, as the upgrade items name themselves in their causes
+    private static boolean fittedWith(final Cause cause, final Item item) {
+        return cause.first(ItemStack.class).filter(stack -> stack.is(item)).isPresent();
     }
 
     // A gate lying flat turns over where it lies, its ring on the same blocks; one standing can't turn

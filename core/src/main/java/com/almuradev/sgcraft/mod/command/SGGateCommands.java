@@ -478,13 +478,14 @@ final class SGGateCommands {
                 .orElse(player.toString());
     }
 
-    // rights <player> <use,iris,configure | none | reset>; rights default <...>. Anyone may look; only the gate's
-    // owner or an operator changes them, which the gate checks
+    // rights <player> <use,iris,configure | none | reset>; rights default <...>. The rights are the rest of the line,
+    // as a single word can't hold commas. Anyone may look; only the gate's owner or an operator changes them, which
+    // the gate checks
     private static ArgumentBuilder<CommandSourceStack, ?> rights(final GateFinder finder) {
         return Commands.literal("rights")
                 .executes(context -> SGGateCommands.showRights(context.getSource(), finder.find(context)))
                 .then(Commands.literal("default")
-                        .then(Commands.argument("rights", StringArgumentType.word())
+                        .then(Commands.argument("rights", StringArgumentType.greedyString())
                                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                                         new String[] {"use,iris,configure", "use,iris", "use", "none"}, builder))
                                 .executes(context -> {
@@ -498,7 +499,7 @@ final class SGGateCommands {
                 .then(Commands.argument("player", StringArgumentType.word())
                         .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                                 context.getSource().getOnlinePlayerNames(), builder))
-                        .then(Commands.argument("rights", StringArgumentType.word())
+                        .then(Commands.argument("rights", StringArgumentType.greedyString())
                                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                                         new String[] {"use,iris,configure", "use,iris", "use", "none", "reset"},
                                         builder))

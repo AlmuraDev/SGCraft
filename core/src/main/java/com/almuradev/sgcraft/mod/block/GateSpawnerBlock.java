@@ -77,9 +77,9 @@ import java.util.Optional;
 /**
  * Builds a finished gate in its place, as the original's gate spawner does: the base goes where the block was placed,
  * facing the player as a base they placed would, and the ring rises from it. A supergate's spawner builds one of the
- * original's default size. Meant for testing, so it is only in the creative tab and has no recipe;
+ * original's default size. A creative build tool, so it is only in the creative tab and has no recipe;
  * {@code /sgcraft place} does the same with a choice of size. Picking a block of a finished gate gives its spawner.
- * A server whose settings turn gate spawners off doesn't let players place them.
+ * Spawners always build: no server setting turns them off.
  *
  * <p>Structures hold spawners too, which build their gates once the world runs, facing as the structure turned them;
  * their block entity says how. See {@link GateSpawnerBlockEntity}.</p>

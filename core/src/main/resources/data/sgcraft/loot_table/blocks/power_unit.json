@@ -7,22 +7,18 @@
         {
           "type": "minecraft:item",
           "name": "sgcraft:power_unit",
-          "functions": [
-            {
-              "function": "minecraft:copy_components",
-              "source": "block_entity",
-              "include": [
-                "sgcraft:energy"
-              ]
-            }
-          ]
+          "modifier": {
+            "type": "minecraft:copy_components",
+            "source": "block_entity",
+            "include": [
+              "sgcraft:energy"
+            ]
+          }
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "sgcraft:blocks/power_unit"

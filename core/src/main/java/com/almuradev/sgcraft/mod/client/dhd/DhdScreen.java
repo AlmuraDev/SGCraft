@@ -62,9 +62,10 @@ import java.util.Optional;
  *
  * <p>Symbols pressed light up, and a right click takes back the last. The keyboard works too: a letter, digit or
  * {@code @} presses its symbol, whatever the case, Backspace takes one back and Enter presses the dome. A key with no
- * symbol shows in red. The dome then dials them, and the gate opens at
- * once, as on the show. While the gate is active the buttons show the address it dialed, and the dome shuts it
- * down. A button pressed sinks into the face for a moment.</p>
+ * symbol shows in red. The dome then dials them: the gate turns its ring for each symbol, as the original's did, or
+ * locks every chevron at once when its {@code chevrons_lock_on_dial} property is on. While the gate is active the
+ * buttons show the address it dialed, and the dome shuts it down. A button pressed sinks into the face for a
+ * moment.</p>
  */
 public final class DhdScreen extends Screen {
 

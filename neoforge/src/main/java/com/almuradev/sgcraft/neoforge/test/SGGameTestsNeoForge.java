@@ -121,6 +121,7 @@ import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.entity.npc.villager.VillagerProfession;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.MerchantOffers;
@@ -845,7 +846,8 @@ public final class SGGameTestsNeoForge {
     private static void configuratorApply(final GameTestHelper helper, final BlockPos origin) {
         final Stargate gate = SGGameTestsNeoForge.place(helper, origin.offset(SGGameTestsNeoForge.A), 9);
         final ServerPlayer player = SGGameTestsNeoForge.playerAt(helper, gate);
-        // Only the owner, or a player they let, changes a gate's settings
+        // Only the owner, or a player they let, changes a gate's settings. The mock player is in creative mode, so
+        // changes the type, chevrons and iris too, without upgrade items
         gate.setOwner(Optional.of(player.getUUID()), SGGameTestsNeoForge.server(helper));
         ToolActions.configurator(player, new ToolPayloads.ConfiguratorApply(
                 gate.position().dimension().identifier().toString(),
@@ -1505,23 +1507,54 @@ public final class SGGameTestsNeoForge {
         helper.succeed();
     }
 
-    // A broken base gives back its upgrades: two chevron upgrades on a nine chevron gate, and its iris
+    // A broken base gives back the upgrades fitted with items: two chevron upgrades used on a seven chevron gate, and
+    // an iris upgrade. Chevrons and an iris set without the items, as commands and operators set them, give nothing
+    // back.
     private static void baseDropsUpgrades(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = origin.offset(SGGameTestsNeoForge.A);
         level.getChunk(at);
-        final Stargate gate = SGGameTestsNeoForge.place(helper, at, 9);
-        gate.set(GateProperties.IRIS, IrisTypes.METAL, SGGameTestsNeoForge.server(helper));
+        final Stargate gate = SGGameTestsNeoForge.place(helper, at, 7);
+        final ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.snapTo(Vec3.atCenterOf(at.north(3)), 180, 0);
+        gate.setOwner(Optional.of(player.getUUID()), SGGameTestsNeoForge.server(helper));
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(SGItems.CHEVRON_UPGRADE));
+        for (int use = 0; use < 2; use++) {
+            SGGameTestsNeoForge.useOnRing(player, level, at);
+        }
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(SGItems.IRIS_UPGRADE));
+        SGGameTestsNeoForge.useOnRing(player, level, at);
+        helper.assertTrue(gate.chevrons() == 9 && gate.iris().isPresent(), "The upgrades weren't fitted");
         final BlockPos base = gate.position().pos();
         level.destroyBlock(base, false);
-        final List<ItemEntity> drops = level.getEntitiesOfClass(ItemEntity.class, new AABB(base).inflate(2));
-        final int chevrons = drops.stream().filter(drop -> drop.getItem().is(SGItems.CHEVRON_UPGRADE))
-                .mapToInt(drop -> drop.getItem().getCount()).sum();
-        final int irises = drops.stream().filter(drop -> drop.getItem().is(SGItems.IRIS_UPGRADE))
-                .mapToInt(drop -> drop.getItem().getCount()).sum();
+        final int chevrons = SGGameTestsNeoForge.dropped(level, base, SGItems.CHEVRON_UPGRADE);
+        final int irises = SGGameTestsNeoForge.dropped(level, base, SGItems.IRIS_UPGRADE);
         helper.assertTrue(chevrons == 2 && irises == 1, "The base dropped " + chevrons + " chevron upgrades and "
                 + irises + " iris upgrades");
+        final BlockPos otherAt = origin.offset(SGGameTestsNeoForge.B);
+        level.getChunk(otherAt);
+        final Stargate given = SGGameTestsNeoForge.place(helper, otherAt, 7);
+        given.setChevrons(9, SGGameTestsNeoForge.server(helper));
+        given.set(GateProperties.IRIS, IrisTypes.METAL, SGGameTestsNeoForge.server(helper));
+        final BlockPos givenBase = given.position().pos();
+        level.destroyBlock(givenBase, false);
+        final int givenChevrons = SGGameTestsNeoForge.dropped(level, givenBase, SGItems.CHEVRON_UPGRADE);
+        final int givenIrises = SGGameTestsNeoForge.dropped(level, givenBase, SGItems.IRIS_UPGRADE);
+        helper.assertTrue(givenChevrons == 0 && givenIrises == 0, "A gate given its chevrons and iris dropped "
+                + givenChevrons + " chevron upgrades and " + givenIrises + " iris upgrades");
         helper.succeed();
+    }
+
+    // Uses the held item on the ring beside a gate's base, as a player would
+    private static void useOnRing(final ServerPlayer player, final ServerLevel level, final BlockPos base) {
+        player.gameMode.useItemOn(player, level, player.getMainHandItem(), InteractionHand.MAIN_HAND,
+                new BlockHitResult(Vec3.atCenterOf(base.east()), Direction.NORTH, base.east(), false));
+    }
+
+    // How many of an item lie dropped around a broken base
+    private static int dropped(final ServerLevel level, final BlockPos base, final Item item) {
+        return level.getEntitiesOfClass(ItemEntity.class, new AABB(base).inflate(2)).stream()
+                .filter(drop -> drop.getItem().is(item)).mapToInt(drop -> drop.getItem().getCount()).sum();
     }
 
     // A Pegasus upgrade used on a Milky Way gate turns it Pegasus and is used up; a second does nothing
@@ -1543,6 +1576,18 @@ public final class SGGameTestsNeoForge {
         }
         helper.assertTrue(gate.type().is(GateTypes.PEGASUS), "The gate is " + gate.type());
         helper.assertTrue(stack.getCount() == 1, "The upgrades left are " + stack.getCount() + ", not 1");
+        // The ring broken and built again forms the gate it was, Pegasus
+        final BlockState ring = level.getBlockState(at.east());
+        level.destroyBlock(at.east(), false);
+        level.setBlock(at.east(), ring.getBlock().defaultBlockState(), Block.UPDATE_ALL);
+        final Optional<Stargate> formed = SGCraftApi.get().stargates().at(gate.position());
+        helper.assertTrue(formed.isPresent(), "The gate didn't form again");
+        helper.assertTrue(formed.get().type().is(GateTypes.PEGASUS), "The gate formed again as "
+                + formed.get().type());
+        // The base gives the upgrade back
+        level.destroyBlock(gate.position().pos(), false);
+        final int upgrades = SGGameTestsNeoForge.dropped(level, gate.position().pos(), SGItems.PEGASUS_UPGRADE);
+        helper.assertTrue(upgrades == 1, "The base dropped " + upgrades + " Pegasus upgrades, not 1");
         helper.succeed();
     }
 

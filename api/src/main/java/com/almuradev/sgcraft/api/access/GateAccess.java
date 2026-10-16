@@ -71,6 +71,9 @@ public interface GateAccess {
     boolean allowsOutgoing(final Stargate to);
 
     /**
+     * Implementations may grant a right these sources don't, such as every right to a server operator who is
+     * online.
+     *
      * @param player a player's UUID
      * @param right a right
      * @return whether the player has the right on this gate: every right if they are the gate's

@@ -65,20 +65,23 @@ public final class ToolPayloads {
     /**
      * One entry of an address book, as text, with what the gate its address reaches is doing: one of
      * {@link #NO_GATE} or a gate state's name in lower case.
+     *
+     * @param own whether the address reaches the gate the screen dials from, which can't dial itself
      */
-    public record BookEntry(String name, String address, String status) {
+    public record BookEntry(String name, String address, String status, boolean own) {
 
         /** {@link #status()} for an address no gate answers to. */
         public static final String NO_GATE = "no_gate";
 
         public BookEntry(final FriendlyByteBuf buf) {
-            this(buf.readUtf(), buf.readUtf(), buf.readUtf());
+            this(buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readBoolean());
         }
 
         public void write(final FriendlyByteBuf buf) {
             buf.writeUtf(this.name);
             buf.writeUtf(this.address);
             buf.writeUtf(this.status);
+            buf.writeBoolean(this.own);
         }
     }
 
@@ -341,10 +344,12 @@ public final class ToolPayloads {
      * @param orientation whether the gate stands or lies flat, by its serialized name
      * @param owner the player the gate belongs to, if any
      * @param manage whether the player may change who has which rights, and whether others may break the gate
+     * @param fitFreely whether the player may change the gate's type, chevrons and iris here, as an operator or a
+     *     player in creative mode may; anyone else changes them with upgrade items
      */
     public record ConfiguratorState(boolean open, GateInfo gate, int chevrons, List<String> types,
             String world, List<String> typeNames, List<Property> properties, List<Named> players, String message,
-            double fePerEnergy, String orientation, Optional<Named> owner, boolean manage)
+            double fePerEnergy, String orientation, Optional<Named> owner, boolean manage, boolean fitFreely)
             implements SGPacket {
 
         public static final Type<ConfiguratorState> TYPE = new Type<>(SGCraft.id("configurator_state"));
@@ -355,7 +360,7 @@ public final class ToolPayloads {
                     SGPacket.readList(buf, FriendlyByteBuf::readUtf),
                     SGPacket.readList(buf, Property::new),
                     SGPacket.readList(buf, Named::new), buf.readUtf(), buf.readDouble(), buf.readUtf(),
-                    buf.readOptional(Named::new), buf.readBoolean());
+                    buf.readOptional(Named::new), buf.readBoolean(), buf.readBoolean());
         }
 
         @Override
@@ -373,6 +378,7 @@ public final class ToolPayloads {
             buf.writeUtf(this.orientation);
             buf.writeOptional(this.owner, (out, named) -> named.write(out));
             buf.writeBoolean(this.manage);
+            buf.writeBoolean(this.fitFreely);
         }
 
         @Override

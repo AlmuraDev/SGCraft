@@ -98,8 +98,8 @@ public final class GateFormation {
         if (frame.isEmpty()) {
             return false;
         }
-        // A supergate keeps the type it was given; a standard gate is its base's type
-        final ResourceKey<GateType> type = baseBlock.isSupergate() ? base.gateType() : baseBlock.gateType();
+        // A gate keeps the type its base holds: the base block's own, or the one an upgrade or setting gave it
+        final ResourceKey<GateType> type = base.gateType();
         final Optional<SGServer> server = SGServer.current();
         final boolean built = server.isPresent() && !server.get().stargates().isPlacing();
         if (built) {

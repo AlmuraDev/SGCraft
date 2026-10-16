@@ -63,6 +63,21 @@ public final class GateTypeUpgradeItem extends Item implements GateItem {
         this.type = type;
     }
 
+    /** @return the type this upgrade turns a gate into */
+    public ResourceKey<GateType> type() {
+        return this.type;
+    }
+
+    /** @return the upgrade that turns a gate into a type, if there is one */
+    public static Optional<GateTypeUpgradeItem> forType(final ResourceKey<GateType> type) {
+        for (final Item item : new Item[] {SGItems.PEGASUS_UPGRADE, SGItems.UNIVERSE_UPGRADE}) {
+            if (item instanceof final GateTypeUpgradeItem upgrade && upgrade.type.equals(type)) {
+                return Optional.of(upgrade);
+            }
+        }
+        return Optional.empty();
+    }
+
     @Override
     public InteractionResult useOn(final UseOnContext context) {
         if (!(context.getPlayer() instanceof final ServerPlayer player)) {

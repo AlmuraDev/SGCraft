@@ -226,15 +226,9 @@ public final class TabletScreen extends Screen {
                 ? Optional.of(this.state.gates().get(this.selected)) : Optional.empty();
     }
 
-    // The addresses, less the chosen gate's own: a gate cannot dial itself
+    // The addresses, less any that reach the chosen gate: a gate cannot dial itself
     private List<BookEntry> shown() {
-        final Optional<Address> own = this.chosen().flatMap(gate -> Address.parse(gate.address()));
-        if (own.isEmpty()) {
-            return this.state.entries();
-        }
-        return this.state.entries().stream()
-                .filter(entry -> !Address.parse(entry.address()).equals(own))
-                .toList();
+        return this.state.entries().stream().filter(entry -> !entry.own()).toList();
     }
 
     private void updateButtons() {

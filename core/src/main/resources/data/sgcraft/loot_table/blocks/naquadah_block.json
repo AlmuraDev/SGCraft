@@ -9,11 +9,9 @@
           "name": "sgcraft:naquadah_block"
         }
       ],
-      "conditions": [
-        {
-          "condition": "minecraft:survives_explosion"
-        }
-      ]
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      }
     }
   ],
   "random_sequence": "sgcraft:blocks/naquadah_block"

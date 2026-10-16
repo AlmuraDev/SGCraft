@@ -45,6 +45,7 @@ import com.almuradev.sgcraft.mod.gate.GateShape;
 import com.almuradev.sgcraft.mod.gate.IrisView;
 import com.almuradev.sgcraft.mod.gate.SGIris;
 import com.almuradev.sgcraft.mod.gate.SGStargate;
+import com.almuradev.sgcraft.mod.item.GateTypeUpgradeItem;
 import com.almuradev.sgcraft.mod.item.SGItems;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -98,10 +99,13 @@ public final class StargateBaseBlockEntity extends BlockEntity {
     private final Camouflage camouflage = new Camouflage();
     private ResourceKey<GateType> gateType;
     private int chevrons = StargateBaseBlockEntity.DEFAULT_CHEVRONS;
-    // How many chevrons the gate came with, which give no chevron upgrades back when the base breaks
+    // How many chevrons the gate has that weren't fitted with chevron upgrades, such as those it came with, which give
+    // no chevron upgrades back when the base breaks
     private int includedChevrons = StargateBaseBlockEntity.DEFAULT_CHEVRONS;
-    // Whether the gate's iris came with it as it formed, so gives no iris upgrade back; sent by the server's gate
+    // Whether the gate's iris was set without an iris upgrade, so gives no iris upgrade back; sent by the server's gate
     private boolean irisIncluded;
+    // Whether the gate's type was set with a gate type upgrade, which the base gives back when it breaks
+    private boolean typeFitted;
     private GateShape shape = GateShape.STANDARD;
     // Whether the gate stands or lies flat; kept while it is broken, so a flat ring turned face down forms so again
     private GateOrientation orientation = GateOrientation.STANDING;
@@ -140,6 +144,17 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         this.setChanged();
         if (this.level != null) {
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+        }
+    }
+
+    /**
+     * Records whether the gate's type was set with a gate type upgrade, so the base gives that upgrade back when it
+     * breaks.
+     */
+    public void setTypeFitted(final boolean fitted) {
+        if (this.typeFitted != fitted) {
+            this.typeFitted = fitted;
+            this.setChanged();
         }
     }
 
@@ -209,19 +224,25 @@ public final class StargateBaseBlockEntity extends BlockEntity {
     }
 
     /**
-     * Raises the gate's chevrons to {@code chevrons} without upgrades, as the server's settings do for a new gate, so
-     * breaking the base gives no chevron upgrades back for the ones added.
+     * Sets the gate's chevrons to {@code chevrons} without upgrades, as the server's settings do for a new gate, and
+     * commands, operators and players in creative mode do, so breaking the base gives no chevron upgrades back for
+     * the ones added. Chevrons taken away are those included first, so the ones fitted with upgrades still give them
+     * back.
      */
     public void giveChevrons(final int chevrons) {
-        final int more = chevrons - this.chevrons;
-        if (more <= 0) {
+        if (this.chevrons == chevrons) {
             return;
         }
-        this.includedChevrons = Math.min(this.includedChevrons + more, chevrons);
+        final int fitted = Math.max(0, this.chevrons - Math.max(StargateBaseBlockEntity.DEFAULT_CHEVRONS,
+                this.includedChevrons));
+        final int kept = Math.min(fitted, Math.max(0, chevrons - StargateBaseBlockEntity.DEFAULT_CHEVRONS));
+        this.includedChevrons = chevrons - kept;
         this.setChevrons(chevrons);
     }
 
-    /** Sets whether the gate's iris came with it as it formed, so breaking the base gives no iris upgrade back. */
+    /**
+     * Sets whether the gate's iris was set without an iris upgrade, so breaking the base gives no iris upgrade back.
+     */
     public void setIrisIncluded(final boolean included) {
         this.irisIncluded = included;
     }
@@ -321,8 +342,12 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         this.removePlates();
         if (this.level != null) {
             Containers.dropContents(this.level, pos, this.camouflage);
-            // The upgrades fitted to it, as in 1.12: a chevron upgrade for each chevron past seven, and the iris;
-            // not those the gate came with
+            // The upgrades fitted to it, as in 1.12: a chevron upgrade for each chevron past seven, the iris and the
+            // gate type upgrade; not those the gate came with
+            if (this.typeFitted) {
+                GateTypeUpgradeItem.forType(this.gateType).ifPresent(upgrade -> Containers.dropItemStack(
+                        this.level, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(upgrade)));
+            }
             final int from = Math.max(StargateBaseBlockEntity.DEFAULT_CHEVRONS, this.includedChevrons);
             for (int i = from; i < this.chevrons; i++) {
                 Containers.dropItemStack(this.level, pos.getX(), pos.getY(), pos.getZ(),
@@ -516,6 +541,7 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         input.read("gate_type", ResourceKey.codec(SGCraftRegistries.GATE_TYPE)).ifPresent(type -> this.gateType = type);
         this.chevrons = input.getIntOr("chevrons", StargateBaseBlockEntity.DEFAULT_CHEVRONS);
         this.includedChevrons = input.getIntOr("included_chevrons", StargateBaseBlockEntity.DEFAULT_CHEVRONS);
+        this.typeFitted = input.getBooleanOr("type_fitted", false);
         this.shape = GateShape.ofRadius(input.getIntOr("radius", GateShape.STANDARD.radius()));
         this.orientation = input.read("orientation", GateOrientation.CODEC).orElse(GateOrientation.STANDING);
         this.spill = input.getString("spill_fluid").flatMap(id -> Optional.ofNullable(Identifier.tryParse(id)))
@@ -540,6 +566,7 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         output.store("gate_type", ResourceKey.codec(SGCraftRegistries.GATE_TYPE), this.gateType);
         output.putInt("chevrons", this.chevrons);
         output.putInt("included_chevrons", this.includedChevrons);
+        output.putBoolean("type_fitted", this.typeFitted);
         output.putInt("radius", this.shape.radius());
         output.store("orientation", GateOrientation.CODEC, this.orientation);
         output.putBoolean("powered", this.powered);

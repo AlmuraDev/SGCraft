@@ -68,7 +68,8 @@ import java.util.Optional;
  * and whether a gate lying flat faces up or down; Energy its store and what dialing costs it; Travel how its wormholes
  * behave; Access its owner, who may use it and which gates may connect; Other the properties add-ons register, as JSON.
  * A setting the gate has no value of its own for shows faintly what applies instead, such as the server's value for
- * gates. Changes wait until Save, which sends only what changed.
+ * gates. Changes wait until Save, which sends only what changed. Only operators and players in creative mode change
+ * the type, chevrons and iris here; anyone else sees them, and changes them with upgrade items.
  */
 public final class ConfiguratorScreen extends Screen {
 
@@ -109,8 +110,14 @@ public final class ConfiguratorScreen extends Screen {
                     + "dials"),
             Map.entry("chevrons", "How many chevrons the gate has. More chevrons dial longer addresses, such as "
                     + "gates in other worlds"),
-            Map.entry("iris", "Whether an iris is fitted. Taking it off gives back the iris upgrade, unless the gate "
-                    + "came with it"),
+            Map.entry("iris", "Whether an iris is fitted. Taking off one fitted with an iris upgrade gives the "
+                    + "upgrade back"),
+            Map.entry("type.locked", "The kind of gate. Use a gate upgrade on the gate to change it; only an "
+                    + "operator or a player in creative mode changes it here"),
+            Map.entry("chevrons.locked", "How many chevrons the gate has. Use a chevron upgrade on the gate to add "
+                    + "one; only an operator or a player in creative mode changes them here"),
+            Map.entry("iris.locked", "Whether an iris is fitted. Use an iris upgrade on the gate to fit one; only an "
+                    + "operator or a player in creative mode changes it here"),
             Map.entry("orientation", "Whether the gate stands upright or lies flat. A gate lying flat can be turned "
                     + "face up or face down; one standing stays as it was built"),
             Map.entry("open_ticks", "How many seconds a wormhole stays open before it shuts on its own. 0 for no "
@@ -318,19 +325,19 @@ public final class ConfiguratorScreen extends Screen {
     private void gatePage(final int left, final int top) {
         int i = 0;
         int[] at = this.slot(left, top, i++);
-        this.tip(this.addRenderableWidget(CycleButton.builder(this::typeName, this.type)
+        this.upgraded(this.addRenderableWidget(CycleButton.builder(this::typeName, this.type)
                 .withValues(this.state.types()).create(at[0], at[1], 150, 20,
                         Component.translatableWithFallback("screen.sgcraft.configurator.type", "Type"),
                         (b, value) -> this.type = value)), "type");
         at = this.slot(left, top, i++);
         final List<Integer> counts = List.of(7, 8, 9);
-        this.tip(this.addRenderableWidget(CycleButton.builder((Integer n) -> Component.literal(String.valueOf(n)),
+        this.upgraded(this.addRenderableWidget(CycleButton.builder((Integer n) -> Component.literal(String.valueOf(n)),
                 counts.contains(this.chevrons) ? this.chevrons : 9).withValues(counts).create(at[0], at[1], 150, 20,
                 Component.translatableWithFallback("screen.sgcraft.configurator.chevrons", "Chevrons"),
                 (b, value) -> this.chevrons = value)), "chevrons");
         at = this.slot(left, top, i++);
         final boolean iris = this.values.containsKey(ConfiguratorScreen.NS + "iris");
-        this.tip(this.addRenderableWidget(CycleButton.onOffBuilder(iris).create(at[0], at[1], 150, 20,
+        this.upgraded(this.addRenderableWidget(CycleButton.onOffBuilder(iris).create(at[0], at[1], 150, 20,
                 Component.translatableWithFallback("screen.sgcraft.configurator.iris", "Iris fitted"),
                 (b, value) -> {
                     if (value) {
@@ -692,6 +699,16 @@ public final class ConfiguratorScreen extends Screen {
     private <W extends AbstractWidget> W tip(final W widget, final String key) {
         widget.setTooltip(Tooltip.create(ConfiguratorScreen.tipText(key)));
         return widget;
+    }
+
+    // A setting upgrade items change: shown but not set, with a tip saying which item does, for a player the server
+    // doesn't let change it here
+    private <W extends AbstractWidget> W upgraded(final W widget, final String key) {
+        if (this.state.fitFreely()) {
+            return this.tip(widget, key);
+        }
+        widget.active = false;
+        return this.tip(widget, key + ".locked");
     }
 
     private static Component tipText(final String key) {

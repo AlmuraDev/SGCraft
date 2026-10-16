@@ -102,27 +102,31 @@ public final class MalpItem extends Item {
 
     /** Packs up a MALP as an item, keeping its battery, its console, its name, its owner and its settings. */
     public static ItemStack of(final MalpEntity malp) {
-        final ItemStack stack = new ItemStack(SGItems.MALP);
+        final ItemStack stack = MalpItem.withoutBattery(malp);
         final ItemStack battery = malp.battery();
         if (!battery.isEmpty()) {
             stack.set(DataComponents.CONTAINER, ItemContainerContents.fromItems(List.of(battery.copy())));
         }
+        return stack;
+    }
+
+    /**
+     * Packs up a MALP as an item with no battery in it, keeping its console, its name, its owner and its settings,
+     * unless they are the defaults.
+     */
+    public static ItemStack withoutBattery(final MalpEntity malp) {
+        final ItemStack stack = new ItemStack(SGItems.MALP);
         if (malp.console() != null) {
             stack.set(SGDataComponents.MALP_CONSOLE, malp.console());
         }
         stack.set(DataComponents.CUSTOM_NAME, malp.getCustomName());
-        MalpItem.keepOwnerAndOptions(stack, malp);
-        return stack;
-    }
-
-    /** Puts a MALP's owner, if it has one, and its settings, unless they are the defaults, on a MALP item. */
-    public static void keepOwnerAndOptions(final ItemStack stack, final MalpEntity malp) {
         if (malp.owner() != null) {
             stack.set(SGDataComponents.MALP_OWNER, malp.owner());
         }
         if (!MalpOptions.DEFAULTS.equals(malp.options())) {
             stack.set(SGDataComponents.MALP_OPTIONS, malp.options());
         }
+        return stack;
     }
 
     @Override

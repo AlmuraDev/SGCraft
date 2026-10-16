@@ -35,6 +35,7 @@ import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.event.SGEventBus;
 import com.almuradev.sgcraft.mod.event.SGEvents;
 import com.almuradev.sgcraft.mod.gate.SGStargate;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.entity.player.Player;
 
@@ -88,10 +89,13 @@ public final class SGGateAccess implements GateAccess {
         return Optional.empty();
     }
 
+    // An operator has every right while online, where the server can see their permissions, as with a cause
     @Override
     public boolean allows(final UUID player, final GateRight right) {
+        final ServerPlayer online = this.gate.server().getPlayerList().getPlayer(player);
+        final boolean allowed = online != null && SGGateAccess.isOperator(online) || this.listed(player, right);
         return SGEventBus.get().post(new SGEvents.CheckPlayer(Cause.of(this.gate.server()), this.gate,
-                Optional.of(player), right, this.listed(player, right))).allowed();
+                Optional.of(player), right, allowed)).allowed();
     }
 
     @Override
