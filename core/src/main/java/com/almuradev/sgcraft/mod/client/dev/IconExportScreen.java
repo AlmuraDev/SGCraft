@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.client.dev;
 
 import com.almuradev.sgcraft.mod.SGCraft;
+import com.almuradev.sgcraft.mod.villager.SGVillagers;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.mojang.blaze3d.platform.NativeImage;
@@ -33,12 +34,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.gui.screens.inventory.InventoryScreen;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -53,7 +58,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * Saves every item's icon as the game draws it in an inventory, for the wiki. It only runs when the client starts with
@@ -61,7 +69,9 @@ import java.util.List;
  * only have their parts once a world is loaded, and draws the items a page at a time, first on black and then on
  * white. From the two pictures it works out each pixel's color and how see-through it is, so glass and glints come
  * out right. It saves one image per item, as
- * {@code <namespace>/<path>.png}, and every item's name in {@code names.json}, then closes the game.
+ * {@code <namespace>/<path>.png}, and every item's name in {@code names.json}. Then it draws the entities the wiki
+ * shows, such as a Tok'ra, the same way, saves them in {@code scenes}, and hands over to the {@link SceneExport}, which
+ * pictures gates in the world and closes the game.
  *
  * <p>Items in an inventory are drawn at 16 pixels for each step of the GUI scale, so the client must run at GUI scale
  * {@value #GUI_SCALE}, in a window large enough for it, for the icons to be {@value #ICON} pixels across.</p>
@@ -77,6 +87,10 @@ public final class IconExportScreen extends Screen {
     private static final int CELL = 18;
     // Frames drawn with a page before it is read back, so the picture read is of that page
     private static final int SETTLE_FRAMES = 3;
+    // The box an entity is drawn in, in GUI units, and how many GUI units a block of it takes
+    private static final int ENTITY_WIDTH = 96;
+    private static final int ENTITY_HEIGHT = 128;
+    private static final int ENTITY_SCALE = 54;
     // The world the export runs in, kept in the export's own game folder
     private static final String WORLD = "icon-export";
 
@@ -86,6 +100,8 @@ public final class IconExportScreen extends Screen {
 
     private final Path out;
     private final List<Item> items;
+    // The entities drawn after the items, each with the name its picture is saved as
+    private final List<Shot> shots = new ArrayList<>();
     private final JsonObject names = new JsonObject();
     private int columns;
     private int perPage;
@@ -103,7 +119,7 @@ public final class IconExportScreen extends Screen {
 
     /**
      * Starts the export, if the client was started to export icons: items only have their parts once a world is
-     * loaded, so this opens the exporter's own flat creative world, made the first time. Call this from the title
+     * loaded, so this makes the exporter's own flat creative world, new each time. Call this from the title
      * screen, on the render thread.
      */
     public static void startIfRequested(final Minecraft minecraft, final Screen titleScreen) {
@@ -112,10 +128,13 @@ public final class IconExportScreen extends Screen {
             return;
         }
         IconExportScreen.folder = Path.of(folder);
+        // A new world each time, so the gates the scene export builds are the only ones in it
         if (minecraft.getLevelSource().levelExists(IconExportScreen.WORLD)) {
-            minecraft.createWorldOpenFlows().openWorld(IconExportScreen.WORLD,
-                    () -> minecraft.gui.setScreen(titleScreen));
-            return;
+            try (Stream<Path> files = Files.walk(minecraft.getLevelSource().getLevelPath(IconExportScreen.WORLD))) {
+                files.sorted(Comparator.reverseOrder()).forEach(file -> file.toFile().delete());
+            } catch (final IOException e) {
+                SGCraft.LOG.error("Couldn't delete the export's old world", e);
+            }
         }
         minecraft.createWorldOpenFlows().createFreshLevel(IconExportScreen.WORLD, new LevelSettings(
                 IconExportScreen.WORLD, GameType.CREATIVE, new LevelSettings.DifficultySettings(Difficulty.PEACEFUL,
@@ -143,6 +162,24 @@ public final class IconExportScreen extends Screen {
             SGCraft.LOG.error("Icon export needs GUI scale {}, but the window allows only {}; make the window larger",
                     IconExportScreen.GUI_SCALE, this.minecraft.getWindow().getGuiScale());
         }
+        if (this.shots.isEmpty() && this.minecraft.level != null) {
+            final Villager tokra = new Villager(EntityTypes.VILLAGER, this.minecraft.level);
+            tokra.setVillagerData(tokra.getVillagerData().withProfession(this.minecraft.level.registryAccess(),
+                    SGVillagers.TOKRA));
+            // Drawing an entity reads its ID, which one never added to the world doesn't have
+            tokra.setId(-1);
+            this.shots.add(new Shot("tokra", tokra));
+        }
+    }
+
+    // How many pages of items there are; the entities follow, one a page
+    private int itemPages() {
+        return (this.items.size() + this.perPage - 1) / this.perPage;
+    }
+
+    private @Nullable Shot shot() {
+        final int index = this.page - this.itemPages();
+        return index >= 0 && index < this.shots.size() ? this.shots.get(index) : null;
     }
 
     @Override
@@ -165,6 +202,16 @@ public final class IconExportScreen extends Screen {
             final float partialTick) {
         this.frames++;
         graphics.fill(0, 0, this.width, this.height, this.white ? 0xFFFFFFFF : 0xFF000000);
+        final Shot shot = this.shot();
+        if (shot != null) {
+            // Turned a little to the viewer's left, looking just above them
+            final int middleX = IconExportScreen.ENTITY_WIDTH / 2;
+            final int middleY = IconExportScreen.ENTITY_HEIGHT / 2;
+            InventoryScreen.extractEntityInInventoryFollowsMouse(graphics, 0, 0, IconExportScreen.ENTITY_WIDTH,
+                    IconExportScreen.ENTITY_HEIGHT, IconExportScreen.ENTITY_SCALE, 0.0625F, middleX - 30,
+                    middleY - 20, shot.entity());
+            return;
+        }
         final int first = this.page * this.perPage;
         for (int i = first; i < Math.min(first + this.perPage, this.items.size()); i++) {
             final int cell = i - first;
@@ -203,7 +250,7 @@ public final class IconExportScreen extends Screen {
             }
             this.white = false;
             this.page++;
-            if (this.page * this.perPage >= this.items.size()) {
+            if (this.page >= this.itemPages() + this.shots.size()) {
                 this.finish();
                 return;
             }
@@ -212,8 +259,26 @@ public final class IconExportScreen extends Screen {
         this.reading = false;
     }
 
-    // Saves the icons of the page just drawn on black and on white
+    // Saves the icons of the page just drawn on black and on white, or the entity drawn on it
     private void save(final NativeImage black, final NativeImage white) {
+        final Shot shot = this.shot();
+        if (shot != null) {
+            final int width = IconExportScreen.ENTITY_WIDTH * IconExportScreen.GUI_SCALE;
+            final int height = IconExportScreen.ENTITY_HEIGHT * IconExportScreen.GUI_SCALE;
+            try (NativeImage picture = new NativeImage(width, height, true)) {
+                for (int y = 0; y < height; y++) {
+                    for (int x = 0; x < width; x++) {
+                        picture.setPixel(x, y, IconExportScreen.unmix(black.getPixel(x, y), white.getPixel(x, y)));
+                    }
+                }
+                final Path file = this.out.resolve("scenes").resolve(shot.name() + ".png");
+                Files.createDirectories(file.getParent());
+                picture.writeToFile(file);
+            } catch (final IOException e) {
+                SGCraft.LOG.error("Couldn't save the picture of {}", shot.name(), e);
+            }
+            return;
+        }
         final int first = this.page * this.perPage;
         for (int i = first; i < Math.min(first + this.perPage, this.items.size()); i++) {
             final int cell = i - first;
@@ -264,6 +329,10 @@ public final class IconExportScreen extends Screen {
             SGCraft.LOG.error("Couldn't save the item names", e);
         }
         SGCraft.LOG.info("Saved the icons of {} items to {}", this.items.size(), this.out);
-        this.minecraft.stop();
+        SceneExport.start(this.minecraft, this.out.resolve("scenes"));
+    }
+
+    // An entity the wiki shows, and the name its picture is saved as
+    private record Shot(String name, LivingEntity entity) {
     }
 }
