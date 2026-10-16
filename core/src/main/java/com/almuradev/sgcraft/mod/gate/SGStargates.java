@@ -246,6 +246,17 @@ public final class SGStargates implements Stargates {
     }
 
     /**
+     * Changes whether an open wormhole jumps to another gate in the cell when the gate it reaches is broken, and
+     * writes it to the settings file.
+     *
+     * @return whether the settings file was written
+     */
+    public boolean setWormholesJump(final boolean jump) {
+        this.config = this.config.withWormholesJump(jump);
+        return SGConfig.saveWormholesJump(jump);
+    }
+
+    /**
      * Changes whether a kawoosh clears blocks that can't be broken from now on, and writes it to the settings file.
      *
      * @return whether the settings file was written
@@ -495,11 +506,17 @@ public final class SGStargates implements Stargates {
         this.store().gate(position).ifPresent(record -> this.store().put(record.withOwner(owner)));
     }
 
-    /** Forgets a gate that has been broken apart, ending its connection. */
+    /**
+     * Forgets a gate that has been broken apart, ending its connection; or, if it was the gate an open wormhole reached
+     * and the server lets wormholes jump, sending the wormhole to another gate in its address cell.
+     */
     public void broken(final GlobalPos position, final Cause cause) {
         final Optional<SGStargate> gate = this.gate(position);
         gate.ifPresent(broken -> this.log("REMOVED {}", broken));
         final Runnable breach = gate.map(SGStargate::breach).orElse(() -> { });
+        if (this.config.wormholesJump()) {
+            gate.ifPresent(broken -> broken.liveConnection().ifPresent(connection -> connection.jump(broken, cause)));
+        }
         this.live.remove(position);
         gate.ifPresent(SGStargate::gone);
         this.store().remove(position);
@@ -558,6 +575,23 @@ public final class SGStargates implements Stargates {
             this.connections.add(connection.get());
             connection.get().resume();
         }
+    }
+
+    /** @return the other formed gates in the address cell holding a gate */
+    List<SGStargate> cellMates(final SGStargate gate) {
+        final int cell = this.addressing.partition(gate.position().dimension()).cellChunks();
+        final ChunkPos home = ChunkPos.containing(gate.position().pos());
+        final List<SGStargate> gates = new ArrayList<>();
+        for (final GateRecord record : this.store().gates()) {
+            final ChunkPos chunk = ChunkPos.containing(record.position().pos());
+            if (record.position().dimension().equals(gate.position().dimension())
+                    && !record.position().equals(gate.position())
+                    && Math.floorDiv(chunk.x(), cell) == Math.floorDiv(home.x(), cell)
+                    && Math.floorDiv(chunk.z(), cell) == Math.floorDiv(home.z(), cell)) {
+                this.gate(record.position()).ifPresent(gates::add);
+            }
+        }
+        return gates;
     }
 
     Optional<SGStargate> inCell(final AddressTarget target) {

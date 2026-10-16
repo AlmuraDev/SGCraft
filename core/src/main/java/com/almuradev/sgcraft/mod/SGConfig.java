@@ -63,7 +63,8 @@ import java.util.Optional;
  *
  * <p>The file keeps its settings in sections: {@code energy} (naquadah, power units, the energy bridges' rates, dial
  * costs and their {@code multipliers}), {@code addresses}, {@code gates}, {@code tools}, {@code worldgen},
- * {@code remote_view}, {@code malp}, {@code shields} and {@code zpm}. The records here keep the shape the rest of the mod reads them in.</p>
+ * {@code remote_view}, {@code malp}, {@code shields} and {@code zpm}. The records here keep the shape the rest of
+ * the mod reads them in.</p>
  *
  * @param energyPerNaquadah how much energy one naquadah gives
  * @param dialCosts what a wormhole costs the gate that dials it, before distance: as each chevron locks, as it opens,
@@ -145,7 +146,8 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
             energy.powerUnitCapacity(), worldgen.naquadahOre(), remoteView, malp,
             new Options(gates.kawooshBreaksUnbreakable(), gates.chunkLoadingRange(), gates.logEvents(),
                     worldgen.tokraWorlds(), gates.defaults(), gates.ownersBreakGates(),
-                    gates.generatedGatesBreakable(), shields, zpm, energy.multipliers().otherGroup()))));
+                    gates.generatedGatesBreakable(), shields, zpm, energy.multipliers().otherGroup(),
+                    gates.wormholesJump()))));
 
     // The file's energy section: what naquadah and power units hold, the energy bridges' rates, and what dials cost
     private record EnergySection(double energyPerNaquadah, long powerUnitCapacity, BridgeRates rates,
@@ -244,9 +246,10 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         }
     }
 
-    // The file's gates section: chunk loading, the kawoosh, breaking gates, logging, and gates' defaults
+    // The file's gates section: chunk loading, the kawoosh, breaking gates, jumping wormholes, logging, and gates'
+    // defaults
     private record GatesSection(int chunkLoadingRange, boolean kawooshBreaksUnbreakable,
-            boolean ownersBreakGates, boolean generatedGatesBreakable, boolean logEvents,
+            boolean ownersBreakGates, boolean generatedGatesBreakable, boolean wormholesJump, boolean logEvents,
             Map<Identifier, JsonElement> defaults) {
 
         static final Codec<GatesSection> CODEC = RecordCodecBuilder.create(instance -> instance.group(
@@ -259,6 +262,8 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
                         .forGetter(GatesSection::ownersBreakGates),
                 Codec.BOOL.optionalFieldOf("generated_gates_breakable", SGConfig.DEFAULTS.generatedGatesBreakable())
                         .forGetter(GatesSection::generatedGatesBreakable),
+                Codec.BOOL.optionalFieldOf("wormholes_jump", SGConfig.DEFAULTS.wormholesJump())
+                        .forGetter(GatesSection::wormholesJump),
                 Codec.BOOL.optionalFieldOf("log_events", SGConfig.DEFAULTS.logStargateEvents())
                         .forGetter(GatesSection::logEvents),
                 SGConfig.GATE_DEFAULTS_CODEC.optionalFieldOf("defaults", SGConfig.DEFAULTS.gateDefaults())
@@ -267,7 +272,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
 
         static GatesSection of(final SGConfig config) {
             return new GatesSection(config.chunkLoadingRange(), config.kawooshBreaksUnbreakable(),
-                    config.ownersBreakGates(), config.generatedGatesBreakable(),
+                    config.ownersBreakGates(), config.generatedGatesBreakable(), config.wormholesJump(),
                     config.logStargateEvents(), config.gateDefaults());
         }
     }
@@ -332,15 +337,17 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
      * @param zpm the settings for ZPMs, kept under {@code zpm}
      * @param otherGroupMultiplier how many times more a wormhole costs again with a ninth chevron, which reaches
      *     another group of worlds, on top of the eighth's
+     * @param wormholesJump whether an open wormhole jumps to another gate in the same address cell when the gate it
+     *     reaches is broken, as on the show; on unless set
      */
     public record Options(boolean kawooshBreaksUnbreakable, int chunkLoadingRange, boolean logStargateEvents,
             Map<Identifier, Boolean> tokraWorlds, Map<Identifier, JsonElement> gateDefaults, boolean ownersBreakGates,
             boolean generatedGatesBreakable, ShieldSettings shields, ZpmSettings zpm,
-            double otherGroupMultiplier) {
+            double otherGroupMultiplier, boolean wormholesJump) {
 
         public static final Options DEFAULTS = new Options(false, 1, false,
                 Map.of(Level.OVERWORLD.identifier(), true), Map.of(), true, false, ShieldSettings.DEFAULTS,
-                ZpmSettings.DEFAULTS, 10.0);
+                ZpmSettings.DEFAULTS, 10.0, true);
 
         public Options {
             gateDefaults = Map.copyOf(gateDefaults);
@@ -349,49 +356,56 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         Options withKawooshBreaksUnbreakable(final boolean breaks) {
             return new Options(breaks, this.chunkLoadingRange, this.logStargateEvents, this.tokraWorlds,
                     this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump);
         }
 
         Options withChunkLoadingRange(final int range) {
             return new Options(this.kawooshBreaksUnbreakable, range, this.logStargateEvents, this.tokraWorlds,
                     this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump);
         }
 
         Options withLogStargateEvents(final boolean log) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, log, this.tokraWorlds,
                     this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump);
         }
 
         Options withGateDefaults(final Map<Identifier, JsonElement> defaults) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, defaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump);
         }
 
         Options withBreaking(final boolean owners, final boolean generated) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, owners, generated, this.shields, this.zpm,
-                    this.otherGroupMultiplier);
+                    this.otherGroupMultiplier, this.wormholesJump);
         }
 
         Options withZpm(final ZpmSettings zpm) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
-                    this.shields, zpm, this.otherGroupMultiplier);
+                    this.shields, zpm, this.otherGroupMultiplier,
+                    this.wormholesJump);
         }
 
         Options withOtherGroupMultiplier(final double multiplier) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
-                    this.shields, this.zpm, multiplier);
+                    this.shields, this.zpm, multiplier, this.wormholesJump);
+        }
+
+        Options withWormholesJump(final boolean jump) {
+            return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
+                    this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
+                    this.shields, this.zpm, this.otherGroupMultiplier, jump);
         }
 
         Options withShields(final ShieldSettings shields) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, shields,
-                    this.zpm, this.otherGroupMultiplier);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump);
         }
     }
 
@@ -411,6 +425,26 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
     /** @return whether players may break generated gates with no {@code breakable} value of their own */
     public boolean generatedGatesBreakable() {
         return this.options.generatedGatesBreakable();
+    }
+
+    /** @return whether an open wormhole jumps to another gate in the same cell when the gate it reaches breaks */
+    public boolean wormholesJump() {
+        return this.options.wormholesJump();
+    }
+
+    /** @return these settings with wormholes jumping to another gate in the cell, or not */
+    public SGConfig withWormholesJump(final boolean jump) {
+        return this.withOptions(this.options.withWormholesJump(jump));
+    }
+
+    /**
+     * Writes whether open wormholes jump to another gate in the cell to the settings file, leaving the rest of the
+     * file as it is.
+     *
+     * @return whether the file was written
+     */
+    public static boolean saveWormholesJump(final boolean jump) {
+        return SGConfig.save(Codec.BOOL, jump, "gates", "wormholes_jump");
     }
 
     /** @return whether a kawoosh clears blocks that can't be broken */

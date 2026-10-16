@@ -67,6 +67,7 @@ final class SGSettingsCommands {
     private static final String KAWOOSH_BREAKS_UNBREAKABLE = "kawoosh_breaks_unbreakable";
     private static final String OWNERS_BREAK_GATES = "owners_break_gates";
     private static final String GENERATED_GATES_BREAKABLE = "generated_gates_breakable";
+    private static final String WORMHOLES_JUMP = "wormholes_jump";
 
     private static final SimpleCommandExceptionType UNKNOWN_KEY = new SimpleCommandExceptionType(
             SGCommands.text("gate_defaults.unknown", "There is no gate property by that name"));
@@ -81,7 +82,8 @@ final class SGSettingsCommands {
                 .executes(context -> SGSettingsCommands.show(context.getSource()))
                 .then(SGSettingsCommands.setting(SGSettingsCommands.KAWOOSH_BREAKS_UNBREAKABLE))
                 .then(SGSettingsCommands.setting(SGSettingsCommands.OWNERS_BREAK_GATES))
-                .then(SGSettingsCommands.setting(SGSettingsCommands.GENERATED_GATES_BREAKABLE));
+                .then(SGSettingsCommands.setting(SGSettingsCommands.GENERATED_GATES_BREAKABLE))
+                .then(SGSettingsCommands.setting(SGSettingsCommands.WORMHOLES_JUMP));
     }
 
     // <name> shows the settings, and <name> <true|false> sets one
@@ -103,6 +105,8 @@ final class SGSettingsCommands {
                 config.ownersBreakGates()), false);
         source.sendSuccess(() -> SGSettingsCommands.line(SGSettingsCommands.GENERATED_GATES_BREAKABLE,
                 config.generatedGatesBreakable()), false);
+        source.sendSuccess(() -> SGSettingsCommands.line(SGSettingsCommands.WORMHOLES_JUMP,
+                config.wormholesJump()), false);
         return 1;
     }
 
@@ -114,6 +118,7 @@ final class SGSettingsCommands {
                     config.generatedGatesBreakable());
             case SGSettingsCommands.GENERATED_GATES_BREAKABLE -> stargates.setBreaking(config.ownersBreakGates(),
                     value);
+            case SGSettingsCommands.WORMHOLES_JUMP -> stargates.setWormholesJump(value);
             default -> stargates.setKawooshBreaksUnbreakable(value);
         };
         source.sendSuccess(() -> SGSettingsCommands.line(name, value), true);

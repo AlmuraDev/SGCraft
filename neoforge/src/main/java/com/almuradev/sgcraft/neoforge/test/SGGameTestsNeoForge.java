@@ -248,6 +248,7 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("broken_base_drops_upgrades", SGGameTestsNeoForge::baseDropsUpgrades);
         SGGameTestsNeoForge.TESTS.put("new_pdds_take_default_addresses", SGGameTestsNeoForge::defaultAddresses);
         SGGameTestsNeoForge.TESTS.put("breaking_an_open_gate_explodes", SGGameTestsNeoForge::breach);
+        SGGameTestsNeoForge.TESTS.put("wormhole_jumps_to_cell_mate", SGGameTestsNeoForge::wormholeJumps);
         SGGameTestsNeoForge.TESTS.put("type_upgrade_changes_gate", SGGameTestsNeoForge::typeUpgrade);
         SGGameTestsNeoForge.TESTS.put("open_gate_gives_light", SGGameTestsNeoForge::gateGivesLight);
         SGGameTestsNeoForge.TESTS.put("flat_gate_forms_face_up", SGGameTestsNeoForge::flatGateForms);
@@ -1485,6 +1486,43 @@ public final class SGGameTestsNeoForge {
                     "Breaking the open gate didn't harm the pig in front of it");
             helper.assertTrue(b.state() == GateState.IDLE || b.state() == GateState.CLOSING,
                     "Gate B is still " + b.state());
+            helper.succeed();
+        });
+    }
+
+    // Breaking the gate an open wormhole reaches sends the wormhole to the other gate in its address cell, which
+    // opens without a new dial; the dialing gate stays connected
+    private static void wormholeJumps(final GameTestHelper helper, final BlockPos origin) {
+        final Stargate a = SGGameTestsNeoForge.place(helper, origin.offset(SGGameTestsNeoForge.A), 9);
+        final BlockPos atB = origin.offset(SGGameTestsNeoForge.B);
+        final Stargate b = SGGameTestsNeoForge.place(helper, atB, 9);
+        // Four chunks away along z, in the same cell as gate B
+        final int cell = SGCraftApi.get().addressing().partition(helper.getLevel().dimension()).cellChunks();
+        final int chunkZ = SectionPos.blockToSectionCoord(atB.getZ());
+        final int cellZ = Math.floorDiv(chunkZ, cell) * cell;
+        final int otherZ = cellZ + Math.floorMod(chunkZ - cellZ + cell / 2, cell);
+        final Stargate c = SGGameTestsNeoForge.place(helper,
+                new BlockPos(atB.getX(), atB.getY(), otherZ * 16 + Math.floorMod(atB.getZ(), 16)), 9);
+        helper.assertTrue(SGGameTestsNeoForge.addressOf(b, a).equals(SGGameTestsNeoForge.addressOf(c, a)),
+                "Gates B and C aren't in one cell");
+        a.set(GateProperties.REQUIRES_POWER, false, SGGameTestsNeoForge.server(helper));
+        a.set(GateProperties.OPENING_DAMAGE, false, SGGameTestsNeoForge.server(helper));
+        b.set(GateProperties.BREACH_EXPLOSION, 0.0, SGGameTestsNeoForge.server(helper));
+        c.set(GateProperties.BREACH_EXPLOSION, 0.0, SGGameTestsNeoForge.server(helper));
+        final AtomicReference<DialResult> result = new AtomicReference<>();
+        a.dial(SGGameTestsNeoForge.addressOf(b, a), DialMode.QUICK, SGGameTestsNeoForge.server(helper))
+                .thenAccept(result::set);
+        helper.runAfterDelay(SGIris.MOVE_TICKS + 60, () -> {
+            helper.assertTrue(result.get() == DialResult.CONNECTED, "The dial ended " + result.get());
+            final Stargate reached = b.state() == GateState.CONNECTED ? b : c;
+            final Stargate other = reached == b ? c : b;
+            helper.getLevel().destroyBlock(reached.position().pos(), false);
+            helper.assertTrue(a.state() == GateState.CONNECTED, "The dialing gate is " + a.state());
+            helper.assertTrue(other.state() == GateState.CONNECTED, "The other gate in the cell is "
+                    + other.state());
+            helper.assertTrue(a.connection().map(connection -> connection.target().equals(other)).orElse(false),
+                    "The wormhole doesn't reach the other gate");
+            a.disconnect(SGGameTestsNeoForge.server(helper));
             helper.succeed();
         });
     }

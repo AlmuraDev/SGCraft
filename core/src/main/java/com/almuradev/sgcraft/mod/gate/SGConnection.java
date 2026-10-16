@@ -55,6 +55,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -669,6 +670,34 @@ public final class SGConnection implements Connection {
         this.dialer.store().putConnection(this.dialer.position(), this.save());
         this.dialer.stargates().log("REROUTED {} FROM {} TO {}", this.dialer, from, to);
         return true;
+    }
+
+    /**
+     * The gate the open wormhole reaches was broken: the wormhole jumps to another gate in the broken gate's address
+     * cell, as on the show, the nearest first. Only a gate the dialing gate could have reached is taken: one that is
+     * idle, of a type the two gates connect between, and that the gates' access allows.
+     *
+     * @return whether the wormhole jumped; not if the broken gate isn't the one it reaches, or there is nowhere to go
+     */
+    boolean jump(final SGStargate broken, final Cause cause) {
+        if (broken != this.target || this.phase != DialPhase.CONNECTED) {
+            return false;
+        }
+        final List<SGStargate> gates = new ArrayList<>(this.dialer.stargates().cellMates(broken));
+        gates.removeIf(gate -> gate.equals(this.dialer) || gate.state() != GateState.IDLE
+                || !this.dialer.type().value().connectsTo(gate.typeKey())
+                || !gate.type().value().connectsTo(this.dialer.typeKey())
+                || !this.dialer.access().allowsOutgoing(gate) || !gate.access().allowsIncoming(this.dialer));
+        gates.sort(Comparator.comparingDouble(gate -> gate.position().pos().distSqr(broken.position().pos())));
+        for (final SGStargate gate : gates) {
+            if (this.reroute(gate, cause)) {
+                // The broken gate is gone, so there is nothing left of it to close
+                this.left.remove(broken);
+                this.dialer.stargates().log("JUMPED {} FROM BROKEN {} TO {}", this.dialer, broken, gate);
+                return true;
+            }
+        }
+        return false;
     }
 
     private void sync() {
