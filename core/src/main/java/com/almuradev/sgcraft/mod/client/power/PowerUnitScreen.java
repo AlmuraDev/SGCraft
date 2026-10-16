@@ -38,8 +38,8 @@ import java.text.NumberFormat;
 import java.util.Locale;
 
 /**
- * A power unit's charge, laid out as the original's screen: its name, a gauge filling red, and how much FE it holds
- * against the most it can. Below it are the battery slot, with the battery's charge, and the player's inventory.
+ * A power unit's charge, laid out as the original's screen: its name, a gauge filling red, and how much gate energy it
+ * holds against the most it can. Below it are the battery slot, with the battery's charge, and the player's inventory.
  */
 public final class PowerUnitScreen extends AbstractContainerScreen<PowerUnitMenu> {
 
@@ -98,7 +98,7 @@ public final class PowerUnitScreen extends AbstractContainerScreen<PowerUnitMenu
         graphics.text(this.font, this.title, this.titleLabelX, this.titleLabelY, PowerUnitScreen.TEXT_COLOR, false);
         graphics.text(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY,
                 PowerUnitScreen.TEXT_COLOR, false);
-        this.row(graphics, Component.translatableWithFallback("container.sgcraft.power_unit.stored", "FE:"),
+        this.row(graphics, Component.translatableWithFallback("container.sgcraft.power_unit.stored", "GE:"),
                 this.menu.stored(), PowerUnitScreen.STORED_Y);
         this.row(graphics, Component.translatableWithFallback("container.sgcraft.power_unit.capacity", "Max:"),
                 this.menu.capacity(), PowerUnitScreen.CAPACITY_Y);

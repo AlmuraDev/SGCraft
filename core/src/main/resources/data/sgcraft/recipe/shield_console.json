@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "B": "minecraft:stone_button",
+    "R": "minecraft:redstone",
+    "C": "sgcraft:controller_crystal"
+  },
+  "pattern": [
+    "IBI",
+    "RCR",
+    "III"
+  ],
+  "result": {
+    "id": "sgcraft:shield_console"
+  }
+}

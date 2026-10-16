@@ -30,6 +30,7 @@ import com.almuradev.sgcraft.api.Cause;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.gate.GateTargeting;
+import com.almuradev.sgcraft.mod.gate.OriGate;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
@@ -82,6 +83,11 @@ public final class ChevronUpgradeItem extends Item implements GateItem {
     }
 
     private static InteractionResult fit(final ServerPlayer player, final Stargate gate, final ItemStack stack) {
+        if (gate.type().unwrapKey().map(OriGate::is).orElse(false)) {
+            player.sendOverlayMessage(Component.translatableWithFallback("message.sgcraft.ori_no_upgrades",
+                    "An Ori supergate takes no upgrades").withStyle(ChatFormatting.RED));
+            return InteractionResult.FAIL;
+        }
         final int chevrons = gate.chevrons();
         if (chevrons >= ChevronUpgradeItem.MOST) {
             player.sendOverlayMessage(Component.translatableWithFallback("message.sgcraft.chevrons_full",

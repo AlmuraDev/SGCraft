@@ -74,8 +74,8 @@ import java.util.UUID;
 /**
  * A MALP, the show's Mobile Analytic Laboratory Probe: a six-wheeled probe driven from a {@code MalpConsole} through
  * a stargate, to see what is on the other side. It has no mind of its own; it drives only while someone at its
- * console holds the controls, and only while its battery holds FE, unless its {@link MalpOptions} say it needs no
- * power. Its camera sits on a mast that pans and tilts apart from the body, and a lamp lights what the camera sees.
+ * console holds the controls, and only while its battery holds gate energy, unless its {@link MalpOptions} say it needs
+ * no power. Its camera sits on a mast that pans and tilts apart from the body, and a lamp lights what the camera sees.
  *
  * <p>It belongs to the player who first put it down, if anyone did; its owner and operators change its settings
  * with a configurator, and pair it with MALP tablets by using a tablet on it while sneaking, besides its one console.
@@ -126,8 +126,6 @@ public final class MalpEntity extends VehicleEntity implements RemoteViewSource 
     private float driveForward;
     private float driveTurn;
     private long driveUntil = Long.MIN_VALUE;
-    // FE owed for driving less than a block, paid once it adds up to a whole FE
-    private double driveDebt;
     // The chunk it was in when it last told the registry where it is, or null if it hasn't yet
     private @Nullable ChunkPos recordedChunk;
     // How far each side's wheels have turned, for the client to draw, in radians, now and a tick ago
@@ -171,29 +169,29 @@ public final class MalpEntity extends VehicleEntity implements RemoteViewSource 
         return this.batterySlot;
     }
 
-    /** @return the FE in the MALP's battery */
-    public long energy() {
+    /** @return the gate energy in the MALP's battery */
+    public double energy() {
         return this.battery().isEmpty() ? 0 : BatteryItem.energy(this.battery());
     }
 
     /**
-     * Uses FE from the MALP's battery for its work, as much as the battery holds. A MALP that needs no power uses
-     * none.
+     * Uses gate energy from the MALP's battery for its work, as much as the battery holds. A MALP that needs no power
+     * uses none.
      *
      * @return how much it used
      */
-    public long drain(final long amount) {
+    public double drain(final double amount) {
         if (!this.options.powerRequired()) {
             return 0;
         }
-        final long used = BatteryItem.extract(this.battery(), amount, false);
+        final double used = BatteryItem.extract(this.battery(), amount, false);
         if (used > 0) {
             this.batterySlot.setChanged();
         }
         return used;
     }
 
-    /** @return whether the MALP can work: it needs no power, or its battery holds FE */
+    /** @return whether the MALP can work: it needs no power, or its battery holds gate energy */
     public boolean hasPower() {
         return !this.options.powerRequired() || this.energy() > 0;
     }
@@ -373,23 +371,17 @@ public final class MalpEntity extends VehicleEntity implements RemoteViewSource 
         }
     }
 
-    // Driving costs FE for each block covered across the ground; rolling on, or being pushed, costs nothing, and a
-    // MALP that needs no power pays nothing
+    // Driving costs gate energy for each block covered across the ground; rolling on, or being pushed, costs nothing,
+    // and a MALP that needs no power pays nothing
     private void payForDriving(final Vec3 before) {
         if (!this.options.powerRequired()) {
-            this.driveDebt = 0;
             return;
         }
         final double moved = this.position().subtract(before).horizontalDistance();
         if (moved <= 0) {
             return;
         }
-        this.driveDebt += moved * MalpSettings.current().driveDrain();
-        final long owed = (long) this.driveDebt;
-        if (owed > 0) {
-            this.driveDebt -= owed;
-            this.drain(owed);
-        }
+        this.drain(moved * MalpSettings.current().driveDrain());
     }
 
     // The client turns the wheels with how far it moved and turned: both sides together going ahead, and against

@@ -93,7 +93,7 @@ public final class MalpConfigScreen extends Screen {
         final int left = this.width / 2 - 155;
         int i = 0;
         this.toggle(this.slot(left, i++), "power_required", "Requires power", "Whether the MALP runs on its "
-                + "battery. Off, it uses no FE, and drives and sends its feed with a flat battery or none",
+                + "battery. Off, it uses no energy, and drives and sends its feed with a flat battery or none",
                 this.options.powerRequired(), value -> this.options = this.options.withPowerRequired(value));
         this.addRenderableWidget(Button.builder(Component.translatableWithFallback("screen.sgcraft.configurator.save",
                 "Save"), b -> this.save()).bounds(this.bottom(0), this.height - 28, MalpConfigScreen.BUTTON, 20)

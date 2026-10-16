@@ -35,6 +35,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,24 +52,30 @@ public final class DhdFuelProvider implements EnergySourceProvider {
             return List.of();
         }
         final BlockPos base = gate.position().pos();
-        final List<EnergySource> sources = new ArrayList<>();
+        final List<DhdBlockEntity> dhds = new ArrayList<>();
         final int reach = (int) Math.ceil(DhdBlockEntity.range(gate));
         for (final BlockPos pos : BlockPos.betweenClosed(base.offset(-reach, -2, -reach),
                 base.offset(reach, 2, reach))) {
             if (level.get().getBlockEntity(pos) instanceof DhdBlockEntity dhd
                     && dhd.gate().filter(linked -> linked.position().pos().equals(base)).isPresent()) {
-                sources.add(new EnergySource() {
-                    @Override
-                    public long available() {
-                        return dhd.available();
-                    }
-
-                    @Override
-                    public long draw(final long wanted, final boolean simulate) {
-                        return dhd.draw(wanted, simulate);
-                    }
-                });
+                dhds.add(dhd);
             }
+        }
+        // The nearest first
+        dhds.sort(Comparator.comparingDouble(dhd -> dhd.getBlockPos().distSqr(base)));
+        final List<EnergySource> sources = new ArrayList<>();
+        for (final DhdBlockEntity dhd : dhds) {
+            sources.add(new EnergySource() {
+                @Override
+                public long available() {
+                    return dhd.available();
+                }
+
+                @Override
+                public long draw(final long wanted, final boolean simulate) {
+                    return dhd.draw(wanted, simulate);
+                }
+            });
         }
         return sources;
     }

@@ -40,14 +40,19 @@ import com.almuradev.sgcraft.mod.client.malp.MalpRenderer;
 import com.almuradev.sgcraft.mod.client.malp.MalpScreen;
 import com.almuradev.sgcraft.mod.client.power.BatteryChargerScreen;
 import com.almuradev.sgcraft.mod.client.power.PowerUnitScreen;
+import com.almuradev.sgcraft.mod.client.shield.CityShieldRenderer;
+import com.almuradev.sgcraft.mod.client.shield.CityShieldScreen;
 import com.almuradev.sgcraft.mod.client.view.RemoteViewClient;
 import com.almuradev.sgcraft.mod.client.view.RemoteViewPicture;
+import com.almuradev.sgcraft.mod.client.zpm.ZpmScreen;
 import com.almuradev.sgcraft.mod.dhd.DhdFuelMenu;
 import com.almuradev.sgcraft.mod.entity.SGEntityTypes;
 import com.almuradev.sgcraft.mod.gate.GateBaseMenu;
 import com.almuradev.sgcraft.mod.malp.MalpMenu;
 import com.almuradev.sgcraft.mod.power.BatteryChargerMenu;
 import com.almuradev.sgcraft.mod.power.PowerUnitMenu;
+import com.almuradev.sgcraft.mod.shield.CityShieldMenu;
+import com.almuradev.sgcraft.mod.zpm.ZpmMenu;
 import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -75,6 +80,7 @@ public final class SGCraftClientNeoForge {
         event.registerBlockEntityRenderer(SGBlockEntityTypes.STARGATE_BASE, StargateBaseRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.DHD, DhdRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.MALP_CONSOLE, MalpConsoleRenderer::new);
+        event.registerBlockEntityRenderer(SGBlockEntityTypes.CITY_SHIELD, CityShieldRenderer::new);
         // The iris's plates are unseen; the iris itself is drawn with its gate
         event.registerEntityRenderer(SGEntityTypes.IRIS_PLATE, NoopRenderer::new);
         event.registerEntityRenderer(SGEntityTypes.MALP, MalpRenderer::new);
@@ -101,6 +107,9 @@ public final class SGCraftClientNeoForge {
         event.register(PowerUnitMenu.TYPE, PowerUnitScreen::new);
         event.register(BatteryChargerMenu.TYPE, BatteryChargerScreen::new);
         event.register(MalpMenu.TYPE, MalpScreen::new);
+        event.register(ZpmMenu.SINGLE, ZpmScreen::new);
+        event.register(ZpmMenu.HUB, ZpmScreen::new);
+        event.register(CityShieldMenu.TYPE, CityShieldScreen::new);
     }
 
     @SubscribeEvent

@@ -110,14 +110,15 @@ public final class ConfiguratorScreen extends Screen {
                     + "dials"),
             Map.entry("chevrons", "How many chevrons the gate has. More chevrons dial longer addresses, such as "
                     + "gates in other worlds"),
-            Map.entry("iris", "Whether an iris is fitted. Taking off one fitted with an iris upgrade gives the "
-                    + "upgrade back"),
+            Map.entry("iris", "The iris fitted: none, the metal iris or a shield. Taking off one fitted with its "
+                    + "upgrade gives the upgrade back"),
             Map.entry("type.locked", "The kind of gate. Use a gate upgrade on the gate to change it; only an "
                     + "operator or a player in creative mode changes it here"),
             Map.entry("chevrons.locked", "How many chevrons the gate has. Use a chevron upgrade on the gate to add "
                     + "one; only an operator or a player in creative mode changes them here"),
-            Map.entry("iris.locked", "Whether an iris is fitted. Use an iris upgrade on the gate to fit one; only an "
-                    + "operator or a player in creative mode changes it here"),
+            Map.entry("iris.locked", "The iris fitted: none, the metal iris or a shield. Use an iris upgrade or a "
+                    + "shield upgrade on the gate to fit one; only an operator or a player in creative mode changes it "
+                    + "here"),
             Map.entry("orientation", "Whether the gate stands upright or lies flat. A gate lying flat can be turned "
                     + "face up or face down; one standing stays as it was built"),
             Map.entry("open_ticks", "How many seconds a wormhole stays open before it shuts on its own. 0 for no "
@@ -159,8 +160,8 @@ public final class ConfiguratorScreen extends Screen {
                     + "gate. Empty for the server's amount, shown faintly"),
             Map.entry("distance_factor_multiplier", "How much more a wormhole costs the further it reaches. 0 for no "
                     + "extra. Empty for the server's amount, shown faintly"),
-            Map.entry("inter_world_multiplier", "How many times more a wormhole to another world costs. Empty for the "
-                    + "server's amount, shown faintly"),
+            Map.entry("inter_world_multiplier", "How many times more a wormhole costs with an eighth chevron, which "
+                    + "reaches another world. Empty for the server's amount, shown faintly"),
             Map.entry("server_costs", "Clears this gate's own costs and energy settings, so it uses what the server "
                     + "sets"),
             Map.entry("lightning_malfunction", "Whether lightning in the rain can send a wormhole this gate dials to "
@@ -331,21 +332,33 @@ public final class ConfiguratorScreen extends Screen {
                         (b, value) -> this.type = value)), "type");
         at = this.slot(left, top, i++);
         final List<Integer> counts = List.of(7, 8, 9);
-        this.upgraded(this.addRenderableWidget(CycleButton.builder((Integer n) -> Component.literal(String.valueOf(n)),
-                counts.contains(this.chevrons) ? this.chevrons : 9).withValues(counts).create(at[0], at[1], 150, 20,
-                Component.translatableWithFallback("screen.sgcraft.configurator.chevrons", "Chevrons"),
-                (b, value) -> this.chevrons = value)), "chevrons");
+        final CycleButton<Integer> chevronButton = this.upgraded(this.addRenderableWidget(CycleButton.builder(
+                (Integer n) -> Component.literal(String.valueOf(n)), counts.contains(this.chevrons) ? this.chevrons : 9)
+                .withValues(counts).create(at[0], at[1], 150, 20,
+                        Component.translatableWithFallback("screen.sgcraft.configurator.chevrons", "Chevrons"),
+                        (b, value) -> this.chevrons = value)), "chevrons");
+        // An Ori supergate always has nine chevrons' reach
+        chevronButton.active = chevronButton.active && !this.state.gate().type().equals("sgcraft:ori");
         at = this.slot(left, top, i++);
-        final boolean iris = this.values.containsKey(ConfiguratorScreen.NS + "iris");
-        this.upgraded(this.addRenderableWidget(CycleButton.onOffBuilder(iris).create(at[0], at[1], 150, 20,
-                Component.translatableWithFallback("screen.sgcraft.configurator.iris", "Iris fitted"),
+        // No iris, or one of the kinds the gate's type takes, such as the metal iris or a shield
+        final List<String> irises = new ArrayList<>();
+        irises.add("");
+        irises.addAll(this.state.irisTypes());
+        final String iris = this.values.get(ConfiguratorScreen.NS + "iris") instanceof final JsonPrimitive fitted
+                ? fitted.getAsString() : "";
+        final CycleButton<String> irisButton = this.addRenderableWidget(CycleButton.builder(this::irisName,
+                irises.contains(iris) ? iris : "").withValues(irises).create(at[0], at[1], 150, 20,
+                Component.translatableWithFallback("screen.sgcraft.configurator.iris", "Iris"),
                 (b, value) -> {
-                    if (value) {
-                        this.values.put(ConfiguratorScreen.NS + "iris", new JsonPrimitive("sgcraft:metal"));
-                    } else {
+                    if (value.isEmpty()) {
                         this.values.remove(ConfiguratorScreen.NS + "iris");
+                    } else {
+                        this.values.put(ConfiguratorScreen.NS + "iris", new JsonPrimitive(value));
                     }
-                })), "iris");
+                }));
+        this.upgraded(irisButton, "iris");
+        // A type that takes no iris, as an Ori supergate, has nothing to choose
+        irisButton.active = irisButton.active && !this.state.irisTypes().isEmpty();
         at = this.slot(left, top, i++);
         this.number(at, "open_ticks", "Open seconds", 20);
         at = this.slot(left, top, i++);
@@ -717,6 +730,21 @@ public final class ConfiguratorScreen extends Screen {
     }
 
     // A gate type by the name players see, as the server sent it
+    private Component irisName(final String id) {
+        if (id.isEmpty()) {
+            return Component.translatableWithFallback("screen.sgcraft.configurator.iris.none", "None");
+        }
+        final int index = this.state.irisTypes().indexOf(id);
+        if (index >= 0 && index < this.state.irisNames().size() && !this.state.irisNames().get(index).isEmpty()) {
+            final Optional<Component> name = ComponentSerialization.CODEC.parse(JsonOps.INSTANCE,
+                    JsonParser.parseString(this.state.irisNames().get(index))).result();
+            if (name.isPresent()) {
+                return name.get();
+            }
+        }
+        return Component.literal(ConfiguratorScreen.shortId(id));
+    }
+
     private Component typeName(final String id) {
         final int index = this.state.types().indexOf(id);
         if (index >= 0 && index < this.state.typeNames().size() && !this.state.typeNames().get(index).isEmpty()) {
@@ -822,7 +850,7 @@ public final class ConfiguratorScreen extends Screen {
         }
         if (this.page == Page.ENERGY) {
             graphics.text(this.font, Component.translatableWithFallback("screen.sgcraft.configurator.energy_units",
-                    "Amounts are gate energy, before distance: one is %s FE from a power unit",
+                    "Amounts are gate energy, before distance: one is worth %s FE from other mods",
                     ConfiguratorScreen.amount(this.state.fePerEnergy())), this.width / 2 - 155,
                     ConfiguratorScreen.TOP + ConfiguratorScreen.ENERGY_ROWS * 24 + 6,
                     0xFFA0A0A0);

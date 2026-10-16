@@ -224,7 +224,8 @@ public final class PddScreen extends Screen {
                 GateStatusText.of(gate.state()));
     }
 
-    static DialStyle style(final GateInfo gate) {
+    /** @return the style of glyphs a gate's address is drawn in */
+    public static DialStyle style(final GateInfo gate) {
         if (gate.type().equals("sgcraft:pegasus")) {
             return DialStyle.PEGASUS;
         }

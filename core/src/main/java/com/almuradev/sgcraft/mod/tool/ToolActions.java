@@ -51,7 +51,9 @@ import com.almuradev.sgcraft.mod.energy.DialCosts;
 import com.almuradev.sgcraft.mod.gate.DialStyle;
 import com.almuradev.sgcraft.mod.gate.GateOrientation;
 import com.almuradev.sgcraft.mod.gate.GateTargeting;
+import com.almuradev.sgcraft.mod.gate.SGIris;
 import com.almuradev.sgcraft.mod.gate.SGStargate;
+import com.almuradev.sgcraft.mod.item.IrisUpgradeItem;
 import com.almuradev.sgcraft.mod.item.SGDataComponents;
 import com.almuradev.sgcraft.mod.item.SGItems;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
@@ -113,7 +115,7 @@ public final class ToolActions {
     private ToolActions() {
     }
 
-    private static int range() {
+    static int range() {
         return SGServer.current().map(server -> server.config().toolRange()).orElse(6);
     }
 
@@ -128,7 +130,9 @@ public final class ToolActions {
                 .addressOf(gate.position(), player.level().dimension()).map(Address::toString).orElse("") : "";
         final String type = gate.type().unwrapKey().map(key -> key.identifier().toString()).orElse("");
         final int iris = gate.iris().map(i -> i.state().ordinal()).orElse(GateInfo.NO_IRIS);
-        return new GateInfo(gate.position().pos(), address, type, gate.state().name().toLowerCase(Locale.ROOT), iris);
+        final boolean shield = gate.iris().map(i -> SGIris.isShield(i.type())).orElse(false);
+        return new GateInfo(gate.position().pos(), address, type, gate.state().name().toLowerCase(Locale.ROOT), iris,
+                shield);
     }
 
     // The gate at a position the player's screen names, if it is still there and the player is still near it
@@ -171,6 +175,7 @@ public final class ToolActions {
             case SAME_GATE -> "That is this gate's own address";
             case BUSY -> "This gate is busy";
             case TARGET_BUSY -> "The gate at that address is busy";
+            case INCOMPATIBLE -> "This gate can't connect to that type of gate";
             case NOT_ENOUGH_ENERGY -> "This gate doesn't have the energy";
             case DENIED -> "You aren't allowed to dial that";
             case CANCELED -> "Something stopped the dial";
@@ -360,8 +365,9 @@ public final class ToolActions {
         final String type = gate.flatMap(g -> g.type().unwrapKey()).map(key -> key.identifier().toString())
                 .orElse("");
         final int iris = gate.flatMap(Stargate::iris).map(i -> i.state().ordinal()).orElse(GateInfo.NO_IRIS);
+        final boolean shield = gate.flatMap(Stargate::iris).map(i -> SGIris.isShield(i.type())).orElse(false);
         return new TabletGateInfo(listed.name(), listed.position().dimension().identifier().toString(),
-                listed.position().pos(), address, type, ToolActions.status(gate), iris);
+                listed.position().pos(), address, type, ToolActions.status(gate), iris, shield);
     }
 
     // The tablet the player holds, main hand first
@@ -569,12 +575,21 @@ public final class ToolActions {
         ToolActions.sendGdo(player, gate.get(), false, message);
     }
 
-    private static String iris(final Stargate gate, final boolean open, final Cause cause) {
+    /**
+     * Opens or closes a gate's iris, which for a shield lowers or raises it.
+     *
+     * @return what went wrong, or nothing
+     */
+    public static String iris(final Stargate gate, final boolean open, final Cause cause) {
         final Optional<Iris> iris = gate.iris();
         if (iris.isEmpty()) {
             return "That gate has no iris";
         }
-        return ToolActions.explain(open ? iris.get().open(cause) : iris.get().close(cause));
+        final ActionResult result = open ? iris.get().open(cause) : iris.get().close(cause);
+        if (result == ActionResult.NOT_POSSIBLE && !open && SGIris.isShield(iris.get().type())) {
+            return "The gate doesn't have the energy to raise its shield";
+        }
+        return ToolActions.explain(result);
     }
 
     // The configurator
@@ -593,6 +608,12 @@ public final class ToolActions {
         ToolActions.sendConfigurator(player, gate.get(), true, "");
     }
 
+    // A name as JSON, as the screens read names back
+    private static String json(final Component name) {
+        return ComponentSerialization.CODEC.encodeStart(JsonOps.INSTANCE, name).result().map(JsonElement::toString)
+                .orElse("");
+    }
+
     private static void sendConfigurator(final ServerPlayer player, final Stargate gate, final boolean open,
             final String message) {
         final Registry<GateProperty<?>> properties = player.level().getServer().registryAccess()
@@ -606,11 +627,20 @@ public final class ToolActions {
         }
         final List<String> types = new ArrayList<>();
         final List<String> typeNames = new ArrayList<>();
+        // Only the types a gate of its size can be, as only a supergate can be an Ori gate
         player.level().getServer().registryAccess().lookupOrThrow(SGCraftRegistries.GATE_TYPE).listElements()
+                .filter(type -> type.value().supports(gate.size()) || type.value() == gate.type().value())
                 .forEach(type -> {
                     types.add(type.key().identifier().toString());
-                    typeNames.add(ComponentSerialization.CODEC.encodeStart(JsonOps.INSTANCE, type.value().name())
-                            .result().map(JsonElement::toString).orElse(""));
+                    typeNames.add(ToolActions.json(type.value().name()));
+                });
+        final List<String> irisTypes = new ArrayList<>();
+        final List<String> irisNames = new ArrayList<>();
+        player.level().getServer().registryAccess().lookupOrThrow(SGCraftRegistries.IRIS_TYPE).listElements()
+                .filter(iris -> gate.type().value().acceptsIris(iris.key()))
+                .forEach(iris -> {
+                    irisTypes.add(iris.key().identifier().toString());
+                    irisNames.add(ToolActions.json(iris.value().name()));
                 });
         final List<Named> players = new ArrayList<>();
         for (final UUID uuid : gate.get(GateProperties.PLAYER_RIGHTS).orElse(Map.of()).keySet()) {
@@ -619,7 +649,7 @@ public final class ToolActions {
         final Optional<Named> owner = gate.owner().map(uuid -> new Named(uuid.toString(),
                 ToolActions.name(player, uuid)));
         SGNetwork.send(player, new ConfiguratorState(open, ToolActions.info(player, gate), gate.chevrons(), types,
-                gate.position().dimension().identifier().toString(), typeNames,
+                gate.position().dimension().identifier().toString(), typeNames, irisTypes, irisNames,
                 values, players, message,
                 1 / SGCraftApi.get().energy().rate(PowerUnitBlockEntity.FORGE_ENERGY),
                 GateOrientation.of(gate.orientation()).getSerializedName(), owner,
@@ -760,8 +790,8 @@ public final class ToolActions {
             ToolActions.change(player, gate, property, change, cause, problems);
         }
         if (upgradesOnly) {
-            problems.add("Use a gate upgrade, a chevron upgrade or an iris upgrade to change the gate's type, "
-                    + "chevrons or iris");
+            problems.add("Use a gate upgrade, a chevron upgrade, an iris upgrade or a shield upgrade to change the "
+                    + "gate's type, chevrons or iris");
         }
         if (!apply.addPlayer().isBlank()) {
             ToolActions.addPlayer(player, gate, apply.addPlayer().strip(), cause, problems);
@@ -822,11 +852,14 @@ public final class ToolActions {
         }
     }
 
-    // An iris fitted with an iris upgrade, taken off with the configurator, comes back as the upgrade
+    // An iris fitted with its upgrade, taken off or swapped for the other kind with the configurator, comes back as
+    // the upgrade
     private static void irisChanged(final ServerPlayer player, final GateProperty<?> property, final Optional<?> before,
             final Optional<?> after) {
-        if (property == GateProperties.IRIS && before.isPresent() && after.isEmpty() && !player.isCreative()) {
-            player.getInventory().placeItemBackInInventory(new ItemStack(SGItems.IRIS_UPGRADE), Prediction.SERVER_ONLY);
+        if (property == GateProperties.IRIS && before.isPresent() && !after.equals(before) && !player.isCreative()
+                && before.get() instanceof final ResourceKey<?> key) {
+            key.cast(SGCraftRegistries.IRIS_TYPE).flatMap(IrisUpgradeItem::forType).ifPresent(upgrade -> player
+                    .getInventory().placeItemBackInInventory(new ItemStack(upgrade), Prediction.SERVER_ONLY));
         }
     }
 

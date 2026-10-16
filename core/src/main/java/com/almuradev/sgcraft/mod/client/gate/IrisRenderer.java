@@ -60,6 +60,9 @@ public final class IrisRenderer {
     private static final Map<ResourceKey<GateType>, Double> RIMS = Map.of(GateTypes.MILKY_WAY, 2.0,
             GateTypes.PEGASUS, 2.0);
 
+    // Where a shield stops for a type of gate with no rim here: a little inside its ring
+    private static final double SHIELD_RIM = 2.0;
+
     private static final int BLADES = 20;
     // A standard gate's ring's inner radius, which the blades are sized for
     private static final double RING_INNER_RADIUS = 2.0;
@@ -110,6 +113,11 @@ public final class IrisRenderer {
                 IrisRenderer.TEXTURES.get(GateTypes.MILKY_WAY));
         collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(texture),
                 (pose, buffer) -> GateGeometry.emit(pose, buffer, triangles, -1, light));
+    }
+
+    /** @return the edge of the opening of a type of gate's ring, where an iris or a shield across it stops */
+    public static double rim(final ResourceKey<GateType> type) {
+        return IrisRenderer.RIMS.getOrDefault(type, IrisRenderer.SHIELD_RIM);
     }
 
     // Cached for the shut iris, which is drawn most, by the rim it stops at

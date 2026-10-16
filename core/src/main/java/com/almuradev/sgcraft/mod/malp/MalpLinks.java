@@ -44,6 +44,7 @@ import com.almuradev.sgcraft.mod.malp.MalpPayloads.Role;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.Use;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
+import com.almuradev.sgcraft.mod.shield.CityShieldBlockEntity;
 import com.almuradev.sgcraft.mod.view.RemoteViews;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
@@ -92,9 +93,9 @@ import java.util.UUID;
  * player has the screen of their console or tablet open and stays with it: within reach of the console, or holding
  * the tablet in the hand they used it from, in the world they used it in. While a link drives a MALP, the MALP's
  * chunk is kept loaded, and for a while after, so it keeps ticking wherever it is. While the console or tablet
- * reaches the MALP, a tablet has FE in its own battery, and the MALP has power, its battery holding FE or it needing
- * none, the feed is live: the player sees what the MALP sees, the MALP uses FE if it needs power, a tablet uses FE
- * from its own battery, and the MALP takes the driver's controls.
+ * reaches the MALP, a tablet has gate energy in its own battery, and the MALP has power, its battery holding gate
+ * energy or it needing none, the feed is live: the player sees what the MALP sees, the MALP uses gate energy if it
+ * needs power, a tablet uses gate energy from its own battery, and the MALP takes the driver's controls.
  *
  * <p>A player who opens a console steps up to its front, if there is safe ground there within their reach, and turns
  * to face it, and every client draws them working its controls. A player with a tablet's screen open is drawn holding
@@ -108,7 +109,7 @@ import java.util.UUID;
  *
  * <p>While the feed of the player at a console is live, the players nearest it who aren't at it see the feed on its
  * monitor, as many as the server's settings allow, within the settings' range. A tablet has no monitor. Watching, on
- * a screen or a monitor, uses none of the MALP's FE beyond what the driver's feed uses.</p>
+ * a screen or a monitor, uses none of the MALP's gate energy beyond what the driver's feed uses.</p>
  */
 public final class MalpLinks {
 
@@ -125,7 +126,7 @@ public final class MalpLinks {
     private static final int TICKET_TICKS = 20;
     private static final int SIGNAL_TICKS = 5;
     private static final int STATE_TICKS = 10;
-    // How often a tablet's battery pays for the FE its feed used, so the tablet isn't changed every tick
+    // How often a tablet's battery pays for the gate energy its feed used, so the tablet isn't changed every tick
     private static final int TABLET_PAY_TICKS = 20;
     // How often a driven console looks for the players near it who see its monitor
     private static final int SPECTATOR_TICKS = 10;
@@ -165,8 +166,8 @@ public final class MalpLinks {
         private @Nullable MalpEntity viewing;
         // The players near the console who see this player's feed on its monitor
         private Set<UUID> spectators = new HashSet<>();
-        // The FE a tablet's feed has used since the tablet's battery last paid for it
-        private long owed;
+        // The gate energy a tablet's feed has used since the tablet's battery last paid for it
+        private double owed;
 
         private Link(final ServerPlayer player, final MalpController controller) {
             this.player = player;
@@ -192,9 +193,11 @@ public final class MalpLinks {
         }
     }
 
-    /** Registers the ticket type. */
+    /** Registers the ticket types: the MALP's, and the city shield's. */
     public static void registerTickets(final RegistrySink<TicketType> sink) {
         sink.register(ResourceKey.create(Registries.TICKET_TYPE, SGCraft.id("malp")), MalpLinks.TICKET);
+        sink.register(ResourceKey.create(Registries.TICKET_TYPE, SGCraft.id("city_shield")),
+                CityShieldBlockEntity.TICKET);
     }
 
     /**
@@ -610,7 +613,7 @@ public final class MalpLinks {
     public static void tick(final MinecraftServer server) {
         final long now = server.getTickCount();
         final MalpSettings settings = MalpSettings.current();
-        // A MALP watched from several consoles and tablets uses its idle FE once
+        // A MALP watched from several consoles and tablets uses its idle gate energy once
         final Set<MalpEntity> drained = new HashSet<>();
         final List<Link> links = new ArrayList<>(MalpLinks.LINKS.values());
         // Drivers first, so those watching them follow what they have this tick
@@ -663,7 +666,7 @@ public final class MalpLinks {
         }
     }
 
-    // A tablet's battery pays for the FE its feed has used
+    // A tablet's battery pays for the gate energy its feed has used
     private static void pay(final Link link) {
         if (link.owed > 0 && link.controller instanceof MalpController.Tablet tablet) {
             MalpTabletItem.drain(tablet.stack(), link.owed);

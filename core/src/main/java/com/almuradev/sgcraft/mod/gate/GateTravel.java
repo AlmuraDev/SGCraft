@@ -39,6 +39,7 @@ import com.almuradev.sgcraft.mod.event.SGEventBus;
 import com.almuradev.sgcraft.mod.event.SGEvents;
 import com.almuradev.sgcraft.mod.item.SGItems;
 import com.almuradev.sgcraft.mod.sound.SGSounds;
+import com.almuradev.sgcraft.mod.tool.ExplorerData;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
@@ -198,6 +199,10 @@ final class GateTravel {
         if (to == null || destination == null) {
             return;
         }
+        // A player going through a generated gate has visited it, and the gate they come out of too
+        if (entity instanceof final ServerPlayer player) {
+            ExplorerData.visit(player, this.gate.position());
+        }
         if (to.irisBlocks() && !GateTravel.phases(entity, to)) {
             GateTravel.splat(level, entity, to);
             return;
@@ -217,6 +222,9 @@ final class GateTravel {
         final Entity arrived = entity.teleport(new TeleportTransition(destination, position, motion, yaw,
                 entity.getXRot(), TeleportTransition.DO_NOTHING));
         if (arrived != null) {
+            if (arrived instanceof final ServerPlayer player) {
+                ExplorerData.visit(player, to.position());
+            }
             GateTravel.playTeleport(destination, arrived, position);
             SGEventBus.get().post(new SGEvents.TravelPost(cause, this.gate, arrived, to));
         }

@@ -48,8 +48,12 @@ import com.almuradev.sgcraft.mod.power.BatteryChargerMenu;
 import com.almuradev.sgcraft.mod.power.PowerUnitMenu;
 import com.almuradev.sgcraft.mod.power.PowerUnitProvider;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
+import com.almuradev.sgcraft.mod.shield.CityShieldMenu;
+import com.almuradev.sgcraft.mod.zpm.ZpmMenu;
+import com.almuradev.sgcraft.mod.zpm.ZpmSources;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.inventory.MenuType;
@@ -63,6 +67,9 @@ import java.util.List;
  */
 public final class SGBuiltIns {
 
+    /** The identifier of the bridge for FE, whose rate the server's {@code energy.bridge_rates.fe_in_per_ge} sets. */
+    public static final Identifier FORGE_ENERGY_BRIDGE = SGCraft.id("forge_energy");
+
     private SGBuiltIns() {
     }
 
@@ -74,14 +81,17 @@ public final class SGBuiltIns {
 
     public static void registerIrisTypes(final RegistrySink<IrisType> sink) {
         sink.register(IrisTypes.METAL, () -> Component.translatable("iris_type.sgcraft.metal"));
+        sink.register(IrisTypes.SHIELD, () -> Component.translatable("iris_type.sgcraft.shield"));
     }
 
-    /** SGCraft's own energy sources: the naquadah in a gate's DHDs. */
+    /** SGCraft's own energy sources: the naquadah in a gate's DHDs, power units, and ZPMs. */
     public static void registerEnergySources(final RegistrySink<EnergySourceProvider> sink) {
         sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_SOURCE_PROVIDER, SGCraft.id("dhd_fuel")),
                 new DhdFuelProvider());
         sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_SOURCE_PROVIDER, SGCraft.id("power_unit")),
                 new PowerUnitProvider());
+        sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_SOURCE_PROVIDER, SGCraft.id("zpm")),
+                new ZpmSources());
     }
 
     /**
@@ -103,8 +113,8 @@ public final class SGBuiltIns {
      */
     public static void registerEnergyBridges(final RegistrySink<EnergyBridge> sink) {
         sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_BRIDGE, SGCraft.id("direct")), () -> 1.0);
-        // FE, the loaders' common energy, which power units store
-        sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_BRIDGE, SGCraft.id("forge_energy")),
+        // FE, the loaders' common energy, which cables bring in at this bridge's rate
+        sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_BRIDGE, SGBuiltIns.FORGE_ENERGY_BRIDGE),
                 PowerUnitBlockEntity.FORGE_ENERGY);
     }
 
@@ -120,6 +130,13 @@ public final class SGBuiltIns {
         sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("battery_charger")), BatteryChargerMenu.TYPE);
         MalpMenu.TYPE = Platform.get().menuType(MalpMenu::new);
         sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("malp")), MalpMenu.TYPE);
+        CityShieldMenu.TYPE = Platform.get().menuType(CityShieldMenu::new);
+        sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("city_shield")), CityShieldMenu.TYPE);
+        // A ZPM console or cart has one slot, a hub three, so each kind has its own menu
+        ZpmMenu.SINGLE = Platform.get().menuType(ZpmMenu::single);
+        sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("zpm")), ZpmMenu.SINGLE);
+        ZpmMenu.HUB = Platform.get().menuType(ZpmMenu::hub);
+        sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("zpm_hub")), ZpmMenu.HUB);
     }
 
     public static void registerProperties(final RegistrySink<GateProperty<?>> sink) {

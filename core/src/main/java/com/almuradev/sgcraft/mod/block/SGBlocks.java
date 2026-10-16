@@ -29,6 +29,10 @@ import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.api.gate.GateTypes;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
+import com.almuradev.sgcraft.mod.shield.CityShieldBlock;
+import com.almuradev.sgcraft.mod.shield.ShieldConsoleBlock;
+import com.almuradev.sgcraft.mod.zpm.ZpmDevice;
+import com.almuradev.sgcraft.mod.zpm.ZpmDeviceBlock;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.valueproviders.UniformInt;
@@ -66,6 +70,12 @@ public final class SGBlocks {
     public static PowerUnitBlock POWER_UNIT;
     public static MalpConsoleBlock MALP_CONSOLE;
     public static BatteryChargerBlock BATTERY_CHARGER;
+    public static EnergyConverterBlock ENERGY_CONVERTER;
+    public static ShieldConsoleBlock SHIELD_CONSOLE;
+    public static CityShieldBlock CITY_SHIELD_GENERATOR;
+    public static ZpmDeviceBlock ZPM_CONSOLE;
+    public static ZpmDeviceBlock ZPM_INTERFACE_CART;
+    public static ZpmDeviceBlock ZPM_HUB;
 
     private SGBlocks() {
     }
@@ -100,6 +110,9 @@ public final class SGBlocks {
                         supergate)));
             }
         }
+        // The Ori supergate comes only as a supergate
+        SGBlocks.SPAWNERS.add(SGBlocks.register(sink, "ori_supergate_spawner", properties -> new GateSpawnerBlock(
+                properties.sound(SoundType.STONE).mapColor(MapColor.STONE).noLootTable(), GateTypes.ORI, true)));
         // A DHD's model is drawn by its block entity, so the block hides nothing behind it
         SGBlocks.DHD = SGBlocks.register(sink, "dhd",
                 properties -> new DhdBlock(properties.noOcclusion(), GateTypes.MILKY_WAY));
@@ -120,6 +133,22 @@ public final class SGBlocks {
         SGBlocks.MALP_CONSOLE = SGBlocks.register(sink, "malp_console",
                 properties -> new MalpConsoleBlock(properties.noOcclusion()));
         SGBlocks.BATTERY_CHARGER = SGBlocks.register(sink, "battery_charger", BatteryChargerBlock::new);
+        // Turns an SGCraft store's gate energy into FE for other mods
+        SGBlocks.ENERGY_CONVERTER = SGBlocks.register(sink, "energy_converter", EnergyConverterBlock::new);
+        // The original's shield console, which works the nearest gate's shield, as hard as its machines
+        SGBlocks.SHIELD_CONSOLE = SGBlocks.register(sink, "shield_console",
+                properties -> new ShieldConsoleBlock(properties.strength(1.5F, 10.0F)));
+        // The city shield generator, as hard as the original's, and proof against blasts
+        SGBlocks.CITY_SHIELD_GENERATOR = SGBlocks.register(sink, "city_shield_generator",
+                properties -> new CityShieldBlock(properties.strength(5.0F, 2000.0F)));
+        // The ZPM console, interface cart and hub, which hold ZPMs for gates and cables; models of their own, so they
+        // hide nothing behind them
+        SGBlocks.ZPM_CONSOLE = SGBlocks.register(sink, "zpm_console",
+                properties -> new ZpmDeviceBlock.Single(properties.noOcclusion(), ZpmDevice.CONSOLE));
+        SGBlocks.ZPM_INTERFACE_CART = SGBlocks.register(sink, "zpm_interface_cart",
+                properties -> new ZpmDeviceBlock.Single(properties.noOcclusion(), ZpmDevice.CART));
+        SGBlocks.ZPM_HUB = SGBlocks.register(sink, "zpm_hub",
+                properties -> new ZpmDeviceBlock.Hub(properties.noOcclusion()));
     }
 
     private static <B extends Block> B register(final RegistrySink<Block> sink, final String name,

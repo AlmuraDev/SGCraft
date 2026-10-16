@@ -83,3 +83,28 @@ widened to the width the original's screen drew it at) and its recipe come from 
 The Tok'ra's skin (`textures/entity/villager/profession/tokra.png`, and the same in `zombie_villager`) comes from
 the 1.12 mod's `textures/skins/tokra.png`, and the Tok'ra trade the crystals the original's did, at the original's
 prices.
+
+## SGCraft 2.2.0's shields, Ori supergate and explorer dialer
+
+The gate shield, the shield console, the city shield generator, the Ori supergate and the explorer dialer follow the
+1.12 mod's version 2.2.0, as AlmuraDev added them there. From it come the shield upgrade's texture
+(`textures/item/shield_upgrade.png`, the 1.12 mod's `sgShieldUpgrade.png`), the shield console's and the city shield
+generator's textures (`textures/block/shield_console_*.png` and `city_shield_generator_*.png`), the explorer dialer's
+texture (`textures/item/edd.png`), the Ori supergate's metal (`textures/gate/ori/ring.png`, the 1.12 mod's
+`tileentity/ori/stargate.png`) and its spawner's texture (`textures/block/ori_supergate_spawner.png`), and the sounds
+of the shield rising and falling (`sounds/shield_activation.ogg` and `shield_deactivation.ogg`) and of the Ori
+supergate's ring linking (`sounds/ori/link1.ogg` to `link4.ogg`). The recipes, the timings, the shapes and colors of
+the shields and of the Ori supergate's ring, and the city shield's energy use follow the 1.12 mod's. The city shield
+runs on ZPMs and power units here, where the 1.12 mod's ran on ZPMs alone.
+
+## ZPMs
+
+The ZPM, the ZPM console, the ZPM interface cart and the ZPM hub come from the 1.12 mod. The ZPM's texture
+(`textures/item/zpm.png`) comes from it, and so do the models of the console, the cart and the hub
+(`models/block/zpm_console.json`, `zpm_console_active.json`, `zpm_hub.json`, `zpm_hub_1.json`, `zpm_hub_2.json`,
+`zpm_hub_3.json`, `zpm_interface_cart.json` and `zpm_interface_cart_active.json`), which Dockter made for the 1.12
+mod with MrCrayfish's Model Creator. Their textures (`textures/block/zpm_side.png`, `zpm_top.png`,
+`zpm_interface_cart_*.png`, `1_console.png`, `2_console.png`, `4_console.png`, `5_console.png` and
+`6_console.png`) and the screens' art (`textures/gui/zpm_gui.png` and `zpm_hub_gui.png`) come from the 1.12 mod
+too. The ZPM's energy units, the supergate's need for three ZPMs, the routes that need a ZPM and the ZPM chests
+follow the 1.12 mod's version 2.2.0.

@@ -40,6 +40,12 @@ public final class IrisTypes {
     /** The metal iris of the show, which closes like a camera shutter. */
     public static final ResourceKey<IrisType> METAL = IrisTypes.key("metal");
 
+    /**
+     * An energy shield, which rises and falls in moments and needs energy to stay raised. Travelers stopped by a
+     * raised shield are stopped as by a shut iris.
+     */
+    public static final ResourceKey<IrisType> SHIELD = IrisTypes.key("shield");
+
     private IrisTypes() {
     }
 

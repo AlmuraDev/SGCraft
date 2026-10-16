@@ -32,6 +32,7 @@ import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.block.GateSpawnerBlock;
 import com.almuradev.sgcraft.mod.villager.SGVillagers;
 import com.almuradev.sgcraft.mod.worldgen.StructureGates;
+import com.almuradev.sgcraft.mod.zpm.ZpmChests;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
@@ -113,6 +114,8 @@ public final class GateSpawnerBlockEntity extends BlockEntity {
         if (tokra && StructureGates.tokraIn(level.dimension())) {
             SGVillagers.spawnTokra(level, pos, state.getValue(HorizontalDirectionalBlock.FACING));
         }
+        // Now and then a chest with a ZPM in it stands by the gate, as in the original
+        ZpmChests.roll(level, pos, state.getValue(HorizontalDirectionalBlock.FACING));
     }
 
     private boolean gateNear(final ServerLevel level, final BlockPos pos) {

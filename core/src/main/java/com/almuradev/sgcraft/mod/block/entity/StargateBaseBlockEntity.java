@@ -46,7 +46,9 @@ import com.almuradev.sgcraft.mod.gate.IrisView;
 import com.almuradev.sgcraft.mod.gate.SGIris;
 import com.almuradev.sgcraft.mod.gate.SGStargate;
 import com.almuradev.sgcraft.mod.item.GateTypeUpgradeItem;
+import com.almuradev.sgcraft.mod.item.IrisUpgradeItem;
 import com.almuradev.sgcraft.mod.item.SGItems;
+import com.almuradev.sgcraft.mod.zpm.ZpmItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
@@ -95,8 +97,34 @@ public final class StargateBaseBlockEntity extends BlockEntity {
     /** How many blocks of camouflage a base holds: one for each block of the gate's bottom row, left to right. */
     public static final int CAMOUFLAGE_SLOTS = 5;
 
+    /** How many ZPMs a supergate's base holds, as in the original. */
+    public static final int ZPM_SLOTS = 3;
+
     private boolean formed;
     private final Camouflage camouflage = new Camouflage();
+    // A supergate's own ZPMs, which it draws on; a standard gate's base takes none
+    private final SimpleContainer zpms = new SimpleContainer(StargateBaseBlockEntity.ZPM_SLOTS) {
+        @Override
+        public int getMaxStackSize() {
+            return 1;
+        }
+
+        @Override
+        public boolean canPlaceItem(final int slot, final ItemStack stack) {
+            return ZpmItem.is(stack) && StargateBaseBlockEntity.this.takesZpms();
+        }
+
+        @Override
+        public boolean stillValid(final Player player) {
+            return Container.stillValidBlockEntity(StargateBaseBlockEntity.this, player);
+        }
+
+        @Override
+        public void setChanged() {
+            super.setChanged();
+            StargateBaseBlockEntity.this.setChanged();
+        }
+    };
     private ResourceKey<GateType> gateType;
     private int chevrons = StargateBaseBlockEntity.DEFAULT_CHEVRONS;
     // How many chevrons the gate has that weren't fitted with chevron upgrades, such as those it came with, which give
@@ -342,6 +370,7 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         this.removePlates();
         if (this.level != null) {
             Containers.dropContents(this.level, pos, this.camouflage);
+            Containers.dropContents(this.level, pos, this.zpms);
             // The upgrades fitted to it, as in 1.12: a chevron upgrade for each chevron past seven, the iris and the
             // gate type upgrade; not those the gate came with
             if (this.typeFitted) {
@@ -354,10 +383,20 @@ public final class StargateBaseBlockEntity extends BlockEntity {
                         new ItemStack(SGItems.CHEVRON_UPGRADE));
             }
             if (this.iris != null && !this.irisIncluded) {
-                Containers.dropItemStack(this.level, pos.getX(), pos.getY(), pos.getZ(),
-                        new ItemStack(SGItems.IRIS_UPGRADE));
+                IrisUpgradeItem.forType(this.iris.type()).ifPresent(upgrade -> Containers.dropItemStack(
+                        this.level, pos.getX(), pos.getY(), pos.getZ(), new ItemStack(upgrade)));
             }
         }
+    }
+
+    /** @return a supergate's ZPM slots, which a menu can show; a standard gate's base has them, but takes nothing */
+    public Container zpms() {
+        return this.zpms;
+    }
+
+    /** @return whether the base takes ZPMs: a supergate's does */
+    public boolean takesZpms() {
+        return this.getBlockState().getBlock() instanceof final StargateBaseBlock block && block.isSupergate();
     }
 
     // The camouflage, one block to a slot; a change is saved and shown to clients at once
@@ -426,7 +465,7 @@ public final class StargateBaseBlockEntity extends BlockEntity {
     // them away as it opens; a plate lost as its chunk unloads is put back
     private static void irisPlates(final ServerLevel level, final BlockPos pos, final StargateBaseBlockEntity base) {
         final IrisView iris = base.iris;
-        final boolean shut = base.formed && iris != null && SGIris.aperture(iris.state(), iris.since(),
+        final boolean shut = base.formed && iris != null && SGIris.aperture(iris.type(), iris.state(), iris.since(),
                 level.getServer().overworld().getGameTime()) <= StargateBaseBlockEntity.IRIS_STOPS;
         final boolean standing = !base.plates.isEmpty() && base.plates.stream().noneMatch(Entity::isRemoved);
         if (shut == standing) {
@@ -557,6 +596,11 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         for (int i = 0; i < items.size(); i++) {
             this.camouflage.getItems().set(i, items.get(i));
         }
+        final NonNullList<ItemStack> zpms = NonNullList.withSize(StargateBaseBlockEntity.ZPM_SLOTS, ItemStack.EMPTY);
+        ContainerHelper.loadAllItems(input.childOrEmpty("zpms"), zpms);
+        for (int i = 0; i < zpms.size(); i++) {
+            this.zpms.getItems().set(i, zpms.get(i));
+        }
     }
 
     @Override
@@ -571,6 +615,7 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         output.store("orientation", GateOrientation.CODEC, this.orientation);
         output.putBoolean("powered", this.powered);
         ContainerHelper.saveAllItems(output, this.camouflage.getItems());
+        ContainerHelper.saveAllItems(output.child("zpms"), this.zpms.getItems());
     }
 
     @Override

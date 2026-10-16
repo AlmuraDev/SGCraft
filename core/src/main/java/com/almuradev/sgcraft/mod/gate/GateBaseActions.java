@@ -31,11 +31,13 @@ import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
 import com.almuradev.sgcraft.mod.tool.ToolActions;
+import com.almuradev.sgcraft.mod.zpm.ZpmSources;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.inventory.ContainerData;
 
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -46,6 +48,9 @@ import java.util.OptionalInt;
  * its address.
  */
 public final class GateBaseActions {
+
+    // How often a supergate's base menu looks again at the ZPMs it can draw on, in ticks
+    private static final long LOOK_TICKS = 20;
 
     private GateBaseActions() {
     }
@@ -59,16 +64,55 @@ public final class GateBaseActions {
             return;
         }
         int menu = GateBaseInfo.NO_MENU;
-        // A gate lying flat has no bottom row to camouflage, as in the original
-        if (!base.orientation().isFlat()
+        // A gate lying flat has no bottom row to camouflage, as in the original, so only a supergate's, for its ZPMs,
+        // opens lying flat
+        if ((!base.orientation().isFlat() || base.takesZpms())
                 && gate.get().access().allows(ToolActions.cause(player), GateRight.CONFIGURE)) {
+            final ContainerData data = GateBaseActions.data(gate.get(), base);
             final OptionalInt opened = player.openMenu(new SimpleMenuProvider((id, inventory, opener) ->
-                    new GateBaseMenu(id, inventory, base.camouflage()),
+                    new GateBaseMenu(id, inventory, base.camouflage(), base.zpms(), data),
                     Component.translatableWithFallback("screen.sgcraft.gate_base", "Stargate Address")));
             if (opened.isPresent()) {
                 menu = opened.getAsInt();
             }
         }
         SGNetwork.send(player, new GateBaseInfo(menu, ToolActions.info(player, gate.get())));
+    }
+
+    // What a base's menu sends: whether it takes ZPMs and stands, and the ZPMs a supergate can draw on, looked at once
+    // a second
+    private static ContainerData data(final Stargate gate, final StargateBaseBlockEntity base) {
+        return new ContainerData() {
+            private long looked = Long.MIN_VALUE;
+            private int count;
+            private long units;
+
+            @Override
+            public int get(final int index) {
+                if (index == GateBaseMenu.FLAGS) {
+                    return (base.takesZpms() ? GateBaseMenu.TAKES_ZPMS : 0)
+                            | (base.orientation().isFlat() ? 0 : GateBaseMenu.STANDING);
+                }
+                final long now = base.getLevel() == null ? 0 : base.getLevel().getGameTime();
+                if (now - this.looked >= GateBaseActions.LOOK_TICKS && base.takesZpms()) {
+                    this.looked = now;
+                    this.count = ZpmSources.count(gate);
+                    this.units = ZpmSources.stored(gate);
+                }
+                return switch (index) {
+                    case GateBaseMenu.COUNT -> this.count;
+                    default -> (int) (this.units >>> (16 * (index - GateBaseMenu.UNITS)) & 0xFFFF);
+                };
+            }
+
+            @Override
+            public void set(final int index, final int value) {
+            }
+
+            @Override
+            public int getCount() {
+                return GateBaseMenu.DATA;
+            }
+        };
     }
 }

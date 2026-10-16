@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "sgcraft:block/ori_supergate_spawner"
+    }
+  }
+}

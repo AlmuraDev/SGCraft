@@ -57,7 +57,8 @@ public final class GateLoopSounds {
     /** Starts whichever of a gate's sounds should be playing and aren't. Call each client tick. */
     public static void tick(final StargateBaseBlockEntity base) {
         final DialStyle style = DialStyle.of(base.gateType());
-        GateLoopSounds.keep(GateLoopSounds.ROLLS, base, SGSounds.roll(style), GateLoopSounds::rolling);
+        GateLoopSounds.keep(GateLoopSounds.ROLLS, base, SGSounds.roll(style),
+                view -> GateLoopSounds.rolling(style, view));
         GateLoopSounds.keep(GateLoopSounds.HUMS, base, SGSounds.EVENT_HORIZON,
                 view -> view.phase() == DialPhase.CONNECTED);
     }
@@ -65,6 +66,11 @@ public final class GateLoopSounds {
     // The dialing gate rolls while a symbol is being dialed
     private static boolean rolling(final DialView view) {
         return view.initiator() && view.phase() == DialPhase.DIALING;
+    }
+
+    // An Ori supergate's ring doesn't turn, so it doesn't roll
+    private static boolean rolling(final DialStyle style, final DialView view) {
+        return style != DialStyle.ORI && GateLoopSounds.rolling(view);
     }
 
     private static void keep(final Map<StargateBaseBlockEntity, Loop> playing, final StargateBaseBlockEntity base,

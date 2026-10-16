@@ -26,7 +26,10 @@
 package com.almuradev.sgcraft.neoforge;
 
 import com.almuradev.sgcraft.mod.Platform;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
@@ -35,7 +38,10 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.entity.PartEntity;
+import net.neoforged.neoforge.transfer.energy.EnergyHandler;
+import net.neoforged.neoforge.transfer.transaction.Transaction;
 
 import java.nio.file.Path;
 import java.util.function.BiFunction;
@@ -60,6 +66,19 @@ public final class PlatformNeoForge implements Platform {
     @Override
     public boolean isPart(final Entity entity) {
         return entity instanceof PartEntity<?>;
+    }
+
+    @Override
+    public long offerEnergy(final ServerLevel level, final BlockPos pos, final Direction face, final long amount) {
+        final EnergyHandler handler = level.getCapability(Capabilities.Energy.BLOCK, pos, face);
+        if (handler == null || amount <= 0) {
+            return 0;
+        }
+        try (Transaction transaction = Transaction.openRoot()) {
+            final int taken = handler.insert((int) Math.min(Integer.MAX_VALUE, amount), transaction);
+            transaction.commit();
+            return taken;
+        }
     }
 
     @Override

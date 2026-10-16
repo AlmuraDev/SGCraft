@@ -64,7 +64,7 @@ public final class MalpScreen extends AbstractContainerScreen<MalpMenu> {
         super.extractLabels(graphics, xm, ym);
         final int battery = this.menu.data().get(MalpMenu.BATTERY);
         final Component charge = this.menu.data().get(MalpMenu.POWER_REQUIRED) == 0
-                ? Component.translatableWithFallback("container.sgcraft.malp.no_power_needed", "Needs no FE")
+                ? Component.translatableWithFallback("container.sgcraft.malp.no_power_needed", "Needs no power")
                 : battery < 0
                 ? Component.translatableWithFallback("container.sgcraft.malp.no_battery", "No battery")
                 : Component.translatableWithFallback("container.sgcraft.malp.battery", "Battery %s%%", battery);

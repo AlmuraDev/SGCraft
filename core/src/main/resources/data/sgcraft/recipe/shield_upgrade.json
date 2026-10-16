@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "i": "sgcraft:naquadah_ingot",
+    "l": "minecraft:blue_dye",
+    "r": "minecraft:redstone",
+    "c": "sgcraft:core_crystal"
+  },
+  "pattern": [
+    "ili",
+    "rcr",
+    "ili"
+  ],
+  "result": {
+    "id": "sgcraft:shield_upgrade"
+  }
+}

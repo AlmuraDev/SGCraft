@@ -34,8 +34,8 @@ import net.minecraft.network.FriendlyByteBuf;
  * when it goes through a gate and when it is packed up as an item. Each setting has a default, which a MALP saved
  * before the setting existed takes.
  *
- * @param powerRequired whether the MALP runs on its battery; when false it uses no FE and works with a flat battery
- *     or none
+ * @param powerRequired whether the MALP runs on its battery; when false it uses no gate energy and works with a flat
+ *     battery or none
  */
 public record MalpOptions(boolean powerRequired) {
 

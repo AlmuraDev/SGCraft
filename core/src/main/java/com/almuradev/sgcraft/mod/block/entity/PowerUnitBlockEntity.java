@@ -25,9 +25,11 @@
 
 package com.almuradev.sgcraft.mod.block.entity;
 
-import com.almuradev.sgcraft.api.SGCraftApi;
 import com.almuradev.sgcraft.api.energy.EnergyBridge;
+import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.energy.FeRate;
+import com.almuradev.sgcraft.mod.energy.GeStore;
 import com.almuradev.sgcraft.mod.item.BatteryItem;
 import com.almuradev.sgcraft.mod.item.SGDataComponents;
 import com.almuradev.sgcraft.mod.item.SGItems;
@@ -55,18 +57,19 @@ import org.jspecify.annotations.Nullable;
 import java.util.function.Function;
 
 /**
- * A stargate power unit, as the original's: a store of the loaders' common energy, FE, which cables fill and nothing
- * drains but the gates near it, and the battery in its slot. Gates draw on it through
- * {@link com.almuradev.sgcraft.mod.power.PowerUnitProvider}, turning FE into their own energy at the
- * {@link #FORGE_ENERGY} bridge's rate. It keeps its charge when broken, and drops its battery.
+ * A stargate power unit, as the original's: a store of gate energy (GE) that cables fill and nothing drains but the
+ * gates near it, and the battery in its slot. Cables put FE in, which it keeps as the GE it is worth at the
+ * {@link #FORGE_ENERGY} bridge's rate; gates draw its GE through
+ * {@link com.almuradev.sgcraft.mod.power.PowerUnitProvider}. It keeps its charge when broken, and drops its battery.
  */
-public final class PowerUnitBlockEntity extends BlockEntity {
+public final class PowerUnitBlockEntity extends BlockEntity implements GeStore {
 
     /**
-     * The bridge between FE and gate energy, whose rate is how much gate energy one FE is worth: the original's 80 FE
-     * to a unit, unless the server's settings say otherwise.
+     * The bridge between FE and gate energy, whose rate is how much gate energy one FE buys coming in: one over the
+     * server's {@code energy.bridge_rates.fe_in_per_ge}, the original's 80 FE to a unit unless set.
      */
-    public static final EnergyBridge FORGE_ENERGY = () -> 1.0 / 80;
+    public static final EnergyBridge FORGE_ENERGY = () -> 1.0 / SGServer.current()
+            .map(server -> server.config().fePerGeIn()).orElse(SGConfig.DEFAULTS.fePerGeIn());
 
     private final SimpleContainer battery = new SimpleContainer(1) {
         @Override
@@ -85,7 +88,7 @@ public final class PowerUnitBlockEntity extends BlockEntity {
             PowerUnitBlockEntity.this.setChanged();
         }
     };
-    private long energy;
+    private double energy;
     // What the loader hands cables, made once so a transaction always meets the same one
     private @Nullable Object handler;
 
@@ -93,61 +96,81 @@ public final class PowerUnitBlockEntity extends BlockEntity {
         super(SGBlockEntityTypes.POWER_UNIT, pos, state);
     }
 
-    /** @return the FE the unit holds */
-    public long stored() {
+    /** @return the gate energy the unit holds */
+    public double stored() {
         return this.energy;
     }
 
-    /** @return the most FE a unit holds, as the server's settings say */
+    /** @return the most gate energy a unit holds, as the server's settings say */
     public static long capacity() {
-        return SGServer.current().map(server -> server.config().powerUnitCapacity()).orElse(4_000_000L);
+        return SGServer.current().map(server -> server.config().powerUnitCapacity()).orElse(50_000L);
     }
 
     /**
-     * Sets the FE the unit holds, kept between none and its capacity; for loaders putting back a charge when a
-     * transaction is undone, and for commands.
+     * Sets the gate energy the unit holds, kept between none and its capacity; for loaders putting back a charge when
+     * a transaction is undone, and for commands.
      */
-    public void setStored(final long energy) {
-        final long kept = Math.max(0, Math.min(energy, PowerUnitBlockEntity.capacity()));
+    public void setStored(final double energy) {
+        final double kept = Math.max(0, Math.min(energy, PowerUnitBlockEntity.capacity()));
         if (kept != this.energy) {
             this.energy = kept;
             this.setChanged();
         }
     }
 
+    /** @return the unit's gate energy as cables see it, in FE */
+    public long feStored() {
+        return FeRate.toFeIn(this.energy);
+    }
+
+    /** @return the most a unit holds as cables see it, in FE */
+    public static long feCapacity() {
+        return FeRate.toFeIn(PowerUnitBlockEntity.capacity());
+    }
+
     /**
-     * Takes in FE, as much as there is room for.
+     * Takes in FE from a cable, as much as there is room for, and keeps the gate energy it is worth.
      *
-     * @return how much it took, or would take
+     * @return how much FE it took, or would take
      */
-    public long insert(final long amount, final boolean simulate) {
-        final long taken = Math.max(0, Math.min(amount, PowerUnitBlockEntity.capacity() - this.energy));
+    public long insertFe(final long fe, final boolean simulate) {
+        final long taken = Math.max(0, Math.min(fe, FeRate.toFeIn(PowerUnitBlockEntity.capacity() - this.energy)));
         if (!simulate && taken > 0) {
-            this.setStored(this.energy + taken);
+            this.setStored(this.energy + FeRate.toGeIn(taken));
         }
         return taken;
     }
 
-    /** @return how much gate energy the unit could give now */
+    /** @return how much gate energy the unit could give now, in whole units */
     public long available() {
-        return (long) Math.floor(this.energy * PowerUnitBlockEntity.rate());
+        return (long) Math.floor(this.energy);
     }
 
     /**
-     * Gives gate energy, using up the FE it is worth.
+     * Gives gate energy.
      *
      * @return how much it gave, or would give
      */
     public long draw(final long wanted, final boolean simulate) {
         final long given = Math.max(0, Math.min(wanted, this.available()));
         if (!simulate && given > 0) {
-            this.setStored(this.energy - (long) Math.ceil(given / PowerUnitBlockEntity.rate()));
+            this.setStored(this.energy - given);
         }
         return given;
     }
 
-    private static double rate() {
-        return SGCraftApi.get().energy().rate(PowerUnitBlockEntity.FORGE_ENERGY);
+    @Override
+    public double givable() {
+        return this.energy;
+    }
+
+    @Override
+    public double give(final double wanted) {
+        final double given = Math.max(0, Math.min(wanted, this.energy));
+        if (given > 0) {
+            this.setStored(this.energy - given);
+        }
+        return given;
     }
 
     /**
@@ -169,8 +192,8 @@ public final class PowerUnitBlockEntity extends BlockEntity {
 
     /** Charges the battery in the unit's slot from the unit's store. */
     public static void serverTick(final ServerLevel level, final BlockPos pos, final PowerUnitBlockEntity unit) {
-        final long rate = Math.min(MalpSettings.current().powerUnitChargeRate(), unit.energy);
-        final long taken = BatteryItem.insert(unit.battery.getItem(0), rate, false);
+        final double rate = Math.min(MalpSettings.current().powerUnitChargeRate(), unit.energy);
+        final double taken = BatteryItem.insert(unit.battery.getItem(0), rate, false);
         if (taken > 0) {
             unit.battery.setChanged();
             unit.setStored(unit.energy - taken);
@@ -186,7 +209,7 @@ public final class PowerUnitBlockEntity extends BlockEntity {
                     final ItemStack battery = PowerUnitBlockEntity.this.battery.getItem(0);
                     return battery.isEmpty() ? -1 : BatteryItem.percent(battery);
                 }
-                return PowerUnitMenu.part(index < PowerUnitMenu.CAPACITY ? PowerUnitBlockEntity.this.energy
+                return PowerUnitMenu.part(index < PowerUnitMenu.CAPACITY ? PowerUnitBlockEntity.this.available()
                         : PowerUnitBlockEntity.capacity(), index % PowerUnitMenu.PARTS);
             }
 
@@ -213,14 +236,14 @@ public final class PowerUnitBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(final ValueInput input) {
         super.loadAdditional(input);
-        this.energy = input.getLongOr("energy", 0);
+        this.energy = input.getDoubleOr("energy", 0);
         this.battery.setItem(0, input.read("battery", ItemStack.CODEC).orElse(ItemStack.EMPTY));
     }
 
     @Override
     protected void saveAdditional(final ValueOutput output) {
         super.saveAdditional(output);
-        output.putLong("energy", this.energy);
+        output.putDouble("energy", this.energy);
         if (!this.battery.getItem(0).isEmpty()) {
             output.store("battery", ItemStack.CODEC, this.battery.getItem(0));
         }
@@ -230,7 +253,7 @@ public final class PowerUnitBlockEntity extends BlockEntity {
     @Override
     protected void applyImplicitComponents(final DataComponentGetter components) {
         super.applyImplicitComponents(components);
-        this.energy = components.getOrDefault(SGDataComponents.ENERGY, 0L);
+        this.energy = components.getOrDefault(SGDataComponents.ENERGY, 0.0);
     }
 
     @Override

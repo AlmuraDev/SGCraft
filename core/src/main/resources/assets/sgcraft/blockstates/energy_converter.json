@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "facing=north": { "model": "sgcraft:block/energy_converter" },
+    "facing=east": { "model": "sgcraft:block/energy_converter", "y": 90 },
+    "facing=south": { "model": "sgcraft:block/energy_converter", "y": 180 },
+    "facing=west": { "model": "sgcraft:block/energy_converter", "y": 270 },
+    "facing=up": { "model": "sgcraft:block/energy_converter", "x": 270 },
+    "facing=down": { "model": "sgcraft:block/energy_converter", "x": 90 }
+  }
+}

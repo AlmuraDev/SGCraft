@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "e": "minecraft:comparator",
+    "A": "minecraft:iron_block",
+    "w": "minecraft:copper_ingot",
+    "B": "sgcraft:power_unit",
+    "M": "minecraft:iron_ingot"
+  },
+  "pattern": [
+    "eAw",
+    "wBw",
+    "wMe"
+  ],
+  "result": {
+    "id": "sgcraft:zpm_interface_cart"
+  }
+}

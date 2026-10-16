@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.malp;
 
+import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -32,12 +33,11 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 /**
  * The server's settings for the MALP and its batteries, kept under {@code malp} in the server's settings file.
  *
- * @param batteryCapacity the most FE a battery holds
- * @param powerUnitChargeRate how much FE a power unit puts into a battery in its slot each tick
- * @param chargerChargeRate how much FE a battery charger puts into its battery each tick
- * @param fePerNaquadah how much FE one naquadah gives a battery, whether crafted in or burned in a charger
- * @param idleDrain how much FE a MALP uses each tick while someone watches its feed
- * @param driveDrain how much FE a MALP uses for each block it drives
+ * @param batteryCapacity the most gate energy a battery holds
+ * @param powerUnitChargeRate how much gate energy a power unit puts into a battery in its slot each tick
+ * @param chargerChargeRate how much gate energy a battery charger puts into its battery each tick
+ * @param idleDrain how much gate energy a MALP uses each tick while someone watches its feed
+ * @param driveDrain how much gate energy a MALP uses for each block it drives
  * @param signalRange how far, in blocks, a console or tablet reaches a MALP directly, and reaches a gate to relay
  *     through
  * @param lingerTicks how long a MALP's chunk stays loaded after the last person stops watching it, in ticks
@@ -46,27 +46,27 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
  * @param consoleSpectators how many of the players near a console someone is driving at, nearest first, see the
  *     feed on its monitor; 0 shows it to none
  * @param spectatorRange how near a console, in blocks, a player must be to see the feed on its monitor
- * @param tabletDrain how much FE a MALP tablet uses from its own battery each tick while its screen shows a live feed
+ * @param tabletDrain how much gate energy a MALP tablet uses from its own battery each tick while its screen shows a
+ *     live feed
  */
-public record MalpSettings(long batteryCapacity, long powerUnitChargeRate, long chargerChargeRate, long fePerNaquadah,
-        long idleDrain, long driveDrain, int signalRange, int lingerTicks, boolean consoleDamageInterrupts,
-        int consoleSpectators, int spectatorRange, long tabletDrain) {
+public record MalpSettings(long batteryCapacity, double powerUnitChargeRate, double chargerChargeRate,
+        double idleDrain, double driveDrain, int signalRange, int lingerTicks,
+        boolean consoleDamageInterrupts, int consoleSpectators, int spectatorRange, double tabletDrain) {
 
-    public static final MalpSettings DEFAULTS = new MalpSettings(1_000_000L, 1000L, 1000L, 100_000L, 10L, 100L, 256,
-            600, true, 4, 16, 2L);
+    /** The defaults, the earlier FE amounts' worth at 80 FE to one gate energy. */
+    public static final MalpSettings DEFAULTS = new MalpSettings(12_500L, 12.5, 12.5, 0.125, 1.25, 256,
+            600, true, 4, 16, 0.025);
 
     public static final Codec<MalpSettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.LONG.optionalFieldOf("battery_capacity", MalpSettings.DEFAULTS.batteryCapacity)
                     .forGetter(MalpSettings::batteryCapacity),
-            Codec.LONG.optionalFieldOf("power_unit_charge_rate", MalpSettings.DEFAULTS.powerUnitChargeRate)
+            Codec.DOUBLE.optionalFieldOf("power_unit_charge_rate", MalpSettings.DEFAULTS.powerUnitChargeRate)
                     .forGetter(MalpSettings::powerUnitChargeRate),
-            Codec.LONG.optionalFieldOf("charger_charge_rate", MalpSettings.DEFAULTS.chargerChargeRate)
+            Codec.DOUBLE.optionalFieldOf("charger_charge_rate", MalpSettings.DEFAULTS.chargerChargeRate)
                     .forGetter(MalpSettings::chargerChargeRate),
-            Codec.LONG.optionalFieldOf("fe_per_naquadah", MalpSettings.DEFAULTS.fePerNaquadah)
-                    .forGetter(MalpSettings::fePerNaquadah),
-            Codec.LONG.optionalFieldOf("idle_drain", MalpSettings.DEFAULTS.idleDrain)
+            Codec.DOUBLE.optionalFieldOf("idle_drain", MalpSettings.DEFAULTS.idleDrain)
                     .forGetter(MalpSettings::idleDrain),
-            Codec.LONG.optionalFieldOf("drive_drain", MalpSettings.DEFAULTS.driveDrain)
+            Codec.DOUBLE.optionalFieldOf("drive_drain", MalpSettings.DEFAULTS.driveDrain)
                     .forGetter(MalpSettings::driveDrain),
             Codec.INT.optionalFieldOf("signal_range", MalpSettings.DEFAULTS.signalRange)
                     .forGetter(MalpSettings::signalRange),
@@ -78,9 +78,18 @@ public record MalpSettings(long batteryCapacity, long powerUnitChargeRate, long 
                     .forGetter(MalpSettings::consoleSpectators),
             Codec.intRange(1, 64).optionalFieldOf("spectator_range", MalpSettings.DEFAULTS.spectatorRange)
                     .forGetter(MalpSettings::spectatorRange),
-            Codec.LONG.optionalFieldOf("tablet_drain", MalpSettings.DEFAULTS.tabletDrain)
+            Codec.DOUBLE.optionalFieldOf("tablet_drain", MalpSettings.DEFAULTS.tabletDrain)
                     .forGetter(MalpSettings::tabletDrain)
     ).apply(instance, MalpSettings::new));
+
+    /**
+     * @return how much gate energy one naquadah gives a battery, whether crafted in or burned in a charger: the same as
+     *     it gives a gate, the server's {@code energy.per_naquadah}
+     */
+    public static double naquadahEnergy() {
+        return SGServer.current().map(server -> server.config().energyPerNaquadah())
+                .orElse(SGConfig.DEFAULTS.energyPerNaquadah());
+    }
 
     /** @return the running server's MALP settings, or the defaults if no server is running */
     public static MalpSettings current() {
@@ -91,28 +100,28 @@ public record MalpSettings(long batteryCapacity, long powerUnitChargeRate, long 
     /** @return these settings with damage taking players off their consoles, or not */
     public MalpSettings withConsoleDamageInterrupts(final boolean interrupts) {
         return new MalpSettings(this.batteryCapacity, this.powerUnitChargeRate, this.chargerChargeRate,
-                this.fePerNaquadah, this.idleDrain, this.driveDrain, this.signalRange, this.lingerTicks, interrupts,
+                this.idleDrain, this.driveDrain, this.signalRange, this.lingerTicks, interrupts,
                 this.consoleSpectators, this.spectatorRange, this.tabletDrain);
     }
 
     /** @return these settings with as many players near a driven console seeing the feed on its monitor */
     public MalpSettings withConsoleSpectators(final int spectators) {
         return new MalpSettings(this.batteryCapacity, this.powerUnitChargeRate, this.chargerChargeRate,
-                this.fePerNaquadah, this.idleDrain, this.driveDrain, this.signalRange, this.lingerTicks,
+                this.idleDrain, this.driveDrain, this.signalRange, this.lingerTicks,
                 this.consoleDamageInterrupts, spectators, this.spectatorRange, this.tabletDrain);
     }
 
     /** @return these settings with players this near a driven console seeing the feed on its monitor */
     public MalpSettings withSpectatorRange(final int range) {
         return new MalpSettings(this.batteryCapacity, this.powerUnitChargeRate, this.chargerChargeRate,
-                this.fePerNaquadah, this.idleDrain, this.driveDrain, this.signalRange, this.lingerTicks,
+                this.idleDrain, this.driveDrain, this.signalRange, this.lingerTicks,
                 this.consoleDamageInterrupts, this.consoleSpectators, range, this.tabletDrain);
     }
 
-    /** @return these settings with MALP tablets using this much FE each tick while they show a live feed */
-    public MalpSettings withTabletDrain(final long drain) {
+    /** @return these settings with MALP tablets using this much gate energy each tick while they show a live feed */
+    public MalpSettings withTabletDrain(final double drain) {
         return new MalpSettings(this.batteryCapacity, this.powerUnitChargeRate, this.chargerChargeRate,
-                this.fePerNaquadah, this.idleDrain, this.driveDrain, this.signalRange, this.lingerTicks,
+                this.idleDrain, this.driveDrain, this.signalRange, this.lingerTicks,
                 this.consoleDamageInterrupts, this.consoleSpectators, this.spectatorRange, drain);
     }
 }

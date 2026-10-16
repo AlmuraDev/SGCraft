@@ -63,6 +63,7 @@ public final class GateGlow {
 
     private static final Identifier HALO = SGCraft.id("textures/gate/glow.png");
     private static final Identifier HORIZON = SGCraft.id("textures/gate/horizon_glow.png");
+    private static final Identifier PLAIN = SGCraft.id("textures/gate/shield.png");
 
     // Drawn as vanilla's energy swirl is, added to what is behind it and as bright whatever light it is in, but
     // without hiding what is drawn behind it afterwards, such as another glow. The fragment shader is SGCraft's own,
@@ -97,6 +98,8 @@ public final class GateGlow {
     public static final RenderType HALO_TYPE = GateGlow.type("sgcraft_gate_glow", GateGlow.HALO);
     /** The glow over an open horizon: even across most of it, fading out at its edge. */
     public static final RenderType HORIZON_TYPE = GateGlow.type("sgcraft_horizon_glow", GateGlow.HORIZON);
+    /** Plain light in the colors of its vertices, as a shield is drawn. */
+    public static final RenderType SHIELD_TYPE = GateGlow.type("sgcraft_shield", GateGlow.PLAIN);
 
     // The box round each array of triangles, as the least x, y and z then the most, by the array
     private static final Map<float[], float[]> BOUNDS = new IdentityHashMap<>();

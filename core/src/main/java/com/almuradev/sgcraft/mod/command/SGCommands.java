@@ -180,7 +180,10 @@ public final class SGCommands {
                 .then(SGOreCommands.ore())
                 .then(SGDefaultAddressCommands.defaultAddresses())
                 .then(SGMalpCommands.malp())
-                .then(SGMalpCommands.battery());
+                .then(SGMalpCommands.battery())
+                .then(SGShieldCommands.shields())
+                .then(SGExplorerCommands.explorer())
+                .then(SGZpmCommands.zpm());
         final RequiredArgumentBuilder<CommandSourceStack, Coordinates> gate =
                 Commands.argument("pos", BlockPosArgument.blockPos());
         gate.then(Commands.literal("address")
@@ -469,6 +472,12 @@ public final class SGCommands {
             throws CommandSyntaxException {
         final Holder<GateType> type = Optional.ofNullable(SGCommands.gateTypes(source).get(id))
                 .orElseThrow(SGCommands.UNKNOWN_TYPE::create);
+        // Some types come only in some sizes, as the Ori supergate only as a supergate
+        if (!type.value().supports(gate.size())) {
+            source.sendFailure(SGCommands.text("place.unsupported", "%s gates can't be built at that size",
+                    type.value().name()));
+            return 0;
+        }
         return SGCommands.report(source, gate.setType(type, SGCommands.cause(source)),
                 SGCommands.text("type.done", "The gate at %s is now a %s gate", SGCommands.position(gate),
                         type.value().name()));
@@ -508,6 +517,8 @@ public final class SGCommands {
             case SAME_GATE -> SGCommands.text("dial.same_gate", "That is this gate's own address");
             case BUSY -> SGCommands.text("dial.busy", "This gate is busy");
             case TARGET_BUSY -> SGCommands.text("dial.target_busy", "The gate at that address is busy");
+            case INCOMPATIBLE -> SGCommands.text("dial.incompatible",
+                    "This gate can't connect to that type of gate");
             case NOT_ENOUGH_ENERGY -> SGCommands.text("dial.not_enough_energy", "This gate doesn't have the energy");
             case DENIED -> SGCommands.text("dial.denied", "You aren't allowed to dial that");
             case CANCELED -> SGCommands.text("dial.canceled", "Something stopped the dial");

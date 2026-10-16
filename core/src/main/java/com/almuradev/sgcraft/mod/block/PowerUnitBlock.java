@@ -43,8 +43,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A stargate power unit: a block that stores FE from cables for the gates near it, and shows its charge when used, as
- * the original's did. It also charges a battery put in its slot.
+ * A stargate power unit: a block that stores gate energy from cables' FE for the gates near it, and shows its charge
+ * when used, as the original's did. It also charges a battery put in its slot.
  */
 public final class PowerUnitBlock extends Block implements EntityBlock {
 

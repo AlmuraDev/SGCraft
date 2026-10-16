@@ -45,18 +45,19 @@ final class BatteryEnergyNeoForge implements EnergyHandler {
         this.access = access;
     }
 
-    private long stored(final ItemResource resource) {
+    private double stored(final ItemResource resource) {
         return resource.is(SGItems.BATTERY) ? BatteryItem.energy(resource.getComponents()) : 0;
     }
 
     @Override
     public long getAmountAsLong() {
-        return this.access.getAmount() * this.stored(this.access.getResource());
+        final ItemResource resource = this.access.getResource();
+        return resource.is(SGItems.BATTERY) ? this.access.getAmount() * BatteryItem.fe(resource.getComponents()) : 0;
     }
 
     @Override
     public long getCapacityAsLong() {
-        return this.access.getResource().is(SGItems.BATTERY) ? this.access.getAmount() * BatteryItem.capacity() : 0;
+        return this.access.getResource().is(SGItems.BATTERY) ? this.access.getAmount() * BatteryItem.feCapacity() : 0;
     }
 
     @Override
@@ -69,19 +70,20 @@ final class BatteryEnergyNeoForge implements EnergyHandler {
         return this.change(amount, transaction, false);
     }
 
-    // Moves FE into or out of every battery in the stack alike, as much as each has room for or holds
+    // Moves FE into or out of every battery in the stack alike, as much as each has room for or holds, each keeping
+    // the gate energy it is worth
     private int change(final int amount, final TransactionContext transaction, final boolean in) {
         final ItemResource resource = this.access.getResource();
         final int count = this.access.getAmount();
         if (count <= 0 || amount <= 0 || !resource.is(SGItems.BATTERY)) {
             return 0;
         }
-        final long stored = this.stored(resource);
-        final long each = Math.min(amount / count, in ? BatteryItem.capacity() - stored : stored);
+        final double stored = this.stored(resource);
+        final long each = BatteryItem.feMovable(stored, amount / count, in);
         if (each <= 0) {
             return 0;
         }
-        final ItemResource changed = resource.with(SGDataComponents.ENERGY, in ? stored + each : stored - each);
+        final ItemResource changed = resource.with(SGDataComponents.ENERGY, BatteryItem.afterFe(stored, each, in));
         return (int) (each * this.access.exchange(changed, count, transaction));
     }
 }

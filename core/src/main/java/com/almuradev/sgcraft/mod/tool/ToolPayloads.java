@@ -43,14 +43,18 @@ public final class ToolPayloads {
     private ToolPayloads() {
     }
 
-    /** A gate as a tool sees it. */
-    public record GateInfo(BlockPos pos, String address, String type, String state, int iris) {
+    /**
+     * A gate as a tool sees it.
+     *
+     * @param shield whether its iris is a shield, which is raised by closing it and lowered by opening it
+     */
+    public record GateInfo(BlockPos pos, String address, String type, String state, int iris, boolean shield) {
 
         /** {@link #iris()} for a gate with no iris; otherwise it is the ordinal of its {@code IrisState}. */
         public static final int NO_IRIS = -1;
 
         public GateInfo(final FriendlyByteBuf buf) {
-            this(buf.readBlockPos(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readVarInt());
+            this(buf.readBlockPos(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readVarInt(), buf.readBoolean());
         }
 
         public void write(final FriendlyByteBuf buf) {
@@ -59,6 +63,7 @@ public final class ToolPayloads {
             buf.writeUtf(this.type);
             buf.writeUtf(this.state);
             buf.writeVarInt(this.iris);
+            buf.writeBoolean(this.shield);
         }
     }
 
@@ -92,13 +97,14 @@ public final class ToolPayloads {
      * @param address its address from the holder's world, or empty if it is hidden or gone
      * @param status what it is doing: {@link BookEntry#NO_GATE} if it is gone, or a gate state's name in lower case
      * @param iris its iris, as {@link GateInfo#iris()} gives it
+     * @param shield whether its iris is a shield
      */
     public record TabletGateInfo(String name, String world, BlockPos pos, String address, String type,
-            String status, int iris) {
+            String status, int iris, boolean shield) {
 
         public TabletGateInfo(final FriendlyByteBuf buf) {
             this(buf.readUtf(), buf.readUtf(), buf.readBlockPos(), buf.readUtf(), buf.readUtf(), buf.readUtf(),
-                    buf.readVarInt());
+                    buf.readVarInt(), buf.readBoolean());
         }
 
         public void write(final FriendlyByteBuf buf) {
@@ -109,6 +115,7 @@ public final class ToolPayloads {
             buf.writeUtf(this.type);
             buf.writeUtf(this.status);
             buf.writeVarInt(this.iris);
+            buf.writeBoolean(this.shield);
         }
     }
 
@@ -337,10 +344,12 @@ public final class ToolPayloads {
      * The configurator's state: a gate and everything that can be set on it.
      *
      * @param open whether to open the screen, rather than only update it if it is still open
-     * @param types every gate type, by identifier
+     * @param types every gate type the gate can be at its size, by identifier
      * @param typeNames each type's name as players see it, as JSON, in the same order as {@code types}
+     * @param irisTypes every kind of iris the gate's type takes, by identifier
+     * @param irisNames each kind's name as players see it, as JSON, in the same order as {@code irisTypes}
      * @param message something to tell the player, or empty
-     * @param fePerEnergy how many FE a power unit gives for one unit of gate energy
+     * @param fePerEnergy how many FE one gate energy is worth to other mods
      * @param orientation whether the gate stands or lies flat, by its serialized name
      * @param owner the player the gate belongs to, if any
      * @param manage whether the player may change who has which rights, and whether others may break the gate
@@ -348,15 +357,17 @@ public final class ToolPayloads {
      *     player in creative mode may; anyone else changes them with upgrade items
      */
     public record ConfiguratorState(boolean open, GateInfo gate, int chevrons, List<String> types,
-            String world, List<String> typeNames, List<Property> properties, List<Named> players, String message,
-            double fePerEnergy, String orientation, Optional<Named> owner, boolean manage, boolean fitFreely)
-            implements SGPacket {
+            String world, List<String> typeNames, List<String> irisTypes, List<String> irisNames,
+            List<Property> properties, List<Named> players, String message, double fePerEnergy, String orientation,
+            Optional<Named> owner, boolean manage, boolean fitFreely) implements SGPacket {
 
         public static final Type<ConfiguratorState> TYPE = new Type<>(SGCraft.id("configurator_state"));
 
         public ConfiguratorState(final FriendlyByteBuf buf) {
             this(buf.readBoolean(), new GateInfo(buf), buf.readVarInt(),
                     SGPacket.readList(buf, FriendlyByteBuf::readUtf), buf.readUtf(),
+                    SGPacket.readList(buf, FriendlyByteBuf::readUtf),
+                    SGPacket.readList(buf, FriendlyByteBuf::readUtf),
                     SGPacket.readList(buf, FriendlyByteBuf::readUtf),
                     SGPacket.readList(buf, Property::new),
                     SGPacket.readList(buf, Named::new), buf.readUtf(), buf.readDouble(), buf.readUtf(),
@@ -371,6 +382,8 @@ public final class ToolPayloads {
             SGPacket.writeList(buf, this.types, FriendlyByteBuf::writeUtf);
             buf.writeUtf(this.world);
             SGPacket.writeList(buf, this.typeNames, FriendlyByteBuf::writeUtf);
+            SGPacket.writeList(buf, this.irisTypes, FriendlyByteBuf::writeUtf);
+            SGPacket.writeList(buf, this.irisNames, FriendlyByteBuf::writeUtf);
             SGPacket.writeList(buf, this.properties, (out, property) -> property.write(out));
             SGPacket.writeList(buf, this.players, (out, player) -> player.write(out));
             buf.writeUtf(this.message);

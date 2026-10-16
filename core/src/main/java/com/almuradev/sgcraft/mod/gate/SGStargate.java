@@ -44,6 +44,7 @@ import com.almuradev.sgcraft.api.gate.GateState;
 import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.api.gate.GateTypes;
 import com.almuradev.sgcraft.api.gate.Iris;
+import com.almuradev.sgcraft.api.gate.IrisType;
 import com.almuradev.sgcraft.api.gate.PlacementMode;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.access.AccessChanges;
@@ -55,8 +56,10 @@ import com.almuradev.sgcraft.mod.event.SGEventBus;
 import com.almuradev.sgcraft.mod.event.SGEvents;
 import com.almuradev.sgcraft.mod.gate.GateStore.GateRecord;
 import com.almuradev.sgcraft.mod.item.GateTypeUpgradeItem;
+import com.almuradev.sgcraft.mod.item.IrisUpgradeItem;
 import com.almuradev.sgcraft.mod.item.SGItems;
 import com.almuradev.sgcraft.mod.sound.SGSounds;
+import com.almuradev.sgcraft.mod.zpm.ZpmSources;
 import net.minecraft.core.Direction;
 import net.minecraft.core.FrontAndTop;
 import net.minecraft.core.GlobalPos;
@@ -69,6 +72,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -206,6 +210,10 @@ public final class SGStargate implements Stargate {
 
     @Override
     public int chevrons() {
+        // An Ori supergate always reaches as far as nine chevrons do
+        if (OriGate.is(this.typeKey())) {
+            return ChevronOrder.POSITIONS;
+        }
         return this.record().map(GateRecord::chevrons).orElse(0);
     }
 
@@ -357,6 +365,10 @@ public final class SGStargate implements Stargate {
         if (gate.get().state() != GateState.IDLE) {
             return this.refused(address, cause, DialResult.TARGET_BUSY, gate.get());
         }
+        if (!this.type().value().connectsTo(gate.get().typeKey())
+                || !gate.get().type().value().connectsTo(this.typeKey())) {
+            return this.refused(address, cause, DialResult.INCOMPATIBLE, gate.get());
+        }
         if (!this.access.allowsOutgoing(gate.get()) || !gate.get().access().allowsIncoming(this)) {
             return this.refused(address, cause, DialResult.DENIED, gate.get());
         }
@@ -368,7 +380,7 @@ public final class SGStargate implements Stargate {
         double tickCost = 0;
         if (this.get(GateProperties.REQUIRES_POWER).orElse(true) && !this.freeFor(cause)) {
             final DialCosts costs = this.stargates.config().dialCosts().forGate(this);
-            final double factor = this.stargates.distanceFactor(this, gate.get());
+            final double factor = this.stargates.distanceFactor(this, gate.get(), address.size());
             final SGEvents.DialCost cost = SGEventBus.get().post(new SGEvents.DialCost(cause, this, address,
                     gate.get(), costs.chevron().scaledWhole(factor), costs.open().scaledWhole(factor),
                     costs.tick().scaled(factor)));
@@ -388,7 +400,8 @@ public final class SGStargate implements Stargate {
                 new SGConnection.Costs(chevronCost, openCost, tickCost));
         connection.result().thenAccept(result -> SGEventBus.get().post(
                 new SGEvents.DialPost(cause, this, address, result, Optional.of(gate.get()))));
-        this.stargates.connect(connection, mode);
+        // An Ori supergate links its ring symbol by symbol, never all at once
+        this.stargates.connect(connection, OriGate.is(this.typeKey()) ? DialMode.STANDARD : mode);
         return connection.result();
     }
 
@@ -515,6 +528,11 @@ public final class SGStargate implements Stargate {
         if (!this.exists() || !this.stargates.isRegistered(property)) {
             return ActionResult.NOT_POSSIBLE;
         }
+        // The gate's type says which kinds of iris it takes, as an Ori supergate takes none
+        if (property == GateProperties.IRIS && SGStargate.irisOf(value)
+                .filter(iris -> !this.type().value().acceptsIris(iris)).isPresent()) {
+            return ActionResult.NOT_POSSIBLE;
+        }
         if (SGStargate.MANAGED.contains(property) ? !this.access.mayManage(cause)
                 : !this.access.allows(cause, GateRight.CONFIGURE)) {
             return ActionResult.DENIED;
@@ -539,10 +557,15 @@ public final class SGStargate implements Stargate {
             return result;
         }
         if (property == GateProperties.IRIS) {
-            if (wanted.isPresent() && old.isEmpty()) {
+            if (wanted.isPresent() && !wanted.equals(old)) {
+                // A new iris, or a shield in place of an iris or the other way, starts open
+                if (old.isPresent()) {
+                    this.iris.removed();
+                }
                 this.iris.fitted();
-                // Only an iris fitted with an iris upgrade gives the upgrade back; one set any other way is included
-                this.includeIris(!SGStargate.fittedWith(cause, SGItems.IRIS_UPGRADE));
+                // Only an iris fitted with its upgrade gives the upgrade back; one set any other way is included
+                this.includeIris(SGStargate.irisOf(wanted).flatMap(IrisUpgradeItem::forType)
+                        .map(item -> !SGStargate.fittedWith(cause, item)).orElse(true));
             } else if (wanted.isEmpty()) {
                 this.iris.removed();
                 this.includeIris(false);
@@ -584,7 +607,24 @@ public final class SGStargate implements Stargate {
         if (!this.access.allows(cause, GateRight.CONFIGURE)) {
             return ActionResult.DENIED;
         }
-        this.stargates.store().put(record.get().withType(type));
+        // An iris the new type doesn't take comes off, its upgrade dropped at the base unless the gate came with it
+        final Optional<ResourceKey<IrisType>> iris = this.get(GateProperties.IRIS);
+        if (iris.isPresent() && !holder.get().value().acceptsIris(iris.get())) {
+            final boolean included = this.irisIncluded();
+            this.stargates.removeProperty(this.position, GateProperties.IRIS);
+            this.iris.removed();
+            this.includeIris(false);
+            if (!included) {
+                IrisUpgradeItem.forType(iris.get()).ifPresent(upgrade -> this.withBase(base -> {
+                    if (base.getLevel() != null) {
+                        Containers.dropItemStack(base.getLevel(), base.getBlockPos().getX(),
+                                base.getBlockPos().getY() + 1, base.getBlockPos().getZ(), new ItemStack(upgrade));
+                    }
+                }));
+            }
+        }
+        // As it is now, without any iris just taken off
+        this.stargates.store().put(this.record().orElse(record.get()).withType(type));
         final boolean upgraded = cause.first(ItemStack.class)
                 .filter(stack -> stack.getItem() instanceof GateTypeUpgradeItem).isPresent();
         this.withBase(base -> {
@@ -597,7 +637,7 @@ public final class SGStargate implements Stargate {
     @Override
     public ActionResult setChevrons(final int chevrons, final Cause cause) {
         final Optional<GateRecord> record = this.record();
-        if (record.isEmpty() || chevrons < 1 || this.state() != GateState.IDLE) {
+        if (record.isEmpty() || chevrons < 1 || this.state() != GateState.IDLE || OriGate.is(this.typeKey())) {
             return ActionResult.NOT_POSSIBLE;
         }
         if (record.get().chevrons() == chevrons) {
@@ -617,6 +657,12 @@ public final class SGStargate implements Stargate {
             }
         });
         return ActionResult.DONE;
+    }
+
+    // The kind of iris a value of the iris property names
+    private static Optional<ResourceKey<IrisType>> irisOf(final Optional<?> value) {
+        return value.flatMap(each -> each instanceof final ResourceKey<?> key ? key.cast(SGCraftRegistries.IRIS_TYPE)
+                : Optional.empty());
     }
 
     // Whether an upgrade item made a change, as the upgrade items name themselves in their causes
@@ -722,6 +768,9 @@ public final class SGStargate implements Stargate {
     // Which chevrons are lit, by position, as the gate's renderer lights them: those locked, or every one of a
     // Universe gate while it is active
     private boolean[] litChevrons() {
+        if (OriGate.is(this.typeKey())) {
+            return new boolean[ChevronOrder.POSITIONS];
+        }
         if (!this.typeKey().equals(GateTypes.UNIVERSE)) {
             return ChevronOrder.locked(this.chevrons(), this.view.length(), this.view.engaged());
         }
@@ -754,11 +803,20 @@ public final class SGStargate implements Stargate {
 
     /** Plays a sound from the middle of the gate's ring, as far as its size carries it, if its world is loaded. */
     public void play(final SoundEvent sound) {
+        this.play(sound, 1.0F, 1.0F);
+    }
+
+    /**
+     * Plays a sound at the middle of the gate's ring, as loud as the gate's sounds by the factor given.
+     *
+     * @param loudness how loud, from the gate's own volume at 1
+     */
+    public void play(final SoundEvent sound, final float loudness, final float pitch) {
         final ServerLevel level = this.stargates.server().getLevel(this.position.dimension());
         if (level != null) {
             final Vec3 middle = this.middle();
             level.playSound(null, middle.x, middle.y, middle.z, sound, SoundSource.BLOCKS,
-                    SGSounds.volume(this.shape()), 1.0F);
+                    SGSounds.volume(this.shape()) * loudness, pitch);
         }
     }
 

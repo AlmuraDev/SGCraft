@@ -63,6 +63,11 @@ public final class SGSounds {
     public static final SoundEvent IRIS_OPEN = SGSounds.create("iris_open");
     public static final SoundEvent IRIS_CLOSE = SGSounds.create("iris_close");
     public static final SoundEvent IRIS_HIT = SGSounds.create("iris_hit");
+    // A shield rising and falling, in place of the iris's sounds; the city shield's too
+    public static final SoundEvent SHIELD_UP = SGSounds.create("shield_up");
+    public static final SoundEvent SHIELD_DOWN = SGSounds.create("shield_down");
+    // An Ori supergate's segments linking as it dials
+    public static final SoundEvent ORI_LINK = SGSounds.create("ori_link");
     // A storm sending a wormhole astray
     public static final SoundEvent MALFUNCTION = SGSounds.create("malfunction");
 
@@ -72,7 +77,7 @@ public final class SGSounds {
             SGSounds.PEGASUS_CHEVRON_INCOMING, SGSounds.PEGASUS_OPEN, SGSounds.PEGASUS_FAIL, SGSounds.EVENT_HORIZON,
             SGSounds.CLOSE, SGSounds.TELEPORT, SGSounds.MILKY_WAY_DHD_PRESS, SGSounds.MILKY_WAY_DHD_DIAL,
             SGSounds.PEGASUS_DHD_PRESS, SGSounds.IRIS_OPEN, SGSounds.IRIS_CLOSE, SGSounds.IRIS_HIT,
-            SGSounds.MALFUNCTION,
+            SGSounds.SHIELD_UP, SGSounds.SHIELD_DOWN, SGSounds.ORI_LINK, SGSounds.MALFUNCTION,
     };
 
     private SGSounds() {

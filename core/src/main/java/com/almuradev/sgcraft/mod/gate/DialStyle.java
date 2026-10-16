@@ -44,7 +44,10 @@ public enum DialStyle {
 
     MILKY_WAY(24, 30),
     PEGASUS(10, 10),
-    UNIVERSE(24, 30);
+    UNIVERSE(24, 30),
+    // The Ori supergate's ring doesn't turn: each symbol takes its share of the dial as its segments link, and the
+    // wormhole forms, then fills the horizon from the ring inward, before the kawoosh
+    ORI(OriGate.INTER_DIALING_TICKS, OriGate.ESTABLISH_TICKS + OriGate.FILL_TICKS);
 
     // How fast a ring turns, in degrees a tick, unless the gate says otherwise
     private static final double RING_SPEED = 2.0;
@@ -69,6 +72,9 @@ public enum DialStyle {
     public static DialStyle of(final ResourceKey<GateType> type) {
         if (type.equals(GateTypes.PEGASUS)) {
             return DialStyle.PEGASUS;
+        }
+        if (OriGate.is(type)) {
+            return DialStyle.ORI;
         }
         return type.equals(GateTypes.UNIVERSE) ? DialStyle.UNIVERSE : DialStyle.MILKY_WAY;
     }
@@ -112,6 +118,9 @@ public enum DialStyle {
      */
     public Move move(final float angle, final Symbol symbol, final int index, final int[] positions,
             final double speed) {
+        if (this == DialStyle.ORI) {
+            return new Move(angle, angle, OriGate.symbolTicks(positions.length));
+        }
         if (this == DialStyle.PEGASUS) {
             final int from = index == 0 ? ChevronOrder.TOP : positions[index - 1];
             final int to = positions[index];

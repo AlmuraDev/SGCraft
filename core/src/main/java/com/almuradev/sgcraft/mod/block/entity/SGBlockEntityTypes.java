@@ -28,6 +28,8 @@ package com.almuradev.sgcraft.mod.block.entity;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.block.SGBlocks;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
+import com.almuradev.sgcraft.mod.shield.CityShieldBlockEntity;
+import com.almuradev.sgcraft.mod.zpm.ZpmDeviceBlockEntity;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -45,7 +47,10 @@ public final class SGBlockEntityTypes {
     public static BlockEntityType<GateSpawnerBlockEntity> GATE_SPAWNER;
     public static BlockEntityType<PowerUnitBlockEntity> POWER_UNIT;
     public static BlockEntityType<BatteryChargerBlockEntity> BATTERY_CHARGER;
+    public static BlockEntityType<EnergyConverterBlockEntity> ENERGY_CONVERTER;
     public static BlockEntityType<MalpConsoleBlockEntity> MALP_CONSOLE;
+    public static BlockEntityType<CityShieldBlockEntity> CITY_SHIELD;
+    public static BlockEntityType<ZpmDeviceBlockEntity> ZPM_DEVICE;
 
     private SGBlockEntityTypes() {
     }
@@ -69,9 +74,21 @@ public final class SGBlockEntityTypes {
                 Set.of(SGBlocks.BATTERY_CHARGER));
         sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("battery_charger")),
                 SGBlockEntityTypes.BATTERY_CHARGER);
+        SGBlockEntityTypes.ENERGY_CONVERTER = new BlockEntityType<>(EnergyConverterBlockEntity::new,
+                Set.of(SGBlocks.ENERGY_CONVERTER));
+        sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("energy_converter")),
+                SGBlockEntityTypes.ENERGY_CONVERTER);
         SGBlockEntityTypes.MALP_CONSOLE = new BlockEntityType<>(MalpConsoleBlockEntity::new,
                 Set.of(SGBlocks.MALP_CONSOLE));
         sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("malp_console")),
                 SGBlockEntityTypes.MALP_CONSOLE);
+        SGBlockEntityTypes.CITY_SHIELD = new BlockEntityType<>(CityShieldBlockEntity::new,
+                Set.of(SGBlocks.CITY_SHIELD_GENERATOR));
+        sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("city_shield_generator")),
+                SGBlockEntityTypes.CITY_SHIELD);
+        SGBlockEntityTypes.ZPM_DEVICE = new BlockEntityType<>(ZpmDeviceBlockEntity::new,
+                Set.of(SGBlocks.ZPM_CONSOLE, SGBlocks.ZPM_INTERFACE_CART, SGBlocks.ZPM_HUB));
+        sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("zpm_device")),
+                SGBlockEntityTypes.ZPM_DEVICE);
     }
 }

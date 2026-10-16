@@ -38,8 +38,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * A power unit's charge and capacity, in FE, and its battery slot over the player's inventory, for its screen. The
- * game sends a menu's numbers sixteen bits at a time, so each is sent as {@link #PARTS} parts, lowest first: the
+ * A power unit's charge and capacity, in gate energy, and its battery slot over the player's inventory, for its screen.
+ * The game sends a menu's numbers sixteen bits at a time, so each is sent as {@link #PARTS} parts, lowest first: the
  * charge's at index 0, the capacity's from {@link #CAPACITY}; the battery's charge, in percent, follows at
  * {@link #BATTERY}.
  */
@@ -98,12 +98,12 @@ public final class PowerUnitMenu extends AbstractContainerMenu {
         return (int) (value >>> (16 * part) & 0xFFFF);
     }
 
-    /** @return the FE the unit holds */
+    /** @return the gate energy the unit holds */
     public long stored() {
         return this.read(0);
     }
 
-    /** @return the most FE the unit holds */
+    /** @return the most gate energy the unit holds */
     public long capacity() {
         return this.read(PowerUnitMenu.CAPACITY);
     }

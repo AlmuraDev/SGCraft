@@ -47,7 +47,7 @@ final class BatteryEnergyFabric implements EnergyStorage {
         this.context = context;
     }
 
-    private long stored(final ItemVariant variant) {
+    private double stored(final ItemVariant variant) {
         return variant.isOf(SGItems.BATTERY) ? BatteryItem.energy(variant.getComponents()) : 0;
     }
 
@@ -61,31 +61,33 @@ final class BatteryEnergyFabric implements EnergyStorage {
         return this.change(amount, transaction, false);
     }
 
-    // Moves FE into or out of every battery in the stack alike, as much as each has room for or holds
+    // Moves FE into or out of every battery in the stack alike, as much as each has room for or holds, each keeping
+    // the gate energy it is worth
     private long change(final long amount, final TransactionContext transaction, final boolean in) {
         final ItemVariant variant = this.context.getItemVariant();
         final long count = this.context.getAmount();
         if (count <= 0 || amount <= 0 || !variant.isOf(SGItems.BATTERY)) {
             return 0;
         }
-        final long stored = this.stored(variant);
-        final long each = Math.min(amount / count, in ? BatteryItem.capacity() - stored : stored);
+        final double stored = this.stored(variant);
+        final long each = BatteryItem.feMovable(stored, amount / count, in);
         if (each <= 0) {
             return 0;
         }
         final ItemVariant changed = variant.withComponents(DataComponentPatch.builder()
-                .set(SGDataComponents.ENERGY, in ? stored + each : stored - each).build());
+                .set(SGDataComponents.ENERGY, BatteryItem.afterFe(stored, each, in)).build());
         return this.context.exchange(changed, count, transaction) == count ? each * count : 0;
     }
 
     @Override
     public long getAmount() {
-        return this.context.getAmount() * this.stored(this.context.getItemVariant());
+        final ItemVariant variant = this.context.getItemVariant();
+        return variant.isOf(SGItems.BATTERY) ? this.context.getAmount() * BatteryItem.fe(variant.getComponents()) : 0;
     }
 
     @Override
     public long getCapacity() {
         return this.context.getItemVariant().isOf(SGItems.BATTERY)
-                ? this.context.getAmount() * BatteryItem.capacity() : 0;
+                ? this.context.getAmount() * BatteryItem.feCapacity() : 0;
     }
 }

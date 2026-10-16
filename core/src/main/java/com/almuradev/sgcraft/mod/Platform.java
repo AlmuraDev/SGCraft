@@ -25,7 +25,10 @@
 
 package com.almuradev.sgcraft.mod;
 
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
@@ -68,6 +71,16 @@ public interface Platform {
      *     beside the entity it belongs to but which is drawn with it rather than on its own
      */
     boolean isPart(final Entity entity);
+
+    /**
+     * Offers FE to the block at a place, through one of its faces, as a cable would: the loader's energy system on
+     * NeoForge, Team Reborn Energy on Fabric.
+     *
+     * @param face the face of that block the energy goes in through
+     * @param amount the most FE to give
+     * @return how much it took, from none to {@code amount}
+     */
+    long offerEnergy(final ServerLevel level, final BlockPos pos, final Direction face, final long amount);
 
     final class Holder {
 

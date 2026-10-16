@@ -48,5 +48,7 @@ public final class SGGateTypes {
                 Set.of(GateTypes.PEGASUS)));
         sink.register(GateTypes.UNIVERSE, new BuiltInGateType(Component.translatable("gate_type.sgcraft.universe"),
                 Set.of()));
+        // The Ori supergate is dialed without a DHD, and only by another
+        sink.register(GateTypes.ORI, new OriGate(Component.translatable("gate_type.sgcraft.ori")));
     }
 }

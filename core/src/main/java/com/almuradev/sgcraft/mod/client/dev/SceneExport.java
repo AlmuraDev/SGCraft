@@ -27,17 +27,27 @@ package com.almuradev.sgcraft.mod.client.dev;
 
 import com.almuradev.sgcraft.api.Cause;
 import com.almuradev.sgcraft.api.SGCraftApi;
+import com.almuradev.sgcraft.api.SGCraftRegistries;
 import com.almuradev.sgcraft.api.address.Address;
 import com.almuradev.sgcraft.api.gate.DialMode;
 import com.almuradev.sgcraft.api.gate.GateProperties;
 import com.almuradev.sgcraft.api.gate.GateState;
+import com.almuradev.sgcraft.api.gate.IrisTypes;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGCraft;
+import com.almuradev.sgcraft.mod.block.entity.PowerUnitBlockEntity;
+import com.almuradev.sgcraft.mod.gate.OriGate;
+import com.almuradev.sgcraft.mod.shield.CityShieldBlockEntity;
+import com.almuradev.sgcraft.mod.zpm.ZpmDeviceBlockEntity;
+import com.almuradev.sgcraft.mod.zpm.ZpmItem;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
@@ -57,7 +67,10 @@ import java.util.function.Predicate;
  * far from spawn, stands the player in front of it with the game's interface hidden, sets the time, waits for the
  * world to draw, and saves the frame as {@code <name>-day.png} and {@code <name>-night.png}. Then it builds a second
  * gate behind the player, dials it from the first, and once the wormhole is open saves {@code <name>-open-day.png}
- * and {@code <name>-open-night.png}. When the last is saved it closes the game.
+ * and {@code <name>-open-night.png}. An Ori supergate is pictured part way through its dial too, as
+ * {@code ori-linking-*.png}; a Milky Way gate with its shield raised as {@code shield-*.png}; and a raised city shield
+ * as {@code city-shield-*.png}; and a ZPM console, interface cart and hub with ZPMs in them as
+ * {@code zpm-devices-*.png}. When the last is saved it closes the game.
  */
 public final class SceneExport {
 
@@ -81,6 +94,11 @@ public final class SceneExport {
     private static final int NEAR = 8;
     // How far round a scene the world is cleared to open grass, past the gates and the player
     private static final int CLEAR = 24;
+    // How far into an Ori supergate's dial its linking is pictured, in ticks
+    private static final int LINKING_TICKS = 160;
+    // How far back from a city shield the player stands, and how long its shield takes to spread before the picture
+    private static final int CITY_BACK = 30;
+    private static final int CITY_SPREAD_TICKS = 160;
 
     private static @Nullable SceneExport running;
 
@@ -97,10 +115,14 @@ public final class SceneExport {
         this.command("gamerule send_command_feedback false");
         this.command("gamerule max_block_modifications 1000000");
         this.command("weather clear");
-        this.scene(0, "milky-way", "sgcraft:milky_way", 2, "sgcraft:dhd");
-        this.scene(1, "pegasus", "sgcraft:pegasus", 2, "sgcraft:dhd_pegasus");
-        this.scene(2, "universe", "sgcraft:universe", 2, null);
-        this.scene(3, "supergate", "sgcraft:milky_way", 6, null);
+        this.scene(0, "milky-way", "sgcraft:milky_way", 2, "sgcraft:dhd", false);
+        this.scene(1, "pegasus", "sgcraft:pegasus", 2, "sgcraft:dhd_pegasus", false);
+        this.scene(2, "universe", "sgcraft:universe", 2, null, false);
+        this.scene(3, "supergate", "sgcraft:milky_way", 6, null, false);
+        this.scene(4, "ori", "sgcraft:ori", 7, null, false);
+        this.scene(5, "shield", "sgcraft:milky_way", 2, "sgcraft:dhd", true);
+        this.city(6);
+        this.zpmDevices(7);
     }
 
     /** Starts taking the pictures, saved in {@code out}. Call this on the render thread, in the export's world. */
@@ -119,11 +141,11 @@ public final class SceneExport {
         }
     }
 
-    // Builds a gate of a type and radius, with a DHD to its side if one is named, and pictures it by day and night.
-    // The gate is built facing north, and the player stands north of it looking south at its face, far enough back
-    // that the whole ring shows
+    // Builds a gate of a type and radius, with a DHD to its side if one is named, and pictures it by day and night,
+    // with its shield raised if it is to have one. The gate is built facing north, and the player stands north of it
+    // looking south at its face, far enough back that the whole ring shows
     private void scene(final int index, final String name, final String type, final int radius,
-            final @Nullable String dhd) {
+            final @Nullable String dhd, final boolean shield) {
         final int x = SceneExport.ORIGIN_X + index * SceneExport.SPACING;
         final int z = SceneExport.ORIGIN_Z;
         final int across = radius * 2 + 1;
@@ -156,19 +178,112 @@ public final class SceneExport {
         this.command(String.format(Locale.ROOT, "tp @s %d.5 %d %d.5 0 %s", x, SceneExport.GROUND + rise, standZ,
                 pitch));
         this.waitTicks(SceneExport.LOAD_TICKS);
+        final BlockPos near = new BlockPos(x, SceneExport.GROUND, z + 3);
+        if (shield) {
+            this.steps.add(Step.run(server -> SceneExport.raiseShield(server, near)));
+            this.waitTicks(SceneExport.SETTLE_TICKS);
+        }
         this.shots(name);
         // The far gate stands behind the player, facing away, so neither it nor its wormhole shows
         this.command(String.format(Locale.ROOT, "execute positioned %d %d %d rotated 180 0 run sgcraft place %s 9",
                 x, SceneExport.GROUND, farZ, type));
-        final BlockPos near = new BlockPos(x, SceneExport.GROUND, z + 3);
         final BlockPos far = new BlockPos(x, SceneExport.GROUND, farZ - 3);
         // The command reaches the server as a packet, so give it time to build the gate before dialing
         this.waitTicks(SceneExport.SETTLE_TICKS);
         this.steps.add(Step.run(server -> SceneExport.open(server, near, far)));
+        // An Ori supergate links its ring as it dials, which is worth a picture of its own
+        if (OriGate.is(ResourceKey.create(SGCraftRegistries.GATE_TYPE, Identifier.parse(type)))) {
+            this.waitTicks(SceneExport.LINKING_TICKS);
+            this.shots(name + "-linking");
+        }
         this.steps.add(Step.until(server -> SceneExport.gate(server, near).map(Stargate::state)
                 .filter(state -> state == GateState.CONNECTED).isPresent()));
         this.waitTicks(SceneExport.SETTLE_TICKS);
         this.shots(name + "-open");
+    }
+
+    // Builds a city shield generator with a full power unit beside it, raises its shield, and pictures it from far
+    // enough back that the whole dome shows
+    private void city(final int index) {
+        final int x = SceneExport.ORIGIN_X + index * SceneExport.SPACING;
+        final int z = SceneExport.ORIGIN_Z;
+        final int standZ = z - SceneExport.CITY_BACK;
+        this.command(String.format(Locale.ROOT, "tp @s %d.5 %d %d.5 0 0", x, SceneExport.GROUND, standZ));
+        this.waitTicks(SceneExport.LOAD_TICKS);
+        this.command(String.format(Locale.ROOT, "fill %d %d %d %d %d %d air", x - SceneExport.CLEAR,
+                SceneExport.GROUND, standZ - 4, x + SceneExport.CLEAR, SceneExport.GROUND + SceneExport.CLEAR,
+                z + SceneExport.CLEAR));
+        this.command(String.format(Locale.ROOT, "fill %d %d %d %d %d %d grass_block", x - SceneExport.CLEAR,
+                SceneExport.GROUND - 1, standZ - 4, x + SceneExport.CLEAR, SceneExport.GROUND - 1,
+                z + SceneExport.CLEAR));
+        this.command("kill @e[type=!player]");
+        final BlockPos generator = new BlockPos(x, SceneExport.GROUND, z);
+        this.command(String.format(Locale.ROOT, "setblock %d %d %d sgcraft:city_shield_generator", x,
+                SceneExport.GROUND, z));
+        this.command(String.format(Locale.ROOT, "setblock %d %d %d sgcraft:power_unit", x + 1, SceneExport.GROUND,
+                z));
+        this.command(String.format(Locale.ROOT, "setblock %d %d %d barrier", x, SceneExport.GROUND + 3, standZ));
+        this.command(String.format(Locale.ROOT, "tp @s %d.5 %d %d.5 0 8", x, SceneExport.GROUND + 4, standZ));
+        this.waitTicks(SceneExport.SETTLE_TICKS);
+        this.steps.add(Step.run(server -> SceneExport.raiseCityShield(server, generator)));
+        this.waitTicks(SceneExport.CITY_SPREAD_TICKS);
+        this.shots("city-shield");
+    }
+
+    // Sets out a ZPM console, interface cart and hub with ZPMs in them, and pictures them close up
+    private void zpmDevices(final int index) {
+        final int x = SceneExport.ORIGIN_X + index * SceneExport.SPACING;
+        final int z = SceneExport.ORIGIN_Z;
+        this.command(String.format(Locale.ROOT, "tp @s %d.5 %d %d.5 0 0", x, SceneExport.GROUND, z - 5));
+        this.waitTicks(SceneExport.LOAD_TICKS);
+        this.command(String.format(Locale.ROOT, "fill %d %d %d %d %d %d air", x - 8, SceneExport.GROUND, z - 8,
+                x + 8, SceneExport.GROUND + 8, z + 8));
+        this.command(String.format(Locale.ROOT, "fill %d %d %d %d %d %d grass_block", x - 8, SceneExport.GROUND - 1,
+                z - 8, x + 8, SceneExport.GROUND - 1, z + 8));
+        this.command("kill @e[type=!player]");
+        final String[] devices = {"sgcraft:zpm_console", "sgcraft:zpm_interface_cart", "sgcraft:zpm_hub"};
+        for (int i = 0; i < devices.length; i++) {
+            this.command(String.format(Locale.ROOT, "setblock %d %d %d %s[facing=north]", x - 2 + 2 * i,
+                    SceneExport.GROUND, z, devices[i]));
+        }
+        this.waitTicks(SceneExport.SETTLE_TICKS);
+        this.steps.add(Step.run(server -> {
+            for (int i = 0; i < devices.length; i++) {
+                if (server.overworld().getBlockEntity(new BlockPos(x - 2 + 2 * i, SceneExport.GROUND, z))
+                        instanceof final ZpmDeviceBlockEntity device) {
+                    for (int slot = 0; slot < device.zpms().getContainerSize(); slot++) {
+                        device.zpms().setItem(slot, ZpmItem.full(false));
+                    }
+                }
+            }
+        }));
+        this.command(String.format(Locale.ROOT, "tp @s %d.5 %d %d.5 0 25", x, SceneExport.GROUND + 1, z - 4));
+        this.waitTicks(SceneExport.SETTLE_TICKS);
+        this.shots("zpm-devices");
+    }
+
+    // Fits a shield to the gate built nearest a place, and raises it, needing no energy
+    private static void raiseShield(final MinecraftServer server, final BlockPos near) {
+        final Cause cause = Cause.of(server);
+        SceneExport.gate(server, near).ifPresentOrElse(gate -> {
+            gate.set(GateProperties.REQUIRES_POWER, false, cause);
+            gate.set(GateProperties.IRIS, IrisTypes.SHIELD, cause);
+            gate.iris().ifPresent(iris -> iris.close(cause));
+        }, () -> SGCraft.LOG.error("The scene's shielded gate wasn't built, at {}", near));
+    }
+
+    // Fills the power unit beside a city shield generator, sizes its shield and raises it
+    private static void raiseCityShield(final MinecraftServer server, final BlockPos generator) {
+        final ServerLevel level = server.overworld();
+        if (level.getBlockEntity(generator.east()) instanceof final PowerUnitBlockEntity unit) {
+            unit.setStored(PowerUnitBlockEntity.capacity());
+        }
+        if (level.getBlockEntity(generator) instanceof final CityShieldBlockEntity shield) {
+            shield.resize(14, 10, 4);
+            SGCraft.LOG.info("The scene's city shield rose: {}", shield.raise());
+        } else {
+            SGCraft.LOG.error("The scene's city shield generator wasn't built, at {}", generator);
+        }
     }
 
     // Pictures the scene by day and by night

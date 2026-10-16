@@ -34,7 +34,7 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  * A power unit as NeoForge's cables see it: it takes FE in, and gives none out, as the original's did. A transaction
  * undone puts its charge back.
  */
-final class PowerUnitEnergyNeoForge extends SnapshotJournal<Long> implements EnergyHandler {
+final class PowerUnitEnergyNeoForge extends SnapshotJournal<Double> implements EnergyHandler {
 
     private final PowerUnitBlockEntity unit;
 
@@ -44,20 +44,20 @@ final class PowerUnitEnergyNeoForge extends SnapshotJournal<Long> implements Ene
 
     @Override
     public long getAmountAsLong() {
-        return this.unit.stored();
+        return this.unit.feStored();
     }
 
     @Override
     public long getCapacityAsLong() {
-        return PowerUnitBlockEntity.capacity();
+        return PowerUnitBlockEntity.feCapacity();
     }
 
     @Override
     public int insert(final int amount, final TransactionContext transaction) {
-        final long taken = this.unit.insert(amount, true);
+        final long taken = this.unit.insertFe(amount, true);
         if (taken > 0) {
             this.updateSnapshots(transaction);
-            this.unit.insert(taken, false);
+            this.unit.insertFe(taken, false);
         }
         return (int) taken;
     }
@@ -68,12 +68,12 @@ final class PowerUnitEnergyNeoForge extends SnapshotJournal<Long> implements Ene
     }
 
     @Override
-    protected Long createSnapshot() {
+    protected Double createSnapshot() {
         return this.unit.stored();
     }
 
     @Override
-    protected void revertToSnapshot(final Long snapshot) {
+    protected void revertToSnapshot(final Double snapshot) {
         this.unit.setStored(snapshot);
     }
 }

@@ -26,7 +26,7 @@
 package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.mod.block.entity.PowerUnitBlockEntity;
-import com.mojang.brigadier.arguments.LongArgumentType;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -42,8 +42,8 @@ import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * {@code /sgcraft power [<pos>]}: the charge of the power unit there, or of the one the caller is looking at, in FE;
- * {@code set <fe>} sets it, kept within the unit's capacity.
+ * {@code /sgcraft power [<pos>]}: the charge of the power unit there, or of the one the caller is looking at, in
+ * gate energy, with the FE it is worth to cables; {@code set <ge>} sets it, kept within the unit's capacity.
  */
 final class SGPowerCommands {
 
@@ -70,9 +70,9 @@ final class SGPowerCommands {
 
     private static ArgumentBuilder<CommandSourceStack, ?> set(final UnitFinder finder) {
         return Commands.literal("set")
-                .then(Commands.argument("fe", LongArgumentType.longArg(0))
+                .then(Commands.argument("ge", DoubleArgumentType.doubleArg(0))
                         .executes(context -> SGPowerCommands.set(context.getSource(), finder.find(context),
-                                LongArgumentType.getLong(context, "fe"))));
+                                DoubleArgumentType.getDouble(context, "ge"))));
     }
 
     private static PowerUnitBlockEntity unit(final CommandContext<CommandSourceStack> context)
@@ -105,16 +105,16 @@ final class SGPowerCommands {
     }
 
     private static int show(final CommandSourceStack source, final PowerUnitBlockEntity unit) {
-        source.sendSuccess(() -> SGCommands.text("power.show", "The power unit at %s holds %s of %s FE, %s gate energy",
-                unit.getBlockPos().toShortString(), unit.stored(), PowerUnitBlockEntity.capacity(),
-                unit.available()), false);
-        return (int) Math.min(Integer.MAX_VALUE, unit.stored());
+        source.sendSuccess(() -> SGCommands.text("power.show", "The power unit at %s holds %s of %s GE (%s FE)",
+                unit.getBlockPos().toShortString(), unit.available(), PowerUnitBlockEntity.capacity(),
+                unit.feStored()), false);
+        return (int) Math.min(Integer.MAX_VALUE, unit.available());
     }
 
-    private static int set(final CommandSourceStack source, final PowerUnitBlockEntity unit, final long fe) {
-        unit.setStored(fe);
-        source.sendSuccess(() -> SGCommands.text("power.set", "The power unit at %s now holds %s FE",
-                unit.getBlockPos().toShortString(), unit.stored()), true);
+    private static int set(final CommandSourceStack source, final PowerUnitBlockEntity unit, final double ge) {
+        unit.setStored(ge);
+        source.sendSuccess(() -> SGCommands.text("power.set", "The power unit at %s now holds %s GE",
+                unit.getBlockPos().toShortString(), unit.available()), true);
         return 1;
     }
 

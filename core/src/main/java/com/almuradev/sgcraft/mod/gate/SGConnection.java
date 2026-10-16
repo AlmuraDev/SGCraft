@@ -74,6 +74,8 @@ public final class SGConnection implements Connection {
     // How long the gates wait on each other once every chevron has locked, how long the kawoosh lasts, and how long
     // the wormhole takes to shut down
     private static final int SYNC_AWAIT_TICKS = 10;
+    // How long two Ori supergates in different worlds wait on each other, as the original's
+    private static final int ORI_SYNC_AWAIT_TICKS = 30;
     private static final int TRANSIENT_TICKS = 20;
     private static final int DISCONNECTING_TICKS = 40;
     // How long a dialed Pegasus gate takes to fill with light, at most
@@ -124,6 +126,8 @@ public final class SGConnection implements Connection {
     private long lockTick;
     private long fillStart;
     private long fillEnd;
+    // How many of an Ori supergate's segments have linked, which sound as each one does
+    private int linked;
 
     SGConnection(final SGStargate dialer, final SGStargate target, final Address address,
             final Optional<Address> homeAddress, final int openTicks, final Cause cause, final Costs costs) {
@@ -175,8 +179,8 @@ public final class SGConnection implements Connection {
             this.lockTick = this.now();
             this.fillStart = this.now();
             this.fillEnd = this.now();
-            this.target.play(SGSounds.chevron(DialStyle.of(this.target.typeKey()), false));
-            this.enter(DialPhase.SYNC_AWAIT, SGConnection.SYNC_AWAIT_TICKS);
+            SGConnection.chevron(this.target, false);
+            this.enter(DialPhase.SYNC_AWAIT, this.syncTicks());
             return;
         }
         this.scheduleFill();
@@ -198,6 +202,38 @@ public final class SGConnection implements Connection {
         }
         this.fillEnd = this.now() + ticks;
         this.fillStart = Math.max(this.now(), this.fillEnd - SGConnection.PEGASUS_FILL_TICKS);
+    }
+
+    // How long the gates wait on each other once every chevron has locked: longer between Ori supergates in different
+    // worlds
+    private int syncTicks() {
+        return this.style == DialStyle.ORI && !this.dialer.position().dimension().equals(
+                this.target.position().dimension()) ? SGConnection.ORI_SYNC_AWAIT_TICKS : SGConnection.SYNC_AWAIT_TICKS;
+    }
+
+    // A chevron locking, on the gate that dialed or the gate dialed; an Ori supergate has none to sound
+    private static void chevron(final SGStargate gate, final boolean outgoing) {
+        final DialStyle style = DialStyle.of(gate.typeKey());
+        if (style != DialStyle.ORI) {
+            gate.play(SGSounds.chevron(style, outgoing));
+        }
+    }
+
+    // An Ori supergate's segments sound as each one links, higher and louder as the ring fills
+    private void link() {
+        if (this.style != DialStyle.ORI) {
+            return;
+        }
+        final int segments = OriGate.segments(this.dialer.shape());
+        final int now = (int) Math.floor(OriGate.reach(this.dialer.view(), this.now(), segments));
+        if (now > this.linked) {
+            final float full = (float) now / segments;
+            this.dialer.play(SGSounds.ORI_LINK, 0.35F + 0.65F * full, 0.75F + 0.5F * full);
+            if (OriGate.is(this.target.typeKey())) {
+                this.target.play(SGSounds.ORI_LINK, 0.35F + 0.65F * full, 0.75F + 0.5F * full);
+            }
+        }
+        this.linked = now;
     }
 
     private void startSymbol() {
@@ -263,8 +299,8 @@ public final class SGConnection implements Connection {
             this.dialerTravel.kawoosh();
             this.targetTravel.kawoosh();
         }
-        if (this.phase == DialPhase.ESTABLISHING && this.elapsed == (this.style == DialStyle.PEGASUS ? 0
-                : SGConnection.MILKY_WAY_OPEN_SOUND_TICKS)) {
+        this.link();
+        if (this.phase == DialPhase.ESTABLISHING && this.elapsed == this.openSoundTicks()) {
             this.dialer.play(SGSounds.open(this.style));
             this.target.play(SGSounds.open(this.style));
         }
@@ -284,12 +320,12 @@ public final class SGConnection implements Connection {
                 this.lockTick = this.now();
                 SGEventBus.get().post(new SGEvents.DialLockChevron(this.cause, this.dialer, this.address,
                         this.engaged - 1));
-                this.dialer.play(SGSounds.chevron(this.style, true));
-                this.target.play(SGSounds.chevron(DialStyle.of(this.target.typeKey()), false));
+                SGConnection.chevron(this.dialer, true);
+                SGConnection.chevron(this.target, false);
                 if (this.engaged < this.address.size()) {
                     this.enter(DialPhase.INTER_DIALING, this.style.interDialingTicks());
                 } else {
-                    this.enter(DialPhase.SYNC_AWAIT, SGConnection.SYNC_AWAIT_TICKS);
+                    this.enter(DialPhase.SYNC_AWAIT, this.syncTicks());
                 }
             }
             case INTER_DIALING -> {
@@ -317,6 +353,16 @@ public final class SGConnection implements Connection {
             }
         }
         return this.phase == DialPhase.IDLE;
+    }
+
+    // How long into the wormhole forming its sound starts: at once for a Pegasus gate, and for an Ori supergate a
+    // little way into its horizon filling
+    private int openSoundTicks() {
+        return switch (this.style) {
+            case PEGASUS -> 0;
+            case ORI -> OriGate.ESTABLISH_TICKS + SGConnection.MILKY_WAY_OPEN_SOUND_TICKS;
+            default -> SGConnection.MILKY_WAY_OPEN_SOUND_TICKS;
+        };
     }
 
     /**
@@ -407,11 +453,13 @@ public final class SGConnection implements Connection {
         }
     }
 
-    // The horizon's light moves on with its waves; behind a shut iris it gives none
+    // The horizon's light moves on with its waves; behind a shut iris it gives none, though it shines through a
+    // raised shield
     private static void shimmer(final SGStargate gate) {
         final ServerLevel level = gate.level();
         if (level != null) {
-            EventHorizonBlock.shimmer(level, gate.frame(), gate.now(), gate.irisBlocks());
+            EventHorizonBlock.shimmer(level, gate.frame(), gate.now(), gate.irisBlocks()
+                    && !gate.irisState().shieldRaised());
         }
     }
 
@@ -634,8 +682,11 @@ public final class SGConnection implements Connection {
         final DialView dialerView = new DialView(this.phase, true, SGConnection.characters(this.address),
                 this.engaged, this.move.from(), this.move.to(), this.phaseStart, ringEnd, this.lockTick,
                 this.fillStart, this.fillEnd, this.phaseStart, 0);
-        final DialView targetView = new DialView(this.phase, false, this.homeAddress, this.engaged, 0, 0, 0, 0,
-                this.lockTick, this.fillStart, this.fillEnd, this.phaseStart, 0);
+        // A dialed Ori supergate links in step with the one dialing it, so it is shown each symbol's timing too
+        final boolean ori = this.style == DialStyle.ORI;
+        final DialView targetView = new DialView(this.phase, false, this.homeAddress, this.engaged, 0, 0,
+                ori ? this.phaseStart : 0, ori ? ringEnd : 0, this.lockTick, this.fillStart, this.fillEnd,
+                this.phaseStart, ori ? this.address.size() : 0);
         this.dialer.enter(this, dialerView, cause);
         this.target.enter(this, targetView, cause);
     }

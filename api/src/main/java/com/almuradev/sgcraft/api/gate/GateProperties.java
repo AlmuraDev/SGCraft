@@ -128,8 +128,8 @@ public final class GateProperties {
             GateProperties.register("distance_factor_multiplier", GateProperties.ENERGY_CODEC);
 
     /**
-     * How many times more a wormhole the gate dials costs when it reaches another world. With no value, the server's
-     * setting applies.
+     * How many times more a wormhole the gate dials costs with an eighth chevron, which reaches another world. With
+     * no value, the server's setting applies.
      */
     public static final GateProperty<Double> INTER_WORLD_MULTIPLIER =
             GateProperties.register("inter_world_multiplier", GateProperties.ENERGY_CODEC);

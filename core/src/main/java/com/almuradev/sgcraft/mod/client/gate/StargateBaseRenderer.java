@@ -38,6 +38,7 @@ import com.almuradev.sgcraft.mod.gate.GateFrame;
 import com.almuradev.sgcraft.mod.gate.GateOrientation;
 import com.almuradev.sgcraft.mod.gate.GateShape;
 import com.almuradev.sgcraft.mod.gate.IrisView;
+import com.almuradev.sgcraft.mod.gate.OriGate;
 import com.almuradev.sgcraft.mod.gate.SGIris;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -94,7 +95,8 @@ public final class StargateBaseRenderer
     private static final Map<ResourceKey<GateType>, GateTypeRenderer> RENDERERS = Map.of(
             GateTypes.MILKY_WAY, new MilkyWayGateRenderer(),
             GateTypes.PEGASUS, new PegasusGateRenderer(),
-            GateTypes.UNIVERSE, new UniverseGateRenderer());
+            GateTypes.UNIVERSE, new UniverseGateRenderer(),
+            GateTypes.ORI, new OriGateRenderer());
 
     public StargateBaseRenderer(final BlockEntityRendererProvider.Context context) {
     }
@@ -122,7 +124,8 @@ public final class StargateBaseRenderer
         state.locked = ChevronOrder.locked(gate.chevrons(), state.view.length(), state.view.engaged());
         state.time = gate.getLevel() != null ? gate.getLevel().getGameTime() + partialTicks : 0;
         final IrisView iris = gate.iris();
-        state.irisAperture = iris == null ? 1 : SGIris.aperture(iris.state(), iris.since(), state.time);
+        state.irisAperture = iris == null ? 1 : SGIris.aperture(iris.type(), iris.state(), iris.since(), state.time);
+        state.shield = iris != null && SGIris.isShield(iris.type());
         state.transparent = gate.transparent();
         final EventHorizon horizon = gate.horizon();
         if (horizon == null) {
@@ -169,12 +172,21 @@ public final class StargateBaseRenderer
         final double scale = state.shape.scale();
         poseStack.scale((float) scale, (float) scale, (float) Math.min(scale, state.shape.depthScale()));
         renderer.submit(state, poseStack, collector);
+        // A shield hides nothing behind it: the horizon ripples on behind it, and glows through it
+        final float hides = state.shield ? 1 : state.irisAperture;
         if (state.horizon != null) {
-            StargateBaseRenderer.submitHorizon(state.horizon, state.irisAperture, state.transparent, poseStack,
+            StargateBaseRenderer.submitHorizon(state.horizon, hides, state.transparent, poseStack, collector);
+            StargateBaseRenderer.submitHorizonGlow(state, hides, renderer.glowColor(), poseStack, collector);
+        } else if (OriGate.is(state.gateType)) {
+            StargateBaseRenderer.submitFill(OriGate.fill(state.view, state.time), state.transparent, poseStack,
                     collector);
-            StargateBaseRenderer.submitHorizonGlow(state, renderer.glowColor(), poseStack, collector);
         }
-        IrisRenderer.submit(state.gateType, state.irisAperture, poseStack, collector, state.lightCoords);
+        if (state.shield) {
+            ShieldRenderer.submit(IrisRenderer.rim(state.gateType), state.irisAperture, state.time, poseStack,
+                    collector);
+        } else {
+            IrisRenderer.submit(state.gateType, state.irisAperture, poseStack, collector, state.lightCoords);
+        }
         poseStack.popPose();
     }
 
@@ -204,11 +216,37 @@ public final class StargateBaseRenderer
                 });
     }
 
+    // An Ori supergate's horizon filling in from its ring as the wormhole forms, flat, before the kawoosh
+    private static void submitFill(final double fill, final boolean transparent, final PoseStack poseStack,
+            final SubmitNodeCollector collector) {
+        if (fill <= 0 || fill >= 1) {
+            return;
+        }
+        final double outer = EventHorizon.RINGS * EventHorizon.BAND;
+        final double hole = outer * (1 - fill);
+        final Identifier texture = SGClientConfig.get().hdEventHorizon() ? StargateBaseRenderer.HORIZON
+                : StargateBaseRenderer.HORIZON_PLAIN;
+        collector.submitCustomGeometry(poseStack, RenderTypes.beaconBeam(texture, transparent),
+                (pose, buffer) -> {
+                    for (int j = 0; j < EventHorizon.SPOKES; j++) {
+                        final double a0 = 2 * Math.PI * j / EventHorizon.SPOKES;
+                        final double a1 = 2 * Math.PI * (j + 1) / EventHorizon.SPOKES;
+                        final double[][] quad = {
+                                {hole * Math.cos(a0), hole * Math.sin(a0), 0},
+                                {outer * Math.cos(a0), outer * Math.sin(a0), 0},
+                                {outer * Math.cos(a1), outer * Math.sin(a1), 0},
+                                {hole * Math.cos(a1), hole * Math.sin(a1), 0}};
+                        StargateBaseRenderer.horizonQuad(pose, buffer, quad, false);
+                        StargateBaseRenderer.horizonQuad(pose, buffer, quad, true);
+                    }
+                });
+    }
+
     // A soft, steady glow in the gate's color over its open horizon, on both faces; an iris shuts it off, and it fades
     // as the wormhole shuts down
-    private static void submitHorizonGlow(final StargateBaseRenderState state, final int color,
-            final PoseStack poseStack, final SubmitNodeCollector collector) {
-        double strength = StargateBaseRenderer.HORIZON_GLOW * state.irisAperture;
+    private static void submitHorizonGlow(final StargateBaseRenderState state, final float irisAperture,
+            final int color, final PoseStack poseStack, final SubmitNodeCollector collector) {
+        double strength = StargateBaseRenderer.HORIZON_GLOW * irisAperture;
         if (state.view.phase() == DialPhase.DISCONNECTING) {
             strength *= Math.max(0, 1 - (state.time - state.view.phaseStart())
                     / StargateBaseRenderer.HORIZON_GLOW_FADE_TICKS);

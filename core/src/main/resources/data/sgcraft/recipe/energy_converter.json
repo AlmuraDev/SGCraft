@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "i": "minecraft:iron_ingot",
+    "N": "sgcraft:naquadah_ingot",
+    "c": "minecraft:copper_ingot",
+    "r": "minecraft:redstone"
+  },
+  "pattern": [
+    "iNi",
+    "rcr",
+    "iNi"
+  ],
+  "result": {
+    "id": "sgcraft:energy_converter"
+  }
+}

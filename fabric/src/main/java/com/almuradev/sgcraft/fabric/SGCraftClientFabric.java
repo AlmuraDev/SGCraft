@@ -39,8 +39,11 @@ import com.almuradev.sgcraft.mod.client.malp.MalpRenderer;
 import com.almuradev.sgcraft.mod.client.malp.MalpScreen;
 import com.almuradev.sgcraft.mod.client.power.BatteryChargerScreen;
 import com.almuradev.sgcraft.mod.client.power.PowerUnitScreen;
+import com.almuradev.sgcraft.mod.client.shield.CityShieldRenderer;
+import com.almuradev.sgcraft.mod.client.shield.CityShieldScreen;
 import com.almuradev.sgcraft.mod.client.view.RemoteViewClient;
 import com.almuradev.sgcraft.mod.client.view.RemoteViewPicture;
+import com.almuradev.sgcraft.mod.client.zpm.ZpmScreen;
 import com.almuradev.sgcraft.mod.dhd.DhdFuelMenu;
 import com.almuradev.sgcraft.mod.entity.SGEntityTypes;
 import com.almuradev.sgcraft.mod.gate.GateBaseMenu;
@@ -48,6 +51,8 @@ import com.almuradev.sgcraft.mod.malp.MalpMenu;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
 import com.almuradev.sgcraft.mod.power.BatteryChargerMenu;
 import com.almuradev.sgcraft.mod.power.PowerUnitMenu;
+import com.almuradev.sgcraft.mod.shield.CityShieldMenu;
+import com.almuradev.sgcraft.mod.zpm.ZpmMenu;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -73,6 +78,7 @@ public final class SGCraftClientFabric implements ClientModInitializer {
         FeatureRendererRegistry.register(GateFeatureRenderer.TYPE, GateFeatureRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.DHD, DhdRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.MALP_CONSOLE, MalpConsoleRenderer::new);
+        BlockEntityRendererRegistry.register(SGBlockEntityTypes.CITY_SHIELD, CityShieldRenderer::new);
         // The iris's plates are unseen; the iris itself is drawn with its gate
         EntityRendererRegistry.register(SGEntityTypes.IRIS_PLATE, NoopRenderer::new);
         ModelLayerRegistry.registerModelLayer(MalpModel.LAYER, MalpModel::createLayer);
@@ -86,6 +92,9 @@ public final class SGCraftClientFabric implements ClientModInitializer {
         MenuScreens.register(PowerUnitMenu.TYPE, PowerUnitScreen::new);
         MenuScreens.register(BatteryChargerMenu.TYPE, BatteryChargerScreen::new);
         MenuScreens.register(MalpMenu.TYPE, MalpScreen::new);
+        MenuScreens.register(ZpmMenu.SINGLE, ZpmScreen::new);
+        MenuScreens.register(ZpmMenu.HUB, ZpmScreen::new);
+        MenuScreens.register(CityShieldMenu.TYPE, CityShieldScreen::new);
         SGNetwork.clientbound().forEach(SGCraftClientFabric::receive);
         // Remote views, drawn into screens as pictures in pictures, and dropped when the client leaves the server
         PictureInPictureRendererRegistry.register(context -> new RemoteViewPicture());

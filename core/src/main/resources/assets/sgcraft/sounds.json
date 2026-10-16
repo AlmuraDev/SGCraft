@@ -119,6 +119,24 @@
       "sgcraft:iris_hit"
     ]
   },
+  "shield_up": {
+    "sounds": [
+      "sgcraft:shield_activation"
+    ]
+  },
+  "shield_down": {
+    "sounds": [
+      "sgcraft:shield_deactivation"
+    ]
+  },
+  "ori_link": {
+    "sounds": [
+      "sgcraft:ori/link1",
+      "sgcraft:ori/link2",
+      "sgcraft:ori/link3",
+      "sgcraft:ori/link4"
+    ]
+  },
   "malfunction": {
     "sounds": [
       "sgcraft:malfunction"

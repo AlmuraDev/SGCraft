@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "N": "sgcraft:naquadah_block",
+    "S": "sgcraft:shield_upgrade",
+    "C": "sgcraft:core_crystal",
+    "X": "minecraft:nether_star"
+  },
+  "pattern": [
+    "NSN",
+    "CXC",
+    "NSN"
+  ],
+  "result": {
+    "id": "sgcraft:city_shield_generator"
+  }
+}

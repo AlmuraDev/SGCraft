@@ -74,4 +74,25 @@ public interface GateType {
     default boolean acceptsDhd(final ResourceKey<GateType> style) {
         return false;
     }
+
+    /**
+     * Whether a gate of this type can connect to a gate of another type. A wormhole forms only if both types allow
+     * it, each asked about the other's type, so either type can refuse the connection.
+     *
+     * @param other the type of the gate at the other end
+     * @return whether a gate of this type can connect to it
+     */
+    default boolean connectsTo(final ResourceKey<GateType> other) {
+        return true;
+    }
+
+    /**
+     * Whether a gate of this type can have an iris of a kind fitted.
+     *
+     * @param iris the kind of iris
+     * @return whether it can be fitted
+     */
+    default boolean acceptsIris(final ResourceKey<IrisType> iris) {
+        return true;
+    }
 }

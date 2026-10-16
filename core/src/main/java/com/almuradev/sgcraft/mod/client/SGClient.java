@@ -31,7 +31,10 @@ import com.almuradev.sgcraft.mod.client.gate.GateBaseScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConfigScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleUsers;
+import com.almuradev.sgcraft.mod.client.shield.CityShieldScreen;
+import com.almuradev.sgcraft.mod.client.shield.ShieldConsoleScreen;
 import com.almuradev.sgcraft.mod.client.tool.ConfiguratorScreen;
+import com.almuradev.sgcraft.mod.client.tool.ExplorerScreen;
 import com.almuradev.sgcraft.mod.client.tool.GdoScreen;
 import com.almuradev.sgcraft.mod.client.tool.PddScreen;
 import com.almuradev.sgcraft.mod.client.tool.TabletScreen;
@@ -40,6 +43,8 @@ import com.almuradev.sgcraft.mod.dhd.DhdHooks;
 import com.almuradev.sgcraft.mod.gate.GateBaseInfo;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
+import com.almuradev.sgcraft.mod.shield.ShieldPayloads;
+import com.almuradev.sgcraft.mod.tool.ExplorerPayloads;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -75,6 +80,16 @@ public final class SGClient {
         SGNetwork.onClient(MalpPayloads.ConfigState.TYPE, state -> SGClient.show(MalpConfigScreen.class, state,
                 state.open(), MalpConfigScreen::new, MalpConfigScreen::update));
         SGNetwork.onClient(MalpPayloads.ConsoleUse.TYPE, MalpConsoleUsers::update);
+        SGNetwork.onClient(ExplorerPayloads.State.TYPE, state -> SGClient.show(ExplorerScreen.class, state,
+                state.open(), ExplorerScreen::new, ExplorerScreen::update));
+        // The generator's screen opens with its menu; its state only fills it
+        SGNetwork.onClient(ShieldPayloads.CityState.TYPE, state -> {
+            if (Minecraft.getInstance().gui.screen() instanceof final CityShieldScreen screen) {
+                screen.update(state);
+            }
+        });
+        SGNetwork.onClient(ShieldPayloads.ConsoleState.TYPE, state -> SGClient.show(ShieldConsoleScreen.class, state,
+                state.open(), ShieldConsoleScreen::new, ShieldConsoleScreen::update));
     }
 
     // A gate's base: the address goes to the base's menu the server has just opened, or opens on its own for a player

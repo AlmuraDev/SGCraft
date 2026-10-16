@@ -250,11 +250,19 @@ public final class TabletScreen extends Screen {
             this.configure.active = !status.equals(BookEntry.NO_GATE);
         }
         final boolean iris = gate.map(g -> g.iris() != GateInfo.NO_IRIS).orElse(false);
+        // A shield is lowered by opening it and raised by closing it, and its buttons say so
+        final boolean shield = gate.map(TabletGateInfo::shield).orElse(false);
         if (this.openIris != null) {
             this.openIris.active = iris;
+            this.openIris.setMessage(shield ? Component.translatableWithFallback("screen.sgcraft.gdo.lower_shield",
+                    "Deactivate Shield") : Component.translatableWithFallback("screen.sgcraft.gdo.open_local",
+                    "Open iris"));
         }
         if (this.closeIris != null) {
             this.closeIris.active = iris;
+            this.closeIris.setMessage(shield ? Component.translatableWithFallback("screen.sgcraft.gdo.raise_shield",
+                    "Activate Shield") : Component.translatableWithFallback("screen.sgcraft.gdo.close_local",
+                    "Close iris"));
         }
         if (this.removeGate != null) {
             this.removeGate.active = gate.isPresent();
@@ -417,8 +425,10 @@ public final class TabletScreen extends Screen {
                         this.getContentX() + 6 + screen.font.width(status), this.getContentY() + 11, 0xFF8FB8FF);
                 // A shut or moving iris shows beside its name
                 if (this.gate.iris() != GateInfo.NO_IRIS && this.gate.iris() != IrisState.OPEN.ordinal()) {
-                    final Component iris = Component.translatableWithFallback("screen.sgcraft.tablet.iris_shut",
-                            "Iris shut").withStyle(ChatFormatting.RED);
+                    final Component iris = (this.gate.shield()
+                            ? Component.translatableWithFallback("screen.sgcraft.tablet.shield_up", "Shield up")
+                            : Component.translatableWithFallback("screen.sgcraft.tablet.iris_shut", "Iris shut"))
+                            .withStyle(ChatFormatting.RED);
                     graphics.text(screen.font, iris, this.getContentRight() - screen.font.width(iris) - 2,
                             this.getContentY() + 1, 0xFFFFFFFF);
                 }

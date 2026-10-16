@@ -59,19 +59,19 @@ public final class MalpRegistry extends SavedData {
      * @param id the MALP's UUID
      * @param position where it was, by block
      * @param name what it is called
-     * @param energy the FE in its battery
+     * @param energy the gate energy in its battery
      * @param console the console it is paired with, if any
      * @param owner the player it belongs to, if any
      * @param options its own settings
      */
-    public record Entry(UUID id, GlobalPos position, String name, long energy, Optional<GlobalPos> console,
+    public record Entry(UUID id, GlobalPos position, String name, double energy, Optional<GlobalPos> console,
             Optional<UUID> owner, MalpOptions options) {
 
         static final Codec<Entry> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 UUIDUtil.CODEC.fieldOf("id").forGetter(Entry::id),
                 GlobalPos.CODEC.fieldOf("position").forGetter(Entry::position),
                 Codec.STRING.fieldOf("name").forGetter(Entry::name),
-                Codec.LONG.optionalFieldOf("energy", 0L).forGetter(Entry::energy),
+                Codec.DOUBLE.optionalFieldOf("energy", 0.0).forGetter(Entry::energy),
                 GlobalPos.CODEC.optionalFieldOf("console").forGetter(Entry::console),
                 UUIDUtil.CODEC.optionalFieldOf("owner").forGetter(Entry::owner),
                 MalpOptions.CODEC.optionalFieldOf("options", MalpOptions.DEFAULTS).forGetter(Entry::options)

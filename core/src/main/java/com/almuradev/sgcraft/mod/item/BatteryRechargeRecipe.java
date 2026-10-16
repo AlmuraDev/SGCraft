@@ -36,7 +36,8 @@ import net.minecraft.world.level.Level;
 
 /**
  * A battery and naquadah in the crafting grid, in any arrangement: the naquadah is used up and the battery comes out
- * holding the FE it gave, as much as it has room for. A full battery isn't topped up, so no naquadah is wasted on it.
+ * holding the gate energy it gave, as much as it has room for. A full battery isn't topped up, so no naquadah is wasted
+ * on it.
  */
 public final class BatteryRechargeRecipe extends CustomRecipe {
 
@@ -62,7 +63,7 @@ public final class BatteryRechargeRecipe extends CustomRecipe {
             return ItemStack.EMPTY;
         }
         final ItemStack charged = battery.copyWithCount(1);
-        BatteryItem.insert(charged, naquadah * MalpSettings.current().fePerNaquadah(), false);
+        BatteryItem.insert(charged, naquadah * MalpSettings.naquadahEnergy(), false);
         return charged;
     }
 

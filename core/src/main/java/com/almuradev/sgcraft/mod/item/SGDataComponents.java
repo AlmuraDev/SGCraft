@@ -39,6 +39,7 @@ import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.Unit;
 
 import java.util.List;
 import java.util.UUID;
@@ -69,9 +70,9 @@ public final class SGDataComponents {
                     .networkSynchronized(ByteBufCodecs.fromCodecWithRegistries(TabletGate.CODEC.listOf()))
                     .build();
 
-    /** The FE a power unit held when it was broken, which it holds again when placed. */
-    public static final DataComponentType<Long> ENERGY = DataComponentType.<Long>builder()
-            .persistent(Codec.LONG).networkSynchronized(ByteBufCodecs.VAR_LONG).build();
+    /** The gate energy a power unit or battery holds; a power unit holds it again when placed. */
+    public static final DataComponentType<Double> ENERGY = DataComponentType.<Double>builder()
+            .persistent(Codec.DOUBLE).networkSynchronized(ByteBufCodecs.DOUBLE).build();
 
     /** The MALP console a MALP item is paired with, which the MALP placed from it reports to. */
     public static final DataComponentType<GlobalPos> MALP_CONSOLE = DataComponentType.<GlobalPos>builder()
@@ -90,6 +91,14 @@ public final class SGDataComponents {
             .persistent(UUIDUtil.CODEC.listOf())
             .networkSynchronized(UUIDUtil.STREAM_CODEC.apply(ByteBufCodecs.list()))
             .build();
+
+    /** The gate energy a ZPM holds; a ZPM without it is full. */
+    public static final DataComponentType<Double> ZPM_ENERGY = DataComponentType.<Double>builder()
+            .persistent(Codec.DOUBLE).networkSynchronized(ByteBufCodecs.DOUBLE).build();
+
+    /** Marks a tainted ZPM, which explodes when drawn on. */
+    public static final DataComponentType<Unit> ZPM_TAINTED = DataComponentType.<Unit>builder()
+            .persistent(Unit.CODEC).networkSynchronized(Unit.STREAM_CODEC).build();
 
     private SGDataComponents() {
     }
@@ -111,5 +120,9 @@ public final class SGDataComponents {
                 SGDataComponents.MALP_OPTIONS);
         sink.register(ResourceKey.create(Registries.DATA_COMPONENT_TYPE, SGCraft.id("tablet_malps")),
                 SGDataComponents.TABLET_MALPS);
+        sink.register(ResourceKey.create(Registries.DATA_COMPONENT_TYPE, SGCraft.id("zpm_energy")),
+                SGDataComponents.ZPM_ENERGY);
+        sink.register(ResourceKey.create(Registries.DATA_COMPONENT_TYPE, SGCraft.id("zpm_tainted")),
+                SGDataComponents.ZPM_TAINTED);
     }
 }

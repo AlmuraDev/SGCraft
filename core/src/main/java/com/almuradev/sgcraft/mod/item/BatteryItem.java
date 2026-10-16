@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.item;
 
+import com.almuradev.sgcraft.mod.energy.FeRate;
 import com.almuradev.sgcraft.mod.malp.MalpSettings;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponentGetter;
@@ -40,8 +41,9 @@ import java.util.Locale;
 import java.util.function.Consumer;
 
 /**
- * A battery: a store of FE that powers a MALP. Its charge is kept on the stack, in {@link SGDataComponents#ENERGY},
- * and its capacity is the server's. Power units, battery chargers, naquadah and other mods' chargers fill it.
+ * A battery: a store of gate energy (GE) that powers a MALP. Its charge is kept on the stack, in
+ * {@link SGDataComponents#ENERGY}, and its capacity is the server's. Power units, battery chargers, naquadah and other
+ * mods' chargers fill it; other mods see its charge as FE, at {@link FeRate}'s rate.
  */
 public final class BatteryItem extends Item {
 
@@ -52,39 +54,63 @@ public final class BatteryItem extends Item {
         super(properties);
     }
 
-    /** @return the most FE a battery holds, as the server's settings say */
+    /** @return the most gate energy a battery holds, as the server's settings say */
     public static long capacity() {
         return MalpSettings.current().batteryCapacity();
     }
 
-    /** @return the FE a battery holds */
-    public static long energy(final DataComponentGetter battery) {
-        return Math.max(0, Math.min(battery.getOrDefault(SGDataComponents.ENERGY, 0L), BatteryItem.capacity()));
+    /** @return the gate energy a battery holds */
+    public static double energy(final DataComponentGetter battery) {
+        return Math.max(0, Math.min(battery.getOrDefault(SGDataComponents.ENERGY, 0.0), BatteryItem.capacity()));
     }
 
-    /** @return a new battery holding as much FE as a battery holds */
+    /** @return a battery's charge as other mods see it, in FE */
+    public static long fe(final DataComponentGetter battery) {
+        return FeRate.toFeIn(BatteryItem.energy(battery));
+    }
+
+    /** @return the most a battery holds as other mods see it, in FE */
+    public static long feCapacity() {
+        return FeRate.toFeIn(BatteryItem.capacity());
+    }
+
+    /**
+     * @return how much FE other mods may move into a battery holding this much gate energy, or out of it, at most
+     *     {@code fe}
+     */
+    public static long feMovable(final double stored, final long fe, final boolean in) {
+        return Math.max(0, Math.min(fe, in ? FeRate.toFeIn(BatteryItem.capacity() - stored) : FeRate.toFeOut(stored)));
+    }
+
+    /** @return the gate energy a battery holds after this much FE moves into or out of it */
+    public static double afterFe(final double stored, final long fe, final boolean in) {
+        final double moved = in ? FeRate.toGeIn(fe) : FeRate.toGeOut(fe);
+        return Math.max(0, Math.min(BatteryItem.capacity(), in ? stored + moved : stored - moved));
+    }
+
+    /** @return a new battery holding as much gate energy as a battery holds */
     public static ItemStack full() {
         final ItemStack battery = new ItemStack(SGItems.BATTERY);
         BatteryItem.setEnergy(battery, BatteryItem.capacity());
         return battery;
     }
 
-    /** Sets the FE a battery holds, kept between none and its capacity. */
-    public static void setEnergy(final ItemStack battery, final long energy) {
-        battery.set(SGDataComponents.ENERGY, Math.max(0, Math.min(energy, BatteryItem.capacity())));
+    /** Sets the gate energy a battery holds, kept between none and its capacity. */
+    public static void setEnergy(final ItemStack battery, final double energy) {
+        battery.set(SGDataComponents.ENERGY, Math.max(0, Math.min(energy, (double) BatteryItem.capacity())));
     }
 
     /**
-     * Puts FE into a battery, as much as there is room for.
+     * Puts gate energy into a battery, as much as there is room for.
      *
      * @return how much it took, or would take
      */
-    public static long insert(final ItemStack battery, final long amount, final boolean simulate) {
+    public static double insert(final ItemStack battery, final double amount, final boolean simulate) {
         if (!battery.is(SGItems.BATTERY)) {
             return 0;
         }
-        final long stored = BatteryItem.energy(battery);
-        final long taken = Math.max(0, Math.min(amount, BatteryItem.capacity() - stored));
+        final double stored = BatteryItem.energy(battery);
+        final double taken = Math.max(0, Math.min(amount, BatteryItem.capacity() - stored));
         if (!simulate && taken > 0) {
             BatteryItem.setEnergy(battery, stored + taken);
         }
@@ -92,16 +118,16 @@ public final class BatteryItem extends Item {
     }
 
     /**
-     * Takes FE out of a battery, as much as it holds.
+     * Takes gate energy out of a battery, as much as it holds.
      *
      * @return how much it gave, or would give
      */
-    public static long extract(final ItemStack battery, final long amount, final boolean simulate) {
+    public static double extract(final ItemStack battery, final double amount, final boolean simulate) {
         if (!battery.is(SGItems.BATTERY)) {
             return 0;
         }
-        final long stored = BatteryItem.energy(battery);
-        final long given = Math.max(0, Math.min(amount, stored));
+        final double stored = BatteryItem.energy(battery);
+        final double given = Math.max(0, Math.min(amount, stored));
         if (!simulate && given > 0) {
             BatteryItem.setEnergy(battery, stored - given);
         }
@@ -122,7 +148,7 @@ public final class BatteryItem extends Item {
     @Override
     public int getBarWidth(final ItemStack stack) {
         final long capacity = BatteryItem.capacity();
-        return capacity <= 0 ? 0 : Mth.clamp(Math.round((float) BatteryItem.BAR_WIDTH * BatteryItem.energy(stack)
+        return capacity <= 0 ? 0 : Mth.clamp((int) Math.round(BatteryItem.BAR_WIDTH * BatteryItem.energy(stack)
                 / capacity), 0, BatteryItem.BAR_WIDTH);
     }
 
@@ -135,8 +161,8 @@ public final class BatteryItem extends Item {
     public void appendHoverText(final ItemStack stack, final TooltipContext context, final TooltipDisplay display,
             final Consumer<Component> builder, final TooltipFlag flag) {
         final NumberFormat format = NumberFormat.getIntegerInstance(Locale.US);
-        builder.accept(Component.translatableWithFallback("item.sgcraft.battery.charge", "%s / %s FE (%s%%)",
-                format.format(BatteryItem.energy(stack)), format.format(BatteryItem.capacity()),
+        builder.accept(Component.translatableWithFallback("item.sgcraft.battery.charge", "%s / %s GE (%s%%)",
+                format.format(Math.floor(BatteryItem.energy(stack))), format.format(BatteryItem.capacity()),
                 BatteryItem.percent(stack)).withStyle(ChatFormatting.GRAY));
     }
 }

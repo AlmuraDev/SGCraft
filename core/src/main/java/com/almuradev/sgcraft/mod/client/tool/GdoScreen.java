@@ -29,6 +29,7 @@ import com.almuradev.sgcraft.api.address.Address;
 import com.almuradev.sgcraft.api.gate.IrisState;
 import com.almuradev.sgcraft.mod.client.ClientPlatform;
 import com.almuradev.sgcraft.mod.gate.GlyphText;
+import com.almuradev.sgcraft.mod.gate.SGIris;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads.GateInfo;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads.GdoAction;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads.GdoState;
@@ -98,17 +99,23 @@ public final class GdoScreen extends Screen {
         ClientPlatform.get().sendToServer(new GdoAction(this.state.local().pos(), kind));
     }
 
-    // An iris that is moving takes no orders until it stops; one that is shut can only open, and the other way
+    // An iris that is moving takes no orders until it stops; one that is shut can only open, and the other way. A
+    // shield is raised by closing it and lowered by opening it, and its buttons say so
     private static void irisButtons(final @Nullable Button open, final @Nullable Button close,
             final @Nullable GateInfo gate) {
         final int iris = gate == null ? GateInfo.NO_IRIS : gate.iris();
+        final boolean shield = gate != null && gate.shield();
         if (open != null) {
             open.visible = gate != null;
             open.active = iris == IrisState.CLOSED.ordinal();
+            open.setMessage(shield ? Component.translatableWithFallback("screen.sgcraft.gdo.lower_shield",
+                    "Deactivate Shield") : Component.translatableWithFallback("screen.sgcraft.gdo.open", "Open Iris"));
         }
         if (close != null) {
             close.visible = gate != null;
             close.active = iris == IrisState.OPEN.ordinal();
+            close.setMessage(shield ? Component.translatableWithFallback("screen.sgcraft.gdo.raise_shield",
+                    "Activate Shield") : Component.translatableWithFallback("screen.sgcraft.gdo.close", "Close Iris"));
         }
     }
 
@@ -163,6 +170,7 @@ public final class GdoScreen extends Screen {
                 graphics.centeredText(this.font, GlyphText.of(address, PddScreen.style(gate)), x, top + 26, -1));
         final Component iris = gate.iris() == GateInfo.NO_IRIS
                 ? Component.translatableWithFallback("screen.sgcraft.gdo.no_iris", "No iris")
+                : gate.shield() ? SGIris.shieldText(IrisState.values()[gate.iris()])
                 : Component.translatableWithFallback("screen.sgcraft.gdo.iris", "Iris: %s",
                         IrisState.values()[gate.iris()].name().toLowerCase(Locale.ROOT));
         graphics.centeredText(this.font, iris, x, top + 42, gate.iris() == IrisState.CLOSED.ordinal() ? 0xFFFF8040

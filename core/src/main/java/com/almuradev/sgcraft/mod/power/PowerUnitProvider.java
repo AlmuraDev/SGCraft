@@ -34,6 +34,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /** The power units near a gate, within {@link #REACH} blocks of its base each way, as the original looked for them. */
@@ -51,22 +52,28 @@ public final class PowerUnitProvider implements EnergySourceProvider {
         }
         final BlockPos base = gate.position().pos();
         final int reach = PowerUnitProvider.REACH;
-        final List<EnergySource> sources = new ArrayList<>();
+        final List<PowerUnitBlockEntity> units = new ArrayList<>();
         for (final BlockPos pos : BlockPos.betweenClosed(base.offset(-reach, -reach, -reach),
                 base.offset(reach, reach, reach))) {
             if (level.isLoaded(pos) && level.getBlockEntity(pos) instanceof PowerUnitBlockEntity unit) {
-                sources.add(new EnergySource() {
-                    @Override
-                    public long available() {
-                        return unit.available();
-                    }
-
-                    @Override
-                    public long draw(final long wanted, final boolean simulate) {
-                        return unit.draw(wanted, simulate);
-                    }
-                });
+                units.add(unit);
             }
+        }
+        // The nearest first
+        units.sort(Comparator.comparingDouble(unit -> unit.getBlockPos().distSqr(base)));
+        final List<EnergySource> sources = new ArrayList<>();
+        for (final PowerUnitBlockEntity unit : units) {
+            sources.add(new EnergySource() {
+                @Override
+                public long available() {
+                    return unit.available();
+                }
+
+                @Override
+                public long draw(final long wanted, final boolean simulate) {
+                    return unit.draw(wanted, simulate);
+                }
+            });
         }
         return sources;
     }

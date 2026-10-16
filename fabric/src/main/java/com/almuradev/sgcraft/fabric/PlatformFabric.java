@@ -27,8 +27,12 @@ package com.almuradev.sgcraft.fabric;
 
 import com.almuradev.sgcraft.mod.Platform;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragonPart;
@@ -36,6 +40,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
+import team.reborn.energy.api.EnergyStorage;
 
 import java.nio.file.Path;
 import java.util.function.BiFunction;
@@ -60,6 +65,19 @@ public final class PlatformFabric implements Platform {
     @Override
     public boolean isPart(final Entity entity) {
         return entity instanceof EnderDragonPart;
+    }
+
+    @Override
+    public long offerEnergy(final ServerLevel level, final BlockPos pos, final Direction face, final long amount) {
+        final EnergyStorage storage = EnergyStorage.SIDED.find(level, pos, face);
+        if (storage == null || !storage.supportsInsertion() || amount <= 0) {
+            return 0;
+        }
+        try (Transaction transaction = Transaction.openOuter()) {
+            final long taken = storage.insert(amount, transaction);
+            transaction.commit();
+            return taken;
+        }
     }
 
     @Override

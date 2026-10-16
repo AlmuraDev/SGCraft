@@ -62,6 +62,8 @@ public final class StargateBaseRenderState extends BlockEntityRenderState {
     public double @Nullable [][] horizon;
     // How far open the iris is, from 0 shut to 1 open; 1 when there is no iris
     public float irisAperture = 1;
+    // Whether the iris is a shield, which is drawn as light, and lets the horizon show through it
+    public boolean shield;
     // Whether the open wormhole's surface lets a little show through
     public boolean transparent = true;
     // How far apart the chevrons stand, in degrees, which camouflage over the bottom row's corners can draw closer

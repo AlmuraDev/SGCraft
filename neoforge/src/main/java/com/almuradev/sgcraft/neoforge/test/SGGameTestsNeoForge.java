@@ -87,6 +87,7 @@ import com.almuradev.sgcraft.mod.worldgen.NaquadahOreFeature;
 import com.almuradev.sgcraft.mod.worldgen.NaquadahOreSettings;
 import com.almuradev.sgcraft.mod.worldgen.OreChunks;
 import com.almuradev.sgcraft.mod.worldgen.StructureGates;
+import com.almuradev.sgcraft.mod.zpm.Zpms;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -270,6 +271,9 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("naquadah_ore_added_to_old_chunks_once",
                 SGGameTestsNeoForge::oreAddedToOldChunks);
         MalpGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
+        ShieldGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
+        OriGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
+        ZpmGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
     }
 
     private SGGameTestsNeoForge() {
@@ -395,7 +399,7 @@ public final class SGGameTestsNeoForge {
     }
 
     // Gate A dials gate B quickly and the test passes when the result is the one expected
-    private static void expectDial(final GameTestHelper helper, final Stargate a, final Stargate b, final Cause cause,
+    static void expectDial(final GameTestHelper helper, final Stargate a, final Stargate b, final Cause cause,
             final DialResult expected, final Runnable after) {
         final AtomicReference<DialResult> result = new AtomicReference<>();
         a.dial(SGGameTestsNeoForge.addressOf(b, a), DialMode.QUICK, cause).thenAccept(result::set);
@@ -919,12 +923,13 @@ public final class SGGameTestsNeoForge {
     private static void supergateCostsMore(final GameTestHelper helper, final BlockPos origin) {
         final Stargate a = SGGameTestsNeoForge.placeSupergate(helper, origin.offset(SGGameTestsNeoForge.A), 4);
         final Stargate b = SGGameTestsNeoForge.place(helper, origin.offset(SGGameTestsNeoForge.B), 9);
-        a.set(GateProperties.ENERGY_CAPACITY, 1_000_000L, SGGameTestsNeoForge.server(helper));
-        a.energy().insert(1_000_000, false);
-        // Eight times a standard gate's opening, which is at least 4000
+        // A supergate runs on the ZPMs in its base
+        final Container zpms = ZpmGameTestsNeoForge.fillBase(helper, a);
+        final double before = Zpms.energy(Zpms.charged(zpms));
+        // Eight times a standard gate's opening, which is at least 4000 gate energy
         SGGameTestsNeoForge.expectDial(helper, a, b, SGGameTestsNeoForge.server(helper), DialResult.CONNECTED, () ->
-                helper.assertTrue(a.energy().stored() <= 1_000_000 - 8 * 4000,
-                        "Opening a supergate took too little: " + a.energy().stored() + " left"));
+                helper.assertTrue(before - Zpms.energy(Zpms.charged(zpms)) >= 8 * 4000,
+                        "Opening a supergate took too little: " + (before - Zpms.energy(Zpms.charged(zpms)))));
     }
 
     // A spawner placed by no one builds its gate facing north, at its default size, and picking it gives the spawner

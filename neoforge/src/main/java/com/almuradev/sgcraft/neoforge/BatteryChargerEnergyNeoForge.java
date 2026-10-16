@@ -34,7 +34,7 @@ import net.neoforged.neoforge.transfer.transaction.TransactionContext;
  * A battery charger as NeoForge's cables see it: it takes FE in, for its battery, and gives none out. A transaction
  * undone puts its store back.
  */
-final class BatteryChargerEnergyNeoForge extends SnapshotJournal<Long> implements EnergyHandler {
+final class BatteryChargerEnergyNeoForge extends SnapshotJournal<Double> implements EnergyHandler {
 
     private final BatteryChargerBlockEntity charger;
 
@@ -44,20 +44,20 @@ final class BatteryChargerEnergyNeoForge extends SnapshotJournal<Long> implement
 
     @Override
     public long getAmountAsLong() {
-        return this.charger.stored();
+        return this.charger.feStored();
     }
 
     @Override
     public long getCapacityAsLong() {
-        return BatteryChargerBlockEntity.capacity();
+        return BatteryChargerBlockEntity.feCapacity();
     }
 
     @Override
     public int insert(final int amount, final TransactionContext transaction) {
-        final long taken = this.charger.insert(amount, true);
+        final long taken = this.charger.insertFe(amount, true);
         if (taken > 0) {
             this.updateSnapshots(transaction);
-            this.charger.insert(taken, false);
+            this.charger.insertFe(taken, false);
         }
         return (int) taken;
     }
@@ -68,12 +68,12 @@ final class BatteryChargerEnergyNeoForge extends SnapshotJournal<Long> implement
     }
 
     @Override
-    protected Long createSnapshot() {
+    protected Double createSnapshot() {
         return this.charger.stored();
     }
 
     @Override
-    protected void revertToSnapshot(final Long snapshot) {
+    protected void revertToSnapshot(final Double snapshot) {
         this.charger.setStored(snapshot);
     }
 }

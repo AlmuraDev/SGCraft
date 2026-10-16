@@ -180,13 +180,13 @@ final class MalpGameTestsNeoForge {
         return helper.absolutePos(new BlockPos(x, 1, z));
     }
 
-    private static ItemStack battery(final long energy) {
+    private static ItemStack battery(final double energy) {
         final ItemStack battery = new ItemStack(SGItems.BATTERY);
         BatteryItem.setEnergy(battery, energy);
         return battery;
     }
 
-    private static MalpEntity malp(final ServerLevel level, final Vec3 at, final long energy,
+    private static MalpEntity malp(final ServerLevel level, final Vec3 at, final double energy,
             final GlobalPos console) {
         final MalpEntity malp = SGEntityTypes.MALP.create(level, EntitySpawnReason.COMMAND);
         malp.snapTo(at.x, at.y, at.z, 0, 0);
@@ -196,18 +196,19 @@ final class MalpGameTestsNeoForge {
         return malp;
     }
 
-    // The power unit fills the battery in its slot from its own store, losing none of the FE on the way
+    // The power unit fills the battery in its slot from its own store, losing none of the gate energy on the way
     private static void powerUnitCharges(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 4, 4);
         level.setBlock(at, SGBlocks.POWER_UNIT.defaultBlockState(), Block.UPDATE_ALL);
         final PowerUnitBlockEntity unit = (PowerUnitBlockEntity) level.getBlockEntity(at);
-        unit.setStored(100_000);
+        unit.setStored(1_250);
         unit.battery().setItem(0, new ItemStack(SGItems.BATTERY));
         helper.succeedWhen(() -> {
-            final long charged = BatteryItem.energy(unit.battery().getItem(0));
-            helper.assertTrue(charged >= 20_000, "The battery holds only " + charged + " FE");
-            helper.assertTrue(unit.stored() + charged == 100_000, "FE was lost or made: the unit holds "
+            final double charged = BatteryItem.energy(unit.battery().getItem(0));
+            helper.assertTrue(charged >= 250, "The battery holds only " + charged + " GE");
+            helper.assertTrue(Math.abs(unit.stored() + charged - 1_250) < 1e-6,
+                    "Gate energy was lost or made: the unit holds "
                     + unit.stored() + " and the battery " + charged);
         });
     }
@@ -220,27 +221,27 @@ final class MalpGameTestsNeoForge {
         final BatteryChargerBlockEntity charger = (BatteryChargerBlockEntity) level.getBlockEntity(at);
         charger.items().setItem(BatteryChargerBlockEntity.FUEL, new ItemStack(SGItems.NAQUADAH, 3));
         charger.items().setItem(BatteryChargerBlockEntity.BATTERY, new ItemStack(SGItems.BATTERY));
-        final long perNaquadah = MalpSettings.current().fePerNaquadah();
         helper.succeedWhen(() -> {
-            final long charged = BatteryItem.energy(charger.items().getItem(BatteryChargerBlockEntity.BATTERY));
+            final double charged = BatteryItem.energy(charger.items().getItem(BatteryChargerBlockEntity.BATTERY));
             helper.assertTrue(charger.items().getItem(BatteryChargerBlockEntity.FUEL).getCount() < 3,
                     "No naquadah was burned");
-            helper.assertTrue(charged > perNaquadah, "The battery holds only " + charged + " FE");
+            helper.assertTrue(charger.stored() > 0, "The burned naquadah gave the charger nothing");
+            helper.assertTrue(charged >= 100, "The battery holds only " + charged + " GE");
         });
     }
 
-    // Battery and naquadah in the grid give the battery back with the naquadah's FE, but not to a full battery or
-    // with anything else in the grid
+    // Battery and naquadah in the grid give the battery back with the naquadah's gate energy, but not to a full battery
+    // or with anything else in the grid
     private static void recipeTopsUp(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
-        final long perNaquadah = MalpSettings.current().fePerNaquadah();
+        final double perNaquadah = MalpSettings.naquadahEnergy();
         final ItemStack naquadah = new ItemStack(SGItems.NAQUADAH);
         final CraftingInput input = MalpGameTestsNeoForge.grid(MalpGameTestsNeoForge.battery(1000), naquadah, naquadah);
         final ItemStack result = level.recipeAccess().getRecipeFor(RecipeType.CRAFTING, input, level)
                 .map(recipe -> recipe.value().assemble(input)).orElse(ItemStack.EMPTY);
         helper.assertTrue(result.is(SGItems.BATTERY), "Battery and naquadah made " + result);
-        helper.assertTrue(BatteryItem.energy(result) == 1000 + 2 * perNaquadah,
-                "The battery came out holding " + BatteryItem.energy(result) + " FE");
+        helper.assertTrue(BatteryItem.energy(result) == Math.min(BatteryItem.capacity(), 1000 + 2 * perNaquadah),
+                "The battery came out holding " + BatteryItem.energy(result) + " GE");
         final CraftingInput full = MalpGameTestsNeoForge.grid(MalpGameTestsNeoForge.battery(BatteryItem.capacity()),
                 naquadah);
         helper.assertTrue(level.recipeAccess().getRecipeFor(RecipeType.CRAFTING, full, level).isEmpty(),
@@ -260,13 +261,14 @@ final class MalpGameTestsNeoForge {
         return CraftingInput.of(3, 3, items);
     }
 
-    // A watched MALP drives and uses FE until its battery is flat; then its feed shows no power and it won't move
+    // A watched MALP drives and uses gate energy until its battery is flat; then its feed shows no power and it won't
+    // move
     private static void watchedDrains(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
         level.setBlock(at, SGBlocks.MALP_CONSOLE.defaultBlockState(), Block.UPDATE_ALL);
         final GlobalPos console = GlobalPos.of(level.dimension(), at);
-        final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)), 300, console);
+        final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)), 3.75, console);
         final ServerPlayer player = helper.makeMockServerPlayerInLevel();
         player.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() - 1.5);
         MalpLinks.open(player, console);
@@ -276,7 +278,7 @@ final class MalpGameTestsNeoForge {
         helper.onEachTick(() -> MalpLinks.drive(player, new MalpPayloads.Drive(1, 0, 0, 0)));
         final AtomicReference<Vec3> stopped = new AtomicReference<>();
         helper.runAfterDelay(60, () -> {
-            helper.assertTrue(malp.energy() == 0, "The battery still holds " + malp.energy() + " FE");
+            helper.assertTrue(malp.energy() == 0, "The battery still holds " + malp.energy() + " GE");
             helper.assertTrue(MalpLinks.feed(player).orElse(null) == MalpPayloads.Feed.NO_POWER,
                     "The feed shows " + MalpLinks.feed(player) + ", not no power");
             helper.assertTrue(malp.position().subtract(start).horizontalDistance() > 0.5, "The MALP never drove");
@@ -291,7 +293,7 @@ final class MalpGameTestsNeoForge {
         });
     }
 
-    // A watched MALP that needs no power has a live feed and drives with a flat battery or none, using no FE
+    // A watched MALP that needs no power has a live feed and drives with a flat battery or none, using no gate energy
     private static void drivesWithoutPower(final GameTestHelper helper, final ItemStack battery) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
@@ -314,7 +316,7 @@ final class MalpGameTestsNeoForge {
                     "The feed shows " + MalpLinks.feed(player) + ", not live");
             helper.assertTrue(malp.powered(), "The MALP says it has no power");
             helper.assertTrue(malp.position().subtract(start).horizontalDistance() > 1, "The MALP never drove");
-            helper.assertTrue(malp.energy() == 0, "The battery holds " + malp.energy() + " FE");
+            helper.assertTrue(malp.energy() == 0, "The battery holds " + malp.energy() + " GE");
             MalpLinks.close(player);
             malp.discard();
             helper.succeed();
@@ -608,8 +610,8 @@ final class MalpGameTestsNeoForge {
 
     // A second player who opens a console someone is driving at only watches: they stay where they are, the server
     // takes none of their controls or buttons, they see the driver's feed while the driver drives, and it goes offline
-    // when the driver leaves; watching uses none of the MALP's FE beyond the driver's feed. Opening the console again,
-    // now free, makes them its driver
+    // when the driver leaves; watching uses none of the MALP's gate energy beyond the driver's feed. Opening the
+    // console again, now free, makes them its driver
     private static void consoleViewOnly(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
@@ -653,14 +655,14 @@ final class MalpGameTestsNeoForge {
                 MalpLinks.drive(watcher, new MalpPayloads.Drive(1, 0, 0, 0));
             }
         });
-        final AtomicReference<Long> before = new AtomicReference<>();
+        final AtomicReference<Double> before = new AtomicReference<>();
         helper.runAfterDelay(5, () -> before.set(malp.energy()));
         helper.runAfterDelay(25, () -> {
             helper.assertTrue(malp.position().subtract(start).horizontalDistance() < 0.01,
                     "The watcher drove the MALP");
-            final long used = before.get() - malp.energy();
-            final long idle = MalpSettings.current().idleDrain();
-            helper.assertTrue(used > 0 && used <= 21 * idle, "The MALP used " + used + " FE in 20 ticks, not "
+            final double used = before.get() - malp.energy();
+            final double idle = MalpSettings.current().idleDrain();
+            helper.assertTrue(used > 0 && used <= 21 * idle, "The MALP used " + used + " GE in 20 ticks, not "
                     + 20 * idle + " for one feed");
             helper.assertTrue(RemoteViews.watching(watcher, malp),
                     "The watcher's feed ended while the driver drives");
@@ -1071,7 +1073,7 @@ final class MalpGameTestsNeoForge {
     }
 
     // A charged tablet, paired with a MALP, in a new player's main hand, the player standing at a spot
-    private static ServerPlayer tabletHolder(final GameTestHelper helper, final Vec3 at, final long energy,
+    private static ServerPlayer tabletHolder(final GameTestHelper helper, final Vec3 at, final double energy,
             final MalpEntity malp) {
         final ServerPlayer player = helper.makeMockServerPlayerInLevel();
         player.teleportTo(at.x, at.y, at.z);
@@ -1080,7 +1082,7 @@ final class MalpGameTestsNeoForge {
         return player;
     }
 
-    private static ItemStack tablet(final long energy, final MalpEntity malp) {
+    private static ItemStack tablet(final double energy, final MalpEntity malp) {
         final ItemStack tablet = new ItemStack(SGItems.MALP_TABLET);
         MalpTabletItem.setBattery(tablet, MalpGameTestsNeoForge.battery(energy));
         MalpTabletItem.pair(tablet, malp.getUUID());
@@ -1181,17 +1183,17 @@ final class MalpGameTestsNeoForge {
         });
     }
 
-    // A tablet uses FE from its battery while its feed is live, as much each tick as the setting says, which the
-    // command changes; once the battery is flat the feed shows no tablet power, as it does with a flat battery or none
-    // from the start
+    // A tablet uses gate energy from its battery while its feed is live, as much each tick as the setting says, which
+    // the command changes; once the battery is flat the feed shows no tablet power, as it does with a flat battery or
+    // none from the start
     private static void tabletDrains(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
         final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)),
                 BatteryItem.capacity(),
                 GlobalPos.of(level.dimension(), at));
-        final long drain = MalpSettings.current().tabletDrain();
-        helper.assertTrue(drain > 0, "The test needs tablets to use FE, not " + drain);
+        final double drain = MalpSettings.current().tabletDrain();
+        helper.assertTrue(drain > 0, "The test needs tablets to use gate energy, not " + drain);
         try {
             MalpGameTestsNeoForge.command(level, "sgcraft malp tablet_drain " + (drain + 3));
             helper.assertTrue(MalpSettings.current().tabletDrain() == drain + 3, "The command didn't change the drain");
@@ -1199,7 +1201,7 @@ final class MalpGameTestsNeoForge {
             MalpGameTestsNeoForge.command(level, "sgcraft malp tablet_drain " + drain);
         }
         final Vec3 stand = Vec3.atBottomCenterOf(at);
-        final ServerPlayer steady = MalpGameTestsNeoForge.tabletHolder(helper, stand, 10_000, malp);
+        final ServerPlayer steady = MalpGameTestsNeoForge.tabletHolder(helper, stand, 125, malp);
         final ServerPlayer flat = MalpGameTestsNeoForge.tabletHolder(helper, stand, 15 * drain, malp);
         final ServerPlayer empty = MalpGameTestsNeoForge.tabletHolder(helper, stand, 0, malp);
         final ServerPlayer none = MalpGameTestsNeoForge.tabletHolder(helper, stand, 0, malp);
@@ -1218,13 +1220,13 @@ final class MalpGameTestsNeoForge {
                     "The run down tablet shows " + MalpLinks.feed(flat));
             MalpLinks.close(flat);
             helper.assertTrue(MalpTabletItem.energy(flat.getMainHandItem()) == 0, "The run down tablet still holds "
-                    + MalpTabletItem.energy(flat.getMainHandItem()) + " FE");
+                    + MalpTabletItem.energy(flat.getMainHandItem()) + " GE");
         });
         helper.runAfterDelay(41, () -> {
             MalpLinks.close(steady);
-            final long used = 10_000 - MalpTabletItem.energy(steady.getMainHandItem());
-            helper.assertTrue(used >= 38 * drain && used <= 43 * drain, "The tablet used " + used
-                    + " FE in about 40 ticks, not " + 40 * drain);
+            final double used = 125 - MalpTabletItem.energy(steady.getMainHandItem());
+            helper.assertTrue(used >= 38 * drain - 1e-9 && used <= 43 * drain + 1e-9, "The tablet used " + used
+                    + " GE in about 40 ticks, not " + 40 * drain);
             MalpLinks.close(empty);
             MalpLinks.close(none);
             malp.discard();
@@ -1392,7 +1394,7 @@ final class MalpGameTestsNeoForge {
         helper.assertTrue(menu.data().get(MalpMenu.TABLET) == 1, "The menu isn't a tablet's");
         menu.getSlot(0).set(MalpGameTestsNeoForge.battery(BatteryItem.capacity() / 2));
         helper.assertTrue(MalpTabletItem.energy(tablet) == BatteryItem.capacity() / 2, "The tablet holds "
-                + MalpTabletItem.energy(tablet) + " FE after a battery was put in");
+                + MalpTabletItem.energy(tablet) + " GE after a battery was put in");
         helper.assertTrue(menu.data().get(MalpMenu.BATTERY) == 50, "The menu shows "
                 + menu.data().get(MalpMenu.BATTERY) + "%");
         // The hotbar comes last, after the battery slot and the rest of the inventory
@@ -1466,7 +1468,7 @@ final class MalpGameTestsNeoForge {
             final UUID id = sent.get().getUUID();
             helper.assertTrue(nether.getEntity(id) instanceof MalpEntity, "The MALP isn't in the Nether");
             final MalpEntity arrived = (MalpEntity) nether.getEntity(id);
-            helper.assertTrue(arrived.energy() == 12_345, "Its battery holds " + arrived.energy() + " FE");
+            helper.assertTrue(arrived.energy() == 12_345, "Its battery holds " + arrived.energy() + " GE");
             helper.assertTrue(console.equals(arrived.console()), "It lost its console: " + arrived.console());
             helper.assertTrue("Test Probe".equals(arrived.displayName()), "It's called " + arrived.displayName());
             helper.assertTrue(MalpGameTestsNeoForge.OWNER.equals(arrived.owner()), "It lost its owner: "

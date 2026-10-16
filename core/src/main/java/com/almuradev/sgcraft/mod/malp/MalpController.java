@@ -75,10 +75,10 @@ public sealed interface MalpController {
     boolean valid(ServerPlayer player);
 
     /**
-     * @param owed the FE used since the battery was last drained
+     * @param owed the gate energy used since the battery was last drained
      * @return whether this has the power to show a feed
      */
-    boolean powered(long owed);
+    boolean powered(double owed);
 
     /** A console, by where it is. */
     record Console(GlobalPos pos) implements MalpController {
@@ -110,7 +110,7 @@ public sealed interface MalpController {
         }
 
         @Override
-        public boolean powered(final long owed) {
+        public boolean powered(final double owed) {
             return true;
         }
     }
@@ -148,7 +148,7 @@ public sealed interface MalpController {
         }
 
         @Override
-        public boolean powered(final long owed) {
+        public boolean powered(final double owed) {
             return MalpTabletItem.energy(this.stack) > owed;
         }
 

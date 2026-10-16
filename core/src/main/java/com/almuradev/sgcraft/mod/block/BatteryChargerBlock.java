@@ -43,8 +43,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A battery charger: a small machine with a bay for a battery, which it charges from FE that cables bring it or that
- * it makes by burning naquadah.
+ * A battery charger: a small machine with a bay for a battery, which it charges from gate energy that cables bring it
+ * as FE or that it makes by burning naquadah.
  */
 public final class BatteryChargerBlock extends Block implements EntityBlock {
 

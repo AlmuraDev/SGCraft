@@ -56,8 +56,8 @@ import java.util.function.Consumer;
  * console too. Any number of tablets can be paired with one MALP.
  *
  * <p>The tablet keeps the MALPs it is paired with in {@link SGDataComponents#TABLET_MALPS} and its battery in
- * {@link DataComponents#CONTAINER}. While its screen shows a live feed it uses FE from that battery, as much each tick
- * as the server's settings say; with a flat battery or none it shows no feed.</p>
+ * {@link DataComponents#CONTAINER}. While its screen shows a live feed it uses gate energy from that battery, as much
+ * each tick as the server's settings say; with a flat battery or none it shows no feed.</p>
  */
 public final class MalpTabletItem extends Item {
 
@@ -153,20 +153,20 @@ public final class MalpTabletItem extends Item {
         }
     }
 
-    /** @return the FE in a tablet's battery, or 0 if it has none */
-    public static long energy(final ItemStack tablet) {
+    /** @return the gate energy in a tablet's battery, or 0 if it has none */
+    public static double energy(final ItemStack tablet) {
         final ItemStack battery = MalpTabletItem.battery(tablet);
         return battery.isEmpty() ? 0 : BatteryItem.energy(battery);
     }
 
     /**
-     * Uses FE from a tablet's battery, as much as the battery holds.
+     * Uses gate energy from a tablet's battery, as much as the battery holds.
      *
      * @return how much it used
      */
-    public static long drain(final ItemStack tablet, final long amount) {
+    public static double drain(final ItemStack tablet, final double amount) {
         final ItemStack battery = MalpTabletItem.battery(tablet);
-        final long used = BatteryItem.extract(battery, amount, false);
+        final double used = BatteryItem.extract(battery, amount, false);
         if (used > 0) {
             MalpTabletItem.setBattery(tablet, battery);
         }

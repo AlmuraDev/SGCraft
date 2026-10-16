@@ -26,10 +26,13 @@
 package com.almuradev.sgcraft.mod.item;
 
 import com.almuradev.sgcraft.api.gate.GateTypes;
+import com.almuradev.sgcraft.api.gate.IrisTypes;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.block.SGBlocks;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
+import com.almuradev.sgcraft.mod.tool.ExplorerDialer;
 import com.almuradev.sgcraft.mod.tool.ToolActions;
+import com.almuradev.sgcraft.mod.zpm.ZpmItem;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -72,12 +75,15 @@ public final class SGItems {
     public static Item CONTROLLER_CRYSTAL;
     public static Item IRIS_BLADE;
     public static Item IRIS_UPGRADE;
+    public static Item SHIELD_UPGRADE;
+    public static Item ZPM;
     public static Item CHEVRON_UPGRADE;
     public static Item PEGASUS_UPGRADE;
     public static Item UNIVERSE_UPGRADE;
     public static Item TOLLAN_PHASE_SHIFT_DEVICE;
     public static Item PDD;
     public static Item GATE_CONTROL_TABLET;
+    public static Item EDD;
     public static Item GDO;
     public static Item CONFIGURATOR;
     public static Item MALP;
@@ -85,6 +91,12 @@ public final class SGItems {
     public static Item MALP_TABLET;
     public static Item BATTERY;
     public static BlockItem BATTERY_CHARGER;
+    public static BlockItem ENERGY_CONVERTER;
+    public static BlockItem SHIELD_CONSOLE;
+    public static BlockItem CITY_SHIELD_GENERATOR;
+    public static BlockItem ZPM_CONSOLE;
+    public static BlockItem ZPM_INTERFACE_CART;
+    public static BlockItem ZPM_HUB;
 
     private SGItems() {
     }
@@ -110,8 +122,18 @@ public final class SGItems {
         SGItems.CONTROLLER_CRYSTAL = SGItems.register(sink, "controller_crystal", Item::new,
                 properties -> properties);
         SGItems.IRIS_BLADE = SGItems.register(sink, "iris_blade", Item::new, properties -> properties);
-        SGItems.IRIS_UPGRADE = SGItems.register(sink, "iris_upgrade", IrisUpgradeItem::new,
-                properties -> properties);
+        SGItems.IRIS_UPGRADE = SGItems.register(sink, "iris_upgrade",
+                properties -> new IrisUpgradeItem(properties, IrisTypes.METAL), properties -> properties);
+        // The shield, fitted in place of an iris
+        SGItems.SHIELD_UPGRADE = SGItems.register(sink, "shield_upgrade",
+                properties -> new IrisUpgradeItem(properties, IrisTypes.SHIELD), properties -> properties);
+        SGItems.SHIELD_CONSOLE = SGItems.registerBlock(sink, SGBlocks.SHIELD_CONSOLE);
+        SGItems.CITY_SHIELD_GENERATOR = SGItems.registerBlock(sink, SGBlocks.CITY_SHIELD_GENERATOR);
+        // The ZPM, found beside generated gates, and the blocks that hold it
+        SGItems.ZPM = SGItems.register(sink, "zpm", ZpmItem::new, properties -> properties.stacksTo(1));
+        SGItems.ZPM_CONSOLE = SGItems.registerBlock(sink, SGBlocks.ZPM_CONSOLE);
+        SGItems.ZPM_INTERFACE_CART = SGItems.registerBlock(sink, SGBlocks.ZPM_INTERFACE_CART);
+        SGItems.ZPM_HUB = SGItems.registerBlock(sink, SGBlocks.ZPM_HUB);
         SGItems.CHEVRON_UPGRADE = SGItems.register(sink, "chevron_upgrade", ChevronUpgradeItem::new,
                 properties -> properties);
         SGItems.PEGASUS_UPGRADE = SGItems.register(sink, "pegasus_upgrade",
@@ -126,6 +148,9 @@ public final class SGItems {
         // Like a PDD, but for a list of gates, wherever they are
         SGItems.GATE_CONTROL_TABLET = SGItems.register(sink, "gate_control_tablet",
                 properties -> new ToolItem(properties, ToolActions::openTablet), properties -> properties.stacksTo(1));
+        // Like a PDD, but for every gate world generation built, which its holder sets out to visit
+        SGItems.EDD = SGItems.register(sink, "edd", properties -> new ToolItem(properties, ExplorerDialer::open),
+                properties -> properties.stacksTo(1));
         SGItems.GDO = SGItems.register(sink, "gdo", properties -> new ToolItem(properties, ToolActions::openGdo),
                 properties -> properties.stacksTo(1));
         SGItems.CONFIGURATOR = SGItems.register(sink, "configurator",
@@ -138,6 +163,7 @@ public final class SGItems {
                 properties -> properties.stacksTo(1));
         SGItems.BATTERY = SGItems.register(sink, "battery", BatteryItem::new, properties -> properties.stacksTo(1));
         SGItems.BATTERY_CHARGER = SGItems.registerBlock(sink, SGBlocks.BATTERY_CHARGER);
+        SGItems.ENERGY_CONVERTER = SGItems.registerBlock(sink, SGBlocks.ENERGY_CONVERTER);
     }
 
     /** Registers the recipe that tops up a battery with naquadah. */

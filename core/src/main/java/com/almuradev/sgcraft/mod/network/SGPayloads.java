@@ -32,6 +32,11 @@ import com.almuradev.sgcraft.mod.gate.GateBaseInfo;
 import com.almuradev.sgcraft.mod.malp.MalpConfigurator;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads;
+import com.almuradev.sgcraft.mod.shield.CityShieldActions;
+import com.almuradev.sgcraft.mod.shield.ShieldConsoles;
+import com.almuradev.sgcraft.mod.shield.ShieldPayloads;
+import com.almuradev.sgcraft.mod.tool.ExplorerDialer;
+import com.almuradev.sgcraft.mod.tool.ExplorerPayloads;
 import com.almuradev.sgcraft.mod.tool.ToolActions;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads;
 import com.almuradev.sgcraft.mod.view.RemoteViewPackets;
@@ -83,5 +88,16 @@ final class SGPayloads {
         SGNetwork.serverbound(MalpPayloads.ConfigApply.TYPE, MalpPayloads.ConfigApply::new, MalpConfigurator::apply);
         SGNetwork.serverbound(MalpPayloads.ConfigUnpair.TYPE, MalpPayloads.ConfigUnpair::new,
                 MalpConfigurator::unpair);
+        // The explorer dialer: its list out, its buttons in
+        SGNetwork.clientbound(ExplorerPayloads.State.TYPE, ExplorerPayloads.State::new);
+        SGNetwork.serverbound(ExplorerPayloads.Action.TYPE, ExplorerPayloads.Action::new, ExplorerDialer::action);
+        // The shield console: its state out, its buttons in
+        SGNetwork.clientbound(ShieldPayloads.ConsoleState.TYPE, ShieldPayloads.ConsoleState::new);
+        SGNetwork.serverbound(ShieldPayloads.ConsoleAction.TYPE, ShieldPayloads.ConsoleAction::new,
+                ShieldConsoles::action);
+        // The city shield generator: its state out, its sizes and buttons in
+        SGNetwork.clientbound(ShieldPayloads.CityState.TYPE, ShieldPayloads.CityState::new);
+        SGNetwork.serverbound(ShieldPayloads.CityAction.TYPE, ShieldPayloads.CityAction::new,
+                CityShieldActions::action);
     }
 }

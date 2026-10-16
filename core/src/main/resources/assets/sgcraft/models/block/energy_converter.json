@@ -1,0 +1,12 @@
+{
+  "parent": "minecraft:block/cube",
+  "textures": {
+    "north": "sgcraft:block/energy_converter_output",
+    "south": "sgcraft:block/energy_converter_input",
+    "east": "sgcraft:block/energy_converter_side",
+    "west": "sgcraft:block/energy_converter_side",
+    "up": "sgcraft:block/energy_converter_side",
+    "down": "sgcraft:block/energy_converter_side",
+    "particle": "sgcraft:block/energy_converter_side"
+  }
+}

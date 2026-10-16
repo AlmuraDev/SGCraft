@@ -46,6 +46,11 @@ public final class GateTypes {
     /** The Universe gate, the style the seed ships set down ahead of Destiny. */
     public static final ResourceKey<GateType> UNIVERSE = GateTypes.key("universe");
 
+    /**
+     * The Ori supergate, built only as a supergate. It connects only to other Ori supergates and takes no iris.
+     */
+    public static final ResourceKey<GateType> ORI = GateTypes.key("ori");
+
     private GateTypes() {
     }
 

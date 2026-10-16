@@ -37,8 +37,8 @@ import com.almuradev.sgcraft.mod.malp.MalpRegistry;
 import com.almuradev.sgcraft.mod.malp.MalpSettings;
 import com.almuradev.sgcraft.mod.malp.MalpSignal;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
-import com.mojang.brigadier.arguments.LongArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
@@ -59,6 +59,7 @@ import net.minecraft.world.entity.Relative;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
@@ -70,9 +71,10 @@ import java.util.Set;
  *     and its owner</li>
  *     <li>{@code malp pair <malp> <pos>} and {@code malp unpair <malp>}: pairs a MALP with the console at a
  *     position in the caller's world, or with none</li>
- *     <li>{@code malp battery <malp> <fe>}: sets the charge of a MALP's battery, giving it one if it has none</li>
+ *     <li>{@code malp battery <malp> <ge>}: sets the charge of a MALP's battery, in gate energy, giving it one if it
+ *     has none</li>
  *     <li>{@code malp power_required <malp> [<true|false>]}: whether a MALP runs on its battery, or sets it; one
- *     that doesn't uses no FE and works without a battery</li>
+ *     that doesn't uses no gate energy and works without a battery</li>
  *     <li>{@code malp poweroff <malp>}: powers down the feed of everyone watching a MALP</li>
  *     <li>{@code malp recall <malp>}: brings a MALP to the caller</li>
  *     <li>{@code malp center <malp>}: turns a MALP's camera back to face the way it drives</li>
@@ -83,11 +85,12 @@ import java.util.Set;
  *     nearest first, see the feed on its monitor, or sets it; 0 shows it to none</li>
  *     <li>{@code malp spectator_range [<blocks>]}: how near a driven console players see the feed on its monitor,
  *     or sets it</li>
- *     <li>{@code malp tablet_drain [<fe>]}: how much FE a MALP tablet uses from its battery each tick while it shows
- *     a live feed, or sets it</li>
+ *     <li>{@code malp tablet_drain [<ge>]}: how much gate energy a MALP tablet uses from its battery each tick while it
+ *     shows a live feed, or sets it</li>
  *     <li>{@code malp pair_tablet <malp>} and {@code malp unpair_tablet <malp>}: adds a MALP to, or takes it off,
  *     the MALP tablet in the caller's hand, whoever the MALP belongs to</li>
- *     <li>{@code battery} and {@code battery set <fe>}: the charge of the battery in the caller's hand</li>
+ *     <li>{@code battery} and {@code battery set <ge>}: the charge of the battery in the caller's hand, in gate
+ *     energy</li>
  * </ul>
  * A command about a MALP whose chunk isn't loaded loads it and asks to be run again.
  */
@@ -118,7 +121,7 @@ final class SGMalpCommands {
                 .then(Commands.literal("unpair").then(SGMalpCommands.malpArgument()
                         .executes(context -> SGMalpCommands.pair(context, false))))
                 .then(Commands.literal("battery").then(SGMalpCommands.malpArgument()
-                        .then(Commands.argument("fe", LongArgumentType.longArg(0))
+                        .then(Commands.argument("ge", DoubleArgumentType.doubleArg(0))
                                 .executes(SGMalpCommands::battery))))
                 .then(Commands.literal("power_required").then(SGMalpCommands.malpArgument()
                         .executes(SGMalpCommands::showPowerRequired)
@@ -151,9 +154,9 @@ final class SGMalpCommands {
                                         IntegerArgumentType.getInteger(context, "blocks")))))
                 .then(Commands.literal("tablet_drain")
                         .executes(context -> SGMalpCommands.showTabletDrain(context.getSource()))
-                        .then(Commands.argument("fe", LongArgumentType.longArg(0))
+                        .then(Commands.argument("ge", DoubleArgumentType.doubleArg(0))
                                 .executes(context -> SGMalpCommands.setTabletDrain(context.getSource(),
-                                        LongArgumentType.getLong(context, "fe")))))
+                                        DoubleArgumentType.getDouble(context, "ge")))))
                 .then(Commands.literal("pair_tablet").then(SGMalpCommands.malpArgument()
                         .executes(context -> SGMalpCommands.pairTablet(context, true))))
                 .then(Commands.literal("unpair_tablet").then(SGMalpCommands.malpArgument()
@@ -161,21 +164,26 @@ final class SGMalpCommands {
     }
 
     private static int showTabletDrain(final CommandSourceStack source) {
-        final long drain = MalpSettings.current().tabletDrain();
+        final double drain = MalpSettings.current().tabletDrain();
         source.sendSuccess(() -> SGCommands.text("malp.tablet_drain.show",
-                "A MALP tablet uses %s FE a tick while it shows a live feed", drain), false);
-        return (int) Math.min(Integer.MAX_VALUE, drain);
+                "A MALP tablet uses %s GE a tick while it shows a live feed", SGMalpCommands.ge(drain)), false);
+        return 1;
     }
 
-    private static int setTabletDrain(final CommandSourceStack source, final long drain) {
+    private static int setTabletDrain(final CommandSourceStack source, final double drain) {
         final boolean saved = SGServer.require().stargates().setTabletDrain(drain);
         source.sendSuccess(() -> SGCommands.text("malp.tablet_drain.set",
-                "A MALP tablet now uses %s FE a tick while it shows a live feed", drain), true);
+                "A MALP tablet now uses %s GE a tick while it shows a live feed", SGMalpCommands.ge(drain)), true);
         if (!saved) {
             source.sendFailure(SGCommands.text("settings.not_saved",
                     "The change applies until the server stops, but the settings file couldn't be written"));
         }
-        return (int) Math.min(Integer.MAX_VALUE, drain);
+        return 1;
+    }
+
+    // Gate energy as a command shows it: whole, or to three places when it is a fraction
+    private static String ge(final double energy) {
+        return BigDecimal.valueOf(Math.round(energy * 1000) / 1000.0).stripTrailingZeros().toPlainString();
     }
 
     // Adds a MALP to the tablet in the caller's hand, or takes it off, whoever the MALP belongs to
@@ -279,9 +287,9 @@ final class SGMalpCommands {
         return Commands.literal("battery")
                 .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                 .executes(context -> SGMalpCommands.showBattery(context.getSource()))
-                .then(Commands.literal("set").then(Commands.argument("fe", LongArgumentType.longArg(0))
+                .then(Commands.literal("set").then(Commands.argument("ge", DoubleArgumentType.doubleArg(0))
                         .executes(context -> SGMalpCommands.setBattery(context.getSource(),
-                                LongArgumentType.getLong(context, "fe")))));
+                                DoubleArgumentType.getDouble(context, "ge")))));
     }
 
     private static RequiredArgumentBuilder<CommandSourceStack, String> malpArgument() {
@@ -357,11 +365,11 @@ final class SGMalpCommands {
             malp.setBattery(new ItemStack(SGItems.BATTERY));
         }
         final ItemStack battery = malp.battery();
-        BatteryItem.setEnergy(battery, LongArgumentType.getLong(context, "fe"));
+        BatteryItem.setEnergy(battery, DoubleArgumentType.getDouble(context, "ge"));
         malp.batterySlot().setChanged();
         malp.record();
-        context.getSource().sendSuccess(() -> SGCommands.text("malp.battery", "%s's battery holds %s of %s FE",
-                malp.displayName(), BatteryItem.energy(battery), BatteryItem.capacity()), true);
+        context.getSource().sendSuccess(() -> SGCommands.text("malp.battery", "%s's battery holds %s of %s GE",
+                malp.displayName(), SGMalpCommands.ge(BatteryItem.energy(battery)), BatteryItem.capacity()), true);
         return 1;
     }
 
@@ -453,16 +461,16 @@ final class SGMalpCommands {
 
     private static int showBattery(final CommandSourceStack source) throws CommandSyntaxException {
         final ItemStack battery = SGMalpCommands.heldBattery(source);
-        source.sendSuccess(() -> SGCommands.text("battery.show", "Your battery holds %s of %s FE",
-                BatteryItem.energy(battery), BatteryItem.capacity()), false);
-        return (int) Math.min(Integer.MAX_VALUE, BatteryItem.energy(battery));
+        source.sendSuccess(() -> SGCommands.text("battery.show", "Your battery holds %s of %s GE",
+                SGMalpCommands.ge(BatteryItem.energy(battery)), BatteryItem.capacity()), false);
+        return (int) Math.min(Integer.MAX_VALUE, (long) BatteryItem.energy(battery));
     }
 
-    private static int setBattery(final CommandSourceStack source, final long fe) throws CommandSyntaxException {
+    private static int setBattery(final CommandSourceStack source, final double ge) throws CommandSyntaxException {
         final ItemStack battery = SGMalpCommands.heldBattery(source);
-        BatteryItem.setEnergy(battery, fe);
-        source.sendSuccess(() -> SGCommands.text("battery.set", "Your battery now holds %s FE",
-                BatteryItem.energy(battery)), true);
+        BatteryItem.setEnergy(battery, ge);
+        source.sendSuccess(() -> SGCommands.text("battery.set", "Your battery now holds %s GE",
+                SGMalpCommands.ge(BatteryItem.energy(battery))), true);
         return 1;
     }
 }

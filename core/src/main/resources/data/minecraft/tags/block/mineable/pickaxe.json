@@ -15,6 +15,12 @@
     "sgcraft:supergate_base",
     "sgcraft:power_unit",
     "sgcraft:malp_console",
-    "sgcraft:battery_charger"
+    "sgcraft:battery_charger",
+    "sgcraft:energy_converter",
+    "sgcraft:shield_console",
+    "sgcraft:city_shield_generator",
+    "sgcraft:zpm_console",
+    "sgcraft:zpm_interface_cart",
+    "sgcraft:zpm_hub"
   ]
 }

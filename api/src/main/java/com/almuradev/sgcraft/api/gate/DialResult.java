@@ -59,6 +59,11 @@ public enum DialResult {
     /** The gate at the address isn't idle. */
     TARGET_BUSY,
 
+    /**
+     * The two gates can't connect, as one of their types refuses the other; see {@link GateType#connectsTo}.
+     */
+    INCOMPATIBLE,
+
     /** The dialing gate doesn't have the energy to make the connection. */
     NOT_ENOUGH_ENERGY,
 

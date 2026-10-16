@@ -34,7 +34,7 @@ import team.reborn.energy.api.EnergyStorage;
  * A power unit as Team Reborn Energy's cables see it: it takes FE in, and gives none out, as the original's did. A
  * transaction undone puts its charge back.
  */
-final class PowerUnitEnergyFabric extends SnapshotParticipant<Long> implements EnergyStorage {
+final class PowerUnitEnergyFabric extends SnapshotParticipant<Double> implements EnergyStorage {
 
     private final PowerUnitBlockEntity unit;
 
@@ -44,10 +44,10 @@ final class PowerUnitEnergyFabric extends SnapshotParticipant<Long> implements E
 
     @Override
     public long insert(final long amount, final TransactionContext transaction) {
-        final long taken = this.unit.insert(amount, true);
+        final long taken = this.unit.insertFe(amount, true);
         if (taken > 0) {
             this.updateSnapshots(transaction);
-            this.unit.insert(taken, false);
+            this.unit.insertFe(taken, false);
         }
         return taken;
     }
@@ -64,21 +64,21 @@ final class PowerUnitEnergyFabric extends SnapshotParticipant<Long> implements E
 
     @Override
     public long getAmount() {
-        return this.unit.stored();
+        return this.unit.feStored();
     }
 
     @Override
     public long getCapacity() {
-        return PowerUnitBlockEntity.capacity();
+        return PowerUnitBlockEntity.feCapacity();
     }
 
     @Override
-    protected Long createSnapshot() {
+    protected Double createSnapshot() {
         return this.unit.stored();
     }
 
     @Override
-    protected void readSnapshot(final Long snapshot) {
+    protected void readSnapshot(final Double snapshot) {
         this.unit.setStored(snapshot);
     }
 }

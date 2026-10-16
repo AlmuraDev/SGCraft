@@ -25,6 +25,8 @@
 
 package com.almuradev.sgcraft.mod.block.entity;
 
+import com.almuradev.sgcraft.mod.energy.FeRate;
+import com.almuradev.sgcraft.mod.energy.GeStore;
 import com.almuradev.sgcraft.mod.item.BatteryItem;
 import com.almuradev.sgcraft.mod.item.SGItems;
 import com.almuradev.sgcraft.mod.malp.MalpSettings;
@@ -51,10 +53,11 @@ import org.jspecify.annotations.Nullable;
 import java.util.function.Function;
 
 /**
- * A battery charger: a store of FE that cables fill and naquadah burned in it tops up, which it passes on to the
- * battery in its bay. It burns a piece of naquadah whenever its store has room for all of it.
+ * A battery charger: a store of gate energy (GE) that cables fill with FE, at {@link FeRate}'s rate, and naquadah
+ * burned in it tops up, which it passes on to the battery in its bay. It burns a piece of naquadah whenever its store
+ * has room for all of it.
  */
-public final class BatteryChargerBlockEntity extends BlockEntity {
+public final class BatteryChargerBlockEntity extends BlockEntity implements GeStore {
 
     /** The slot the battery goes in. */
     public static final int BATTERY = 0;
@@ -78,7 +81,7 @@ public final class BatteryChargerBlockEntity extends BlockEntity {
             BatteryChargerBlockEntity.this.setChanged();
         }
     };
-    private long energy;
+    private double energy;
     // What the loader hands cables, made once so a transaction always meets the same one
     private @Nullable Object handler;
 
@@ -91,36 +94,60 @@ public final class BatteryChargerBlockEntity extends BlockEntity {
         return this.items;
     }
 
-    /** @return the FE the charger holds */
-    public long stored() {
+    /** @return the gate energy the charger holds */
+    public double stored() {
         return this.energy;
     }
 
-    /** @return the most FE a charger holds: two pieces of naquadah's worth */
+    /** @return the most gate energy a charger holds: two pieces of naquadah's worth */
     public static long capacity() {
-        return 2 * MalpSettings.current().fePerNaquadah();
+        return (long) (2 * MalpSettings.naquadahEnergy());
     }
 
-    /** Sets the FE the charger holds, kept between none and its capacity. */
-    public void setStored(final long energy) {
-        final long kept = Math.max(0, Math.min(energy, BatteryChargerBlockEntity.capacity()));
+    /** Sets the gate energy the charger holds, kept between none and its capacity. */
+    public void setStored(final double energy) {
+        final double kept = Math.max(0, Math.min(energy, BatteryChargerBlockEntity.capacity()));
         if (kept != this.energy) {
             this.energy = kept;
             this.setChanged();
         }
     }
 
+    /** @return the charger's gate energy as cables see it, in FE */
+    public long feStored() {
+        return FeRate.toFeIn(this.energy);
+    }
+
+    /** @return the most a charger holds as cables see it, in FE */
+    public static long feCapacity() {
+        return FeRate.toFeIn(BatteryChargerBlockEntity.capacity());
+    }
+
     /**
-     * Takes in FE, as much as there is room for.
+     * Takes in FE from a cable, as much as there is room for, and keeps the gate energy it is worth.
      *
-     * @return how much it took, or would take
+     * @return how much FE it took, or would take
      */
-    public long insert(final long amount, final boolean simulate) {
-        final long taken = Math.max(0, Math.min(amount, BatteryChargerBlockEntity.capacity() - this.energy));
+    public long insertFe(final long fe, final boolean simulate) {
+        final long taken = Math.max(0, Math.min(fe, FeRate.toFeIn(BatteryChargerBlockEntity.capacity() - this.energy)));
         if (!simulate && taken > 0) {
-            this.setStored(this.energy + taken);
+            this.setStored(this.energy + FeRate.toGeIn(taken));
         }
         return taken;
+    }
+
+    @Override
+    public double givable() {
+        return this.energy;
+    }
+
+    @Override
+    public double give(final double wanted) {
+        final double given = Math.max(0, Math.min(wanted, this.energy));
+        if (given > 0) {
+            this.setStored(this.energy - given);
+        }
+        return given;
     }
 
     /**
@@ -135,19 +162,21 @@ public final class BatteryChargerBlockEntity extends BlockEntity {
         return (T) this.handler;
     }
 
-    /** Burns naquadah when there is room for its FE, and charges the battery from the store. */
+    /** Burns naquadah when there is room for its gate energy, and charges the battery from the store. */
     public static void serverTick(final ServerLevel level, final BlockPos pos,
             final BatteryChargerBlockEntity charger) {
         final MalpSettings settings = MalpSettings.current();
         final ItemStack fuel = charger.items.getItem(BatteryChargerBlockEntity.FUEL);
-        if (fuel.is(SGItems.NAQUADAH) && settings.fePerNaquadah() > 0
-                && charger.energy + settings.fePerNaquadah() <= BatteryChargerBlockEntity.capacity()) {
+        final double perNaquadah = MalpSettings.naquadahEnergy();
+        if (fuel.is(SGItems.NAQUADAH) && perNaquadah > 0
+                && charger.energy + perNaquadah <= BatteryChargerBlockEntity.capacity()) {
             fuel.shrink(1);
             charger.items.setChanged();
-            charger.setStored(charger.energy + settings.fePerNaquadah());
+            charger.setStored(charger.energy + perNaquadah);
         }
         final ItemStack battery = charger.items.getItem(BatteryChargerBlockEntity.BATTERY);
-        final long taken = BatteryItem.insert(battery, Math.min(settings.chargerChargeRate(), charger.energy), false);
+        final double taken = BatteryItem.insert(battery, Math.min(settings.chargerChargeRate(), charger.energy),
+                false);
         if (taken > 0) {
             charger.items.setChanged();
             charger.setStored(charger.energy - taken);
@@ -191,7 +220,7 @@ public final class BatteryChargerBlockEntity extends BlockEntity {
     @Override
     protected void loadAdditional(final ValueInput input) {
         super.loadAdditional(input);
-        this.energy = input.getLongOr("energy", 0);
+        this.energy = input.getDoubleOr("energy", 0);
         final NonNullList<ItemStack> stacks = NonNullList.withSize(this.items.getContainerSize(), ItemStack.EMPTY);
         ContainerHelper.loadAllItems(input, stacks);
         for (int slot = 0; slot < stacks.size(); slot++) {
@@ -202,7 +231,7 @@ public final class BatteryChargerBlockEntity extends BlockEntity {
     @Override
     protected void saveAdditional(final ValueOutput output) {
         super.saveAdditional(output);
-        output.putLong("energy", this.energy);
+        output.putDouble("energy", this.energy);
         final NonNullList<ItemStack> stacks = NonNullList.withSize(this.items.getContainerSize(), ItemStack.EMPTY);
         for (int slot = 0; slot < stacks.size(); slot++) {
             stacks.set(slot, this.items.getItem(slot));

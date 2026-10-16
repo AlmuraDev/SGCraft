@@ -38,16 +38,19 @@ import com.almuradev.sgcraft.api.gate.GateProperty;
 import com.almuradev.sgcraft.api.gate.GateSize;
 import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.api.gate.Iris;
+import com.almuradev.sgcraft.api.gate.IrisType;
 import com.almuradev.sgcraft.api.gate.IrisTypes;
 import com.almuradev.sgcraft.api.gate.PlacementResult;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.block.GateSpawnerBlock;
 import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.mod.command.SGCommands.GateFinder;
 import com.almuradev.sgcraft.mod.gate.DialStyle;
 import com.almuradev.sgcraft.mod.gate.GateOrientation;
 import com.almuradev.sgcraft.mod.gate.GateShape;
 import com.almuradev.sgcraft.mod.gate.GlyphText;
+import com.almuradev.sgcraft.mod.gate.SGIris;
 import com.almuradev.sgcraft.mod.villager.SGVillagers;
 import com.google.gson.JsonParser;
 import com.mojang.brigadier.Command;
@@ -74,6 +77,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
@@ -266,20 +270,18 @@ final class SGGateCommands {
         return Command.SINGLE_SUCCESS;
     }
 
-    // iris [open | close | fit | remove]
+    // iris [open | close | fit [metal | shield] | remove]; a shield is raised by closing it and lowered by opening it
     private static ArgumentBuilder<CommandSourceStack, ?> iris(final GateFinder finder) {
         return Commands.literal("iris")
                 .executes(context -> SGGateCommands.showIris(context.getSource(), finder.find(context)))
                 .then(Commands.literal("open").executes(context -> SGGateCommands.moveIris(context, finder, true)))
                 .then(Commands.literal("close").executes(context -> SGGateCommands.moveIris(context, finder, false)))
                 .then(Commands.literal("fit").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
-                        .executes(context -> {
-                            final Stargate gate = finder.find(context);
-                            return SGCommands.report(context.getSource(), gate.set(GateProperties.IRIS,
-                                    IrisTypes.METAL, SGCommands.cause(context.getSource())),
-                                    SGCommands.text("iris.fitted", "Fitted an iris to the gate at %s",
-                                            SGCommands.position(gate)));
-                        }))
+                        .executes(context -> SGGateCommands.fitIris(context, finder, IrisTypes.METAL))
+                        .then(Commands.literal("metal")
+                                .executes(context -> SGGateCommands.fitIris(context, finder, IrisTypes.METAL)))
+                        .then(Commands.literal("shield")
+                                .executes(context -> SGGateCommands.fitIris(context, finder, IrisTypes.SHIELD))))
                 .then(Commands.literal("remove").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
                         .executes(context -> {
                             final Stargate gate = finder.find(context);
@@ -290,12 +292,26 @@ final class SGGateCommands {
                         }));
     }
 
+    private static int fitIris(final CommandContext<CommandSourceStack> context, final GateFinder finder,
+            final ResourceKey<IrisType> type) throws CommandSyntaxException {
+        final Stargate gate = finder.find(context);
+        return SGCommands.report(context.getSource(), gate.set(GateProperties.IRIS, type,
+                SGCommands.cause(context.getSource())), SGIris.isShield(type)
+                ? SGCommands.text("iris.fitted_shield", "Fitted a shield to the gate at %s", SGCommands.position(gate))
+                : SGCommands.text("iris.fitted", "Fitted an iris to the gate at %s", SGCommands.position(gate)));
+    }
+
     private static int showIris(final CommandSourceStack source, final Stargate gate) {
         final Optional<Iris> iris = gate.iris();
         if (iris.isEmpty()) {
             source.sendSuccess(() -> SGCommands.text("iris.none", "The gate at %s has no iris",
                     SGCommands.position(gate)), false);
             return 0;
+        }
+        if (SGIris.isShield(iris.get().type())) {
+            source.sendSuccess(() -> SGCommands.text("iris.shield_state", "The gate at %s has a shield: %s",
+                    SGCommands.position(gate), SGIris.shieldText(iris.get().state())), false);
+            return 1;
         }
         source.sendSuccess(() -> SGCommands.text("iris.state", "The gate at %s has an iris, %s",
                 SGCommands.position(gate), iris.get().state().name().toLowerCase(Locale.ROOT)), false);
@@ -312,6 +328,11 @@ final class SGGateCommands {
             return 0;
         }
         final Cause cause = SGCommands.cause(context.getSource());
+        if (SGIris.isShield(iris.get().type())) {
+            return SGCommands.report(context.getSource(), open ? iris.get().open(cause) : iris.get().close(cause),
+                    open ? SGCommands.text("iris.lowering", "The shield is falling")
+                            : SGCommands.text("iris.raising", "The shield is rising"));
+        }
         return SGCommands.report(context.getSource(), open ? iris.get().open(cause) : iris.get().close(cause),
                 open ? SGCommands.text("iris.opening", "The iris is opening")
                         : SGCommands.text("iris.closing", "The iris is closing"));
@@ -634,7 +655,17 @@ final class SGGateCommands {
             source.sendFailure(SGCommands.text("unknown_type", "There is no gate type by that name"));
             return 0;
         }
-        final Optional<GateShape> shape = GateSize.of(radius).flatMap(GateShape::of);
+        Optional<GateShape> shape = GateSize.of(radius).flatMap(GateShape::of);
+        // A type built only as a supergate, as the Ori supergate, is placed at the spawners' size unless one is given
+        if (shape.isPresent() && radius == GateShape.STANDARD.radius() && !type.get().value().supports(
+                shape.get().size())) {
+            shape = Optional.of(GateShape.supergate(GateSpawnerBlock.SUPERGATE_RADIUS));
+        }
+        if (shape.isPresent() && !type.get().value().supports(shape.get().size())) {
+            source.sendFailure(SGCommands.text("place.unsupported", "%s gates can't be built at that size",
+                    type.get().value().name()));
+            return 0;
+        }
         if (shape.isEmpty()) {
             source.sendFailure(SGCommands.text("place.bad_radius", "A gate's radius is %s, or from %s to %s for a "
                     + "supergate", GateShape.STANDARD.radius(), GateShape.MIN_SUPERGATE_RADIUS,

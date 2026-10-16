@@ -49,6 +49,8 @@ import com.almuradev.sgcraft.mod.energy.DialCosts;
 import com.almuradev.sgcraft.mod.event.SGEventBus;
 import com.almuradev.sgcraft.mod.event.SGEvents;
 import com.almuradev.sgcraft.mod.gate.GateStore.GateRecord;
+import com.almuradev.sgcraft.mod.shield.ShieldSettings;
+import com.almuradev.sgcraft.mod.zpm.ZpmSettings;
 import com.google.gson.JsonElement;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
@@ -83,6 +85,10 @@ import java.util.UUID;
  * it is asked for, and the connections between them, which it ticks.
  */
 public final class SGStargates implements Stargates {
+
+    // The chevrons that reach another world, and another group of worlds
+    private static final int EIGHTH_CHEVRON = 8;
+    private static final int NINTH_CHEVRON = 9;
 
     // How many chevrons the server's settings may give gates as they form
     private static final Codec<Integer> CHEVRONS = Codec.intRange(7, 9);
@@ -218,6 +224,28 @@ public final class SGStargates implements Stargates {
     }
 
     /**
+     * Changes how many times more a wormhole costs with an eighth chevron and with a ninth, from the next dial, and
+     * writes them to the settings file.
+     *
+     * @return whether the settings file was written
+     */
+    public boolean setChevronMultipliers(final double interWorld, final double otherGroup) {
+        this.config = this.config.withChevronMultipliers(interWorld, otherGroup);
+        return SGConfig.saveChevronMultipliers(interWorld, otherGroup);
+    }
+
+    /**
+     * Changes the rates for FE coming in and going out, and the converter rate, from now on, and writes them to the
+     * settings file.
+     *
+     * @return whether the settings file was written
+     */
+    public boolean setFeRates(final double fePerGeIn, final double fePerGeOut, final double converterRate) {
+        this.config = this.config.withFeRates(fePerGeIn, fePerGeOut, converterRate);
+        return SGConfig.saveFeRates(fePerGeIn, fePerGeOut, converterRate);
+    }
+
+    /**
      * Changes whether a kawoosh clears blocks that can't be broken from now on, and writes it to the settings file.
      *
      * @return whether the settings file was written
@@ -236,6 +264,26 @@ public final class SGStargates implements Stargates {
     public boolean setChunkLoadingRange(final int range) {
         this.config = this.config.withChunkLoadingRange(range);
         return SGConfig.saveChunkLoadingRange(range);
+    }
+
+    /**
+     * Changes the shield settings, from the next tick, and writes them to the settings file.
+     *
+     * @return whether the settings file was written
+     */
+    public boolean setShields(final ShieldSettings shields) {
+        this.config = this.config.withShields(shields);
+        return SGConfig.saveShields(shields);
+    }
+
+    /**
+     * Changes the ZPM settings, from the next tick, and writes them to the settings file.
+     *
+     * @return whether the settings file was written
+     */
+    public boolean setZpm(final ZpmSettings zpm) {
+        this.config = this.config.withZpm(zpm);
+        return SGConfig.saveZpm(zpm);
     }
 
     /**
@@ -272,12 +320,12 @@ public final class SGStargates implements Stargates {
     }
 
     /**
-     * Changes how much FE a MALP tablet uses each tick while it shows a live feed, from the next tick, and writes it to
-     * the settings file.
+     * Changes how much gate energy a MALP tablet uses each tick while it shows a live feed, from the next tick, and
+     * writes it to the settings file.
      *
      * @return whether the settings file was written
      */
-    public boolean setTabletDrain(final long drain) {
+    public boolean setTabletDrain(final double drain) {
         this.config = this.config.withMalp(this.config.malp().withTabletDrain(drain));
         return SGConfig.saveTabletDrain(drain);
     }
@@ -317,17 +365,23 @@ public final class SGStargates implements Stargates {
 
     /**
      * How many times more a wormhole between two gates costs than the base cost, as in the original: more the further
-     * apart they are, more again between worlds, and more again to or from a supergate, whichever end dials. The
-     * dialing gate's own multipliers apply where it has them.
+     * apart they are, a great deal more again with an eighth chevron, which reaches another world, and a great deal
+     * more than that with a ninth, which reaches another group of worlds, and more again to or from a supergate,
+     * whichever end dials. The dialing gate's own multipliers apply where it has them.
      */
-    double distanceFactor(final Stargate from, final Stargate to) {
+    double distanceFactor(final Stargate from, final Stargate to, final int chevrons) {
         final BlockPos a = from.position().pos();
         final BlockPos b = to.position().pos();
         final double d = Math.hypot(a.getX() - b.getX(), a.getZ() - b.getZ());
         final double scale = Math.log(0.05 * d + 1) / Math.log(0.05 * 16 * 279935);
         double factor = 1 + 14 * this.config.distanceFactorMultiplier(from) * scale * scale;
-        if (!from.position().dimension().equals(to.position().dimension())) {
+        // The eighth chevron reaches another world and takes a great deal more; the ninth, another group of worlds,
+        // takes a great deal more again
+        if (chevrons >= SGStargates.EIGHTH_CHEVRON) {
             factor *= this.config.interWorldMultiplier(from);
+        }
+        if (chevrons >= SGStargates.NINTH_CHEVRON) {
+            factor *= this.config.otherGroupMultiplier();
         }
         if (from.size().radius() > GateShape.STANDARD.radius() || to.size().radius() > GateShape.STANDARD.radius()) {
             factor *= this.config.supergateEnergyMultiplier();
@@ -457,8 +511,11 @@ public final class SGStargates implements Stargates {
     private void restoreIrises() {
         for (final GateRecord record : this.store().gates()) {
             final IrisState state = SGIris.stateOf(record.state());
-            if (state == IrisState.OPENING || state == IrisState.CLOSING) {
-                this.gate(record.position()).ifPresent(gate -> this.irises.put(gate, Cause.of(this.server)));
+            // A raised shield goes on taking its energy, so it needs its ticks as a moving iris does
+            if (state == IrisState.OPENING || state == IrisState.CLOSING || state == IrisState.CLOSED) {
+                this.gate(record.position()).filter(gate -> state != IrisState.CLOSED
+                        || gate.irisState().shieldRaised()).ifPresent(gate -> this.irises.put(gate,
+                        Cause.of(this.server)));
             }
         }
     }

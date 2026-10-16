@@ -34,7 +34,7 @@ import team.reborn.energy.api.EnergyStorage;
  * A battery charger as Team Reborn Energy's cables see it: it takes FE in, for its battery, and gives none out. A
  * transaction undone puts its store back.
  */
-final class BatteryChargerEnergyFabric extends SnapshotParticipant<Long> implements EnergyStorage {
+final class BatteryChargerEnergyFabric extends SnapshotParticipant<Double> implements EnergyStorage {
 
     private final BatteryChargerBlockEntity charger;
 
@@ -44,10 +44,10 @@ final class BatteryChargerEnergyFabric extends SnapshotParticipant<Long> impleme
 
     @Override
     public long insert(final long amount, final TransactionContext transaction) {
-        final long taken = this.charger.insert(amount, true);
+        final long taken = this.charger.insertFe(amount, true);
         if (taken > 0) {
             this.updateSnapshots(transaction);
-            this.charger.insert(taken, false);
+            this.charger.insertFe(taken, false);
         }
         return taken;
     }
@@ -64,21 +64,21 @@ final class BatteryChargerEnergyFabric extends SnapshotParticipant<Long> impleme
 
     @Override
     public long getAmount() {
-        return this.charger.stored();
+        return this.charger.feStored();
     }
 
     @Override
     public long getCapacity() {
-        return BatteryChargerBlockEntity.capacity();
+        return BatteryChargerBlockEntity.feCapacity();
     }
 
     @Override
-    protected Long createSnapshot() {
+    protected Double createSnapshot() {
         return this.charger.stored();
     }
 
     @Override
-    protected void readSnapshot(final Long snapshot) {
+    protected void readSnapshot(final Double snapshot) {
         this.charger.setStored(snapshot);
     }
 }
