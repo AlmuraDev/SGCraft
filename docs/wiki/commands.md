@@ -155,8 +155,12 @@ Ore changes apply to chunks generated or loaded from then on and are saved. See 
 | `/sgcraft default_addresses remove <address>` | Op | Remove a default address |
 | `/sgcraft default_addresses lock <address>` | Op | Holders can't rename or remove it |
 | `/sgcraft default_addresses unlock <address>` | Op | Holders may rename or remove it |
+| `/sgcraft addresses` | Op | Each world's address layout (cell size and point of origin), its gate count, and its layout after a restart |
+| `/sgcraft addresses cell_chunks <chunks> [<world>]` | Op | Set how many chunks wide each addressed cell is, for every world or one |
+| `/sgcraft addresses point_of_origin <symbol> [<world>]` | Op | Set the point of origin: a letter, a digit, `giza` for `@`, or `none` |
+| `/sgcraft addresses clear <world>` | Op | Give a world the server's layout again |
 
-Your book keeps each address in the form that names its world, so it dials from any world. Default address changes reach PDDs and tablets used for the first time after the change. See [Addresses](addresses.md).
+Your book keeps each address in the form that names its world, so it dials from any world. Default address changes reach PDDs and tablets used for the first time after the change. Address layout changes take effect when the server next starts and change every gate address in the worlds they reach. See [Changing the layout](addresses.md#changing-the-layout).
 
 ## Shields
 

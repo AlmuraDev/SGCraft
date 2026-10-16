@@ -42,7 +42,7 @@ A short `sgcraft-server.json` that changes a few settings and leaves the rest at
 
 ## Server settings
 
-`config/sgcraft-server.json` keeps its settings in eight sections: `energy`, `gates`, `tools`, `worldgen`, `remote_view`, `malp`, `shields` and `zpm`. A section left out takes all its defaults. In a section, a setting left out takes its default. This page names a setting by its path, such as `energy.multipliers.inter_world`. [The whole file](#the-whole-file) shows every setting at its default.
+`config/sgcraft-server.json` keeps its settings in nine sections: `energy`, `addresses`, `gates`, `tools`, `worldgen`, `remote_view`, `malp`, `shields` and `zpm`. A section left out takes all its defaults. In a section, a setting left out takes its default. This page names a setting by its path, such as `energy.multipliers.inter_world`. [The whole file](#the-whole-file) shows every setting at its default.
 
 ### Energy
 
@@ -87,19 +87,42 @@ A gate's own `chevron_cost`, `open_cost` and `tick_cost` properties (and their `
 
 A gate's own `distance_factor_multiplier` and `inter_world_multiplier` properties override the first two for that gate.
 
+### Addresses
+
+The `addresses` section lays each world out into addresses. See [Addresses](addresses.md#cells-and-the-grid).
+
+| Key | Default | Meaning |
+| --- | --- | --- |
+| `cell_chunks` | `1` | How many chunks wide and long each addressed cell is, from `1` to `256`. One gate per cell can be dialed |
+| `point_of_origin` | `"@"` | The symbol every address ends with, which the last chevron locks; `""` for addresses without one |
+| `worlds` | `{}` | A world's own `cell_chunks` and `point_of_origin`, by world ID. A value left out is the one above |
+
+```json
+"addresses": {
+  "cell_chunks": 1,
+  "point_of_origin": "@",
+  "worlds": {
+    "minecraft:the_nether": { "cell_chunks": 8 }
+  }
+}
+```
+
+Bigger cells reach further from the center with the same symbols but leave more space between gates. With cells 8 chunks across, 7 symbols reach about 2,985,984 blocks out each way.
+
+> **Warning:** Changing `cell_chunks` or `point_of_origin` changes every gate address in the worlds it reaches. Address books, default addresses and anything else holding an old address stop reaching the gate. Choose them before players build gates.
+>
+> The server records each world's layout. When a world that has gates starts with a different one, the server log shows a large `STARGATE ADDRESSES HAVE CHANGED` warning naming each world, its gate count and its old and new layout. It shows once, as the new layout is then recorded. To get the old addresses back, set the old values again and restart. A world with no gates changes without a warning.
+
 ### Gates
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `point_of_origin` | `"@"` | The symbol every address ends with, which the last chevron locks; `""` for addresses without one |
 | `chunk_loading_range` | `1` | Chunks around a busy gate's own that stay loaded, from `0` to `8` |
 | `kawoosh_breaks_unbreakable` | `false` | A kawoosh also clears blocks that can't be broken, such as bedrock |
 | `owners_break_gates` | `true` | A gate's owner may break it whatever its `breakable` property says |
 | `generated_gates_breakable` | `false` | Players may break generated gates that have no `breakable` value of their own |
 | `log_events` | `false` | Gates forming and breaking, and wormholes opening, closing and going astray, are written to the server log |
 | `defaults` | `{}` | Values gates have for a property when they have none of their own. See [Gate defaults](#gate-defaults) |
-
-> **Warning:** Changing `gates.point_of_origin` changes every address on the server. The server logs a warning naming each world when it does. See [Addresses](addresses.md).
 
 #### Gate defaults
 
@@ -285,8 +308,12 @@ Every server setting at its default. You never need to write all of this. Settin
       "supergate": 8.0
     }
   },
-  "gates": {
+  "addresses": {
+    "cell_chunks": 1,
     "point_of_origin": "@",
+    "worlds": {}
+  },
+  "gates": {
     "chunk_loading_range": 1,
     "kawoosh_breaks_unbreakable": false,
     "owners_break_gates": true,
@@ -509,6 +536,7 @@ These commands change server settings at once and write them to `sgcraft-server.
 | Setting | Command |
 | --- | --- |
 | `energy.dial_costs`, `energy.multipliers.inter_world`, `energy.multipliers.other_group` | `/sgcraft costs` |
+| `addresses` | `/sgcraft addresses`, which writes the file but takes effect when the server next starts |
 | `gates.kawoosh_breaks_unbreakable`, `gates.owners_break_gates`, `gates.generated_gates_breakable` | `/sgcraft settings` |
 | `gates.defaults` | `/sgcraft gate_defaults` |
 | `gates.chunk_loading_range` | `/sgcraft chunk_loading_range` |

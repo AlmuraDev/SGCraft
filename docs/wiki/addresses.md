@@ -44,22 +44,46 @@ Add a [chevron upgrade](building-gates.md#chevrons-and-upgrades) for each extra 
 
 ## Point of origin
 
-Every address ends with the point of origin, `@`, which the top chevron locks last. The server setting `gates.point_of_origin` sets it. An address that doesn't end with it reaches no gate.
+Every address ends with the point of origin, `@`, which the top chevron locks last. The server setting `addresses.point_of_origin` sets it, for every world or for one. An address dialed from a world must end with that world's point of origin, or it reaches no gate.
 
 ### Server admins
 
-- `gates.point_of_origin` is `"@"` by default. Set it to `""` for addresses without one: the seventh symbol then becomes a position symbol, and the grid is 6 times as wide each way.
-- Changing the point of origin changes every address. The server log warns about it, listing each world whose addresses changed.
+- `addresses.point_of_origin` is `"@"` by default. Set it to `""` for addresses without one: the seventh symbol then becomes a position symbol, and the grid is 6 times as wide each way.
+- Changing the point of origin changes every address. See [Changing the layout](#changing-the-layout).
 
 ## Cells and the grid
 
-Each world is divided into cells, 1 chunk across. A gate's address is the address of the cell holding its base.
+Each world is divided into cells, 1 chunk across by default. A gate's address is the address of the cell holding its base.
 
-- The 6 position symbols give 36 to the power 6 codes, a grid 46,656 cells square, centered on x 0, z 0. That covers about 373,248 blocks out from the center in each direction.
+- The 6 position symbols give 36 to the power 6 codes, a grid 46,656 cells square, centered on x 0, z 0. With 1 chunk cells that covers about 373,248 blocks out from the center in each direction.
 - A gate beyond the grid has no address.
 - The codes are scrambled, so gates near each other don't get addresses that look alike.
 - `@` is never a position symbol.
-- Two gates in one chunk share an address, and a dial reaches only one of them. Build one gate per chunk.
+- Two gates in one cell share an address, and a dial reaches only one of them. Build one gate per cell.
+
+### Cell size
+
+The server setting `addresses.cell_chunks` sets how many chunks wide and long each cell is, from 1 to 256, for every world or, under `addresses.worlds`, for one. Bigger cells make the grid reach further with the same symbols, at the cost of more space between gates:
+
+| `cell_chunks` | Cell | Grid reaches, each way from x 0, z 0 |
+| --- | --- | --- |
+| `1` | 16 blocks | 373,248 blocks |
+| `2` | 32 blocks | 746,496 blocks |
+| `4` | 64 blocks | 1,492,992 blocks |
+| `8` | 128 blocks | 2,985,984 blocks |
+
+### Changing the layout
+
+Changing `cell_chunks` or `point_of_origin` changes every gate address in the worlds it reaches. Old addresses in address books, default addresses, PDDs and tablets then reach another gate or none, and a bigger cell can put two gates in one cell. Set the layout before players build gates.
+
+The server records each world's layout. When a world that has gates starts with a different one, the server log shows a large `STARGATE ADDRESSES HAVE CHANGED` warning naming each such world, how many gates it has, and its old and new layout. The warning shows once, as the new layout is then recorded. To get the old addresses back, set the old values again and restart. A world without gates changes quietly.
+
+Operators can change the layout in game. The change is written to the settings file and takes effect when the server next starts. The command warns, in chat and in the server log, about each world whose gates' addresses it would change:
+
+- `/sgcraft addresses` shows each world's layout, how many gates it has, and its layout after a restart if that differs.
+- `/sgcraft addresses cell_chunks <chunks> [<world>]`
+- `/sgcraft addresses point_of_origin <symbol> [<world>]`, where the symbol is a letter, a digit, `giza` (or `"@"`) for `@`, or `none`.
+- `/sgcraft addresses clear <world>` gives a world the server's layout again.
 
 ## World symbols and groups
 
