@@ -5,7 +5,7 @@ The Tok'ra are villagers who keep watch over gates the world builds and trade th
 ```infobox
 Tok'ra
 ID: sgcraft:tokra
-Icon: sgcraft:dhd
+Image: scenes/tokra.png
 Category: Villagers
 Type: Villager profession
 Job site: Milky Way DHD or Pegasus DHD

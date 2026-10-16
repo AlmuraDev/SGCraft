@@ -47,6 +47,18 @@ Power: Battery, FE
 ```
 
 An infobox with an `ID` row shows that item's icon; an `Icon: sgcraft:malp` row picks another.
+An `Image: scenes/tokra.png` row shows a picture instead, and the page's card on its index uses it too.
+
+Gallery, pictures side by side with captions, one per line as `path | caption`:
+
+```gallery
+scenes/milky-way-day.jpg | Idle, by day
+scenes/milky-way-night.jpg | Idle, by night
+scenes/milky-way-open-day.jpg | Open, by day
+scenes/milky-way-open-night.jpg | Open, by night
+```
+
+Code blocks tagged `java`, `groovy` or `json` are colored.
 
 Index of a dictionary folder, as cards grouped by category. The first line names the folder; a line starting with
 `+` adds a page from another folder:
@@ -90,6 +102,9 @@ Glyphs: `{{glyphs:XOBF-R3A@}}` draws an address in the mod's Milky Way glyphs, i
 - Item icons and names come from the game. `./gradlew :neoforge:runIconExport` starts a client that draws every
   item's icon into `build/icons` and closes itself. Then `python tools/wiki/build.py --refresh-icons` keeps the
   icons the wiki uses (every SGCraft item and each other item the pages or recipes name) in `docs/wiki/icons`.
+- The same export then draws the entities the wiki pictures (the Tok'ra) on a see-through background, and builds
+  each gate type in its flat world to photograph it by day and by night. `--refresh-icons` keeps those pictures in
+  `docs/wiki/scenes`, the world ones cut to the gate and saved as JPEG.
 - The sidebar order is the `NAV` list in `tools/wiki/build.py`.
 - The build checks every link and anchor, warns of a dictionary page missing a recipe its item has, and of an
   SGCraft item with no dictionary page. Fix every warning before publishing.

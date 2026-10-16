@@ -14,6 +14,8 @@ License: MIT (code)
 
 SGCraft 3.0 is AlmuraDev's remake of gcewing's SGCraft, rebuilt for NeoForge and Fabric on Minecraft 26.3. It keeps the original's gates, timings and rules where it can. New in this version are a server command suite, an add-on API and the MALP. The gate models are measured from third-party models, which keep their own licenses; the mod's `CREDITS.md` lists them.
 
+Coming from SGCraft 2 on Minecraft 1.12? [Changes since SGCraft 2](changes.md) lists what is new, what works differently and what is not ported yet.
+
 ## What you can do
 
 - Build Milky Way, Pegasus and Universe gates, as standard 5 by 5 rings or as supergates up to 61 blocks across.

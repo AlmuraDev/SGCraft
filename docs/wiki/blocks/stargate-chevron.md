@@ -18,6 +18,15 @@ Drops: Itself
 Block entity: No
 ```
 
+## The finished gate
+
+```gallery
+scenes/milky-way-day.jpg | Idle, by day
+scenes/milky-way-night.jpg | Idle, by night
+scenes/milky-way-open-day.jpg | Open, by day
+scenes/milky-way-open-night.jpg | Open, by night
+```
+
 ## Obtaining
 
 ### Crafting

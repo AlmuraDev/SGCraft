@@ -19,6 +19,15 @@ Gate type: Pegasus (sgcraft:pegasus)
 Dialed by: Pegasus DHD
 ```
 
+## The finished gate
+
+```gallery
+scenes/pegasus-day.jpg | Idle, by day
+scenes/pegasus-night.jpg | Idle, by night
+scenes/pegasus-open-day.jpg | Open, by day
+scenes/pegasus-open-night.jpg | Open, by night
+```
+
 ## Obtaining
 
 ### Crafting

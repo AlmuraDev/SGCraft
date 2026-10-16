@@ -19,6 +19,15 @@ Gate type: Milky Way until changed
 Size: Radius 4 to 30 (9 to 61 blocks across)
 ```
 
+## The finished gate
+
+```gallery
+scenes/supergate-day.jpg | Idle, by day
+scenes/supergate-night.jpg | Idle, by night
+scenes/supergate-open-day.jpg | Open, by day
+scenes/supergate-open-night.jpg | Open, by night
+```
+
 ## Obtaining
 
 ### Crafting

@@ -268,7 +268,16 @@ pre.code code { background: none; border: 0; padding: 0; color: #cfe3ff; }
   color: var(--chevron);
 }
 
-.glyphs { display: inline-flex; gap: 2px; vertical-align: middle; padding: 2px 4px; background: #070b13; border-radius: 3px; }
+.glyphs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  gap: 2px;
+  vertical-align: middle;
+  padding: 2px 4px;
+  background: #070b13;
+  border-radius: 3px;
+}
 .glyph { width: 22px; height: 22px; }
 
 img { max-width: 100%; }
@@ -384,3 +393,26 @@ article::after { content: ''; display: block; clear: both; }
 a.item { color: var(--horizon); }
 .used-in { columns: 2 220px; padding-left: 20px; }
 .used-in li { break-inside: avoid; margin: 2px 0; }
+
+/* Code colors, after the IntelliJ dark theme */
+.tok-keyword { color: #cf8e6d; }
+.tok-type { color: #e2c08d; }
+.tok-string { color: #6aab73; }
+.tok-number { color: #2aacb8; }
+.tok-comment { color: #7a7e85; font-style: italic; }
+.tok-annotation { color: #b3ae60; }
+.tok-key { color: #c77dbb; }
+
+.infobox-image {
+  display: flex;
+  justify-content: center;
+  padding: 14px 0 6px;
+  background: radial-gradient(circle, rgba(21, 101, 168, 0.35), transparent 70%);
+}
+.infobox-image img { max-height: 260px; image-rendering: pixelated; }
+
+.gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin: 16px 0; }
+.gallery figure { margin: 0; background: var(--panel); border: 1px solid var(--steel); border-radius: 4px; overflow: hidden; }
+.gallery img { display: block; width: 100%; height: auto; }
+.gallery figcaption { padding: 6px 10px; font-size: 14px; color: var(--muted); }
+.card-icon .card-image { max-width: 48px; max-height: 48px; image-rendering: pixelated; }

@@ -19,6 +19,15 @@ Gate type: Universe (sgcraft:universe)
 Dialed by: PDD, gate control tablet or command
 ```
 
+## The finished gate
+
+```gallery
+scenes/universe-day.jpg | Idle, by day
+scenes/universe-night.jpg | Idle, by night
+scenes/universe-open-day.jpg | Open, by day
+scenes/universe-open-night.jpg | Open, by night
+```
+
 ## Obtaining
 
 ### Crafting

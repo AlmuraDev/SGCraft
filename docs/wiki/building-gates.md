@@ -26,6 +26,25 @@ Every gate has a type. The base block decides it when the gate forms. All three 
 
 The Universe gate had no DHD on the show, so SGCraft gives it none. Dial it with a [PDD or gate control tablet](tools.md), or with `/sgcraft dial`.
 
+```gallery
+scenes/milky-way-day.jpg | Milky Way, idle, by day
+scenes/milky-way-night.jpg | Milky Way, idle, by night
+scenes/milky-way-open-day.jpg | Milky Way, open, by day
+scenes/milky-way-open-night.jpg | Milky Way, open, by night
+```
+```gallery
+scenes/pegasus-day.jpg | Pegasus, idle, by day
+scenes/pegasus-night.jpg | Pegasus, idle, by night
+scenes/pegasus-open-day.jpg | Pegasus, open, by day
+scenes/pegasus-open-night.jpg | Pegasus, open, by night
+```
+```gallery
+scenes/universe-day.jpg | Universe, idle, by day
+scenes/universe-night.jpg | Universe, idle, by night
+scenes/universe-open-day.jpg | Universe, open, by day
+scenes/universe-open-night.jpg | Universe, open, by night
+```
+
 ### Base recipes
 
 The Pegasus and Universe bases are made from a Milky Way base. The Milky Way base recipe is on [Getting started](getting-started.md#3-craft-the-gate-blocks).
@@ -75,6 +94,13 @@ sgcraft:supergate_chevron
 
 ```recipe
 sgcraft:supergate_base
+```
+
+```gallery
+scenes/supergate-day.jpg | Supergate, idle, by day
+scenes/supergate-night.jpg | Supergate, idle, by night
+scenes/supergate-open-day.jpg | Supergate, open, by day
+scenes/supergate-open-night.jpg | Supergate, open, by night
 ```
 
 ## Forming a gate

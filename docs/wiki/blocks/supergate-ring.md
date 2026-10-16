@@ -18,6 +18,15 @@ Drops: Itself
 Block entity: No
 ```
 
+## The finished gate
+
+```gallery
+scenes/supergate-day.jpg | Idle, by day
+scenes/supergate-night.jpg | Idle, by night
+scenes/supergate-open-day.jpg | Open, by day
+scenes/supergate-open-night.jpg | Open, by night
+```
+
 ## Obtaining
 
 ### Crafting

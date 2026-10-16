@@ -31,6 +31,11 @@ RECIPES = Path('core/src/main/resources/data')
 # The icons and names the wiki keeps, and where the icon export saves every item's
 ICONS = SOURCE / 'icons'
 EXPORTED = Path('build/icons')
+# The pictures the scene export takes in the game, and the share of each picture the wiki keeps, from its middle
+SCENES = SOURCE / 'scenes'
+SCENE_CROP = {'supergate': 0.9}
+STANDARD_CROP = 0.62
+SCENE_WIDTH = 960
 ITEM_ID = re.compile(r'^[a-z0-9_.-]+:[a-z0-9_./-]+$')
 CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@'
 CELL = 64
@@ -41,7 +46,7 @@ LOGO_COLOR = 'e8892b'
 
 # The sidebar, in order: each section's title and its pages. Pages not listed still build, under "More"
 NAV = [
-    ('Start here', ['home', 'install', 'getting-started', 'faq']),
+    ('Start here', ['home', 'install', 'getting-started', 'faq', 'changes']),
     ('Playing', ['building-gates', 'dialing', 'addresses', 'dhd', 'iris', 'power', 'access', 'tools', 'malp',
                  'worldgen']),
     ('Dictionary', ['blocks', 'items', 'entities', 'recipes']),
@@ -176,17 +181,21 @@ def infobox(lines):
     title, rows = infobox_rows(lines)
     shown = []
     picture = ''
+    image = ''
     ids = []
     for key, value in rows:
         if key.lower() == 'icon':
             picture = value
+            continue
+        if key.lower() == 'image':
+            image = f'<div class="infobox-image"><img src="{asset(value)}" alt="{html.escape(title)}"></div>'
             continue
         if key.lower() == 'id':
             ids = [i.strip() for i in value.split(',')]
             value = ', '.join(f'`{i}`' for i in ids)
         shown.append(f'<tr><th>{inline(key)}</th><td>{inline(value)}</td></tr>')
     picture = picture or (ids[0] if ids else '')
-    picture = f'<div class="infobox-icon">{icon(picture, "icon-large")}</div>' if picture else ''
+    picture = image or (f'<div class="infobox-icon">{icon(picture, "icon-large")}</div>' if picture else '')
     return (f'<aside class="infobox"><div class="infobox-title">{inline(title)}</div>{picture}'
             f'<table>{"".join(shown)}</table></aside>')
 
@@ -340,6 +349,8 @@ def index(lines, headings):
         for name in names:
             meta = META[name]
             picture = icon(meta['icon'], 'icon-large') if meta['icon'] else ''
+            if meta['image']:
+                picture = f'<img class="card-image" src="{asset(meta["image"])}" alt="">'
             cards.append(f'<div class="card"><a class="card-icon" href="{asset(name + ".html")}">{picture}</a>'
                          f'<div class="card-text"><a class="card-title" href="{asset(name + ".html")}">'
                          f'{html.escape(meta["title"])}</a><div class="card-summary">'
@@ -379,6 +390,52 @@ def uses():
                 if key != recipe['result']:
                     found.setdefault(key, []).append(recipe['result'])
     return {key: list(dict.fromkeys(results)) for key, results in found.items()}
+
+
+JAVA_KEYWORDS = {
+    'abstract', 'assert', 'boolean', 'break', 'byte', 'case', 'catch', 'char', 'class', 'continue', 'default', 'do',
+    'double', 'else', 'enum', 'extends', 'final', 'finally', 'float', 'for', 'if', 'implements', 'import',
+    'instanceof', 'int', 'interface', 'long', 'new', 'package', 'private', 'protected', 'public', 'record', 'return',
+    'sealed', 'short', 'static', 'super', 'switch', 'this', 'throw', 'throws', 'try', 'var', 'void', 'volatile',
+    'while', 'yield', 'true', 'false', 'null',
+}
+# Groovy's own words, as a Gradle build file uses them
+GROOVY_KEYWORDS = JAVA_KEYWORDS | {'def', 'apply', 'plugins', 'dependencies', 'repositories'}
+# One token of Java or Groovy: a comment, a string, an annotation, a number or a word
+JAVA_TOKEN = re.compile(r'(?P<comment>//[^\n]*|/\*.*?\*/)|(?P<string>"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\')'
+                        r'|(?P<annotation>@[A-Za-z_]\w*)|(?P<number>\b\d[\d_]*(?:\.\d+)?[LlFfDd]?\b)'
+                        r'|(?P<word>\b[A-Za-z_]\w*\b)', re.S)
+JSON_TOKEN = re.compile(r'(?P<key>"(?:\\.|[^"\\])*"(?=\s*:))|(?P<string>"(?:\\.|[^"\\])*")'
+                        r'|(?P<number>-?\b\d+(?:\.\d+)?(?:[eE][+-]?\d+)?\b)|(?P<keyword>\b(?:true|false|null)\b)')
+
+
+def highlight(code, lang):
+    """A code block's text as HTML, its tokens colored for Java, Groovy or JSON; other text as it is."""
+    pattern = JAVA_TOKEN if lang in ('java', 'groovy') else JSON_TOKEN if lang == 'json' else None
+    if pattern is None:
+        return html.escape(code)
+    keywords = GROOVY_KEYWORDS if lang == 'groovy' else JAVA_KEYWORDS
+    out = []
+    last = 0
+    for match in pattern.finditer(code):
+        out.append(html.escape(code[last:match.start()]))
+        kind, text = match.lastgroup, match.group()
+        if kind == 'word':
+            kind = 'keyword' if text in keywords else 'type' if text[0].isupper() else None
+        out.append(f'<span class="tok-{kind}">{html.escape(text)}</span>' if kind else html.escape(text))
+        last = match.end()
+    out.append(html.escape(code[last:]))
+    return ''.join(out)
+
+
+def gallery(lines):
+    """Pictures side by side, each line a picture's path and, after a |, its caption."""
+    figures = []
+    for line in lines:
+        path, _, caption = (part.strip() for part in line.partition('|'))
+        figures.append(f'<figure><a href="{asset(path)}"><img src="{asset(path)}" alt="{html.escape(caption)}" '
+                       f'loading="lazy"></a><figcaption>{inline(caption)}</figcaption></figure>')
+    return f'<div class="gallery">{"".join(figures)}</div>'
 
 
 def table(rows):
@@ -446,8 +503,11 @@ def render(markdown):
                 out.append(index([b for b in block if b.strip()], headings))
             elif lang == 'recipes':
                 out.append(recipes(headings))
+            elif lang == 'gallery':
+                out.append(gallery([b for b in block if b.strip()]))
             else:
-                out.append(f'<pre class="code"><code>{html.escape(chr(10).join(block))}</code></pre>')
+                css = f' class="language-{lang}"' if lang else ''
+                out.append(f'<pre class="code"><code{css}>{highlight(chr(10).join(block), lang)}</code></pre>')
             continue
         heading = re.match(r'^(#{1,4})\s+(.*)$', line)
         if heading:
@@ -507,7 +567,7 @@ def render(markdown):
 def describe(markdown):
     """What a page tells the rest of the wiki: its title, summary, category, items and icon."""
     title, summary, _, _ = render(markdown)
-    meta = {'title': title, 'summary': summary, 'category': '', 'ids': [], 'icon': ''}
+    meta = {'title': title, 'summary': summary, 'category': '', 'ids': [], 'icon': '', 'image': ''}
     box = re.search(r'^```infobox\n(.*?)^```', markdown, re.S | re.M)
     if box:
         _, rows = infobox_rows([b for b in box.group(1).split('\n') if b.strip()])
@@ -518,6 +578,8 @@ def describe(markdown):
                 meta['ids'] = [i.strip() for i in value.split(',')]
             elif key.lower() == 'icon':
                 meta['icon'] = value
+            elif key.lower() == 'image':
+                meta['image'] = value
     meta['icon'] = meta['icon'] or (meta['ids'][0] if meta['ids'] else '')
     return meta
 
@@ -683,6 +745,31 @@ def refresh_icons():
     names = {i: exported[i] for i in sorted(wanted)}
     (ICONS / 'names.json').write_text(json.dumps(names, indent=2) + '\n', encoding='utf-8', newline='\n')
     print(f'Kept the icons of {len(wanted)} items in {ICONS}')
+    refresh_scenes()
+
+
+def refresh_scenes():
+    """Keeps the scene export's pictures: entities as they are, see-through, and the world pictures cut to their
+    middle, where the gate stands, and made smaller."""
+    exported = EXPORTED / 'scenes'
+    if not exported.exists():
+        return
+    if SCENES.exists():
+        shutil.rmtree(SCENES)
+    SCENES.mkdir(parents=True)
+    for path in sorted(exported.glob('*.png')):
+        picture = Image.open(path)
+        if picture.mode == 'RGBA' and picture.getextrema()[3][0] < 255:
+            picture.crop(picture.getbbox()).save(SCENES / path.name, optimize=True)
+            continue
+        share = SCENE_CROP.get(path.stem.rsplit('-', 1)[0], STANDARD_CROP)
+        width, height = picture.size
+        crop_width, crop_height = round(width * share), round(height * share)
+        left, top = (width - crop_width) // 2, (height - crop_height) // 2
+        picture = picture.convert('RGB').crop((left, top, left + crop_width, top + crop_height))
+        picture = picture.resize((SCENE_WIDTH, round(crop_height * SCENE_WIDTH / crop_width)), Image.LANCZOS)
+        picture.save(SCENES / f'{path.stem}.jpg', quality=88, optimize=True)
+    print(f'Kept {len(list(SCENES.iterdir()))} scenes in {SCENES}')
 
 
 def used_in(item_ids, used):
@@ -744,7 +831,7 @@ def main():
     OUT.mkdir(parents=True)
     cut_glyphs()
     shutil.copy(Path(__file__).with_name('wiki.css'), OUT / 'wiki.css')
-    for folder in ('assets', 'icons'):
+    for folder in ('assets', 'icons', 'scenes'):
         if (SOURCE / folder).exists():
             shutil.copytree(SOURCE / folder, OUT / folder)
     sources = {name: path.read_text(encoding='utf-8').replace('\r\n', '\n')
