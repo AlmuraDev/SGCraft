@@ -115,6 +115,16 @@ The bolt is only for show: it hurts nothing and starts no fires. It sends the wo
 
 The gate property `lightning_malfunction` (on by default, **Storms send it astray** in the configurator) turns this off.
 
+## Wormhole jumps
+
+Two gates in one [address cell](addresses.md#cells-and-the-grid) share an address, and a dial reaches only one of them. If that gate is broken while its wormhole is open, by an explosion or any other way, the wormhole jumps to the other gate in the cell, as on the show. The other gate opens at once with every chevron locked, and the dialing gate stays connected. The broken gate still explodes as an open gate does.
+
+The wormhole jumps only to a gate the dialing gate could have dialed: one that is idle, of a type the two gates connect between, and that the gates' rights allow. With more than one, it takes the nearest to the broken gate. If none fits, the wormhole closes as usual. Breaking the dialing gate always closes it.
+
+### Server admins
+
+`gates.wormholes_jump` (on by default) turns this off. Set it with `/sgcraft settings wormholes_jump <true|false>`.
+
 ## Fluid through the wormhole
 
 A gate standing in water, lava or another fluid sends it through the wormhole. The far gate pours it out of its opening, more the deeper the first gate is in the fluid.

@@ -121,6 +121,7 @@ Bigger cells reach further from the center with the same symbols but leave more 
 | `kawoosh_breaks_unbreakable` | `false` | A kawoosh also clears blocks that can't be broken, such as bedrock |
 | `owners_break_gates` | `true` | A gate's owner may break it whatever its `breakable` property says |
 | `generated_gates_breakable` | `false` | Players may break generated gates that have no `breakable` value of their own |
+| `wormholes_jump` | `true` | When the gate an open wormhole reaches breaks, the wormhole jumps to another gate in the same address cell. See [Wormhole jumps](dialing.md#wormhole-jumps) |
 | `log_events` | `false` | Gates forming and breaking, and wormholes opening, closing and going astray, are written to the server log |
 | `defaults` | `{}` | Values gates have for a property when they have none of their own. See [Gate defaults](#gate-defaults) |
 
@@ -318,6 +319,7 @@ Every server setting at its default. You never need to write all of this. Settin
     "kawoosh_breaks_unbreakable": false,
     "owners_break_gates": true,
     "generated_gates_breakable": false,
+    "wormholes_jump": true,
     "log_events": false,
     "defaults": {}
   },
@@ -537,7 +539,7 @@ These commands change server settings at once and write them to `sgcraft-server.
 | --- | --- |
 | `energy.dial_costs`, `energy.multipliers.inter_world`, `energy.multipliers.other_group` | `/sgcraft costs` |
 | `addresses` | `/sgcraft addresses`, which writes the file but takes effect when the server next starts |
-| `gates.kawoosh_breaks_unbreakable`, `gates.owners_break_gates`, `gates.generated_gates_breakable` | `/sgcraft settings` |
+| `gates.kawoosh_breaks_unbreakable`, `gates.owners_break_gates`, `gates.generated_gates_breakable`, `gates.wormholes_jump` | `/sgcraft settings` |
 | `gates.defaults` | `/sgcraft gate_defaults` |
 | `gates.chunk_loading_range` | `/sgcraft chunk_loading_range` |
 | `gates.log_events` | `/sgcraft log_events` |

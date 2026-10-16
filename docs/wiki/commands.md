@@ -222,7 +222,7 @@ See [MALP](malp.md).
 
 | Command | Level | What it does |
 | --- | --- | --- |
-| `/sgcraft settings` | Op | `gates.kawoosh_breaks_unbreakable`, `gates.owners_break_gates` and `gates.generated_gates_breakable` |
+| `/sgcraft settings` | Op | `gates.kawoosh_breaks_unbreakable`, `gates.owners_break_gates`, `gates.generated_gates_breakable` and `gates.wormholes_jump` |
 | `/sgcraft settings <name> <bool>` | Op | Set one of those three |
 | `/sgcraft gate_defaults` | Op | The values gates have when they have none of their own |
 | `/sgcraft gate_defaults <property> <json>` | Op | Set one, such as `sgcraft:open_ticks 12000` |

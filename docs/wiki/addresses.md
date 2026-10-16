@@ -59,7 +59,7 @@ Each world is divided into cells, 8 chunks (128 blocks) across by default. A gat
 - A gate beyond the grid has no address.
 - The codes are scrambled, so gates near each other don't get addresses that look alike.
 - `@` is never a position symbol.
-- Two gates in one cell share an address, and a dial reaches only one of them. Build one gate per cell.
+- Two gates in one cell share an address, and a dial reaches only one of them. Build one gate per cell, unless you want a backup: if the gate a wormhole reaches breaks while it is open, the wormhole jumps to the other. See [Wormhole jumps](dialing.md#wormhole-jumps).
 
 ### Cell size
 
