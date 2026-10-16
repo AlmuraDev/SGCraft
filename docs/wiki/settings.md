@@ -93,16 +93,16 @@ The `addresses` section lays each world out into addresses. See [Addresses](addr
 
 | Key | Default | Meaning |
 | --- | --- | --- |
-| `cell_chunks` | `1` | How many chunks wide and long each addressed cell is, from `1` to `256`. One gate per cell can be dialed |
+| `cell_chunks` | `8` | How many chunks wide and long each addressed cell is, from `1` to `256`. One gate per cell can be dialed |
 | `point_of_origin` | `"@"` | The symbol every address ends with, which the last chevron locks; `""` for addresses without one |
 | `worlds` | `{}` | A world's own `cell_chunks` and `point_of_origin`, by world ID. A value left out is the one above |
 
 ```json
 "addresses": {
-  "cell_chunks": 1,
+  "cell_chunks": 8,
   "point_of_origin": "@",
   "worlds": {
-    "minecraft:the_nether": { "cell_chunks": 8 }
+    "minecraft:the_nether": { "cell_chunks": 1 }
   }
 }
 ```
@@ -309,7 +309,7 @@ Every server setting at its default. You never need to write all of this. Settin
     }
   },
   "addresses": {
-    "cell_chunks": 1,
+    "cell_chunks": 8,
     "point_of_origin": "@",
     "worlds": {}
   },

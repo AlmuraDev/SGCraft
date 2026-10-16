@@ -53,9 +53,9 @@ Every address ends with the point of origin, `@`, which the top chevron locks la
 
 ## Cells and the grid
 
-Each world is divided into cells, 1 chunk across by default. A gate's address is the address of the cell holding its base.
+Each world is divided into cells, 8 chunks (128 blocks) across by default. A gate's address is the address of the cell holding its base.
 
-- The 6 position symbols give 36 to the power 6 codes, a grid 46,656 cells square, centered on x 0, z 0. With 1 chunk cells that covers about 373,248 blocks out from the center in each direction.
+- The 6 position symbols give 36 to the power 6 codes, a grid 46,656 cells square, centered on x 0, z 0. With the default 8 chunk cells that covers about 2,985,984 blocks out from the center in each direction.
 - A gate beyond the grid has no address.
 - The codes are scrambled, so gates near each other don't get addresses that look alike.
 - `@` is never a position symbol.
@@ -70,7 +70,7 @@ The server setting `addresses.cell_chunks` sets how many chunks wide and long ea
 | `1` | 16 blocks | 373,248 blocks |
 | `2` | 32 blocks | 746,496 blocks |
 | `4` | 64 blocks | 1,492,992 blocks |
-| `8` | 128 blocks | 2,985,984 blocks |
+| `8` (default) | 128 blocks | 2,985,984 blocks |
 
 ### Changing the layout
 

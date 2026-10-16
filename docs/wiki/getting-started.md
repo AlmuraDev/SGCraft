@@ -92,7 +92,7 @@ A dial to a gate nearby costs 100 energy for each chevron and 4000 to open the w
 
 ## 7. Build a second gate
 
-Build a second gate the same way, in a different chunk, or find one the world built (see [World generation](worldgen.md)). Two gates in one chunk share an address.
+Build a second gate the same way, at least 128 blocks away so it is in a different address cell, or find one the world built (see [World generation](worldgen.md)). Two gates in one cell share an address.
 
 Right-click the second gate's base or any of its ring blocks. The **Stargate Address** screen shows its address in glyphs and in letters. Click the panel to copy the address. You can also look at the gate and run `/sgcraft address`.
 

@@ -79,7 +79,7 @@ Right-click the base, or any ring block of the formed gate, to open the **Starga
 
 ## Address
 
-A gate's address is the address of the cell holding its base. A cell is 1 chunk across. Two gates in one chunk share an address and a dial reaches only one of them, so build one gate per chunk. A base beyond the address grid, about 373,248 blocks out from x 0, z 0, gives its gate no address. See [Addresses](../addresses.md#cells-and-the-grid).
+A gate's address is the address of the cell holding its base. A cell is 8 chunks (128 blocks) across by default. Two gates in one cell share an address and a dial reaches only one of them, so build one gate per cell. A base beyond the address grid, about 2,985,984 blocks out from x 0, z 0, gives its gate no address. See [Addresses](../addresses.md#cells-and-the-grid).
 
 The gate forms with 7 chevrons, which dial gates in the same world. Each {{item:sgcraft:chevron_upgrade}} adds one, up to 9: 8 reach other worlds of the same group, 9 reach other groups. The server's `gates.defaults` setting `sgcraft:chevrons` can give new gates more. See [Building gates](../building-gates.md#chevrons-and-upgrades).
 
