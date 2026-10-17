@@ -37,6 +37,7 @@ public final class SGEntityTypes {
 
     public static EntityType<IrisPlateEntity> IRIS_PLATE;
     public static EntityType<MalpEntity> MALP;
+    public static EntityType<SeatEntity> SEAT;
 
     private SGEntityTypes() {
     }
@@ -52,5 +53,11 @@ public final class SGEntityTypes {
         SGEntityTypes.MALP = EntityType.Builder.<MalpEntity>of(MalpEntity::new, MobCategory.MISC)
                 .noLootTable().sized(1.0F, 0.9F).clientTrackingRange(10).build(malp);
         sink.register(malp, SGEntityTypes.MALP);
+        // The unseen seat of an office chair, which its sitter rides. A type that can't be saved can't be ridden, so
+        // the seat itself declines to be saved instead
+        final ResourceKey<EntityType<?>> seat = ResourceKey.create(Registries.ENTITY_TYPE, SGCraft.id("seat"));
+        SGEntityTypes.SEAT = EntityType.Builder.<SeatEntity>of(SeatEntity::new, MobCategory.MISC)
+                .noLootTable().noSummon().fireImmune().sized(0F, 0F).clientTrackingRange(10).build(seat);
+        sink.register(seat, SGEntityTypes.SEAT);
     }
 }

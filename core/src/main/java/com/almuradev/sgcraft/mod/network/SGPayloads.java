@@ -25,6 +25,8 @@
 
 package com.almuradev.sgcraft.mod.network;
 
+import com.almuradev.sgcraft.mod.computer.ComputerPayloads;
+import com.almuradev.sgcraft.mod.computer.DialingComputers;
 import com.almuradev.sgcraft.mod.dhd.DhdActions;
 import com.almuradev.sgcraft.mod.dhd.DhdDial;
 import com.almuradev.sgcraft.mod.dhd.DhdPress;
@@ -90,6 +92,9 @@ final class SGPayloads {
         SGNetwork.serverbound(MalpPayloads.ConfigApply.TYPE, MalpPayloads.ConfigApply::new, MalpConfigurator::apply);
         SGNetwork.serverbound(MalpPayloads.ConfigUnpair.TYPE, MalpPayloads.ConfigUnpair::new,
                 MalpConfigurator::unpair);
+        // The dialing computer: its screen opened and closed, its buttons in
+        SGNetwork.clientbound(ComputerPayloads.Screen.TYPE, ComputerPayloads.Screen::new);
+        SGNetwork.serverbound(ComputerPayloads.Action.TYPE, ComputerPayloads.Action::new, DialingComputers::action);
         // The explorer dialer: its list out, its buttons in
         SGNetwork.clientbound(ExplorerPayloads.State.TYPE, ExplorerPayloads.State::new);
         SGNetwork.serverbound(ExplorerPayloads.Action.TYPE, ExplorerPayloads.Action::new, ExplorerDialer::action);

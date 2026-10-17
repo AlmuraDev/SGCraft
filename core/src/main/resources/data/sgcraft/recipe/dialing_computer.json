@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "g": "minecraft:glass_pane",
+    "x": "sgcraft:controller_crystal",
+    "i": "minecraft:iron_ingot",
+    "r": "minecraft:redstone",
+    "c": "minecraft:comparator"
+  },
+  "pattern": [
+    "ggg",
+    "rxr",
+    "ici"
+  ],
+  "result": {
+    "id": "sgcraft:dialing_computer"
+  }
+}

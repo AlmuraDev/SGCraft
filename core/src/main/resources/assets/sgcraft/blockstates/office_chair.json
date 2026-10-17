@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "sgcraft:block/office_chair"
+    },
+    "facing=east": {
+      "model": "sgcraft:block/office_chair",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "sgcraft:block/office_chair",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "sgcraft:block/office_chair",
+      "y": 270
+    }
+  }
+}

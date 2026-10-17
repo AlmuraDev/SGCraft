@@ -186,7 +186,8 @@ public final class SGCommands {
                 .then(SGMalpCommands.battery())
                 .then(SGShieldCommands.shields())
                 .then(SGExplorerCommands.explorer())
-                .then(SGZpmCommands.zpm());
+                .then(SGZpmCommands.zpm())
+                .then(SGComputerCommands.computers());
         final RequiredArgumentBuilder<CommandSourceStack, Coordinates> gate =
                 Commands.argument("pos", BlockPosArgument.blockPos());
         gate.then(Commands.literal("address")

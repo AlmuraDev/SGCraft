@@ -45,6 +45,7 @@ import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.address.SGAddressing;
 import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
+import com.almuradev.sgcraft.mod.computer.ComputerSettings;
 import com.almuradev.sgcraft.mod.energy.DialCosts;
 import com.almuradev.sgcraft.mod.event.SGEventBus;
 import com.almuradev.sgcraft.mod.event.SGEvents;
@@ -304,6 +305,16 @@ public final class SGStargates implements Stargates {
     public boolean setZpm(final ZpmSettings zpm) {
         this.config = this.config.withZpm(zpm);
         return SGConfig.saveZpm(zpm);
+    }
+
+    /**
+     * Uses other dialing computer settings from now on, and writes them to the settings file.
+     *
+     * @return whether the file was written
+     */
+    public boolean setComputers(final ComputerSettings computers) {
+        this.config = this.config.withComputers(computers);
+        return SGConfig.saveComputers(computers);
     }
 
     /**

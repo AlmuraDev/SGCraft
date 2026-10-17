@@ -5,9 +5,14 @@ Dialing locks one chevron for each symbol of an address and opens a wormhole to 
 ## Ways to dial
 
 - A [DHD](dhd.md) next to the gate. Milky Way and Pegasus gates each have their own.
+- A [dialing computer](blocks/dialing-computer.md), from its chair, slowly or quickly. See [The dialing computer](#the-dialing-computer).
 - A [PDD or gate control tablet](tools.md), from an address book.
 - An [Explorer Dialer Device](items/edd.md), to the gates the world built.
 - The command `/sgcraft dial <address>`, at the gate you look at or have selected. See [Commands](commands.md).
+
+## The dialing computer
+
+A [dialing computer](blocks/dialing-computer.md) dials the nearest gate within 32 blocks, as the SGC's does. You sit in an [office chair](blocks/office-chair.md) in front of it to work it. Its screen offers both dial modes for each dial: **Slow dial**, the standard mode, and **Fast dial**, the quick mode, whatever the gate's `chevrons_lock_on_dial` says. Its monitor shows the dialing program to everyone nearby: the ring turning, the chevrons locking red, and each symbol flying to its box.
 
 ## Dial modes
 

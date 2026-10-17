@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.fabric;
 
 import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
 import com.almuradev.sgcraft.mod.client.SGClient;
+import com.almuradev.sgcraft.mod.client.computer.DialingComputerRenderer;
 import com.almuradev.sgcraft.mod.client.dhd.DhdFuelScreen;
 import com.almuradev.sgcraft.mod.client.dhd.DhdItemRenderer;
 import com.almuradev.sgcraft.mod.client.dhd.DhdRenderer;
@@ -78,9 +79,11 @@ public final class SGCraftClientFabric implements ClientModInitializer {
         FeatureRendererRegistry.register(GateFeatureRenderer.TYPE, GateFeatureRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.DHD, DhdRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.MALP_CONSOLE, MalpConsoleRenderer::new);
+        BlockEntityRendererRegistry.register(SGBlockEntityTypes.DIALING_COMPUTER, DialingComputerRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.CITY_SHIELD, CityShieldRenderer::new);
         // The iris's plates are unseen; the iris itself is drawn with its gate
         EntityRendererRegistry.register(SGEntityTypes.IRIS_PLATE, NoopRenderer::new);
+        EntityRendererRegistry.register(SGEntityTypes.SEAT, NoopRenderer::new);
         ModelLayerRegistry.registerModelLayer(MalpModel.LAYER, MalpModel::createLayer);
         ModelLayerRegistry.registerModelLayer(MalpModel.GLOW_LAYER, MalpModel::createGlowLayer);
         EntityRendererRegistry.register(SGEntityTypes.MALP, MalpRenderer::new);

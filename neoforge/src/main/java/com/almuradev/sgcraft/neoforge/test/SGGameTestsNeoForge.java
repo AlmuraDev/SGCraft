@@ -281,6 +281,7 @@ public final class SGGameTestsNeoForge {
         ShieldGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
         OriGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
         ZpmGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
+        ComputerGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
     }
 
     private SGGameTestsNeoForge() {

@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.client;
 
+import com.almuradev.sgcraft.mod.client.computer.DialingComputerScreen;
 import com.almuradev.sgcraft.mod.client.dhd.DhdScreen;
 import com.almuradev.sgcraft.mod.client.gate.GateAddressScreen;
 import com.almuradev.sgcraft.mod.client.gate.GateBaseScreen;
@@ -40,6 +41,7 @@ import com.almuradev.sgcraft.mod.client.tool.GdoScreen;
 import com.almuradev.sgcraft.mod.client.tool.PddScreen;
 import com.almuradev.sgcraft.mod.client.tool.TabletScreen;
 import com.almuradev.sgcraft.mod.client.view.RemoteViewClient;
+import com.almuradev.sgcraft.mod.computer.ComputerPayloads;
 import com.almuradev.sgcraft.mod.dhd.DhdHooks;
 import com.almuradev.sgcraft.mod.gate.GateBaseInfo;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads;
@@ -90,6 +92,7 @@ public final class SGClient {
                 screen.update(state);
             }
         });
+        SGNetwork.onClient(ComputerPayloads.Screen.TYPE, SGClient::dialingComputer);
         SGNetwork.onClient(ShieldPayloads.ConsoleState.TYPE, state -> SGClient.show(ShieldConsoleScreen.class, state,
                 state.open(), ShieldConsoleScreen::new, ShieldConsoleScreen::update));
         SGNetwork.onClient(SettingsPayloads.State.TYPE, state -> SGClient.show(SettingsScreen.class, state,
@@ -109,6 +112,17 @@ public final class SGClient {
         } else if (Minecraft.getInstance().gui.screen() instanceof GateBaseScreen screen
                 && screen.getMenu().containerId == info.menu()) {
             screen.update(info.gate());
+        }
+    }
+
+    // A dialing computer's screen opens as the player sits down at it, and closes as they get up
+    private static void dialingComputer(final ComputerPayloads.Screen screen) {
+        final Minecraft minecraft = Minecraft.getInstance();
+        if (screen.open()) {
+            minecraft.gui.setScreen(new DialingComputerScreen(screen));
+        } else if (minecraft.gui.screen() instanceof final DialingComputerScreen open
+                && open.computer().equals(screen.computer())) {
+            minecraft.gui.setScreen(null);
         }
     }
 

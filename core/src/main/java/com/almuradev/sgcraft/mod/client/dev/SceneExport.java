@@ -35,7 +35,9 @@ import com.almuradev.sgcraft.api.gate.GateState;
 import com.almuradev.sgcraft.api.gate.IrisTypes;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGCraft;
+import com.almuradev.sgcraft.mod.block.SGBlocks;
 import com.almuradev.sgcraft.mod.block.entity.PowerUnitBlockEntity;
+import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.mod.gate.OriGate;
 import com.almuradev.sgcraft.mod.shield.CityShieldBlockEntity;
 import com.almuradev.sgcraft.mod.zpm.ZpmDeviceBlockEntity;
@@ -44,11 +46,16 @@ import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
@@ -70,7 +77,9 @@ import java.util.function.Predicate;
  * and {@code <name>-open-night.png}. An Ori supergate is pictured part way through its dial too, as
  * {@code ori-linking-*.png}; a Milky Way gate with its shield raised as {@code shield-*.png}; and a raised city shield
  * as {@code city-shield-*.png}; and a ZPM console, interface cart and hub with ZPMs in them as
- * {@code zpm-devices-*.png}. When the last is saved it closes the game.
+ * {@code zpm-devices-*.png}; and a dialing computer with its chair before a gate, dialing slowly, from behind the chair
+ * as {@code dialing-computer-*.png}, its screen close up as {@code dialing-computer-screen-*.png}, and once the gate
+ * is open as {@code dialing-computer-open-*.png}. When the last is saved it closes the game.
  */
 public final class SceneExport {
 
@@ -125,6 +134,7 @@ public final class SceneExport {
         this.scene(5, "shield", "sgcraft:milky_way", 2, "sgcraft:dhd", true);
         this.city(6);
         this.zpmDevices(7);
+        this.dialingComputer(8);
     }
 
     /** Starts taking the pictures, saved in {@code out}. Call this on the render thread, in the export's world. */
@@ -264,6 +274,91 @@ public final class SceneExport {
         this.command(String.format(Locale.ROOT, "tp @s %d.5 %d %d.5 0 25", x, SceneExport.GROUND + 1, z - 4));
         this.waitTicks(SceneExport.SETTLE_TICKS);
         this.shots("zpm-devices");
+    }
+
+    // Builds a gate with a dialing computer north of it, facing away from it, and its chair, and pictures the
+    // computer dialing a gate behind the camera slowly, from behind the chair, its screen close up, and the gate open
+    private void dialingComputer(final int index) {
+        final int x = SceneExport.ORIGIN_X + index * SceneExport.SPACING;
+        final int z = SceneExport.ORIGIN_Z;
+        final int standZ = z - 13;
+        final int farZ = standZ - SceneExport.BEHIND;
+        this.command(String.format(Locale.ROOT, "tp @s %d.5 %d %d.5 0 0", x, SceneExport.GROUND, standZ));
+        this.waitTicks(SceneExport.LOAD_TICKS);
+        this.command(String.format(Locale.ROOT, "fill %d %d %d %d %d %d air", x - SceneExport.CLEAR,
+                SceneExport.GROUND, farZ - SceneExport.CLEAR, x + SceneExport.CLEAR, SceneExport.GROUND
+                + SceneExport.CLEAR, z + SceneExport.CLEAR));
+        this.command(String.format(Locale.ROOT, "fill %d %d %d %d %d %d grass_block", x - SceneExport.CLEAR,
+                SceneExport.GROUND - 1, farZ - SceneExport.CLEAR, x + SceneExport.CLEAR, SceneExport.GROUND - 1,
+                z + SceneExport.CLEAR));
+        this.command(String.format(Locale.ROOT, "fill %d %d %d %d %d %d smooth_stone", x - 4,
+                SceneExport.GROUND - 1, z - 12, x + 4, SceneExport.GROUND - 1, z - 5));
+        this.command("kill @e[type=!player]");
+        this.command(String.format(Locale.ROOT, "execute positioned %d %d %d rotated 0 0 run sgcraft place %s 9 2",
+                x, SceneExport.GROUND, z, "sgcraft:milky_way"));
+        final BlockPos computer = new BlockPos(x, SceneExport.GROUND, z - 7);
+        this.steps.add(Step.run(server -> SceneExport.placeComputer(server.overworld(), computer)));
+        this.command(String.format(Locale.ROOT, "setblock %d %d %d sgcraft:office_chair[facing=south]", x,
+                SceneExport.GROUND, z - 9));
+        this.command(String.format(Locale.ROOT, "execute positioned %d %d %d rotated 180 0 run sgcraft place %s 9",
+                x, SceneExport.GROUND, farZ, "sgcraft:milky_way"));
+        this.waitTicks(SceneExport.SETTLE_TICKS);
+        final BlockPos near = new BlockPos(x, SceneExport.GROUND, z + 3);
+        final BlockPos far = new BlockPos(x, SceneExport.GROUND, farZ - 3);
+        this.steps.add(Step.run(server -> SceneExport.dialSlowly(server, near, far)));
+        // From behind the chair, a little to the side and above, on a barrier, the computer before the gate
+        this.command(String.format(Locale.ROOT, "setblock %d %d %d barrier", x - 2, SceneExport.GROUND, z - 13));
+        this.command(String.format(Locale.ROOT, "tp @s %d.5 %d %d.5 -12 16", x - 2, SceneExport.GROUND + 1,
+                z - 13));
+        this.steps.add(Step.until(server -> SceneExport.engaged(server, near) >= 3));
+        this.shots("dialing-computer");
+        // The screen, standing beside the chair, looking past its back
+        this.command(String.format(Locale.ROOT, "tp @s %d.0 %d %d.0 24 4", x + 2, SceneExport.GROUND, z - 10));
+        this.steps.add(Step.until(server -> SceneExport.engaged(server, near) >= 5));
+        this.shots("dialing-computer-screen");
+        this.command(String.format(Locale.ROOT, "tp @s %d.5 %d %d.5 -12 16", x - 2, SceneExport.GROUND + 1,
+                z - 13));
+        this.steps.add(Step.until(server -> SceneExport.gate(server, near).map(Stargate::state)
+                .filter(state -> state == GateState.CONNECTED).isPresent()));
+        this.waitTicks(SceneExport.SETTLE_TICKS);
+        this.shots("dialing-computer-open");
+    }
+
+    // Places a dialing computer as its item does, its screen facing north
+    private static void placeComputer(final ServerLevel level, final BlockPos at) {
+        final BlockState state = SGBlocks.DIALING_COMPUTER.defaultBlockState()
+                .setValue(HorizontalDirectionalBlock.FACING, Direction.NORTH);
+        level.setBlock(at, state, Block.UPDATE_ALL);
+        SGBlocks.DIALING_COMPUTER.setPlacedBy(level, at, state, null, ItemStack.EMPTY);
+    }
+
+    // Lets both gates dial and open for free, then dials slowly, the ring turning to each symbol, a little faster
+    // than a gate's own speed so the pictures don't take too long
+    private static void dialSlowly(final MinecraftServer server, final BlockPos near, final BlockPos far) {
+        final Cause cause = Cause.of(server);
+        final Optional<Stargate> from = SceneExport.gate(server, near);
+        final Optional<Stargate> to = SceneExport.gate(server, far);
+        if (from.isEmpty() || to.isEmpty()) {
+            SGCraft.LOG.error("The computer scene's gates weren't built, at {} and {}", near, far);
+            return;
+        }
+        for (final Stargate gate : new Stargate[] {from.get(), to.get()}) {
+            gate.set(GateProperties.REQUIRES_POWER, false, cause);
+            gate.set(GateProperties.OPENING_DAMAGE, false, cause);
+            gate.set(GateProperties.OPEN_TICKS, 0, cause);
+        }
+        from.get().set(GateProperties.RING_SPEED, 6.0, cause);
+        SGCraftApi.get().addressing().addressOf(to.get().position(), Level.OVERWORLD).ifPresent(address ->
+                from.get().dial(address, DialMode.STANDARD, cause));
+    }
+
+    // How many chevrons the gate nearest a place has locked
+    private static int engaged(final MinecraftServer server, final BlockPos near) {
+        return SceneExport.gate(server, near)
+                .map(gate -> server.overworld().getBlockEntity(gate.position().pos()))
+                .filter(StargateBaseBlockEntity.class::isInstance)
+                .map(base -> ((StargateBaseBlockEntity) base).dialView().engaged())
+                .orElse(Integer.MAX_VALUE);
     }
 
     // Fits a shield to the gate built nearest a place, and raises it, needing no energy

@@ -49,6 +49,7 @@ public final class SGBlockEntityTypes {
     public static BlockEntityType<BatteryChargerBlockEntity> BATTERY_CHARGER;
     public static BlockEntityType<EnergyConverterBlockEntity> ENERGY_CONVERTER;
     public static BlockEntityType<MalpConsoleBlockEntity> MALP_CONSOLE;
+    public static BlockEntityType<DialingComputerBlockEntity> DIALING_COMPUTER;
     public static BlockEntityType<CityShieldBlockEntity> CITY_SHIELD;
     public static BlockEntityType<ZpmDeviceBlockEntity> ZPM_DEVICE;
 
@@ -82,6 +83,10 @@ public final class SGBlockEntityTypes {
                 Set.of(SGBlocks.MALP_CONSOLE));
         sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("malp_console")),
                 SGBlockEntityTypes.MALP_CONSOLE);
+        SGBlockEntityTypes.DIALING_COMPUTER = new BlockEntityType<>(DialingComputerBlockEntity::new,
+                Set.of(SGBlocks.DIALING_COMPUTER));
+        sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("dialing_computer")),
+                SGBlockEntityTypes.DIALING_COMPUTER);
         SGBlockEntityTypes.CITY_SHIELD = new BlockEntityType<>(CityShieldBlockEntity::new,
                 Set.of(SGBlocks.CITY_SHIELD_GENERATOR));
         sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("city_shield_generator")),

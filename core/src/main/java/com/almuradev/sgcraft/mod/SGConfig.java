@@ -28,6 +28,7 @@ package com.almuradev.sgcraft.mod;
 import com.almuradev.sgcraft.api.gate.GateProperties;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.address.AddressSettings;
+import com.almuradev.sgcraft.mod.computer.ComputerSettings;
 import com.almuradev.sgcraft.mod.energy.DialCosts;
 import com.almuradev.sgcraft.mod.malp.MalpSettings;
 import com.almuradev.sgcraft.mod.shield.ShieldSettings;
@@ -63,8 +64,8 @@ import java.util.function.Consumer;
  *
  * <p>The file keeps its settings in sections: {@code energy} (naquadah, power units, the energy bridges' rates, dial
  * costs and their {@code multipliers}), {@code addresses}, {@code gates}, {@code tools}, {@code worldgen},
- * {@code remote_view}, {@code malp}, {@code shields} and {@code zpm}. The records here keep the shape the rest of
- * the mod reads them in.</p>
+ * {@code remote_view}, {@code malp}, {@code shields}, {@code zpm} and {@code computers}. The records here keep the
+ * shape the rest of the mod reads them in.</p>
  *
  * @param energyPerNaquadah how much energy one naquadah gives
  * @param dialCosts what a wormhole costs the gate that dials it, before distance: as each chevron locks, as it opens,
@@ -135,8 +136,11 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
             ShieldSettings.CODEC.optionalFieldOf("shields", SGConfig.DEFAULTS.options.shields())
                     .forGetter(config -> config.options.shields()),
             ZpmSettings.CODEC.optionalFieldOf("zpm", SGConfig.DEFAULTS.options.zpm())
-                    .forGetter(config -> config.options.zpm())
-    ).apply(instance, (energy, addresses, gates, tools, worldgen, remoteView, malp, shields, zpm) -> new SGConfig(
+                    .forGetter(config -> config.options.zpm()),
+            ComputerSettings.CODEC.optionalFieldOf("computers", SGConfig.DEFAULTS.options.computers())
+                    .forGetter(config -> config.options.computers())
+    ).apply(instance, (energy, addresses, gates, tools, worldgen, remoteView, malp, shields, zpm, computers) ->
+            new SGConfig(
             energy.energyPerNaquadah(), energy.dialCosts(), energy.multipliers().distanceFactor(),
             energy.multipliers().interWorld(), energy.freeInCreative(), energy.rates().fePerGeIn(),
             energy.rates().fePerGeOut(),
@@ -147,7 +151,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
             new Options(gates.kawooshBreaksUnbreakable(), gates.chunkLoadingRange(), gates.logEvents(),
                     worldgen.tokraWorlds(), gates.defaults(), gates.ownersBreakGates(),
                     gates.generatedGatesBreakable(), shields, zpm, energy.multipliers().otherGroup(),
-                    gates.wormholesJump()))));
+                    gates.wormholesJump(), computers))));
 
     // The file's energy section: what naquadah and power units hold, the energy bridges' rates, and what dials cost
     private record EnergySection(double energyPerNaquadah, long powerUnitCapacity, BridgeRates rates,
@@ -339,15 +343,16 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
      *     another group of worlds, on top of the eighth's
      * @param wormholesJump whether an open wormhole jumps to another gate in the same address cell when the gate it
      *     reaches is broken, as on the show; on unless set
+     * @param computers the settings for dialing computers, kept under {@code computers}
      */
     public record Options(boolean kawooshBreaksUnbreakable, int chunkLoadingRange, boolean logStargateEvents,
             Map<Identifier, Boolean> tokraWorlds, Map<Identifier, JsonElement> gateDefaults, boolean ownersBreakGates,
             boolean generatedGatesBreakable, ShieldSettings shields, ZpmSettings zpm,
-            double otherGroupMultiplier, boolean wormholesJump) {
+            double otherGroupMultiplier, boolean wormholesJump, ComputerSettings computers) {
 
         public static final Options DEFAULTS = new Options(false, 1, false,
                 Map.of(Level.OVERWORLD.identifier(), true), Map.of(), true, false, ShieldSettings.DEFAULTS,
-                ZpmSettings.DEFAULTS, 10.0, true);
+                ZpmSettings.DEFAULTS, 10.0, true, ComputerSettings.DEFAULTS);
 
         public Options {
             gateDefaults = Map.copyOf(gateDefaults);
@@ -356,56 +361,62 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         Options withKawooshBreaksUnbreakable(final boolean breaks) {
             return new Options(breaks, this.chunkLoadingRange, this.logStargateEvents, this.tokraWorlds,
                     this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers);
         }
 
         Options withChunkLoadingRange(final int range) {
             return new Options(this.kawooshBreaksUnbreakable, range, this.logStargateEvents, this.tokraWorlds,
                     this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers);
         }
 
         Options withLogStargateEvents(final boolean log) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, log, this.tokraWorlds,
                     this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers);
         }
 
         Options withGateDefaults(final Map<Identifier, JsonElement> defaults) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, defaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers);
         }
 
         Options withBreaking(final boolean owners, final boolean generated) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, owners, generated, this.shields, this.zpm,
-                    this.otherGroupMultiplier, this.wormholesJump);
+                    this.otherGroupMultiplier, this.wormholesJump, this.computers);
         }
 
         Options withZpm(final ZpmSettings zpm) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
                     this.shields, zpm, this.otherGroupMultiplier,
-                    this.wormholesJump);
+                    this.wormholesJump, this.computers);
         }
 
         Options withOtherGroupMultiplier(final double multiplier) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
-                    this.shields, this.zpm, multiplier, this.wormholesJump);
+                    this.shields, this.zpm, multiplier, this.wormholesJump, this.computers);
         }
 
         Options withWormholesJump(final boolean jump) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
-                    this.shields, this.zpm, this.otherGroupMultiplier, jump);
+                    this.shields, this.zpm, this.otherGroupMultiplier, jump, this.computers);
+        }
+
+        Options withComputers(final ComputerSettings computers) {
+            return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
+                    this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
+                    this.shields, this.zpm, this.otherGroupMultiplier, this.wormholesJump, computers);
         }
 
         Options withShields(final ShieldSettings shields) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers);
         }
     }
 
@@ -582,6 +593,20 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
     /** @return these settings with other shield settings */
     public SGConfig withShields(final ShieldSettings shields) {
         return this.withOptions(this.options.withShields(shields));
+    }
+
+    /** @return these settings with other dialing computer settings */
+    public SGConfig withComputers(final ComputerSettings computers) {
+        return this.withOptions(this.options.withComputers(computers));
+    }
+
+    /**
+     * Writes the dialing computer settings to the settings file, leaving the rest of the file as it is.
+     *
+     * @return whether the file was written
+     */
+    public static boolean saveComputers(final ComputerSettings computers) {
+        return SGConfig.save(ComputerSettings.CODEC, computers, "computers");
     }
 
     /** @return these settings with other ZPM settings */

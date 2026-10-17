@@ -93,8 +93,8 @@ public final class DhdActions {
         return gate;
     }
 
-    // Tells the player why a dial failed, over their hotbar
-    private static void report(final ServerPlayer player, final CompletionStage<DialResult> result) {
+    /** Tells the player why a dial failed, over their hotbar, once it has. */
+    public static void report(final ServerPlayer player, final CompletionStage<DialResult> result) {
         result.thenAccept(outcome -> {
             if (outcome != DialResult.CONNECTED) {
                 player.sendOverlayMessage(Component.translatableWithFallback(
