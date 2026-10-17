@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "w": "minecraft:black_wool",
+    "i": "minecraft:iron_ingot"
+  },
+  "pattern": [
+    "w  ",
+    "www",
+    "i i"
+  ],
+  "result": {
+    "id": "sgcraft:office_chair"
+  }
+}

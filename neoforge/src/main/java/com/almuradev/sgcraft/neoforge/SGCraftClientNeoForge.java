@@ -28,6 +28,7 @@ package com.almuradev.sgcraft.neoforge;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
 import com.almuradev.sgcraft.mod.client.SGClient;
+import com.almuradev.sgcraft.mod.client.computer.DialingComputerRenderer;
 import com.almuradev.sgcraft.mod.client.dhd.DhdFuelScreen;
 import com.almuradev.sgcraft.mod.client.dhd.DhdItemRenderer;
 import com.almuradev.sgcraft.mod.client.dhd.DhdRenderer;
@@ -80,9 +81,11 @@ public final class SGCraftClientNeoForge {
         event.registerBlockEntityRenderer(SGBlockEntityTypes.STARGATE_BASE, StargateBaseRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.DHD, DhdRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.MALP_CONSOLE, MalpConsoleRenderer::new);
+        event.registerBlockEntityRenderer(SGBlockEntityTypes.DIALING_COMPUTER, DialingComputerRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.CITY_SHIELD, CityShieldRenderer::new);
         // The iris's plates are unseen; the iris itself is drawn with its gate
         event.registerEntityRenderer(SGEntityTypes.IRIS_PLATE, NoopRenderer::new);
+        event.registerEntityRenderer(SGEntityTypes.SEAT, NoopRenderer::new);
         event.registerEntityRenderer(SGEntityTypes.MALP, MalpRenderer::new);
     }
 

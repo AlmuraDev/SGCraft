@@ -190,6 +190,18 @@ Every command here needs level 2.
 
 `energy` without a ZPM in your main hand says "Hold a ZPM in your main hand". See [Power](power.md#zpms) and [Settings](settings.md#zpms).
 
+## Dialing computers
+
+Every command here needs level 2.
+
+| Command | What it does |
+| --- | --- |
+| `/sgcraft computers` | The server's dialing computer settings |
+| `/sgcraft computers link_range <blocks>` | Set how far from a computer, 1 to 64 blocks, the gate it dials may be (saved) |
+| `/sgcraft computers chair_reach <blocks>` | Set how far in front of a computer, 1 to 4 blocks, its chair may stand (saved) |
+
+See [Dialing Computer](blocks/dialing-computer.md) and [Settings](settings.md#dialing-computers).
+
 ## MALP and views
 
 Every command here needs level 2. Name a MALP by its name or the start of its UUID, as `malp list` shows it. Put a name with spaces in quotes. A command about a MALP whose chunk isn't loaded loads it and asks you to run it again.
@@ -223,7 +235,7 @@ See [MALP](malp.md).
 | Command | Level | What it does |
 | --- | --- | --- |
 | `/sgcraft settings` | Op | `gates.kawoosh_breaks_unbreakable`, `gates.owners_break_gates`, `gates.generated_gates_breakable` and `gates.wormholes_jump` |
-| `/sgcraft settings <name> <bool>` | Op | Set one of those three |
+| `/sgcraft settings <name> <bool>` | Op | Set one of those four |
 | `/sgcraft gate_defaults` | Op | The values gates have when they have none of their own |
 | `/sgcraft gate_defaults <property> <json>` | Op | Set one, such as `sgcraft:open_ticks 12000` |
 | `/sgcraft gate_defaults <property> reset` | Op | Clear one, so gates have the property's default again |

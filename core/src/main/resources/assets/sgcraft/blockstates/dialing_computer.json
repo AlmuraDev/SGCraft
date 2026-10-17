@@ -1,0 +1,94 @@
+{
+  "variants": {
+    "facing=north,part=left_lower": {
+      "model": "sgcraft:block/dialing_computer_left_lower"
+    },
+    "facing=east,part=left_lower": {
+      "model": "sgcraft:block/dialing_computer_left_lower",
+      "y": 90
+    },
+    "facing=south,part=left_lower": {
+      "model": "sgcraft:block/dialing_computer_left_lower",
+      "y": 180
+    },
+    "facing=west,part=left_lower": {
+      "model": "sgcraft:block/dialing_computer_left_lower",
+      "y": 270
+    },
+    "facing=north,part=left_upper": {
+      "model": "sgcraft:block/dialing_computer_left_upper"
+    },
+    "facing=east,part=left_upper": {
+      "model": "sgcraft:block/dialing_computer_left_upper",
+      "y": 90
+    },
+    "facing=south,part=left_upper": {
+      "model": "sgcraft:block/dialing_computer_left_upper",
+      "y": 180
+    },
+    "facing=west,part=left_upper": {
+      "model": "sgcraft:block/dialing_computer_left_upper",
+      "y": 270
+    },
+    "facing=north,part=middle_lower": {
+      "model": "sgcraft:block/dialing_computer_middle_lower"
+    },
+    "facing=east,part=middle_lower": {
+      "model": "sgcraft:block/dialing_computer_middle_lower",
+      "y": 90
+    },
+    "facing=south,part=middle_lower": {
+      "model": "sgcraft:block/dialing_computer_middle_lower",
+      "y": 180
+    },
+    "facing=west,part=middle_lower": {
+      "model": "sgcraft:block/dialing_computer_middle_lower",
+      "y": 270
+    },
+    "facing=north,part=middle_upper": {
+      "model": "sgcraft:block/dialing_computer_middle_upper"
+    },
+    "facing=east,part=middle_upper": {
+      "model": "sgcraft:block/dialing_computer_middle_upper",
+      "y": 90
+    },
+    "facing=south,part=middle_upper": {
+      "model": "sgcraft:block/dialing_computer_middle_upper",
+      "y": 180
+    },
+    "facing=west,part=middle_upper": {
+      "model": "sgcraft:block/dialing_computer_middle_upper",
+      "y": 270
+    },
+    "facing=north,part=right_lower": {
+      "model": "sgcraft:block/dialing_computer_right_lower"
+    },
+    "facing=east,part=right_lower": {
+      "model": "sgcraft:block/dialing_computer_right_lower",
+      "y": 90
+    },
+    "facing=south,part=right_lower": {
+      "model": "sgcraft:block/dialing_computer_right_lower",
+      "y": 180
+    },
+    "facing=west,part=right_lower": {
+      "model": "sgcraft:block/dialing_computer_right_lower",
+      "y": 270
+    },
+    "facing=north,part=right_upper": {
+      "model": "sgcraft:block/dialing_computer_right_upper"
+    },
+    "facing=east,part=right_upper": {
+      "model": "sgcraft:block/dialing_computer_right_upper",
+      "y": 90
+    },
+    "facing=south,part=right_upper": {
+      "model": "sgcraft:block/dialing_computer_right_upper",
+      "y": 180
+    },
+    "facing=west,part=right_upper": {
+      "model": "sgcraft:block/dialing_computer_right_upper",
+      "y": 270
+    }
+  }
+}

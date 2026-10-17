@@ -1,0 +1,25 @@
+{
+  "type": "minecraft:block",
+  "pools": [
+    {
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      },
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "condition": {
+            "type": "minecraft:match_block",
+            "blocks": "sgcraft:dialing_computer",
+            "state": {
+              "part": "middle_lower"
+            }
+          },
+          "name": "sgcraft:dialing_computer"
+        }
+      ],
+      "rolls": 1
+    }
+  ],
+  "random_sequence": "sgcraft:blocks/dialing_computer"
+}

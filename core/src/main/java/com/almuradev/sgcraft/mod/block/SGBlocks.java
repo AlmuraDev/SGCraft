@@ -69,6 +69,8 @@ public final class SGBlocks {
     public static Block NAQUADAH_BLOCK;
     public static PowerUnitBlock POWER_UNIT;
     public static MalpConsoleBlock MALP_CONSOLE;
+    public static DialingComputerBlock DIALING_COMPUTER;
+    public static OfficeChairBlock OFFICE_CHAIR;
     public static BatteryChargerBlock BATTERY_CHARGER;
     public static EnergyConverterBlock ENERGY_CONVERTER;
     public static ShieldConsoleBlock SHIELD_CONSOLE;
@@ -133,6 +135,12 @@ public final class SGBlocks {
         SGBlocks.MALP_CONSOLE = SGBlocks.register(sink, "malp_console",
                 properties -> new MalpConsoleBlock(properties.noOcclusion()));
         SGBlocks.BATTERY_CHARGER = SGBlocks.register(sink, "battery_charger", BatteryChargerBlock::new);
+        // The SGC's dialing computer, six parts that don't fill their blocks, and the chair its operator sits in
+        SGBlocks.DIALING_COMPUTER = SGBlocks.register(sink, "dialing_computer",
+                properties -> new DialingComputerBlock(properties.noOcclusion().pushReaction(PushReaction.IMMOVEABLE)));
+        SGBlocks.OFFICE_CHAIR = SGBlocks.register(sink, "office_chair",
+                properties -> new OfficeChairBlock(properties.noOcclusion().strength(0.8F, 1.0F)
+                        .sound(SoundType.WOOL).mapColor(MapColor.COLOR_BLACK)));
         // Turns an SGCraft store's gate energy into FE for other mods
         SGBlocks.ENERGY_CONVERTER = SGBlocks.register(sink, "energy_converter", EnergyConverterBlock::new);
         // The original's shield console, which works the nearest gate's shield, as hard as its machines

@@ -88,6 +88,8 @@ public final class SGItems {
     public static Item CONFIGURATOR;
     public static Item MALP;
     public static BlockItem MALP_CONSOLE;
+    public static BlockItem DIALING_COMPUTER;
+    public static BlockItem OFFICE_CHAIR;
     public static Item MALP_TABLET;
     public static Item BATTERY;
     public static BlockItem BATTERY_CHARGER;
@@ -159,6 +161,8 @@ public final class SGItems {
         // The MALP, its console and tablet, and its batteries and their charger
         SGItems.MALP = SGItems.register(sink, "malp", MalpItem::new, properties -> properties.stacksTo(1));
         SGItems.MALP_CONSOLE = SGItems.registerBlock(sink, SGBlocks.MALP_CONSOLE);
+        SGItems.DIALING_COMPUTER = SGItems.registerBlock(sink, SGBlocks.DIALING_COMPUTER);
+        SGItems.OFFICE_CHAIR = SGItems.registerBlock(sink, SGBlocks.OFFICE_CHAIR);
         SGItems.MALP_TABLET = SGItems.register(sink, "malp_tablet", MalpTabletItem::new,
                 properties -> properties.stacksTo(1));
         SGItems.BATTERY = SGItems.register(sink, "battery", BatteryItem::new, properties -> properties.stacksTo(1));

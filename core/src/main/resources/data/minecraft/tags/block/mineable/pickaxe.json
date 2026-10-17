@@ -21,6 +21,8 @@
     "sgcraft:city_shield_generator",
     "sgcraft:zpm_console",
     "sgcraft:zpm_interface_cart",
-    "sgcraft:zpm_hub"
+    "sgcraft:zpm_hub",
+    "sgcraft:dialing_computer",
+    "sgcraft:office_chair"
   ]
 }

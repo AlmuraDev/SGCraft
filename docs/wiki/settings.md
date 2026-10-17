@@ -42,7 +42,7 @@ A short `sgcraft-server.json` that changes a few settings and leaves the rest at
 
 ## Server settings
 
-`config/sgcraft-server.json` keeps its settings in nine sections: `energy`, `addresses`, `gates`, `tools`, `worldgen`, `remote_view`, `malp`, `shields` and `zpm`. A section left out takes all its defaults. In a section, a setting left out takes its default. This page names a setting by its path, such as `energy.multipliers.inter_world`. [The whole file](#the-whole-file) shows every setting at its default.
+`config/sgcraft-server.json` keeps its settings in ten sections: `energy`, `addresses`, `gates`, `tools`, `worldgen`, `remote_view`, `malp`, `shields`, `zpm` and `computers`. A section left out takes all its defaults. In a section, a setting left out takes its default. This page names a setting by its path, such as `energy.multipliers.inter_world`. [The whole file](#the-whole-file) shows every setting at its default.
 
 ### Energy
 
@@ -282,6 +282,15 @@ A ZPM holds GE, which gates and city shields draw on as on any other source. The
 | `chest_chance` | `15` | The chance, in percent, that a generated gate has a chest beside it holding a ZPM (0 to 100) |
 | `tainted_chance` | `10` | The chance, in percent, that a ZPM in such a chest is tainted (0 to 100) |
 
+### Dialing computers
+
+`computers` sets the [dialing computer](blocks/dialing-computer.md).
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `link_range` | `32` | How far from a dialing computer, in blocks, the base of the gate it dials may be (1 to 64) |
+| `chair_reach` | `2` | How far in front of a dialing computer, in blocks, its office chair may stand (1 to 4) |
+
 ### The whole file
 
 Every server setting at its default. You never need to write all of this. Settings at their defaults can be left out.
@@ -424,6 +433,10 @@ Every server setting at its default. You never need to write all of this. Settin
     "tainted_explosion": 250,
     "chest_chance": 15,
     "tainted_chance": 10
+  },
+  "computers": {
+    "link_range": 32,
+    "chair_reach": 2
   }
 }
 ```
@@ -548,6 +561,7 @@ These commands change server settings at once and write them to `sgcraft-server.
 | `malp.console_damage_interrupts`, `malp.console_spectators`, `malp.spectator_range`, `malp.tablet_drain` | `/sgcraft malp ...` |
 | `shields` | `/sgcraft shields` |
 | `zpm` | `/sgcraft zpm` |
+| `computers` | `/sgcraft computers` |
 | Default addresses | `/sgcraft default_addresses` |
 
 Every other server setting needs an edit to the file and a restart. `/sgcraft worldgen always` gives every listed structure a gate until the server stops, but writes nothing to the file.
