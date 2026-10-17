@@ -25,6 +25,7 @@ body {
   margin: 0;
   background: var(--bg);
   background-image: radial-gradient(circle at 85% -10%, rgba(21, 101, 168, 0.18), transparent 45%);
+  background-attachment: fixed;
   color: var(--text);
   font: 17px/1.65 Barlow, system-ui, sans-serif;
 }
@@ -217,9 +218,9 @@ pre.code code { background: none; border: 0; padding: 0; color: #cfe3ff; }
 .quote { margin: 18px 0; padding: 4px 16px; border-left: 3px solid var(--steel-light); color: var(--muted); }
 
 .recipe {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: start;
   gap: 18px;
   margin: 14px 0;
   padding: 16px;
@@ -244,8 +245,7 @@ pre.code code { background: none; border: 0; padding: 0; color: #cfe3ff; }
 .slot.empty { color: transparent; }
 .arrow { font-size: 26px; color: var(--steel-light); }
 .result {
-  min-width: 120px;
-  max-width: 200px;
+  width: 200px;
   padding: 10px 12px;
   border: 2px solid var(--chevron);
   border-radius: 4px;
@@ -253,8 +253,8 @@ pre.code code { background: none; border: 0; padding: 0; color: #cfe3ff; }
   font-weight: 600;
   text-align: center;
 }
-.recipe-kind { font-size: 13px; color: var(--muted); align-self: center; }
-.legend { list-style: none; margin: 0; padding: 0; font-size: 15px; }
+.recipe-kind { order: 1; grid-column: 1 / -1; contain: inline-size; font-size: 13px; color: var(--muted); }
+.legend { width: 280px; list-style: none; margin: 0; padding: 0; font-size: 15px; }
 .legend li { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
 .slot-key {
   display: inline-flex;
@@ -416,3 +416,7 @@ a.item { color: var(--horizon); }
 .gallery img { display: block; width: 100%; height: auto; }
 .gallery figcaption { padding: 6px 10px; font-size: 14px; color: var(--muted); }
 .card-icon .card-image { max-width: 48px; max-height: 48px; image-rendering: pixelated; }
+
+@media (max-width: 760px) {
+  .recipe { grid-template-columns: auto; }
+}

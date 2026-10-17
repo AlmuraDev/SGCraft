@@ -5,6 +5,7 @@ The MALP (Mobile Analytic Laboratory Probe) is a six-wheeled probe you drive thr
 ```infobox
 MALP
 ID: sgcraft:malp
+Image: scenes/malp.png
 Category: MALP
 Type: Entity and item
 Size: 1.0 wide, 0.9 tall
