@@ -26,6 +26,8 @@
 package com.almuradev.sgcraft.mod.client.dev;
 
 import com.almuradev.sgcraft.mod.SGCraft;
+import com.almuradev.sgcraft.mod.entity.MalpEntity;
+import com.almuradev.sgcraft.mod.entity.SGEntityTypes;
 import com.almuradev.sgcraft.mod.villager.SGVillagers;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -34,15 +36,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.InventoryScreen;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
+import net.minecraft.client.renderer.entity.state.LivingEntityRenderState;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.world.Difficulty;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityTypes;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -52,6 +55,8 @@ import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.WorldDataConfiguration;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
@@ -70,7 +75,7 @@ import java.util.stream.Stream;
  * white. From the two pictures it works out each pixel's color and how see-through it is, so glass and glints come
  * out right. It saves one image per item, as
  * {@code <namespace>/<path>.png}, and every item's name in {@code names.json}. Then it draws the entities the wiki
- * shows, such as a Tok'ra, the same way, saves them in {@code scenes}, and hands over to the {@link SceneExport}, which
+ * shows, a Tok'ra and a MALP, the same way, saves them in {@code scenes}, and hands over to the {@link SceneExport}, which
  * pictures gates in the world and closes the game.
  *
  * <p>Items in an inventory are drawn at 16 pixels for each step of the GUI scale, so the client must run at GUI scale
@@ -91,6 +96,12 @@ public final class IconExportScreen extends Screen {
     private static final int ENTITY_WIDTH = 96;
     private static final int ENTITY_HEIGHT = 128;
     private static final int ENTITY_SCALE = 54;
+    // How far an entity is turned from facing the viewer, and how far the view looks down on it, in degrees
+    private static final float ENTITY_TURN = 13.0F;
+    private static final float ENTITY_TILT = 9.0F;
+    // A MALP is low and long, so it is turned further, to show its side and wheels, and drawn smaller to fit
+    private static final float MALP_TURN = 35.0F;
+    private static final int MALP_SCALE = 38;
     // The world the export runs in, kept in the export's own game folder
     private static final String WORLD = "icon-export";
 
@@ -168,7 +179,13 @@ public final class IconExportScreen extends Screen {
                     SGVillagers.TOKRA));
             // Drawing an entity reads its ID, which one never added to the world doesn't have
             tokra.setId(-1);
-            this.shots.add(new Shot("tokra", tokra));
+            this.shots.add(new Shot("tokra", tokra, IconExportScreen.ENTITY_SCALE));
+            final MalpEntity malp = new MalpEntity(SGEntityTypes.MALP, this.minecraft.level);
+            // Its renderer turns it half round, so this faces its front, headlights and claw, to the viewer
+            malp.setYRot(180.0F - IconExportScreen.MALP_TURN);
+            malp.yRotO = malp.getYRot();
+            malp.setId(-2);
+            this.shots.add(new Shot("malp", malp, IconExportScreen.MALP_SCALE));
         }
     }
 
@@ -204,12 +221,7 @@ public final class IconExportScreen extends Screen {
         graphics.fill(0, 0, this.width, this.height, this.white ? 0xFFFFFFFF : 0xFF000000);
         final Shot shot = this.shot();
         if (shot != null) {
-            // Turned a little to the viewer's left, looking just above them
-            final int middleX = IconExportScreen.ENTITY_WIDTH / 2;
-            final int middleY = IconExportScreen.ENTITY_HEIGHT / 2;
-            InventoryScreen.extractEntityInInventoryFollowsMouse(graphics, 0, 0, IconExportScreen.ENTITY_WIDTH,
-                    IconExportScreen.ENTITY_HEIGHT, IconExportScreen.ENTITY_SCALE, 0.0625F, middleX - 30,
-                    middleY - 20, shot.entity());
+            IconExportScreen.extractEntity(graphics, shot);
             return;
         }
         final int first = this.page * this.perPage;
@@ -218,6 +230,30 @@ public final class IconExportScreen extends Screen {
             graphics.fakeItem(new ItemStack(this.items.get(i)), cell % this.columns * IconExportScreen.CELL + 1,
                     cell / this.columns * IconExportScreen.CELL + 1);
         }
+    }
+
+    // Draws an entity in the export's box as an inventory draws a player, seen a little from above. A living entity
+    // is turned a little to the viewer's left, looking just above them; any other keeps the turn it was given
+    private static void extractEntity(final GuiGraphicsExtractor graphics, final Shot shot) {
+        final Entity entity = shot.entity();
+        final Minecraft minecraft = Minecraft.getInstance();
+        final EntityRenderState state = minecraft.getEntityRenderDispatcher().getRenderer(entity)
+                .createRenderState(entity, 1.0F);
+        state.shadowPieces.clear();
+        state.outlineColor = 0;
+        if (state instanceof final LivingEntityRenderState living) {
+            living.bodyRot = 180.0F + IconExportScreen.ENTITY_TURN;
+            living.yRot = IconExportScreen.ENTITY_TURN;
+            living.xRot = -IconExportScreen.ENTITY_TILT;
+            living.boundingBoxWidth = living.boundingBoxWidth / living.scale;
+            living.boundingBoxHeight = living.boundingBoxHeight / living.scale;
+            living.scale = 1.0F;
+        }
+        final Quaternionf tilt = new Quaternionf().rotateX((float) Math.toRadians(IconExportScreen.ENTITY_TILT));
+        final Quaternionf rotation = new Quaternionf().rotateZ((float) Math.PI).mul(tilt);
+        final Vector3f translation = new Vector3f(0.0F, state.boundingBoxHeight / 2.0F + 0.0625F, 0.0F);
+        graphics.entity(state, shot.scale(), translation, rotation, tilt, 0, 0,
+                IconExportScreen.ENTITY_WIDTH, IconExportScreen.ENTITY_HEIGHT);
     }
 
     // Reads back the last frame drawn once the page has settled, at the start of a tick, before the next is drawn
@@ -332,7 +368,7 @@ public final class IconExportScreen extends Screen {
         SceneExport.start(this.minecraft, this.out.resolve("scenes"));
     }
 
-    // An entity the wiki shows, and the name its picture is saved as
-    private record Shot(String name, LivingEntity entity) {
+    // An entity the wiki shows, the name its picture is saved as, and how many GUI units a block of it takes
+    private record Shot(String name, Entity entity, int scale) {
     }
 }

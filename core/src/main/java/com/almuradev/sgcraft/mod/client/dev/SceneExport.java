@@ -82,12 +82,14 @@ public final class SceneExport {
     private static final int NIGHT = 18000;
     // The ground of the export's flat world: the player stands at this height
     private static final int GROUND = -60;
-    // Where the gates are built, away from spawn, one every SPACING blocks east
+    // Where the gates are built, away from spawn, one every SPACING blocks east. Each gate needs an address cell of
+    // its own, so gates are further apart than a cell is across, at the default 8 chunks
     private static final int ORIGIN_X = 2000;
     private static final int ORIGIN_Z = 2000;
-    private static final int SPACING = 64;
-    // How far behind the player the gate dialed is built, out of the picture
-    private static final int BEHIND = 40;
+    private static final int SPACING = 256;
+    // How far behind the player the gate dialed is built, out of the picture, in a cell of its own and still within
+    // the export's render distance
+    private static final int BEHIND = 192;
     // The longest a dial may take before the export gives up on that gate's open pictures
     private static final int DIAL_TICKS = 1200;
     // How far from where it was asked for a gate may be built and still be found
@@ -128,6 +130,8 @@ public final class SceneExport {
     /** Starts taking the pictures, saved in {@code out}. Call this on the render thread, in the export's world. */
     public static void start(final Minecraft minecraft, final Path out) {
         SceneExport.running = new SceneExport(out);
+        // The pictures must not show the pause menu should the window lose focus as they are taken
+        minecraft.options.pauseOnLostFocus = false;
         minecraft.gui.setScreen(null);
         if (!minecraft.gui.hud.isHidden()) {
             minecraft.gui.hud.toggle();
@@ -371,7 +375,12 @@ public final class SceneExport {
                 }
             }
             case SHOT -> {
-                // The world must be drawn whole before the frame is kept
+                // Nothing may cover the world, and it must be drawn whole before the frame is kept
+                if (minecraft.gui.screen() != null) {
+                    minecraft.gui.setScreen(null);
+                    this.steps.addFirst(step);
+                    return;
+                }
                 if (!minecraft.levelRenderer.hasRenderedAllSections()) {
                     this.steps.addFirst(step);
                     return;
