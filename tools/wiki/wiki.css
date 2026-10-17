@@ -148,6 +148,7 @@ pre.code {
   overflow-x: auto;
   line-height: 1.5;
 }
+pre.code.layout { width: fit-content; max-width: 100%; }
 pre.code code { background: none; border: 0; padding: 0; color: #cfe3ff; }
 
 .toc {

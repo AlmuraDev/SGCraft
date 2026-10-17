@@ -42,7 +42,7 @@ sgcraft:stargate_base_universe
 
 Seen from the front, a standard gate is laid out like this:
 
-```
+```layout
 C R C R C
 R . . . R
 C . . . C

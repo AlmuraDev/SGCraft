@@ -44,7 +44,7 @@ The world builds Milky Way gates with this base in desert pyramids, jungle templ
 
 Seen from the front, a standard gate is laid out like this:
 
-```
+```layout
 C R C R C
 R . . . R
 C . . . C

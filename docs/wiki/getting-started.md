@@ -64,7 +64,7 @@ One gate takes, in all:
 
 Pick a flat spot with 5 by 5 blocks of room. Stand where you want the front of the gate and place the base: it faces you, and the gate faces the same way. Then build the ring up from the base, in the plane that runs across in front of you. Seen from the front:
 
-```
+```layout
 C R C R C
 R . . . R
 C . . . C

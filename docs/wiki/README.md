@@ -58,7 +58,8 @@ scenes/milky-way-open-day.jpg | Open, by day
 scenes/milky-way-open-night.jpg | Open, by night
 ```
 
-Code blocks tagged `java`, `groovy` or `json` are colored.
+Code blocks tagged `java`, `groovy` or `json` are colored. A block tagged `layout`, such as a gate drawn in letters,
+is only as wide as its text.
 
 Index of a dictionary folder, as cards grouped by category. The first line names the folder; a line starting with
 `+` adds a page from another folder:

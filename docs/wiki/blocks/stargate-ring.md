@@ -43,7 +43,7 @@ The standard gates the world builds in structures and villages are made of these
 
 Place 8 ring blocks with 7 {{item:sgcraft:stargate_chevron}} around a base, such as a {{item:sgcraft:stargate_base}}. Seen from the front, the ring stands across the base's front like this:
 
-```
+```layout
 C R C R C
 R . . . R
 C . . . C

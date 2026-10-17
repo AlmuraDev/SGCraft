@@ -61,7 +61,7 @@ sgcraft:stargate_base_universe
 
 A standard gate is 5 blocks wide and 5 tall. Seen from the front:
 
-```
+```layout
 C R C R C
 R . . . R
 C . . . C

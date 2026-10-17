@@ -505,6 +505,8 @@ def render(markdown):
                 out.append(recipes(headings))
             elif lang == 'gallery':
                 out.append(gallery([b for b in block if b.strip()]))
+            elif lang == 'layout':
+                out.append(f'<pre class="code layout"><code>{html.escape(chr(10).join(block))}</code></pre>')
             else:
                 css = f' class="language-{lang}"' if lang else ''
                 out.append(f'<pre class="code"><code{css}>{highlight(chr(10).join(block), lang)}</code></pre>')

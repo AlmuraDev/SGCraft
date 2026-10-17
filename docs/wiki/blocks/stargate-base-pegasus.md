@@ -46,7 +46,7 @@ The world builds a Pegasus gate with this base, and a Pegasus DHD, on the platfo
 
 Seen from the front, a standard gate is laid out like this:
 
-```
+```layout
 C R C R C
 R . . . R
 C . . . C
