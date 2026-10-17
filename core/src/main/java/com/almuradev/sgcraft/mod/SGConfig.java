@@ -55,7 +55,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.Consumer;
 
 /**
  * The server's settings, read from {@code config/sgcraft-server.json} as the server starts. A missing file is written
@@ -545,6 +545,15 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
                 this.villageGates, this.powerUnitCapacity, this.naquadahOre, this.remoteView, malp, this.options);
     }
 
+    /** @return these settings with other naquadah ore settings */
+    public SGConfig withNaquadahOre(final NaquadahOreSettings naquadahOre) {
+        return new SGConfig(this.energyPerNaquadah, this.dialCosts, this.distanceFactorMultiplier,
+                this.interWorldMultiplier, this.freeInCreative, this.fePerGeIn, this.fePerGeOut, this.converterRate,
+                this.bridgeRates,
+                this.toolRange, this.supergateEnergyMultiplier, this.addresses, this.structureGates,
+                this.villageGates, this.powerUnitCapacity, naquadahOre, this.remoteView, this.malp, this.options);
+    }
+
     /** @return these settings with the kawoosh clearing blocks that can't be broken, or not */
     public SGConfig withKawooshBreaksUnbreakable(final boolean breaks) {
         return this.withOptions(this.options.withKawooshBreaksUnbreakable(breaks));
@@ -732,38 +741,43 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
     }
 
     /**
-     * Writes how many chunks wide and long each addressed cell is to the settings file, for every world or for one,
-     * leaving the rest of the file as it is. It takes effect when the server next starts.
-     *
-     * @return whether the file was written
+     * @return the settings as the file would have them after an edit, without writing it: what the server would run
+     *     with when it next starts
      */
-    public static boolean saveCellChunks(final Optional<Identifier> world, final int chunks) {
-        return SGConfig.save(Codec.INT, chunks, SGConfig.addressPath(world, "cell_chunks"));
+    public static SGConfig previewEdit(final Consumer<JsonObject> edit) {
+        final Path file = Platform.get().configDir().resolve(SGConfig.FILE);
+        try {
+            final JsonObject json = SGConfig.readJson(file);
+            edit.accept(json);
+            return SGConfig.parse(json, file);
+        } catch (final IOException | RuntimeException e) {
+            SGCraft.LOG.error("Couldn't read {}", file, e);
+            return SGConfig.load();
+        }
     }
 
     /**
-     * Writes the point of origin to the settings file, for every world or for one, leaving the rest of the file as it
-     * is. It takes effect when the server next starts.
+     * Edits the settings file, leaving the rest of it as it is. It takes effect when the server next starts.
      *
      * @return whether the file was written
      */
-    public static boolean savePointOfOrigin(final Optional<Identifier> world, final String origin) {
-        return SGConfig.save(Codec.STRING, origin, SGConfig.addressPath(world, "point_of_origin"));
+    public static boolean edit(final Consumer<JsonObject> edit) {
+        final Path file = Platform.get().configDir().resolve(SGConfig.FILE);
+        try {
+            final JsonObject json = SGConfig.readJson(file);
+            edit.accept(json);
+            Files.createDirectories(file.getParent());
+            Files.writeString(file, SGConfig.GSON.toJson(json));
+            return true;
+        } catch (final IOException | RuntimeException e) {
+            SGCraft.LOG.error("Couldn't write {}", file, e);
+            return false;
+        }
     }
 
-    /**
-     * Removes a world's own address layout from the settings file, so it takes the server's when the server next
-     * starts, leaving the rest of the file as it is.
-     *
-     * @return whether the file was written
-     */
-    public static boolean clearWorldLayout(final Identifier world) {
-        return SGConfig.write(null, "addresses", "worlds", world.toString());
-    }
-
-    private static String[] addressPath(final Optional<Identifier> world, final String key) {
-        return world.map(id -> new String[] {"addresses", "worlds", id.toString(), key})
-                .orElseGet(() -> new String[] {"addresses", key});
+    private static JsonObject readJson(final Path file) throws IOException {
+        return Files.exists(file) && JsonParser.parseString(Files.readString(file)) instanceof JsonObject existing
+                ? existing : new JsonObject();
     }
 
     // Writes one setting at its place in the file's sections, leaving the rest of the file as it is
@@ -780,8 +794,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
     private static boolean write(final JsonElement value, final String... path) {
         final Path file = Platform.get().configDir().resolve(SGConfig.FILE);
         try {
-            final JsonObject json = Files.exists(file) && JsonParser.parseString(Files.readString(file))
-                    instanceof JsonObject existing ? existing : new JsonObject();
+            final JsonObject json = SGConfig.readJson(file);
             JsonObject into = json;
             for (int part = 0; part < path.length - 1; part++) {
                 final JsonObject section = into.get(path[part]) instanceof JsonObject own ? own : new JsonObject();
@@ -802,6 +815,12 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         }
     }
 
+    private static SGConfig parse(final JsonElement json, final Path path) {
+        return SGConfig.CODEC.parse(JsonOps.INSTANCE, json).resultOrPartial(error ->
+                SGCraft.LOG.error("{} has a mistake, so some settings use their defaults: {}", path, error))
+                .orElse(SGConfig.DEFAULTS);
+    }
+
     /** Reads the settings, writing the file with the defaults first if there is none. */
     public static SGConfig load() {
         final Path path = Platform.get().configDir().resolve(SGConfig.FILE);
@@ -812,12 +831,9 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
                 Files.writeString(path, SGConfig.GSON.toJson(json));
                 return SGConfig.DEFAULTS;
             }
-            final JsonElement json = JsonParser.parseString(Files.readString(path));
-            return SGConfig.CODEC.parse(JsonOps.INSTANCE, json).resultOrPartial(error ->
-                    SGCraft.LOG.error("{} has a mistake, so some settings take their defaults: {}", path, error))
-                    .orElse(SGConfig.DEFAULTS);
+            return SGConfig.parse(JsonParser.parseString(Files.readString(path)), path);
         } catch (final IOException | RuntimeException e) {
-            SGCraft.LOG.error("Couldn't read {}, so every setting takes its default", path, e);
+            SGCraft.LOG.error("Couldn't read {}, so every setting uses its default", path, e);
             return SGConfig.DEFAULTS;
         }
     }

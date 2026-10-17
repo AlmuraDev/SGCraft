@@ -101,10 +101,10 @@ public final class DefaultAddresses {
             }
             final JsonElement json = JsonParser.parseString(Files.readString(path));
             return DefaultAddresses.CODEC.parse(JsonOps.INSTANCE, json).resultOrPartial(error ->
-                    SGCraft.LOG.error("{} has a mistake, so new PDDs start empty: {}", path, error))
+                    SGCraft.LOG.error("{} has a mistake, so new PDDs and tablets start empty: {}", path, error))
                     .map(List::copyOf).orElse(List.of());
         } catch (final IOException | RuntimeException e) {
-            SGCraft.LOG.error("Couldn't read {}, so new PDDs start empty", path, e);
+            SGCraft.LOG.error("Couldn't read {}, so new PDDs and tablets start empty", path, e);
             return List.of();
         }
     }

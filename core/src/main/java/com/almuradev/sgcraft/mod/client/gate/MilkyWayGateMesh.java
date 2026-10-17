@@ -77,7 +77,7 @@ public final class MilkyWayGateMesh {
                 MilkyWayGateMesh.instance = MilkyWayGateMesh.build(MilkyWayGateModel.load(in));
             } catch (final Exception e) {
                 MilkyWayGateMesh.failed = true;
-                SGCraft.LOG.error("Unable to load the Milky Way gate model", e);
+                SGCraft.LOG.error("Couldn't load the Milky Way gate model", e);
             }
         }
         return MilkyWayGateMesh.instance;

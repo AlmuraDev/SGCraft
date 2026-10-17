@@ -74,22 +74,45 @@ The server setting `addresses.cell_chunks` sets how many chunks wide and long ea
 
 ### Changing the layout
 
-Changing `cell_chunks` or `point_of_origin` changes every gate address in the worlds it reaches. Old addresses in address books, default addresses, PDDs and tablets then reach another gate or none, and a bigger cell can put two gates in one cell. Set the layout before players build gates.
+Changing `cell_chunks` or `point_of_origin` changes every gate address in the worlds it reaches. Moving a world to another group, or changing its group's symbol, changes its gates' addresses of 8 and 9 symbols. Old addresses in address books, default addresses, PDDs and tablets then reach another gate or none, and a bigger cell can put two gates in one cell. Set the layout and groups before players build gates.
 
-The server records each world's layout. When a world that has gates starts with a different one, the server log shows a large `STARGATE ADDRESSES HAVE CHANGED` warning naming each such world, how many gates it has, and its old and new layout. The warning shows once, as the new layout is then recorded. To get the old addresses back, set the old values again and restart. A world without gates changes quietly.
+The server records each world's layout, group and symbol. When a world that has gates starts with different ones, the server log shows a large `STARGATE ADDRESSES HAVE CHANGED` warning naming each such world, how many gates it has, and what changed. Operators who join also get a warning in chat. The warning shows once, as the new addresses are then recorded. To get the old addresses back, set the old values again and restart. A world without gates changes quietly.
 
-Operators can change the layout in game. The change is written to the settings file and takes effect when the server next starts. The command warns, in chat and in the server log, about each world whose gates' addresses it would change:
+Operators can change the layout in game, with the commands below or the [settings screen](#the-settings-screen). The change is written to the settings file and takes effect when the server next starts. Each change warns, in chat and in the server log, about each world whose gates get new addresses from it. The settings screen asks before it saves such a change.
 
-- `/sgcraft addresses` shows each world's layout, how many gates it has, and its layout after a restart if that differs.
+- `/sgcraft addresses` shows each world's layout, group and symbol, how many gates it has, and what changes after a restart.
 - `/sgcraft addresses cell_chunks <chunks> [<world>]`
 - `/sgcraft addresses point_of_origin <symbol> [<world>]`, where the symbol is a letter, a digit, `giza` (or `"@"`) for `@`, or `none`.
-- `/sgcraft addresses clear <world>` gives a world the server's layout again.
+- `/sgcraft addresses clear <world>` gives a world the server's cell size and point of origin again. It stays in its group.
 
 ## World symbols and groups
 
-Worlds are sorted into groups. SGCraft has one group, `default`, whose symbol is `@`. That is why a 9 symbol address in the default group ends in `@@`.
+Worlds are sorted into groups. Every world is in the `default` group, whose symbol is `@`, until the server puts it in another. That is why a 9 symbol address in the default group ends in `@@`.
 
-Each world gets a symbol within its group, `A`, `B`, `C` and so on, in the order the server first sees the worlds. A world's symbol never changes once given. The server log records each one, as "World ... has the symbol ...".
+A server has up to 37 groups, the default one included, and each group holds up to 37 worlds. A group's symbol names it in 9 symbol addresses, so no two groups share one. Two worlds in one group never share a symbol, but worlds in different groups can.
+
+Each world gets a symbol within its group, `A`, `B`, `C` and so on, in the order the server first sees the worlds. SGCraft gives it and it can't be set. A world keeps its symbol, even while the server doesn't have the world, so the world gets it back when it returns. The server log records each one, as "World ... has the symbol ... in group ...". A world moved to another group keeps its symbol there if no world in that group has it, and otherwise takes the first free one.
+
+A group can have a symbol of its own, set in the settings, or leave SGCraft to choose one. SGCraft gives such a group the first symbol no group has, and the group keeps it from then on.
+
+With more than one group, an 8 symbol address only means something within a group: from a world in another group, the same symbols reach a world there. So address books then keep each address in its 9 symbol form, which dials from any world. Addresses saved with 8 symbols before the groups were made still work from their own group.
+
+### Server admins
+
+- Make a group with `/sgcraft addresses group create <name> [<symbol>]`, or in the [settings screen](#the-settings-screen). A group's name is lowercase letters, digits and underscores. Leave out the symbol, or give `auto`, for one SGCraft chooses.
+- Put a world in a group with `/sgcraft addresses group assign <world> <group>`. Assign it to `default` to take it out again.
+- Change a group's symbol with `/sgcraft addresses group symbol <name> <symbol>`, and remove a group with `/sgcraft addresses group remove <name>`. A removed group's worlds go to the default group.
+- `/sgcraft addresses groups` lists the groups, their symbols and how many of their 37 worlds each has.
+- These changes are written to the settings file and take effect when the server next starts. Moving a world, or changing its group's symbol, gives its gates new addresses of 8 and 9 symbols. Each change warns about the worlds whose gates it reaches. See [Changing the layout](#changing-the-layout).
+- SGCraft refuses a change past the limits: a 38th group, a 38th world in a group, or a symbol another group has. If the settings file asks for one anyway, the server log says so as it starts, and the group or world goes to the default group.
+
+### The settings screen
+
+Operators can change the address settings in a screen as well as with commands. Open it with `/sgcraft settings screen`, or from the mod list: on NeoForge, the pause screen's Mods button, then SGCraft and Config; on Fabric, Mod Menu's Config button, if Mod Menu is installed.
+
+The Worlds tab lists each world with its group, symbol, point of origin, cell size and gates. Choose a world to set its point of origin, cell size or group, or set every world's point of origin and cell size. The Groups tab lists the groups and how many worlds each has. It makes, changes and removes groups. The screen's other tabs hold the [rest of the settings](settings.md#the-settings-screen).
+
+Changes are held until you press Save. Saving changes that give gates new addresses asks first, naming each world whose gates they reach. Values that change after a restart show in yellow, or in red for a world with gates.
 
 ## Address books
 

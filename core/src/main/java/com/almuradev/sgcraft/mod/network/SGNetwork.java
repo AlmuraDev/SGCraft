@@ -110,7 +110,7 @@ public final class SGNetwork {
     public static <T extends CustomPacketPayload> void handleOnClient(final T payload) {
         final Consumer<T> handler = (Consumer<T>) SGNetwork.CLIENT_HANDLERS.get(payload.type());
         if (handler == null) {
-            SGCraft.LOG.warn("No client handler for {}", payload.type().id());
+            SGCraft.LOG.warn("SGCraft has no client handler for the packet {}", payload.type().id());
             return;
         }
         handler.accept(payload);

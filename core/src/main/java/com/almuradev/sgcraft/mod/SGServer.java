@@ -25,14 +25,18 @@
 
 package com.almuradev.sgcraft.mod;
 
+import com.almuradev.sgcraft.mod.access.SGGateAccess;
 import com.almuradev.sgcraft.mod.address.SGAddressing;
 import com.almuradev.sgcraft.mod.addressbook.DefaultAddresses;
 import com.almuradev.sgcraft.mod.addressbook.SGAddressBooks;
 import com.almuradev.sgcraft.mod.gate.SGStargates;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import com.almuradev.sgcraft.mod.view.RemoteViews;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerPlayer;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayDeque;
@@ -113,6 +117,20 @@ public final class SGServer {
             current.stargates.tick();
             RemoteViews.tick(server);
             MalpLinks.tick(server);
+        }
+    }
+
+    /**
+     * Tells an operator who joins what changed in the stargate addresses when the server started, or what in the
+     * address settings it couldn't follow, so they hear of it without reading the server log.
+     */
+    public static void joined(final ServerPlayer player) {
+        final SGServer current = SGServer.current;
+        if (current == null || !SGGateAccess.isOperator(player)) {
+            return;
+        }
+        for (final Component notice : current.addressing.notices()) {
+            player.sendSystemMessage(Component.literal("[SGCraft] ").append(notice).withStyle(ChatFormatting.RED));
         }
     }
 

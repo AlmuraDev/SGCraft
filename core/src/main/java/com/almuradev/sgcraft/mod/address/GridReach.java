@@ -86,6 +86,11 @@ public final class GridReach implements AddressReach {
         return this.symbolCount;
     }
 
+    /** @return what the symbols after the position name */
+    public Kind kind() {
+        return this.kind;
+    }
+
     @Override
     public Optional<Address> addressOf(final GlobalPos target, final ResourceKey<Level> from) {
         return this.addressOf(target, from, false);

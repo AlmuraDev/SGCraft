@@ -31,8 +31,10 @@ import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.address.AddressLayout;
+import com.almuradev.sgcraft.mod.address.AddressSettings;
 import com.almuradev.sgcraft.mod.address.GridReach;
 import com.almuradev.sgcraft.mod.address.SGAddressing;
+import com.almuradev.sgcraft.mod.address.WorldAddress;
 import com.almuradev.sgcraft.mod.block.entity.GateSpawnerBlockEntity;
 import com.almuradev.sgcraft.mod.villager.SGVillagers;
 import com.almuradev.sgcraft.mod.worldgen.StructureGates;
@@ -137,11 +139,13 @@ final class SGSettingGameTestsNeoForge {
         helper.succeed();
     }
 
-    // Only a world with gates whose recorded layout differs from its layout now gets a line in the warning
+    // Only a world with gates whose recorded addresses differ from its addresses now gets a line in the warning
     static void layoutChangeWarning(final GameTestHelper helper, final BlockPos origin) {
         final Identifier world = Level.OVERWORLD.identifier();
-        final AddressLayout before = AddressLayout.DEFAULTS;
-        final AddressLayout after = new AddressLayout(4, "@");
+        final WorldAddress before = new WorldAddress(AddressLayout.DEFAULTS, AddressSettings.DEFAULT_GROUP,
+                Optional.of(Symbol.GIZA), Optional.of(new Symbol(0)));
+        final WorldAddress after = new WorldAddress(new AddressLayout(4, "@"), AddressSettings.DEFAULT_GROUP,
+                Optional.of(Symbol.GIZA), Optional.of(new Symbol(0)));
         helper.assertTrue(SGAddressing.describeChange(world, Optional.of(before), after, 3).isPresent(),
                 "A changed world with gates isn't warned about");
         helper.assertTrue(SGAddressing.describeChange(world, Optional.of(before), after, 0).isEmpty(),
@@ -150,6 +154,13 @@ final class SGSettingGameTestsNeoForge {
                 "An unchanged world is warned about");
         helper.assertTrue(SGAddressing.describeChange(world, Optional.empty(), after, 3).isEmpty(),
                 "A world with nothing recorded is warned about");
+        helper.assertTrue(before.changesEveryAddress(after), "A new cell size doesn't change every address");
+        final WorldAddress moved = new WorldAddress(AddressLayout.DEFAULTS, "pegasus", Optional.of(new Symbol(15)),
+                Optional.of(new Symbol(0)));
+        helper.assertTrue(SGAddressing.describeChange(world, Optional.of(before), moved, 3).isPresent(),
+                "A world moved to another group isn't warned about");
+        helper.assertTrue(!before.changesEveryAddress(moved),
+                "A new group changes every address, not only those of 8 and 9 symbols");
         helper.succeed();
     }
 

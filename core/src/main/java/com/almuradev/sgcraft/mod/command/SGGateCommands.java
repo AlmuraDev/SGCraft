@@ -103,7 +103,7 @@ final class SGGateCommands {
     private static final SimpleCommandExceptionType BAD_VALUE = new SimpleCommandExceptionType(
             SGCommands.text("bad_value", "That isn't a valid value for the property, written as JSON"));
     private static final SimpleCommandExceptionType UNKNOWN_PLAYER = new SimpleCommandExceptionType(
-            SGCommands.text("unknown_player", "No player by that name has been seen on this server"));
+            SGCommands.text("unknown_player", "This server has never seen a player by that name"));
     private static final SimpleCommandExceptionType NOT_AN_ADDRESS = new SimpleCommandExceptionType(
             SGCommands.text("not_an_address", "That isn't an address. Use letters, digits and @, such as AB12-CDE"));
     private static final SimpleCommandExceptionType PLAYERS_ONLY = new SimpleCommandExceptionType(

@@ -98,7 +98,7 @@ public final class DhdMesh {
                         StandardCharsets.UTF_8)).getAsJsonObject());
             } catch (final Exception e) {
                 DhdMesh.failed = true;
-                SGCraft.LOG.error("Unable to load the DHD model", e);
+                SGCraft.LOG.error("Couldn't load the DHD model", e);
             }
         }
         return DhdMesh.instance;

@@ -30,6 +30,7 @@ import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.address.AddressLayout;
+import com.almuradev.sgcraft.mod.address.AddressSettings;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -53,8 +54,8 @@ import java.util.UUID;
 
 /**
  * Every formed gate on the server, kept with the server's data so gates in unloaded chunks can still be found and
- * dialed, the symbol each world was given within its group, and the address layout each world's addresses were made
- * with.
+ * dialed, the symbol each world was given within its group, each group's symbol, and the address layout each
+ * world's addresses were made with.
  */
 public final class GateStore extends SavedData {
 
@@ -76,7 +77,13 @@ public final class GateStore extends SavedData {
             Codec.STRING.optionalFieldOf("point_of_origin").forGetter(store -> store.legacyOrigin),
             Codec.unboundedMap(ResourceKey.codec(Registries.DIMENSION), AddressLayout.CODEC)
                     .optionalFieldOf("address_layouts", Map.of())
-                    .forGetter(store -> store.layouts)
+                    .forGetter(store -> store.layouts),
+            Codec.unboundedMap(ResourceKey.codec(Registries.DIMENSION), Codec.STRING)
+                    .optionalFieldOf("world_groups", Map.of())
+                    .forGetter(store -> store.worldGroups),
+            Codec.unboundedMap(Codec.STRING, GateStore.SYMBOL_CODEC)
+                    .optionalFieldOf("group_symbols", Map.of())
+                    .forGetter(store -> store.groupSymbols)
     ).apply(instance, GateStore::new));
 
     public static final SavedDataType<GateStore> TYPE =
@@ -84,6 +91,11 @@ public final class GateStore extends SavedData {
 
     private final Map<GlobalPos, GateRecord> gates = new LinkedHashMap<>();
     private final Map<ResourceKey<Level>, Symbol> worldSymbols = new LinkedHashMap<>();
+    // The group each world was in when the server last started, by the group's name; a world with a symbol missing
+    // here got its symbol in the default group, as every world did before there were other groups
+    private final Map<ResourceKey<Level>, String> worldGroups = new LinkedHashMap<>();
+    // The symbol each group had when the server last started, by the group's name
+    private final Map<String, Symbol> groupSymbols = new LinkedHashMap<>();
     // Each connection under way, by its dialing gate, as the connection saves itself
     private final Map<GlobalPos, CompoundTag> connections = new LinkedHashMap<>();
     // The address layout each world's addresses were made with
@@ -97,8 +109,11 @@ public final class GateStore extends SavedData {
 
     private GateStore(final List<GateRecord> gates, final Map<ResourceKey<Level>, Symbol> worldSymbols,
             final List<CompoundTag> connections, final Optional<String> legacyOrigin,
-            final Map<ResourceKey<Level>, AddressLayout> layouts) {
+            final Map<ResourceKey<Level>, AddressLayout> layouts, final Map<ResourceKey<Level>, String> worldGroups,
+            final Map<String, Symbol> groupSymbols) {
         this.legacyOrigin = legacyOrigin;
+        this.worldGroups.putAll(worldGroups);
+        this.groupSymbols.putAll(groupSymbols);
         this.layouts.putAll(layouts);
         gates.forEach(gate -> this.gates.put(gate.position(), gate));
         this.worldSymbols.putAll(worldSymbols);
@@ -176,8 +191,37 @@ public final class GateStore extends SavedData {
         return Collections.unmodifiableMap(this.worldSymbols);
     }
 
-    public void putWorldSymbol(final ResourceKey<Level> world, final Symbol symbol) {
-        if (!symbol.equals(this.worldSymbols.put(world, symbol))) {
+    /** @return the name of the group each world was in when the server last started, for each world it recorded */
+    public Map<ResourceKey<Level>, String> worldGroups() {
+        final Map<ResourceKey<Level>, String> groups = new LinkedHashMap<>(this.worldGroups);
+        // A symbol given before there were groups was given in the default group
+        this.worldSymbols.keySet().forEach(world -> groups.putIfAbsent(world, AddressSettings.DEFAULT_GROUP));
+        return Collections.unmodifiableMap(groups);
+    }
+
+    /** Records the group a world is in and the symbol that names it there, or that it has none when empty. */
+    public void putWorldSymbol(final ResourceKey<Level> world, final String group, final Optional<Symbol> symbol) {
+        boolean changed = !group.equals(this.worldGroups.put(world, group));
+        if (symbol.isPresent()) {
+            changed |= !symbol.get().equals(this.worldSymbols.put(world, symbol.get()));
+        } else {
+            changed |= this.worldSymbols.remove(world) != null;
+        }
+        if (changed) {
+            this.setDirty();
+        }
+    }
+
+    /** @return the symbol each group had when the server last started, by the group's name */
+    public Map<String, Symbol> groupSymbols() {
+        return Collections.unmodifiableMap(this.groupSymbols);
+    }
+
+    /** Records the symbol each group has, forgetting groups that are gone. */
+    public void putGroupSymbols(final Map<String, Symbol> symbols) {
+        if (!this.groupSymbols.equals(symbols)) {
+            this.groupSymbols.clear();
+            this.groupSymbols.putAll(symbols);
             this.setDirty();
         }
     }

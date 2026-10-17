@@ -99,8 +99,8 @@ final class SGMalpCommands {
     private static final DynamicCommandExceptionType NO_MALP = new DynamicCommandExceptionType(name ->
             SGCommands.text("malp.no_malp", "There is no MALP called %s", name));
     private static final DynamicCommandExceptionType NOT_LOADED = new DynamicCommandExceptionType(name ->
-            SGCommands.text("malp.not_loaded", "%s isn't loaded. Its chunk is loading; run the command again in a "
-                    + "moment", name));
+            SGCommands.text("malp.not_loaded", "%s isn't loaded. Its chunk is loading now, so run the command "
+                    + "again in a moment", name));
     private static final SimpleCommandExceptionType NOT_A_CONSOLE = new SimpleCommandExceptionType(
             SGCommands.text("malp.not_a_console", "There is no MALP console there"));
     private static final SimpleCommandExceptionType NO_BATTERY = new SimpleCommandExceptionType(
@@ -176,7 +176,7 @@ final class SGMalpCommands {
                 "A MALP tablet now uses %s GE a tick while it shows a live feed", SGMalpCommands.ge(drain)), true);
         if (!saved) {
             source.sendFailure(SGCommands.text("settings.not_saved",
-                    "The change applies until the server stops, but the settings file couldn't be written"));
+                    "The settings file couldn't be written, so the change lasts only until the server stops"));
         }
         return 1;
     }
@@ -236,7 +236,7 @@ final class SGMalpCommands {
                 "Up to %s players near a driven MALP console now see the feed on its monitor", count), true);
         if (!saved) {
             source.sendFailure(SGCommands.text("settings.not_saved",
-                    "The change applies until the server stops, but the settings file couldn't be written"));
+                    "The settings file couldn't be written, so the change lasts only until the server stops"));
         }
         return count;
     }
@@ -254,7 +254,7 @@ final class SGMalpCommands {
                 "Players within %s blocks of a driven MALP console now see the feed on its monitor", range), true);
         if (!saved) {
             source.sendFailure(SGCommands.text("settings.not_saved",
-                    "The change applies until the server stops, but the settings file couldn't be written"));
+                    "The settings file couldn't be written, so the change lasts only until the server stops"));
         }
         return range;
     }
@@ -278,7 +278,7 @@ final class SGMalpCommands {
                         "Damage no longer takes a player at a MALP console off it"), true);
         if (!saved) {
             source.sendFailure(SGCommands.text("settings.not_saved",
-                    "The change applies until the server stops, but the settings file couldn't be written"));
+                    "The settings file couldn't be written, so the change lasts only until the server stops"));
         }
         return 1;
     }

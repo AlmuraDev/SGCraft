@@ -106,7 +106,7 @@ final class SGWorldgenCommands {
         source.sendSuccess(() -> said, true);
         if (!SGConfig.saveTokraWorlds(worlds)) {
             source.sendFailure(SGCommands.text("settings.not_saved",
-                    "The change applies until the server stops, but the settings file couldn't be written"));
+                    "The settings file couldn't be written, so the change lasts only until the server stops"));
         }
         return 1;
     }

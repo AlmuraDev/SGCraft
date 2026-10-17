@@ -149,7 +149,7 @@ public final class GateFeatureRenderer implements FeatureRenderer<GateFeatureRen
             this.pipeline = RenderSystem.getCompiledPipelineNullable(GateFeatureRenderer.PIPELINE);
             if (this.pipeline == null) {
                 this.failed = true;
-                SGCraft.LOG.error("Unable to compile the gate shader; gates won't be drawn");
+                SGCraft.LOG.error("Couldn't compile the gate shader, so gates won't be drawn");
                 return;
             }
         }

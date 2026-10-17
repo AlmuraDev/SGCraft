@@ -32,6 +32,8 @@ import com.almuradev.sgcraft.mod.gate.GateBaseInfo;
 import com.almuradev.sgcraft.mod.malp.MalpConfigurator;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads;
+import com.almuradev.sgcraft.mod.settings.SettingsActions;
+import com.almuradev.sgcraft.mod.settings.SettingsPayloads;
 import com.almuradev.sgcraft.mod.shield.CityShieldActions;
 import com.almuradev.sgcraft.mod.shield.ShieldConsoles;
 import com.almuradev.sgcraft.mod.shield.ShieldPayloads;
@@ -99,5 +101,10 @@ final class SGPayloads {
         SGNetwork.clientbound(ShieldPayloads.CityState.TYPE, ShieldPayloads.CityState::new);
         SGNetwork.serverbound(ShieldPayloads.CityAction.TYPE, ShieldPayloads.CityAction::new,
                 CityShieldActions::action);
+        // The settings screen: the settings out, the edits it holds in, and edits to confirm out
+        SGNetwork.clientbound(SettingsPayloads.State.TYPE, SettingsPayloads.State::new);
+        SGNetwork.clientbound(SettingsPayloads.Confirm.TYPE, SettingsPayloads.Confirm::new);
+        SGNetwork.serverbound(SettingsPayloads.Request.TYPE, SettingsPayloads.Request::new, SettingsActions::request);
+        SGNetwork.serverbound(SettingsPayloads.Edits.TYPE, SettingsPayloads.Edits::new, SettingsActions::edits);
     }
 }

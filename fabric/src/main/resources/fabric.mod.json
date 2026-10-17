@@ -27,6 +27,9 @@
         ],
         "client": [
             "com.almuradev.sgcraft.fabric.SGCraftClientFabric"
+        ],
+        "modmenu": [
+            "com.almuradev.sgcraft.fabric.SGCraftModMenu"
         ]
     },
     "depends": {

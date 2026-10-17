@@ -326,7 +326,7 @@ public final class MalpConsoleScreen extends Screen {
             } catch (final IOException | RuntimeException e) {
                 SGCraft.LOG.warn("Couldn't save a MALP snapshot", e);
                 minecraft.execute(() -> minecraft.showDebugChat(Component.translatableWithFallback(
-                        "message.sgcraft.malp.snapshot_failed", "Couldn't save MALP snapshot: %s",
+                        "message.sgcraft.malp.snapshot_failed", "The MALP snapshot couldn't be saved: %s",
                         String.valueOf(e.getMessage()))));
             }
         });
@@ -472,9 +472,9 @@ public final class MalpConsoleScreen extends Screen {
         if (this.state.malps().isEmpty()) {
             graphics.textWithWordWrap(this.font, this.state.tablet()
                     ? Component.translatableWithFallback("screen.sgcraft.malp_tablet.none",
-                            "No MALPs are paired. Sneak and use this tablet on a MALP to pair it.")
+                            "No MALPs are paired. Sneak and use this tablet on a MALP to pair it")
                     : Component.translatableWithFallback("screen.sgcraft.malp_console.none",
-                            "No MALPs are paired. Use a MALP on this console to pair it."),
+                            "No MALPs are paired. Use a MALP on this console to pair it"),
                     MalpConsoleScreen.MARGIN, MalpConsoleScreen.MARGIN + 16, MalpConsoleScreen.PANEL, 0xFFAAAAAA);
         }
         if (this.state.tablet()) {
@@ -485,7 +485,7 @@ public final class MalpConsoleScreen extends Screen {
                     ? Component.translatableWithFallback("screen.sgcraft.malp_console.malp_view_only_help",
                             "Someone else is driving this MALP. You can watch, or choose another MALP.")
                     : Component.translatableWithFallback("screen.sgcraft.malp_console.view_only_help",
-                            "Someone else is driving at this console. You can watch, but not drive."),
+                            "Someone else is driving at this console. You can watch, but not drive"),
                     MalpConsoleScreen.MARGIN, this.helpTop(), MalpConsoleScreen.PANEL, 0xFF909090);
             return;
         }

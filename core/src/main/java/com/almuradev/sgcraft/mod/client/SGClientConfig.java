@@ -81,6 +81,25 @@ public record SGClientConfig(boolean hdEventHorizon, boolean copyAddressOnOpen, 
         return sound.getNamespace().equals(SGCraft.MOD_ID) ? volume * (float) this.soundVolume : volume;
     }
 
+    /**
+     * Uses other settings from now on, and writes them to the settings file.
+     *
+     * @return whether the file was written
+     */
+    public static boolean set(final SGClientConfig config) {
+        SGClientConfig.current = config;
+        final Path path = Platform.get().configDir().resolve(SGClientConfig.FILE);
+        try {
+            final JsonElement json = SGClientConfig.CODEC.encodeStart(JsonOps.INSTANCE, config).getOrThrow();
+            Files.createDirectories(path.getParent());
+            Files.writeString(path, new GsonBuilder().setPrettyPrinting().create().toJson(json));
+            return true;
+        } catch (final IOException | RuntimeException e) {
+            SGCraft.LOG.error("Couldn't write {}", path, e);
+            return false;
+        }
+    }
+
     /** Reads the settings, writing the file with the defaults first if there is none. */
     static void load() {
         final Path path = Platform.get().configDir().resolve(SGClientConfig.FILE);
@@ -95,10 +114,10 @@ public record SGClientConfig(boolean hdEventHorizon, boolean copyAddressOnOpen, 
             }
             final JsonElement json = JsonParser.parseString(Files.readString(path));
             SGClientConfig.current = SGClientConfig.CODEC.parse(JsonOps.INSTANCE, json).resultOrPartial(error ->
-                    SGCraft.LOG.error("{} has a mistake, so some settings take their defaults: {}", path, error))
+                    SGCraft.LOG.error("{} has a mistake, so some settings use their defaults: {}", path, error))
                     .orElse(SGClientConfig.DEFAULTS);
         } catch (final IOException | RuntimeException e) {
-            SGCraft.LOG.error("Couldn't read {}, so every setting takes its default", path, e);
+            SGCraft.LOG.error("Couldn't read {}, so every setting uses its default", path, e);
             SGClientConfig.current = SGClientConfig.DEFAULTS;
         }
     }

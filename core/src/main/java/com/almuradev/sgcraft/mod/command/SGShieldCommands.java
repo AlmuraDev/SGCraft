@@ -103,7 +103,7 @@ final class SGShieldCommands {
                             final CityShieldBlockEntity shield = SGShieldCommands.generator(context);
                             if (!shield.raise()) {
                                 context.getSource().sendFailure(SGCommands.text("shields.city.no_power",
-                                        "There isn't enough energy round the generator to raise a shield that size"));
+                                        "There isn't enough energy around the generator to raise a shield that size"));
                                 return 0;
                             }
                             return SGShieldCommands.city(context.getSource(), shield);
@@ -167,7 +167,7 @@ final class SGShieldCommands {
         SGShieldCommands.show(source);
         if (!saved) {
             source.sendFailure(SGCommands.text("settings.not_saved",
-                    "The change applies until the server stops, but the settings file couldn't be written"));
+                    "The settings file couldn't be written, so the change lasts only until the server stops"));
         }
         return 1;
     }

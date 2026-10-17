@@ -174,7 +174,7 @@ final class SGOreCommands {
         SGOreCommands.show(source);
         if (!saved) {
             source.sendFailure(SGCommands.text("ore.not_saved",
-                    "The change applies until the server stops, but the settings file couldn't be written"));
+                    "The settings file couldn't be written, so the change lasts only until the server stops"));
         }
         return 1;
     }

@@ -115,7 +115,7 @@ public final class ShieldConsoleScreen extends Screen {
         graphics.centeredText(this.font, this.title, x, top, 0xFFFFFFFF);
         if (this.state.gate().isEmpty()) {
             graphics.centeredText(this.font, Component.translatableWithFallback("screen.sgcraft.shield.no_gate",
-                    "No shielded Stargate within %s blocks", this.state.range()), x, top + 30, 0xFFFF6060);
+                    "No gate with a shield within %s blocks", this.state.range()), x, top + 30, 0xFFFF6060);
         } else {
             final GateInfo gate = this.state.gate().get();
             if (!gate.address().isEmpty()) {
@@ -126,7 +126,7 @@ public final class ShieldConsoleScreen extends Screen {
             final IrisState iris = IrisState.values()[Math.max(0, gate.iris())];
             final Component status = this.state.control() ? SGIris.shieldText(iris)
                     : Component.translatableWithFallback("screen.sgcraft.shield.no_access",
-                            "You don't have access to this Stargate's shield");
+                            "You don't have access to this gate's shield");
             final int color = !this.state.control() ? 0xFFFF6060 : iris == IrisState.CLOSED ? 0xFF55FFFF
                     : 0xFFAAAAAA;
             graphics.centeredText(this.font, status, x, top + 42, color);

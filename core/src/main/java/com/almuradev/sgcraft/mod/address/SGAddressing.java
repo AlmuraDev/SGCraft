@@ -35,18 +35,20 @@ import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.api.address.WorldGroup;
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGCraft;
+import com.almuradev.sgcraft.mod.address.AddressPlan.Problem;
+import com.almuradev.sgcraft.mod.address.AddressPlan.Recorded;
 import com.almuradev.sgcraft.mod.gate.GateStore;
 import net.minecraft.core.GlobalPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -56,8 +58,9 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Addresses on a running server.
  *
- * <p>Every world is in the default group, whose symbol is {@code @}. Each world is divided into cells as the server's
- * {@code addresses} settings lay it out, for every world or for that one.</p>
+ * <p>Each world is divided into cells as the server's {@code addresses} settings lay it out, for every world or for
+ * that one. The settings sort worlds into groups, as {@link AddressPlan} describes; a world they put in none is in the
+ * default group, whose symbol is {@code @} unless they give it another.</p>
  */
 public final class SGAddressing implements Addressing {
 
@@ -67,54 +70,93 @@ public final class SGAddressing implements Addressing {
     private final AddressSettings settings;
     private final Map<ResourceKey<Level>, AddressPartition> partitions = new ConcurrentHashMap<>();
     private final List<AddressReach> reaches;
-    private final DefaultGroup defaultGroup = new DefaultGroup();
+    private final Map<String, PlannedGroup> groups = new LinkedHashMap<>();
+    // What changed or couldn't be followed at this start, for operators who join
+    private final List<Component> notices = new ArrayList<>();
+    private final AddressPlan plan;
 
     public SGAddressing(final MinecraftServer server, final SGConfig config) {
         this.server = server;
         this.settings = config.addresses();
-        this.recordLayouts();
+        this.plan = this.recordAddresses();
+        for (final AddressPlan.Group group : this.plan.groups()) {
+            this.groups.put(group.name(), new PlannedGroup(group));
+        }
         this.reaches = server.registryAccess().lookupOrThrow(SGCraftRegistries.ADDRESS_REACH).stream()
                 .sorted(Comparator.comparingInt(AddressReach::symbolCount))
                 .toList();
-        this.assignWorldSymbols();
     }
 
-    // Records the layout each world's addresses are made with, warning loudly about each world with gates whose layout
-    // isn't the one its gates' addresses were made with, since every address there has changed
-    private void recordLayouts() {
+    /** @return the symbols the server gave when it last started, as the store recorded them */
+    public static Recorded recorded(final GateStore store) {
+        final Map<String, Symbol> groupSymbols = new LinkedHashMap<>(store.groupSymbols());
+        // Saved before there were groups, when every world was in the default group, named by @
+        groupSymbols.putIfAbsent(AddressSettings.DEFAULT_GROUP, Symbol.GIZA);
+        return new Recorded(groupSymbols, store.worldSymbols(), store.worldGroups());
+    }
+
+    // Works out the groups and symbols, records them and the layout each world's addresses are made with, and warns
+    // loudly about each world with gates whose addresses aren't the ones they were made with
+    private AddressPlan recordAddresses() {
         final GateStore store = this.store();
+        final List<ResourceKey<Level>> worlds = new ArrayList<>();
+        this.server.getAllLevels().forEach(level -> worlds.add(level.dimension()));
+        final Recorded recorded = SGAddressing.recorded(store);
+        final AddressPlan plan = AddressPlan.of(this.settings, recorded, worlds);
+        for (final Problem problem : plan.problems()) {
+            if (problem.error()) {
+                SGCraft.LOG.error(problem.english());
+            } else {
+                SGCraft.LOG.warn(problem.english());
+            }
+            this.notices.add(problem.text());
+        }
+        for (final AddressPlan.Group group : plan.groups()) {
+            if (!group.symbol().equals(recorded.groupSymbols().get(group.name()))) {
+                SGCraft.LOG.info("Group {} has the symbol {}", group.name(), group.symbol());
+            }
+        }
         final List<String> changed = new ArrayList<>();
-        for (final ServerLevel level : this.server.getAllLevels()) {
-            final ResourceKey<Level> world = level.dimension();
-            final AddressLayout layout = this.layoutOf(world);
-            final Optional<AddressLayout> recorded = store.layout(world);
-            final Optional<String> change = SGAddressing.describeChange(world.identifier(), recorded, layout,
+        for (final ResourceKey<Level> world : worlds) {
+            final Optional<WorldAddress> before = WorldAddress.recorded(store.layout(world), recorded, world);
+            final WorldAddress after = WorldAddress.of(this.settings.layoutOf(world), plan, world);
+            final Optional<String> change = SGAddressing.describeChange(world.identifier(), before, after,
                     store.gateCount(world));
             if (change.isPresent()) {
                 changed.add(change.get());
-            } else if (recorded.isPresent() && !recorded.get().equals(layout)) {
-                SGCraft.LOG.info("World {} has no gates, so its new address layout changes nothing: {}",
-                        world.identifier(), layout.describe());
+            } else if (before.isPresent() && !before.get().equals(after)) {
+                SGCraft.LOG.info("World {} has no gates, so its new addresses change nothing: {}",
+                        world.identifier(), after.describe());
             }
-            store.putLayout(world, layout);
+            if (!plan.symbolOf(world).equals(Optional.ofNullable(recorded.worldSymbols().get(world)))) {
+                plan.symbolOf(world).ifPresent(symbol -> SGCraft.LOG.info("World {} has the symbol {} in group {}",
+                        world.identifier(), symbol, plan.groupOf(world)));
+            }
+            store.putLayout(world, after.layout());
+            store.putWorldSymbol(world, plan.groupOf(world), plan.symbolOf(world));
         }
+        store.putGroupSymbols(plan.recorded().groupSymbols());
         store.dropLegacyOrigin();
         if (!changed.isEmpty()) {
             SGAddressing.warnChanged(changed);
+            this.notices.add(Component.translatableWithFallback("message.sgcraft.addresses.changed_at_start",
+                    "Stargate addresses changed when the server started, in %s worlds with gates. The server log "
+                            + "names them", changed.size()));
         }
+        return plan;
     }
 
     /**
-     * @return a line for the warning about a world whose addresses changed, naming it, its gates, and its layout
-     *     before and now; empty when nothing was recorded for it, its layout is the recorded one, or it has no gates
+     * @return a line for the warning about a world whose addresses changed, naming it, its gates, and what changed;
+     *     empty when nothing was recorded for it, nothing changed, or it has no gates
      */
-    public static Optional<String> describeChange(final Identifier world, final Optional<AddressLayout> recorded,
-            final AddressLayout layout, final long gates) {
-        if (recorded.isEmpty() || recorded.get().equals(layout) || gates <= 0) {
+    public static Optional<String> describeChange(final Identifier world, final Optional<WorldAddress> before,
+            final WorldAddress after, final long gates) {
+        if (before.isEmpty() || before.get().equals(after) || gates <= 0) {
             return Optional.empty();
         }
         return Optional.of(world + " (" + gates + (gates == 1 ? " gate" : " gates") + "): "
-                + recorded.get().describe() + " is now " + layout.describe());
+                + before.get().changesTo(after));
     }
 
     private static void warnChanged(final List<String> worlds) {
@@ -123,42 +165,45 @@ public final class SGAddressing implements Addressing {
         SGCraft.LOG.warn("**");
         SGCraft.LOG.warn("**  SGCRAFT: STARGATE ADDRESSES HAVE CHANGED");
         SGCraft.LOG.warn("**");
-        SGCraft.LOG.warn("**  The address settings (cell_chunks or point_of_origin) changed for worlds that already");
-        SGCraft.LOG.warn("**  have gates. EVERY gate address in these worlds is now different:");
+        SGCraft.LOG.warn("**  The address settings changed for worlds that already have gates:");
         SGCraft.LOG.warn("**");
         for (final String world : worlds) {
             SGCraft.LOG.warn("**    {}", world);
         }
         SGCraft.LOG.warn("**");
-        SGCraft.LOG.warn("**  Address books, default addresses, PDDs, tablets, signs and anything else holding an old");
-        SGCraft.LOG.warn("**  address now reach another gate or none. Changing the cell size can also put two gates");
-        SGCraft.LOG.warn("**  in one cell, where only one of them can be dialed.");
+        SGCraft.LOG.warn("**  A new cell size or point of origin changes every address in the world. A new group,");
+        SGCraft.LOG.warn("**  group symbol or world symbol changes its addresses of 8 and 9 symbols.");
         SGCraft.LOG.warn("**");
-        SGCraft.LOG.warn("**  To get the old addresses back, stop the server, set the addresses section of");
-        SGCraft.LOG.warn("**  config/sgcraft-server.json back to the old values and start it again. The new layout");
-        SGCraft.LOG.warn("**  has been recorded, so this warning shows once.");
+        SGCraft.LOG.warn("**  Address books, default addresses, PDDs, tablets, signs and anything else that holds an");
+        SGCraft.LOG.warn("**  old address now reach another gate or none. A bigger cell can also put two gates in one");
+        SGCraft.LOG.warn("**  cell, and then only one of them can be dialed.");
+        SGCraft.LOG.warn("**");
+        SGCraft.LOG.warn("**  To get the old addresses back, stop the server, put the addresses section of");
+        SGCraft.LOG.warn("**  config/sgcraft-server.json back as it was, and start the server again. This warning");
+        SGCraft.LOG.warn("**  shows once, because the server has now recorded the new addresses.");
         SGCraft.LOG.warn("**");
         SGCraft.LOG.warn(SGAddressing.RULE);
         SGCraft.LOG.warn(SGAddressing.RULE);
     }
 
-    // Gives each world without a symbol the first one not yet used; a world's symbol never changes once given
-    private void assignWorldSymbols() {
-        final GateStore store = this.store();
-        for (final ServerLevel level : this.server.getAllLevels()) {
-            if (store.worldSymbols().containsKey(level.dimension())) {
-                continue;
-            }
-            final Set<Symbol> used = new HashSet<>(store.worldSymbols().values());
-            for (int index = 0; index < Symbol.COUNT; index++) {
-                final Symbol symbol = new Symbol(index);
-                if (!used.contains(symbol)) {
-                    store.putWorldSymbol(level.dimension(), symbol);
-                    SGCraft.LOG.info("World {} has the symbol {}", level.dimension().identifier(), symbol);
-                    break;
-                }
-            }
-        }
+    /** @return what changed or couldn't be followed when the server started, to tell operators as they join */
+    public List<Component> notices() {
+        return List.copyOf(this.notices);
+    }
+
+    /** @return the groups and symbols the server is running with */
+    public AddressPlan plan() {
+        return this.plan;
+    }
+
+    /** @return the server's address settings as it is running with them */
+    public AddressSettings settings() {
+        return this.settings;
+    }
+
+    /** @return what a world's addresses are made with while the server runs */
+    public WorldAddress worldAddress(final ResourceKey<Level> world) {
+        return WorldAddress.of(this.layoutOf(world), this.plan, world);
     }
 
     private GateStore store() {
@@ -193,11 +238,13 @@ public final class SGAddressing implements Addressing {
 
     /**
      * @return the address of a cell that reaches it from every world: the shortest that names the cell's world, or
-     *     the address from the cell's own world where no reach names worlds
+     *     the address from the cell's own world where no reach names worlds. With more than one group, an address
+     *     that names the world but not its group means another world in another group, so it must name both
      */
     public Optional<Address> lastingAddressOf(final GlobalPos target) {
+        final boolean grouped = this.groups.size() > 1;
         for (final AddressReach reach : this.reaches) {
-            if (reach instanceof GridReach grid) {
+            if (reach instanceof GridReach grid && !(grouped && grid.kind() == GridReach.Kind.SAME_GROUP)) {
                 final Optional<Address> address = grid.namingAddressOf(target);
                 if (address.isPresent()) {
                     return address;
@@ -254,48 +301,54 @@ public final class SGAddressing implements Addressing {
 
     @Override
     public Collection<WorldGroup> groups() {
-        return List.of(this.defaultGroup);
+        return List.copyOf(this.groups.values());
     }
 
     @Override
     public WorldGroup defaultGroup() {
-        return this.defaultGroup;
+        return this.groups.get(AddressSettings.DEFAULT_GROUP);
     }
 
     @Override
     public WorldGroup groupOf(final ResourceKey<Level> world) {
-        return this.defaultGroup;
+        return this.groups.getOrDefault(this.plan.groupOf(world), this.groups.get(AddressSettings.DEFAULT_GROUP));
     }
 
     private record SimplePartition(int cellChunks, Optional<Symbol> pointOfOrigin) implements AddressPartition {
     }
 
-    private final class DefaultGroup implements WorldGroup {
+    private final class PlannedGroup implements WorldGroup {
+
+        private final AddressPlan.Group group;
+
+        PlannedGroup(final AddressPlan.Group group) {
+            this.group = group;
+        }
 
         @Override
         public String name() {
-            return "default";
+            return this.group.name();
         }
 
         @Override
         public boolean isDefault() {
-            return true;
+            return this.group.isDefault();
         }
 
         @Override
         public Symbol symbol() {
-            return Symbol.GIZA;
+            return this.group.symbol();
         }
 
         @Override
         public Set<ResourceKey<Level>> worlds() {
-            return Set.copyOf(SGAddressing.this.store().worldSymbols().keySet());
+            return Set.copyOf(SGAddressing.this.plan.worldsIn(this.group.name()));
         }
 
         @Override
         public Optional<Symbol> symbolOf(final ResourceKey<Level> world) {
-            final Map<ResourceKey<Level>, Symbol> symbols = SGAddressing.this.store().worldSymbols();
-            return Optional.ofNullable(symbols.get(world));
+            return SGAddressing.this.plan.groupOf(world).equals(this.group.name())
+                    ? SGAddressing.this.plan.symbolOf(world) : Optional.empty();
         }
     }
 }

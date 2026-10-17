@@ -155,12 +155,17 @@ Ore changes apply to chunks generated or loaded from then on and are saved. See 
 | `/sgcraft default_addresses remove <address>` | Op | Remove a default address |
 | `/sgcraft default_addresses lock <address>` | Op | Holders can't rename or remove it |
 | `/sgcraft default_addresses unlock <address>` | Op | Holders may rename or remove it |
-| `/sgcraft addresses` | Op | Each world's address layout (cell size and point of origin), its gate count, and its layout after a restart |
+| `/sgcraft addresses` | Op | Each world's address layout (cell size and point of origin), group and symbol, its gate count, and what changes after a restart |
 | `/sgcraft addresses cell_chunks <chunks> [<world>]` | Op | Set how many chunks wide each addressed cell is, for every world or one |
 | `/sgcraft addresses point_of_origin <symbol> [<world>]` | Op | Set the point of origin: a letter, a digit, `giza` for `@`, or `none` |
-| `/sgcraft addresses clear <world>` | Op | Give a world the server's layout again |
+| `/sgcraft addresses clear <world> [<part>]` | Op | Give a world the server's cell size and point of origin again, or only one: `cell_chunks` or `point_of_origin` |
+| `/sgcraft addresses groups` | Op | Each group, its symbol and how many of its 37 worlds it has |
+| `/sgcraft addresses group create <name> [<symbol>]` | Op | Make a group, with a symbol or, left out or `auto`, one SGCraft chooses |
+| `/sgcraft addresses group remove <name>` | Op | Remove a group; its worlds go to the default group |
+| `/sgcraft addresses group symbol <name> <symbol>` | Op | Set a group's symbol: a letter, a digit, `giza` for `@`, or `auto` |
+| `/sgcraft addresses group assign <world> <group>` | Op | Put a world in a group, or in `default` |
 
-Your book keeps each address in the form that names its world, so it dials from any world. Default address changes reach PDDs and tablets used for the first time after the change. Address layout changes take effect when the server next starts and change every gate address in the worlds they reach. See [Changing the layout](addresses.md#changing-the-layout).
+Your book keeps each address in the form that names its world, so it dials from any world. Default address changes reach PDDs and tablets used for the first time after the change. Address layout and group changes take effect when the server next starts. A layout change changes every gate address in the worlds it reaches, and a group change their addresses of 8 and 9 symbols. Each warns about the worlds whose gates it reaches. See [Changing the layout](addresses.md#changing-the-layout).
 
 ## Shields
 
@@ -223,14 +228,18 @@ See [MALP](malp.md).
 | Command | Level | What it does |
 | --- | --- | --- |
 | `/sgcraft settings` | Op | `gates.kawoosh_breaks_unbreakable`, `gates.owners_break_gates`, `gates.generated_gates_breakable` and `gates.wormholes_jump` |
-| `/sgcraft settings <name> <bool>` | Op | Set one of those three |
+| `/sgcraft settings <name> <bool>` | Op | Set one of those four |
+| `/sgcraft settings screen` | Op | Open the [settings screen](settings.md#the-settings-screen) |
+| `/sgcraft config` | Op | Every setting that is one value, by its key, with its value after a restart where that differs |
+| `/sgcraft config <key>` | Op | One setting: its value, what it does, its default, and whether it waits for a restart |
+| `/sgcraft config <key> <value>` | Op | Set one, such as `/sgcraft config zpm.capacity 30000000` |
 | `/sgcraft gate_defaults` | Op | The values gates have when they have none of their own |
 | `/sgcraft gate_defaults <property> <json>` | Op | Set one, such as `sgcraft:open_ticks 12000` |
 | `/sgcraft gate_defaults <property> reset` | Op | Clear one, so gates have the property's default again |
 | `/sgcraft chunk_loading_range [<0-8>]` | Op | Show or set how many chunks around a busy gate stay loaded |
 | `/sgcraft log_events [<bool>]` | Op | Show or set whether gate events go to the server log |
 
-These changes apply at once and are saved to `config/sgcraft-server.json`. `/sgcraft gate_defaults` also takes `sgcraft:chevrons` (7 to 9), and `sgcraft:iris` and `sgcraft:chevrons` reach gates as they first form. See [Settings](settings.md).
+These changes apply at once and are saved to `config/sgcraft-server.json`, except the `remote_view` and `worldgen.village_gates` settings, which take effect when the server next starts. `/sgcraft gate_defaults` also takes `sgcraft:chevrons` (7 to 9), and `sgcraft:iris` and `sgcraft:chevrons` reach gates as they first form. See [Settings](settings.md).
 
 ## Shared results
 

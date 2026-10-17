@@ -94,7 +94,7 @@ public final class SGEventBus implements EventBus {
             try {
                 SGEventBus.call(listener, event);
             } catch (final RuntimeException | LinkageError e) {
-                SGCraft.LOG.error("A listener for {} threw", event.getClass().getSimpleName(), e);
+                SGCraft.LOG.error("An event listener for {} threw an exception", event.getClass().getSimpleName(), e);
             }
         }
         return event;

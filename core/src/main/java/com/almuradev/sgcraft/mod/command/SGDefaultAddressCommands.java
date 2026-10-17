@@ -163,7 +163,7 @@ final class SGDefaultAddressCommands {
         source.sendSuccess(() -> done, true);
         if (!saved) {
             source.sendFailure(SGCommands.text("default_addresses.not_saved",
-                    "The change applies until the server stops, but the file couldn't be written"));
+                    "The file couldn't be written, so the change lasts only until the server stops"));
         }
         return 1;
     }

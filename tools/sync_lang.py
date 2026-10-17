@@ -10,9 +10,19 @@ from pathlib import Path
 
 LANG = Path('core/src/main/resources/assets/sgcraft/lang/en_us.json')
 SOURCES = [Path('core/src/main/java'), Path('neoforge/src/main/java'), Path('fabric/src/main/java')]
-CALL = re.compile(r'translatableWithFallback\(\s*"([^"]+)"\s*,\s*"((?:[^"\\]|\\.)*)"', re.S)
-# SGCommands builds its keys from a prefix
-COMMAND = re.compile(r'SGCommands\.text\(\s*"([^"]+)"\s*,\s*"((?:[^"\\]|\\.)*)"', re.S)
+# A fallback can be split into literals joined with +, across lines
+TEXT = r'"((?:[^"\\]|\\.)*)"((?:\s*\+\s*"(?:[^"\\]|\\.)*")*)'
+CALL = re.compile(r'translatableWithFallback\(\s*"([^"]+)"\s*,\s*' + TEXT, re.S)
+# Helpers that build their keys from a prefix: SGCommands' for commands, and the address settings' for their
+# messages, AddressPlan's after a flag saying whether the message is an error
+PREFIXED = [
+    (re.compile(r'SGCommands\.text\(\s*"([^"]+)"\s*,\s*' + TEXT, re.S), 'command.sgcraft.'),
+    (re.compile(r'AddressChanges\.text\(\s*"([^"]+)"\s*,\s*' + TEXT, re.S), 'message.sgcraft.addresses.'),
+    (re.compile(r'SettingsCatalog\.text\(\s*"([^"]+)"\s*,\s*' + TEXT, re.S), 'setting.sgcraft.'),
+    (re.compile(r'AddressPlan\.problem\(\s*(?:true|false)\s*,\s*"([^"]+)"\s*,\s*' + TEXT, re.S),
+     'message.sgcraft.addresses.'),
+]
+PART = re.compile(r'"((?:[^"\\]|\\.)*)"')
 
 NAMES = {
     'item.sgcraft.naquadah': 'Naquadah',
@@ -46,11 +56,12 @@ def add(key, text):
 for root in SOURCES:
     for path in root.rglob('*.java'):
         source = path.read_text(encoding='utf-8')
-        for key, text in CALL.findall(source):
-            add(key, text)
-        for key, text in COMMAND.findall(source):
-            add('command.sgcraft.' + key, text)
+        for key, first, rest in CALL.findall(source):
+            add(key, first + ''.join(PART.findall(rest)))
+        for pattern, prefix in PREFIXED:
+            for key, first, rest in pattern.findall(source):
+                add(prefix + key, first + ''.join(PART.findall(rest)))
 for key, text in NAMES.items():
     add(key, text)
-LANG.write_text(json.dumps(lang, indent=2, ensure_ascii=False) + '\n', encoding='utf-8')
+LANG.write_text(json.dumps(lang, indent=2, ensure_ascii=False) + '\n', encoding='utf-8', newline='\n')
 print('added', added)

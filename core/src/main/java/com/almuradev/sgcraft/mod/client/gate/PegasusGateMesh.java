@@ -102,7 +102,7 @@ public final class PegasusGateMesh {
                         PegasusGateModel.load(glyphs));
             } catch (final Exception e) {
                 PegasusGateMesh.failed = true;
-                SGCraft.LOG.error("Unable to load the Pegasus gate model", e);
+                SGCraft.LOG.error("Couldn't load the Pegasus gate model", e);
             }
         }
         return PegasusGateMesh.instance;

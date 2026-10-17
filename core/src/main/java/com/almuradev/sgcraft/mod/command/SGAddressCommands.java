@@ -27,42 +27,64 @@ package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.mod.SGConfig;
-import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.address.AddressChanges.Change;
+import com.almuradev.sgcraft.mod.address.AddressChanges.Kind;
+import com.almuradev.sgcraft.mod.address.AddressChanges.Outcome;
+import com.almuradev.sgcraft.mod.address.AddressChanges;
 import com.almuradev.sgcraft.mod.address.AddressLayout;
+import com.almuradev.sgcraft.mod.address.AddressPlan;
 import com.almuradev.sgcraft.mod.address.AddressSettings;
 import com.almuradev.sgcraft.mod.address.SGAddressing;
+import com.almuradev.sgcraft.mod.address.WorldAddress;
+import com.almuradev.sgcraft.mod.gate.GateStore;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.DimensionArgument;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
- * The address layout: how many chunks wide each addressed cell is, and the point of origin addresses end with, for
- * every world or for one. {@code /sgcraft addresses} shows each world's layout, now and after a restart;
- * {@code cell_chunks <chunks> [<world>]}, {@code point_of_origin <symbol> [<world>]} and {@code clear <world>} change
- * it. Changes are written to the settings file and take effect when the server next starts, as they change every
- * address in the worlds they reach.
+ * The address settings: how many chunks wide each addressed cell is and the point of origin addresses end with, for
+ * every world or for one, and the groups worlds are sorted into. {@code /sgcraft addresses} shows each world's
+ * addresses, now and after a restart, and {@code groups} lists the groups. {@code cell_chunks <chunks> [<world>]},
+ * {@code point_of_origin <symbol> [<world>]}, {@code clear <world> [cell_chunks|point_of_origin]},
+ * {@code group create <name> [<symbol>]},
+ * {@code group remove <name>}, {@code group symbol <name> <symbol>} and {@code group assign <world> <group>} change
+ * them. Changes are written to the settings file and take effect when the server next starts, as they change
+ * addresses in the worlds they reach; each warns about the worlds whose gates get new addresses.
  */
 final class SGAddressCommands {
 
     private static final DynamicCommandExceptionType NOT_A_SYMBOL = new DynamicCommandExceptionType(
             text -> SGCommands.text("addresses.not_a_symbol",
-                    "Not a point of origin: %s. Give one symbol, giza or \"@\" for @, or none", text));
+                    "%s isn't a point of origin. Give one letter or digit, giza or \"@\" for @, or none", text));
+    private static final DynamicCommandExceptionType NOT_A_GROUP_SYMBOL = new DynamicCommandExceptionType(
+            text -> SGCommands.text("addresses.not_a_group_symbol",
+                    "%s isn't a group symbol. Give one letter or digit, giza or \"@\" for @, or auto", text));
+
+    // The groups the server will next start with, to suggest
+    private static final SuggestionProvider<CommandSourceStack> GROUPS = (context, builder) ->
+            SharedSuggestionProvider.suggest(Stream.concat(Stream.of(AddressSettings.DEFAULT_GROUP),
+                    SGConfig.load().addresses().groups().keySet().stream()).distinct(), builder);
 
     private SGAddressCommands() {
     }
@@ -73,120 +95,181 @@ final class SGAddressCommands {
                 .executes(context -> SGAddressCommands.show(context.getSource()))
                 .then(Commands.literal("cell_chunks")
                         .then(Commands.argument("chunks", IntegerArgumentType.integer(1, AddressLayout.MAX_CELL_CHUNKS))
-                                .executes(context -> SGAddressCommands.setCellChunks(context.getSource(),
-                                        Optional.empty(), IntegerArgumentType.getInteger(context, "chunks")))
+                                .executes(context -> SGAddressCommands.change(context, Kind.CELL_CHUNKS,
+                                        Optional.empty(), "", SGAddressCommands.chunks(context)))
                                 .then(Commands.argument("world", DimensionArgument.dimension())
-                                        .executes(context -> SGAddressCommands.setCellChunks(context.getSource(),
-                                                Optional.of(DimensionArgument.getDimension(context, "world")),
-                                                IntegerArgumentType.getInteger(context, "chunks"))))))
+                                        .executes(context -> SGAddressCommands.change(context, Kind.CELL_CHUNKS,
+                                                SGAddressCommands.world(context), "",
+                                                SGAddressCommands.chunks(context))))))
                 .then(Commands.literal("point_of_origin")
                         .then(Commands.argument("symbol", StringArgumentType.string())
                                 .suggests((context, builder) -> SharedSuggestionProvider.suggest(
                                         new String[] {"giza", "none"}, builder))
-                                .executes(context -> SGAddressCommands.setOrigin(context.getSource(),
-                                        Optional.empty(), StringArgumentType.getString(context, "symbol")))
+                                .executes(context -> SGAddressCommands.change(context, Kind.POINT_OF_ORIGIN,
+                                        Optional.empty(), "", SGAddressCommands.origin(context)))
                                 .then(Commands.argument("world", DimensionArgument.dimension())
-                                        .executes(context -> SGAddressCommands.setOrigin(context.getSource(),
-                                                Optional.of(DimensionArgument.getDimension(context, "world")),
-                                                StringArgumentType.getString(context, "symbol"))))))
+                                        .executes(context -> SGAddressCommands.change(context, Kind.POINT_OF_ORIGIN,
+                                                SGAddressCommands.world(context), "",
+                                                SGAddressCommands.origin(context))))))
                 .then(Commands.literal("clear")
                         .then(Commands.argument("world", DimensionArgument.dimension())
-                                .executes(context -> SGAddressCommands.clear(context.getSource(),
-                                        DimensionArgument.getDimension(context, "world")))));
+                                .executes(context -> SGAddressCommands.change(context, Kind.CLEAR_WORLD,
+                                        SGAddressCommands.world(context), "", ""))
+                                .then(Commands.literal("cell_chunks")
+                                        .executes(context -> SGAddressCommands.change(context, Kind.CLEAR_CELL,
+                                                SGAddressCommands.world(context), "", "")))
+                                .then(Commands.literal("point_of_origin")
+                                        .executes(context -> SGAddressCommands.change(context, Kind.CLEAR_ORIGIN,
+                                                SGAddressCommands.world(context), "", "")))))
+                .then(Commands.literal("groups")
+                        .executes(context -> SGAddressCommands.groups(context.getSource())))
+                .then(Commands.literal("group")
+                        .then(Commands.literal("create")
+                                .then(Commands.argument("name", StringArgumentType.word())
+                                        .executes(context -> SGAddressCommands.change(context, Kind.CREATE_GROUP,
+                                                Optional.empty(), SGAddressCommands.name(context, "name"), ""))
+                                        .then(Commands.argument("symbol", StringArgumentType.string())
+                                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                        new String[] {"auto"}, builder))
+                                                .executes(context -> SGAddressCommands.change(context,
+                                                        Kind.CREATE_GROUP, Optional.empty(),
+                                                        SGAddressCommands.name(context, "name"),
+                                                        SGAddressCommands.groupSymbol(context))))))
+                        .then(Commands.literal("remove")
+                                .then(Commands.argument("name", StringArgumentType.word())
+                                        .suggests(SGAddressCommands.GROUPS)
+                                        .executes(context -> SGAddressCommands.change(context, Kind.REMOVE_GROUP,
+                                                Optional.empty(), SGAddressCommands.name(context, "name"), ""))))
+                        .then(Commands.literal("symbol")
+                                .then(Commands.argument("name", StringArgumentType.word())
+                                        .suggests(SGAddressCommands.GROUPS)
+                                        .then(Commands.argument("symbol", StringArgumentType.string())
+                                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                                        new String[] {"auto", "giza"}, builder))
+                                                .executes(context -> SGAddressCommands.change(context,
+                                                        Kind.GROUP_SYMBOL, Optional.empty(),
+                                                        SGAddressCommands.name(context, "name"),
+                                                        SGAddressCommands.groupSymbol(context))))))
+                        .then(Commands.literal("assign")
+                                .then(Commands.argument("world", DimensionArgument.dimension())
+                                        .then(Commands.argument("group", StringArgumentType.word())
+                                                .suggests(SGAddressCommands.GROUPS)
+                                                .executes(context -> SGAddressCommands.change(context,
+                                                        Kind.WORLD_GROUP, SGAddressCommands.world(context),
+                                                        SGAddressCommands.name(context, "group"), ""))))));
+    }
+
+    private static Optional<Identifier> world(final CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
+        return Optional.of(DimensionArgument.getDimension(context, "world").dimension().identifier());
+    }
+
+    private static String chunks(final CommandContext<CommandSourceStack> context) {
+        return String.valueOf(IntegerArgumentType.getInteger(context, "chunks"));
+    }
+
+    private static String name(final CommandContext<CommandSourceStack> context, final String argument) {
+        return StringArgumentType.getString(context, argument).toLowerCase(Locale.ROOT);
     }
 
     private static int show(final CommandSourceStack source) {
+        final MinecraftServer server = source.getServer();
         final SGAddressing addressing = SGServer.require().addressing();
         final AddressSettings pending = SGConfig.load().addresses();
-        for (final ServerLevel level : source.getServer().getAllLevels()) {
+        final AddressPlan next = SGAddressCommands.nextPlan(server, pending);
+        final GateStore store = server.getDataStorage().computeIfAbsent(GateStore.TYPE);
+        for (final ServerLevel level : server.getAllLevels()) {
             final ResourceKey<Level> world = level.dimension();
-            final AddressLayout now = addressing.layoutOf(world);
-            final AddressLayout next = pending.layoutOf(world);
-            final long gates = addressing.gateCount(world);
+            final WorldAddress now = addressing.worldAddress(world);
+            final WorldAddress after = WorldAddress.of(pending.layoutOf(world), next, world);
+            final long gates = store.gateCount(world);
             source.sendSuccess(() -> SGCommands.text("addresses.world", "%s: %s, %s gates",
                     world.identifier().toString(), now.describe(), gates), false);
-            if (!next.equals(now)) {
+            if (!after.equals(now)) {
                 source.sendSuccess(() -> SGCommands.text("addresses.pending", "  After a restart: %s",
-                        next.describe()).withStyle(gates > 0 ? ChatFormatting.RED : ChatFormatting.YELLOW), false);
+                        after.describe()).withStyle(gates > 0 ? ChatFormatting.RED : ChatFormatting.YELLOW), false);
             }
         }
         return 1;
     }
 
-    private static int setCellChunks(final CommandSourceStack source, final Optional<ServerLevel> world,
-            final int chunks) {
-        final boolean saved = SGConfig.saveCellChunks(world.map(level -> level.dimension().identifier()), chunks);
-        return SGAddressCommands.changed(source, world, saved);
+    private static int groups(final CommandSourceStack source) {
+        final AddressPlan now = SGServer.require().addressing().plan();
+        final AddressPlan next = SGAddressCommands.nextPlan(source.getServer(), SGConfig.load().addresses());
+        for (final AddressPlan.Group group : next.groups()) {
+            final Optional<AddressPlan.Group> running = now.group(group.name());
+            source.sendSuccess(() -> SGCommands.text("addresses.group", "%s (%s): %s of %s worlds", group.name(),
+                    String.valueOf(group.symbol().character()), next.worldsIn(group.name()).size(), Symbol.COUNT),
+                    false);
+            if (running.isEmpty()) {
+                source.sendSuccess(() -> SGCommands.text("addresses.group_new", "  New. It exists after a restart")
+                        .withStyle(ChatFormatting.YELLOW), false);
+            } else if (!running.get().symbol().equals(group.symbol())) {
+                source.sendSuccess(() -> SGCommands.text("addresses.group_symbol_now", "  Its symbol is %s until "
+                        + "a restart", String.valueOf(running.get().symbol().character()))
+                        .withStyle(ChatFormatting.YELLOW), false);
+            }
+        }
+        for (final AddressPlan.Group group : now.groups()) {
+            if (next.group(group.name()).isEmpty()) {
+                source.sendSuccess(() -> SGCommands.text("addresses.group_gone", "%s (%s): gone after a restart",
+                        group.name(), String.valueOf(group.symbol().character())).withStyle(ChatFormatting.YELLOW),
+                        false);
+            }
+        }
+        next.problems().forEach(problem -> source.sendFailure(problem.text()));
+        return 1;
     }
 
-    private static int setOrigin(final CommandSourceStack source, final Optional<ServerLevel> world,
-            final String text) throws CommandSyntaxException {
-        final String origin = SGAddressCommands.origin(text);
-        final boolean saved = SGConfig.savePointOfOrigin(world.map(level -> level.dimension().identifier()), origin);
-        return SGAddressCommands.changed(source, world, saved);
-    }
-
-    private static int clear(final CommandSourceStack source, final ServerLevel world) {
-        final boolean saved = SGConfig.clearWorldLayout(world.dimension().identifier());
-        return SGAddressCommands.changed(source, Optional.of(world), saved);
+    private static AddressPlan nextPlan(final MinecraftServer server, final AddressSettings pending) {
+        final List<ResourceKey<Level>> worlds = new ArrayList<>();
+        server.getAllLevels().forEach(level -> worlds.add(level.dimension()));
+        return AddressPlan.of(pending, SGAddressing.recorded(server.getDataStorage().computeIfAbsent(GateStore.TYPE)),
+                worlds);
     }
 
     // Reads a point of origin as typed: one symbol, giza for @, or none for addresses without one
-    private static String origin(final String text) throws CommandSyntaxException {
-        final String lower = text.toLowerCase(Locale.ROOT);
-        if (lower.equals("none")) {
+    private static String origin(final CommandContext<CommandSourceStack> context) throws CommandSyntaxException {
+        final String text = StringArgumentType.getString(context, "symbol");
+        if (text.toLowerCase(Locale.ROOT).equals("none")) {
             return "";
         }
-        if (lower.equals("giza")) {
-            return String.valueOf(Symbol.GIZA.character());
-        }
-        final String upper = text.toUpperCase(Locale.ROOT);
-        if (upper.length() == 1 && Symbol.of(upper.charAt(0)).isPresent()) {
-            return upper;
-        }
-        throw SGAddressCommands.NOT_A_SYMBOL.create(text);
+        return SGAddressCommands.symbol(text).orElseThrow(() -> SGAddressCommands.NOT_A_SYMBOL.create(text));
     }
 
-    // Tells the caller what the change does when the server next starts, warning about each world whose gates'
-    // addresses it changes, in chat and in the server log
-    private static int changed(final CommandSourceStack source, final Optional<ServerLevel> only,
-            final boolean saved) {
-        if (!saved) {
-            source.sendFailure(SGCommands.text("settings.not_saved", "The settings file couldn't be written"));
+    // Reads a group's symbol as typed: one symbol, giza for @, or auto for one SGCraft chooses
+    private static String groupSymbol(final CommandContext<CommandSourceStack> context)
+            throws CommandSyntaxException {
+        final String text = StringArgumentType.getString(context, "symbol");
+        if (text.toLowerCase(Locale.ROOT).equals("auto")) {
+            return "";
+        }
+        return SGAddressCommands.symbol(text).orElseThrow(() -> SGAddressCommands.NOT_A_GROUP_SYMBOL.create(text));
+    }
+
+    private static Optional<String> symbol(final String text) {
+        if (text.toLowerCase(Locale.ROOT).equals("giza")) {
+            return Optional.of(String.valueOf(Symbol.GIZA.character()));
+        }
+        final String upper = text.toUpperCase(Locale.ROOT);
+        return upper.length() == 1 && Symbol.of(upper.charAt(0)).isPresent() ? Optional.of(upper) : Optional.empty();
+    }
+
+    // Saves a change and tells the caller what it does when the server next starts, warning about each world whose
+    // gates get new addresses, in chat and in the server log
+    private static int change(final CommandContext<CommandSourceStack> context, final Kind kind,
+            final Optional<Identifier> world, final String group, final String value) {
+        final CommandSourceStack source = context.getSource();
+        final Outcome outcome = AddressChanges.run(source.getServer(), new Change(kind, world, group, value), true);
+        if (outcome.refusal().isPresent()) {
+            source.sendFailure(outcome.refusal().get());
             return 0;
         }
-        final SGAddressing addressing = SGServer.require().addressing();
-        final AddressSettings pending = SGConfig.load().addresses();
-        int affected = 0;
-        for (final ServerLevel level : source.getServer().getAllLevels()) {
-            final ResourceKey<Level> world = level.dimension();
-            if (only.isPresent() && !only.get().dimension().equals(world)) {
-                continue;
-            }
-            final AddressLayout now = addressing.layoutOf(world);
-            final AddressLayout next = pending.layoutOf(world);
-            final Identifier id = world.identifier();
-            if (next.equals(now)) {
-                source.sendSuccess(() -> SGCommands.text("addresses.unchanged",
-                        "%s keeps its layout after a restart: %s", id.toString(), now.describe()), true);
-                continue;
-            }
-            final long gates = addressing.gateCount(world);
-            source.sendSuccess(() -> SGCommands.text("addresses.next",
-                    "%s will have %s when the server next starts", id.toString(), next.describe()), true);
-            if (gates > 0) {
-                affected++;
-                source.sendFailure(SGCommands.text("addresses.warning",
-                        "WARNING: this changes the address of every gate in %s (%s gates). Address books and saved "
-                                + "addresses will stop reaching them. Set it back before restarting to keep them.",
-                        id.toString(), gates).withStyle(ChatFormatting.RED, ChatFormatting.BOLD));
-                SGCraft.LOG.warn("Every address in {} ({} gates) changes when the server next starts: {} becomes {}",
-                        id, gates, now.describe(), next.describe());
-            }
-        }
-        if (affected == 0) {
-            source.sendSuccess(() -> SGCommands.text("addresses.no_gates_changed",
-                    "No gate's address changes"), false);
+        outcome.lines().forEach(line -> source.sendSuccess(() -> line, true));
+        outcome.warnings().forEach(source::sendFailure);
+        if (outcome.warnings().isEmpty()) {
+            source.sendSuccess(() -> SGCommands.text("addresses.no_gates_changed", "No gate's address changes"),
+                    false);
         }
         return 1;
     }

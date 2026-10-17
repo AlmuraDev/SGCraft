@@ -31,6 +31,7 @@ import com.almuradev.sgcraft.mod.client.gate.GateBaseScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConfigScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleUsers;
+import com.almuradev.sgcraft.mod.client.settings.SettingsScreen;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldScreen;
 import com.almuradev.sgcraft.mod.client.shield.ShieldConsoleScreen;
 import com.almuradev.sgcraft.mod.client.tool.ConfiguratorScreen;
@@ -43,6 +44,7 @@ import com.almuradev.sgcraft.mod.dhd.DhdHooks;
 import com.almuradev.sgcraft.mod.gate.GateBaseInfo;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
+import com.almuradev.sgcraft.mod.settings.SettingsPayloads;
 import com.almuradev.sgcraft.mod.shield.ShieldPayloads;
 import com.almuradev.sgcraft.mod.tool.ExplorerPayloads;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads;
@@ -90,6 +92,13 @@ public final class SGClient {
         });
         SGNetwork.onClient(ShieldPayloads.ConsoleState.TYPE, state -> SGClient.show(ShieldConsoleScreen.class, state,
                 state.open(), ShieldConsoleScreen::new, ShieldConsoleScreen::update));
+        SGNetwork.onClient(SettingsPayloads.State.TYPE, state -> SGClient.show(SettingsScreen.class, state,
+                state.open(), SettingsScreen::new, SettingsScreen::update));
+        SGNetwork.onClient(SettingsPayloads.Confirm.TYPE, confirm -> {
+            if (Minecraft.getInstance().gui.screen() instanceof final SettingsScreen screen) {
+                screen.confirm(confirm);
+            }
+        });
     }
 
     // A gate's base: the address goes to the base's menu the server has just opened, or opens on its own for a player

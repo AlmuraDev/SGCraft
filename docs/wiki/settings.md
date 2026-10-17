@@ -14,7 +14,7 @@ Each file is written the first time the game starts without it. A setting left o
 
 The server file holds only the settings that differ from their defaults, so a fresh `sgcraft-server.json` is `{}`. Add only the settings you want to change.
 
-The server reads `sgcraft-server.json` as it starts. To change a setting by hand, edit the file and restart the server. Many settings can also be changed in game with a command, which applies the change at once and writes it to the file. See [Changing settings in game](#changing-settings-in-game).
+The server reads `sgcraft-server.json` as it starts. To change a setting by hand, edit the file and restart the server. Most settings can also be changed in game, with the [settings screen](#the-settings-screen) or a command, which applies the change at once and writes it to the file. See [Changing settings in game](#changing-settings-in-game).
 
 ## Example
 
@@ -95,23 +95,31 @@ The `addresses` section lays each world out into addresses. See [Addresses](addr
 | --- | --- | --- |
 | `cell_chunks` | `8` | How many chunks wide and long each addressed cell is, from `1` to `256`. One gate per cell can be dialed |
 | `point_of_origin` | `"@"` | The symbol every address ends with, which the last chevron locks; `""` for addresses without one |
-| `worlds` | `{}` | A world's own `cell_chunks` and `point_of_origin`, by world ID. A value left out is the one above |
+| `groups` | `{}` | The groups of worlds, by name, each `{ "symbol": "<symbol>" }`. Leave out `symbol` for one SGCraft chooses. List `default` only to give the default group another symbol than `@` |
+| `worlds` | `{}` | A world's own `cell_chunks`, `point_of_origin` and `group`, by world ID. A value left out is the one above, and a world without a `group` is in the default group |
 
 ```json
 "addresses": {
   "cell_chunks": 8,
   "point_of_origin": "@",
+  "groups": {
+    "pegasus": { "symbol": "P" },
+    "destiny": {}
+  },
   "worlds": {
-    "minecraft:the_nether": { "cell_chunks": 1 }
+    "minecraft:the_nether": { "cell_chunks": 1 },
+    "mymod:atlantis": { "group": "pegasus", "point_of_origin": "A" }
   }
 }
 ```
 
+A group's name is lowercase letters, digits and underscores, up to 32 of them. A server has up to 37 groups and a group up to 37 worlds. See [World symbols and groups](addresses.md#world-symbols-and-groups).
+
 Bigger cells reach further from the center with the same symbols but leave more space between gates. With cells 8 chunks across, 7 symbols reach about 2,985,984 blocks out each way.
 
-> **Warning:** Changing `cell_chunks` or `point_of_origin` changes every gate address in the worlds it reaches. Address books, default addresses and anything else holding an old address stop reaching the gate. Choose them before players build gates.
+> **Warning:** Changing `cell_chunks` or `point_of_origin` changes every gate address in the worlds it reaches. Changing a world's `group`, or a group's `symbol`, changes its gates' addresses of 8 and 9 symbols. Address books, default addresses and anything else holding an old address stop reaching the gate. Choose them before players build gates.
 >
-> The server records each world's layout. When a world that has gates starts with a different one, the server log shows a large `STARGATE ADDRESSES HAVE CHANGED` warning naming each world, its gate count and its old and new layout. It shows once, as the new layout is then recorded. To get the old addresses back, set the old values again and restart. A world with no gates changes without a warning.
+> The server records each world's layout, group and symbol. When a world that has gates starts with different ones, the server log shows a large `STARGATE ADDRESSES HAVE CHANGED` warning naming each world, its gate count and what changed, and operators who join get a warning in chat. It shows once, as the new addresses are then recorded. To get the old addresses back, set the old values again and restart. A world with no gates changes without a warning.
 
 ### Gates
 
@@ -312,6 +320,7 @@ Every server setting at its default. You never need to write all of this. Settin
   "addresses": {
     "cell_chunks": 8,
     "point_of_origin": "@",
+    "groups": {},
     "worlds": {}
   },
   "gates": {
@@ -432,7 +441,7 @@ The structure gate entries above leave out the fields at their defaults.
 
 ## Client settings
 
-`config/sgcraft-client.json` belongs to each player. It changes nothing on the server or for other players. The game reads it as it starts.
+`config/sgcraft-client.json` belongs to each player. It changes nothing on the server or for other players. The game reads it as it starts, and the settings screen's Client tab changes it at once.
 
 | Key | Default | Meaning |
 | --- | --- | --- |
@@ -537,8 +546,9 @@ These commands change server settings at once and write them to `sgcraft-server.
 
 | Setting | Command |
 | --- | --- |
+| Every setting that is one value, by its key, such as `gates.wormholes_jump` or `zpm.capacity` | `/sgcraft config <key> <value>`, or the settings screen |
 | `energy.dial_costs`, `energy.multipliers.inter_world`, `energy.multipliers.other_group` | `/sgcraft costs` |
-| `addresses` | `/sgcraft addresses`, which writes the file but takes effect when the server next starts |
+| `addresses` | `/sgcraft addresses` or the settings screen (`/sgcraft settings screen`), which write the file but take effect when the server next starts |
 | `gates.kawoosh_breaks_unbreakable`, `gates.owners_break_gates`, `gates.generated_gates_breakable`, `gates.wormholes_jump` | `/sgcraft settings` |
 | `gates.defaults` | `/sgcraft gate_defaults` |
 | `gates.chunk_loading_range` | `/sgcraft chunk_loading_range` |
@@ -550,4 +560,23 @@ These commands change server settings at once and write them to `sgcraft-server.
 | `zpm` | `/sgcraft zpm` |
 | Default addresses | `/sgcraft default_addresses` |
 
-Every other server setting needs an edit to the file and a restart. `/sgcraft worldgen always` gives every listed structure a gate until the server stops, but writes nothing to the file.
+`/sgcraft config` and the screen also change `remote_view` and `worldgen.village_gates`, but those take effect when the server next starts, as both are set up as it starts. The settings that are lists or maps, such as `worldgen.structure_gates` and other bridges' `energy.bridge_rates`, need an edit to the file and a restart. `/sgcraft worldgen always` gives every listed structure a gate until the server stops, but writes nothing to the file.
+
+### The settings screen
+
+Open it with `/sgcraft settings screen`, or from the mod list: on NeoForge, the pause screen's Mods button, then SGCraft and Config; on Fabric, Mod Menu's Config button, if Mod Menu is installed.
+
+Operators see these tabs:
+
+| Tab | What it changes |
+| --- | --- |
+| Worlds | Each world's point of origin, cell size and group, and every world's point of origin and cell size. See [Addresses](addresses.md#the-settings-screen) |
+| Groups | The groups of worlds |
+| Gates | The `gates` and `tools` settings, and `remote_view` |
+| Energy | The `energy` settings and `zpm` |
+| Shields | `shields` |
+| MALP | `malp` |
+| Worldgen | `worldgen.naquadah_ore` and `worldgen.village_gates` |
+| Client | Your own `sgcraft-client.json` |
+
+Everyone sees the Client tab, even with no world open. The screen holds your changes until you press **Save**, and **Discard** drops them. Leaving with changes not saved asks first. A number counts as changed when you press Enter or click away from it. Until you save, the screen shows what your changes would do, and a changed setting's name is aqua. Settings marked `*` take effect when the server next starts, and a name in yellow has a different value after a restart. Hover over a setting to see what it does and its default. When you save, every other operator with the screen open sees the change. Commands change the file without refreshing anyone's screen.

@@ -532,7 +532,7 @@ public final class ToolActions {
     public static void openGdo(final ServerPlayer player) {
         final Optional<Stargate> gate = GateTargeting.find(player, ToolActions.range());
         if (gate.isEmpty()) {
-            ToolActions.tell(player, "message.sgcraft.no_gate_near", "Could not detect a gate near you");
+            ToolActions.tell(player, "message.sgcraft.no_gate_near", "There is no gate near you");
             return;
         }
         ToolActions.sendGdo(player, gate.get(), true, "");
@@ -557,7 +557,7 @@ public final class ToolActions {
     public static void gdo(final ServerPlayer player, final GdoAction action) {
         final Optional<Stargate> gate = ToolActions.near(player, action.gate());
         if (gate.isEmpty()) {
-            ToolActions.tell(player, "message.sgcraft.no_gate_near", "Could not detect a gate near you");
+            ToolActions.tell(player, "message.sgcraft.no_gate_near", "There is no gate near you");
             return;
         }
         final Cause cause = ToolActions.cause(player);
@@ -598,7 +598,7 @@ public final class ToolActions {
     public static void openConfigurator(final ServerPlayer player) {
         final Optional<Stargate> gate = GateTargeting.find(player, ToolActions.range());
         if (gate.isEmpty()) {
-            ToolActions.tell(player, "message.sgcraft.no_gate_near", "Could not detect a gate near you");
+            ToolActions.tell(player, "message.sgcraft.no_gate_near", "There is no gate near you");
             return;
         }
         if (!gate.get().access().allows(ToolActions.cause(player), GateRight.CONFIGURE)) {
@@ -733,7 +733,7 @@ public final class ToolActions {
     public static void configurator(final ServerPlayer player, final ConfiguratorApply apply) {
         final Optional<Stargate> found = ToolActions.configured(player, apply.world(), apply.gate());
         if (found.isEmpty()) {
-            ToolActions.tell(player, "message.sgcraft.no_gate_near", "Could not detect a gate near you");
+            ToolActions.tell(player, "message.sgcraft.no_gate_near", "There is no gate near you");
             return;
         }
         final Stargate gate = found.get();

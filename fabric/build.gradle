@@ -2,6 +2,19 @@ plugins {
     id 'multiloader-loader'
     id 'net.fabricmc.fabric-loom'
 }
+repositories {
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'TerraformersMC'
+                url = uri('https://maven.terraformersmc.com/releases')
+            }
+        }
+        filter {
+            includeGroup('com.terraformersmc')
+        }
+    }
+}
 dependencies {
     minecraft("com.mojang:minecraft:${minecraft_version}")
     implementation("net.fabricmc:fabric-loader:${fabric_loader_version}")
@@ -9,6 +22,10 @@ dependencies {
     // Team Reborn Energy, the energy Fabric's tech mods share, so cables can charge power units; bundled in the jar
     implementation("teamreborn:energy:${tr_energy_version}")
     include("teamreborn:energy:${tr_energy_version}")
+    // Mod Menu's Config button opens the settings screen; SGCraft runs without it
+    compileOnly("com.terraformersmc:modmenu:${modmenu_version}") {
+        transitive = false
+    }
 }
 
 loom {

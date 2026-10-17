@@ -65,7 +65,7 @@ public final class CityShieldActions {
                     case RAISE -> {
                         shield.resize(action.width(), action.above(), action.below());
                         if (!shield.raise()) {
-                            message = "There isn't enough energy round the generator to raise a shield that size";
+                            message = "There isn't enough energy around the generator to raise a shield that size";
                         }
                     }
                     case APPLY -> shield.resize(action.width(), action.above(), action.below());

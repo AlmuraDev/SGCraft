@@ -60,6 +60,7 @@ import net.neoforged.neoforge.capabilities.Capabilities;
 import net.neoforged.neoforge.capabilities.RegisterCapabilitiesEvent;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.neoforge.event.level.block.BreakBlockEvent;
 import net.neoforged.neoforge.event.server.ServerAboutToStartEvent;
@@ -98,6 +99,11 @@ public final class SGCraftNeoForge {
         });
         NeoForge.EVENT_BUS.addListener((final ServerTickEvent.Post event) -> NaquadahOre.tick(event.getServer()));
         NeoForge.EVENT_BUS.addListener((final ServerStoppedEvent event) -> SGServer.stopped(event.getServer()));
+        NeoForge.EVENT_BUS.addListener((final PlayerEvent.PlayerLoggedInEvent event) -> {
+            if (event.getEntity() instanceof final ServerPlayer player) {
+                SGServer.joined(player);
+            }
+        });
         NeoForge.EVENT_BUS.addListener((final RegisterCommandsEvent event) ->
                 SGCommands.register(event.getDispatcher()));
         // Formed gates are kept whole unless they may be broken

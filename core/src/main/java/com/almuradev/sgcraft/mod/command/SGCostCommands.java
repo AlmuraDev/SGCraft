@@ -136,7 +136,7 @@ final class SGCostCommands {
         SGCostCommands.showMultipliers(source);
         if (!saved) {
             source.sendFailure(SGCommands.text("costs.not_saved",
-                    "The change applies until the server stops, but the settings file couldn't be written"));
+                    "The settings file couldn't be written, so the change lasts only until the server stops"));
         }
         return 1;
     }
@@ -146,7 +146,7 @@ final class SGCostCommands {
         SGCostCommands.showMultipliers(source);
         if (!saved) {
             source.sendFailure(SGCommands.text("costs.not_saved",
-                    "The change applies until the server stops, but the settings file couldn't be written"));
+                    "The settings file couldn't be written, so the change lasts only until the server stops"));
         }
         return 1;
     }
@@ -168,7 +168,7 @@ final class SGCostCommands {
         source.sendSuccess(() -> SGCostCommands.line(kind, cost), true);
         if (!saved) {
             source.sendFailure(SGCommands.text("costs.not_saved",
-                    "The change applies until the server stops, but the settings file couldn't be written"));
+                    "The settings file couldn't be written, so the change lasts only until the server stops"));
         }
         return 1;
     }

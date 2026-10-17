@@ -28,6 +28,7 @@ package com.almuradev.sgcraft.mod.command;
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.gate.SGStargates;
+import com.almuradev.sgcraft.mod.settings.SettingsActions;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -55,8 +56,8 @@ import java.util.TreeMap;
  *
  * <ul>
  *     <li>{@code /sgcraft settings} shows the settings for every gate; {@code /sgcraft settings <name> <true|false>}
- *     sets one: {@code kawoosh_breaks_unbreakable}, {@code owners_break_gates} and
- *     {@code generated_gates_breakable}.</li>
+ *     sets one: {@code kawoosh_breaks_unbreakable}, {@code owners_break_gates}, {@code generated_gates_breakable}
+ *     and {@code wormholes_jump}. {@code /sgcraft settings screen} opens the settings screen.</li>
  *     <li>{@code /sgcraft gate_defaults} lists the values gates have for a property when they have none of their
  *     own; {@code /sgcraft gate_defaults <property> <json>} sets one and {@code /sgcraft gate_defaults <property>
  *     reset} clears it. {@code sgcraft:iris} and {@code sgcraft:chevrons} reach gates as they first form.</li>
@@ -83,7 +84,12 @@ final class SGSettingsCommands {
                 .then(SGSettingsCommands.setting(SGSettingsCommands.KAWOOSH_BREAKS_UNBREAKABLE))
                 .then(SGSettingsCommands.setting(SGSettingsCommands.OWNERS_BREAK_GATES))
                 .then(SGSettingsCommands.setting(SGSettingsCommands.GENERATED_GATES_BREAKABLE))
-                .then(SGSettingsCommands.setting(SGSettingsCommands.WORMHOLES_JUMP));
+                .then(SGSettingsCommands.setting(SGSettingsCommands.WORMHOLES_JUMP))
+                // The settings screen, for the address settings
+                .then(Commands.literal("screen").executes(context -> {
+                    SettingsActions.open(context.getSource().getPlayerOrException());
+                    return 1;
+                }));
     }
 
     // <name> shows the settings, and <name> <true|false> sets one
@@ -195,7 +201,7 @@ final class SGSettingsCommands {
     private static void reportSaved(final CommandSourceStack source, final boolean saved) {
         if (!saved) {
             source.sendFailure(SGCommands.text("settings.not_saved",
-                    "The change applies until the server stops, but the settings file couldn't be written"));
+                    "The settings file couldn't be written, so the change lasts only until the server stops"));
         }
     }
 }

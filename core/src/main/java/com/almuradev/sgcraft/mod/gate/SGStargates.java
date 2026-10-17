@@ -120,6 +120,15 @@ public final class SGStargates implements Stargates {
     }
 
     /**
+     * Runs with other settings from now on, as the settings screen and {@code /sgcraft config} change them. The
+     * caller writes them to the settings file.
+     */
+    public void useConfig(final SGConfig config) {
+        this.config = config;
+        this.defaults = null;
+    }
+
+    /**
      * Changes the server's values for gates without their own, and writes them to the settings file. The iris and
      * the chevrons only reach gates that form from now on.
      *

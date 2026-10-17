@@ -64,6 +64,7 @@ import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.fabricmc.fabric.api.event.registry.FabricRegistryBuilder;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.object.builder.v1.world.poi.PoiHelper;
 import net.minecraft.core.Registry;
@@ -163,6 +164,7 @@ public final class SGCraftFabric implements ModInitializer {
         ServerChunkEvents.CHUNK_LOAD.register(NaquadahOre::onChunkLoad);
         ServerTickEvents.END_SERVER_TICK.register(NaquadahOre::tick);
         ServerLifecycleEvents.SERVER_STOPPED.register(SGServer::stopped);
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> SGServer.joined(handler.getPlayer()));
         CommandRegistrationCallback.EVENT.register((dispatcher, registries, environment) ->
                 SGCommands.register(dispatcher));
     }

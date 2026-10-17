@@ -131,7 +131,7 @@ public final class UniverseGateMesh {
                 UniverseGateMesh.instance = new UniverseGateMesh(UniverseGateModel.load(in));
             } catch (final Exception e) {
                 UniverseGateMesh.failed = true;
-                SGCraft.LOG.error("Unable to load the Universe gate model", e);
+                SGCraft.LOG.error("Couldn't load the Universe gate model", e);
             }
         }
         return UniverseGateMesh.instance;

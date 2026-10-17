@@ -31,6 +31,7 @@ import com.almuradev.sgcraft.api.SGCraftApi;
 import com.almuradev.sgcraft.api.SGCraftRegistries;
 import com.almuradev.sgcraft.api.address.Address;
 import com.almuradev.sgcraft.api.address.Addressing;
+import com.almuradev.sgcraft.api.address.WorldGroup;
 import com.almuradev.sgcraft.api.gate.DialMode;
 import com.almuradev.sgcraft.api.gate.DialResult;
 import com.almuradev.sgcraft.api.gate.GateType;
@@ -114,8 +115,8 @@ public final class SGCommands {
     private static final SimpleCommandExceptionType NOT_LOOKING = new SimpleCommandExceptionType(
             SGCommands.text("not_looking", "You aren't looking at a gate within %s blocks", SGCommands.LOOK_BLOCKS));
     private static final DynamicCommandExceptionType NO_GATE_IN_CELL = new DynamicCommandExceptionType(
-            cell -> SGCommands.text("no_gate_in_cell", "There is no gate in the %s chunk wide region holding that "
-                    + "position", cell));
+            cell -> SGCommands.text("no_gate_in_cell", "There is no gate in the address cell that holds that "
+                    + "position. Cells are %s chunks across", cell));
     private static final SimpleCommandExceptionType SELECTION_GONE = new SimpleCommandExceptionType(
             SGCommands.text("selection_gone", "Your selected gate is gone, so it's no longer selected"));
     private static final SimpleCommandExceptionType UNKNOWN_TYPE = new SimpleCommandExceptionType(
@@ -175,6 +176,7 @@ public final class SGCommands {
                 .then(SGCostCommands.costs())
                 .then(SGSettingsCommands.settings())
                 .then(SGSettingsCommands.gateDefaults())
+                .then(SGConfigCommands.config())
                 .then(SGOptionCommands.chunkLoadingRange())
                 .then(SGOptionCommands.logEvents())
                 .then(SGOreCommands.ore())
@@ -382,15 +384,29 @@ public final class SGCommands {
         addressing.addressOf(gate.position(), world).ifPresent(address ->
                 source.sendSuccess(() -> SGCommands.text("address.same_world", "  From this world: %s %s",
                         SGCommands.copyable(address, gate), SGCommands.dialLink(address)), false));
-        // From any other world of its group, its address is the same, so the first world that reaches it will do
-        addressing.groupOf(world).worlds().stream()
+        // From any other world of its group, its address is the same, so the first world that reaches it will do;
+        // the same goes for the worlds of other groups
+        final WorldGroup group = addressing.groupOf(world);
+        final boolean grouped = addressing.groups().size() > 1;
+        group.worlds().stream()
                 .filter(other -> !other.equals(world))
                 .map(other -> addressing.addressOf(gate.position(), other))
                 .flatMap(Optional::stream)
                 .findFirst()
-                .ifPresent(address -> source.sendSuccess(() -> SGCommands.text("address.other_world",
-                        "  From other worlds: %s %s", SGCommands.copyable(address, gate), SGCommands.dialLink(address)),
-                        false));
+                .ifPresent(address -> source.sendSuccess(() -> grouped
+                        ? SGCommands.text("address.group_world", "  From other worlds of group %s: %s %s",
+                                group.name(), SGCommands.copyable(address, gate), SGCommands.dialLink(address))
+                        : SGCommands.text("address.other_world", "  From other worlds: %s %s",
+                                SGCommands.copyable(address, gate), SGCommands.dialLink(address)), false));
+        addressing.groups().stream()
+                .filter(other -> !other.equals(group))
+                .flatMap(other -> other.worlds().stream())
+                .map(other -> addressing.addressOf(gate.position(), other))
+                .flatMap(Optional::stream)
+                .findFirst()
+                .ifPresent(address -> source.sendSuccess(() -> SGCommands.text("address.other_group",
+                        "  From other groups: %s %s", SGCommands.copyable(address, gate),
+                        SGCommands.dialLink(address)), false));
         return 1;
     }
 

@@ -95,7 +95,7 @@ final class SGOptionCommands {
     private static void saved(final CommandSourceStack source, final boolean saved) {
         if (!saved) {
             source.sendFailure(SGCommands.text("costs.not_saved",
-                    "The change applies until the server stops, but the settings file couldn't be written"));
+                    "The settings file couldn't be written, so the change lasts only until the server stops"));
         }
     }
 }
