@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.client;
 
+import com.almuradev.sgcraft.mod.client.computer.ComputerConfigScreen;
 import com.almuradev.sgcraft.mod.client.computer.DialingComputerScreen;
 import com.almuradev.sgcraft.mod.client.dhd.DhdScreen;
 import com.almuradev.sgcraft.mod.client.gate.GateAddressScreen;
@@ -32,6 +33,7 @@ import com.almuradev.sgcraft.mod.client.gate.GateBaseScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConfigScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleUsers;
+import com.almuradev.sgcraft.mod.client.malp.MalpMonitorDisplays;
 import com.almuradev.sgcraft.mod.client.settings.SettingsScreen;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldScreen;
 import com.almuradev.sgcraft.mod.client.shield.ShieldConsoleScreen;
@@ -50,8 +52,10 @@ import com.almuradev.sgcraft.mod.settings.SettingsPayloads;
 import com.almuradev.sgcraft.mod.shield.ShieldPayloads;
 import com.almuradev.sgcraft.mod.tool.ExplorerPayloads;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -84,6 +88,7 @@ public final class SGClient {
         SGNetwork.onClient(MalpPayloads.ConfigState.TYPE, state -> SGClient.show(MalpConfigScreen.class, state,
                 state.open(), MalpConfigScreen::new, MalpConfigScreen::update));
         SGNetwork.onClient(MalpPayloads.ConsoleUse.TYPE, MalpConsoleUsers::update);
+        SGNetwork.onClient(MalpPayloads.MonitorState.TYPE, MalpMonitorDisplays::update);
         SGNetwork.onClient(ExplorerPayloads.State.TYPE, state -> SGClient.show(ExplorerScreen.class, state,
                 state.open(), ExplorerScreen::new, ExplorerScreen::update));
         // The generator's screen opens with its menu; its state only fills it
@@ -93,6 +98,9 @@ public final class SGClient {
             }
         });
         SGNetwork.onClient(ComputerPayloads.Screen.TYPE, SGClient::dialingComputer);
+        SGNetwork.onClient(ComputerPayloads.Notice.TYPE, SGClient::computerNotice);
+        SGNetwork.onClient(ComputerPayloads.ConfigState.TYPE, state -> SGClient.show(ComputerConfigScreen.class,
+                state, state.open(), ComputerConfigScreen::new, ComputerConfigScreen::update));
         SGNetwork.onClient(ShieldPayloads.ConsoleState.TYPE, state -> SGClient.show(ShieldConsoleScreen.class, state,
                 state.open(), ShieldConsoleScreen::new, ShieldConsoleScreen::update));
         SGNetwork.onClient(SettingsPayloads.State.TYPE, state -> SGClient.show(SettingsScreen.class, state,
@@ -123,6 +131,18 @@ public final class SGClient {
         } else if (minecraft.gui.screen() instanceof final DialingComputerScreen open
                 && open.computer().equals(screen.computer())) {
             minecraft.gui.setScreen(null);
+        }
+    }
+
+    // What a dialing computer tells its player shows on its screen if that is open, and over the hotbar if not
+    private static void computerNotice(final ComputerPayloads.Notice notice) {
+        final Minecraft minecraft = Minecraft.getInstance();
+        final Component text = Component.translatableWithFallback(notice.key(), notice.fallback());
+        if (minecraft.gui.screen() instanceof final DialingComputerScreen open
+                && open.computer().equals(notice.computer())) {
+            open.notice(text);
+        } else if (minecraft.player != null) {
+            minecraft.player.sendOverlayMessage(text.copy().withStyle(ChatFormatting.RED));
         }
     }
 

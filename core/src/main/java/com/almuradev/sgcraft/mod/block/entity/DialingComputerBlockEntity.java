@@ -27,7 +27,14 @@ package com.almuradev.sgcraft.mod.block.entity;
 
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.client.computer.ComputerAlarms;
+import com.almuradev.sgcraft.mod.computer.ComputerDialMode;
+import com.almuradev.sgcraft.mod.computer.ComputerPower;
 import com.almuradev.sgcraft.mod.computer.ComputerSettings;
+import com.almuradev.sgcraft.mod.computer.DialingComputers;
+import com.almuradev.sgcraft.mod.computer.PoweredComputer;
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
@@ -42,7 +49,9 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -50,13 +59,38 @@ import java.util.Optional;
  * A dialing computer's link to its gate: the nearest gate of any type within the server's
  * {@link ComputerSettings#linkRange() link range}. It finds one when placed, and finds another if its gate is
  * broken. Clients are told which gate it is, so the computer's screen can show that gate dialing.
+ *
+ * <p>It also keeps how it dials, and whether its alarm is off. The alarm sounds while a wormhole comes in to its
+ * gate, unless someone at the computer has turned it off; it stays off, or on, until someone changes it, whether a
+ * wormhole is coming in or not.</p>
+ *
+ * <p>It keeps the addresses last dialed from it too, newest first, as many as the server's
+ * {@link ComputerSettings#historySize() history size}, for its screen to list and dial again.</p>
  */
-public final class DialingComputerBlockEntity extends BlockEntity {
+public final class DialingComputerBlockEntity extends BlockEntity implements PoweredComputer {
 
     // How often a computer checks its link
     private static final int CHECK_TICKS = 20;
 
     private @Nullable BlockPos linked;
+    private ComputerDialMode mode = ComputerDialMode.GATE;
+    private boolean alarmOff;
+    private final ComputerPower power = new ComputerPower();
+    private List<Dialed> history = List.of();
+
+    /**
+     * An address dialed from the computer.
+     *
+     * @param address the address, in its characters, as typed
+     * @param connected whether the dial opened a wormhole
+     */
+    public record Dialed(String address, boolean connected) {
+
+        public static final Codec<Dialed> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+                Codec.STRING.fieldOf("address").forGetter(Dialed::address),
+                Codec.BOOL.fieldOf("connected").forGetter(Dialed::connected)
+        ).apply(instance, Dialed::new));
+    }
 
     public DialingComputerBlockEntity(final BlockPos pos, final BlockState state) {
         super(SGBlockEntityTypes.DIALING_COMPUTER, pos, state);
@@ -96,12 +130,102 @@ public final class DialingComputerBlockEntity extends BlockEntity {
                 .map(Stargate.class::cast);
     }
 
-    /** Keeps the computer linked: to its gate while that lasts, or else to the nearest gate in reach. */
+    /** @return how the computer dials */
+    public ComputerDialMode mode() {
+        return this.mode;
+    }
+
+    /** Has the computer dial another way from now on. */
+    public void setMode(final ComputerDialMode mode) {
+        if (this.mode != mode) {
+            this.mode = mode;
+            this.changed();
+        }
+    }
+
+    /** @return the addresses last dialed from the computer, newest first */
+    public List<Dialed> history() {
+        return this.history;
+    }
+
+    /**
+     * Puts an address dialed from the computer at the top of its history, taking it from lower down if it was there,
+     * and lets go of the oldest beyond the server's history size.
+     */
+    public void remember(final String address, final boolean connected) {
+        final List<Dialed> history = new ArrayList<>();
+        history.add(new Dialed(address, connected));
+        this.history.stream().filter(dialed -> !dialed.address().equals(address)).forEach(history::add);
+        this.history = List.copyOf(history.subList(0, Math.min(history.size(),
+                ComputerSettings.current().historySize())));
+        this.changed();
+    }
+
+    /** @return whether a wormhole is coming in to the computer's gate, as the gate's base shows it */
+    public boolean incoming() {
+        return this.linked != null && this.level != null
+                && this.level.getBlockEntity(this.linked) instanceof final StargateBaseBlockEntity base
+                && base.isFormed() && base.dialView().active() && !base.dialView().initiator();
+    }
+
+    /** @return whether the alarm has been turned off */
+    public boolean alarmOff() {
+        return this.alarmOff;
+    }
+
+    /**
+     * @return whether the alarm sounds now: the computer runs, a wormhole is coming in, and no one has turned it off
+     */
+    public boolean alarming() {
+        return this.running() && this.incoming() && !this.alarmOff;
+    }
+
+    @Override
+    public ComputerPower power() {
+        return this.power;
+    }
+
+    @Override
+    public void setOn(final boolean on) {
+        if (this.level == null) {
+            return;
+        }
+        this.power.setOn(this.level, this.worldPosition, on);
+        this.changed();
+        if (!this.running() && this.level instanceof final ServerLevel serverLevel) {
+            DialingComputers.shutDown(serverLevel, this.worldPosition);
+        }
+    }
+
+    /** Turns the alarm off, or on again; it stays that way until changed. */
+    public void setAlarmOff(final boolean off) {
+        if (this.alarmOff != off) {
+            this.alarmOff = off;
+            this.changed();
+        }
+    }
+
+    /**
+     * Keeps the computer linked, to its gate while that lasts or else to the nearest gate in reach, pays for its
+     * running, ending everyone's turn at it if it loses power, and ends the turn of anyone who walked away from it.
+     */
     public static void serverTick(final ServerLevel level, final BlockPos pos,
             final DialingComputerBlockEntity computer) {
         if (level.getGameTime() % DialingComputerBlockEntity.CHECK_TICKS == 0) {
             computer.gate();
         }
+        if (level.getGameTime() % ComputerPower.CHECK_TICKS == 0 && computer.power.pay(level, pos)) {
+            computer.changed();
+            if (!computer.running()) {
+                DialingComputers.shutDown(level, pos);
+            }
+        }
+        DialingComputers.tick(level, pos);
+    }
+
+    /** Keeps the alarm sounding while it should. Only clients call this. */
+    public static void clientTick(final DialingComputerBlockEntity computer) {
+        ComputerAlarms.tick(computer);
     }
 
     private void relink(final ServerLevel level) {
@@ -121,6 +245,11 @@ public final class DialingComputerBlockEntity extends BlockEntity {
             return;
         }
         this.linked = linked;
+        this.changed();
+    }
+
+    // Saves the computer, and tells clients what changed
+    private void changed() {
         this.setChanged();
         if (this.level != null) {
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
@@ -131,6 +260,10 @@ public final class DialingComputerBlockEntity extends BlockEntity {
     protected void loadAdditional(final ValueInput input) {
         super.loadAdditional(input);
         this.linked = input.read("linked", BlockPos.CODEC).orElse(null);
+        this.mode = input.read("mode", ComputerDialMode.CODEC).orElse(ComputerDialMode.GATE);
+        this.alarmOff = input.getBooleanOr("alarm_off", false);
+        this.power.load(input);
+        this.history = input.read("history", Dialed.CODEC.listOf()).orElse(List.of());
     }
 
     @Override
@@ -139,6 +272,10 @@ public final class DialingComputerBlockEntity extends BlockEntity {
         if (this.linked != null) {
             output.store("linked", BlockPos.CODEC, this.linked);
         }
+        output.store("mode", ComputerDialMode.CODEC, this.mode);
+        output.putBoolean("alarm_off", this.alarmOff);
+        this.power.save(output);
+        output.store("history", Dialed.CODEC.listOf(), this.history);
     }
 
     @Override
@@ -152,6 +289,10 @@ public final class DialingComputerBlockEntity extends BlockEntity {
         if (this.linked != null) {
             tag.store("linked", BlockPos.CODEC, this.linked);
         }
+        tag.store("mode", ComputerDialMode.CODEC, this.mode);
+        tag.putBoolean("alarm_off", this.alarmOff);
+        this.power.write(tag);
+        tag.store("history", Dialed.CODEC.listOf(), this.history);
         return tag;
     }
 }

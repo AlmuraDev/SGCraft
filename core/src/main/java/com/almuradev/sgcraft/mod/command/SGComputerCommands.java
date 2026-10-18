@@ -27,6 +27,8 @@ package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.computer.ComputerSettings;
+import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import net.minecraft.ChatFormatting;
@@ -42,6 +44,14 @@ import net.minecraft.network.chat.Component;
  *     <li>{@code /sgcraft computers link_range <blocks>} sets how far from a computer the gate it dials may be.</li>
  *     <li>{@code /sgcraft computers chair_reach <blocks>} sets how far in front of a computer its chair may
  *     stand.</li>
+ *     <li>{@code /sgcraft computers requires_power <true|false>} sets whether dialing computers and MALP consoles
+ *     need power to run.</li>
+ *     <li>{@code /sgcraft computers energy_per_tick <energy>} sets how much gate energy a computer uses each
+ *     tick.</li>
+ *     <li>{@code /sgcraft computers power_reach <blocks>} sets how far from a computer the power units and ZPM
+ *     blocks it draws on may stand.</li>
+ *     <li>{@code /sgcraft computers history_size <addresses>} sets how many of the addresses last dialed from a
+ *     computer it keeps.</li>
  * </ul>
  */
 final class SGComputerCommands {
@@ -60,7 +70,22 @@ final class SGComputerCommands {
                 .then(Commands.literal("chair_reach").then(Commands.argument("blocks",
                         IntegerArgumentType.integer(1, ComputerSettings.MAX_CHAIR_REACH))
                         .executes(context -> SGComputerCommands.set(context.getSource(), "chair_reach",
-                                IntegerArgumentType.getInteger(context, "blocks")))));
+                                IntegerArgumentType.getInteger(context, "blocks")))))
+                .then(Commands.literal("requires_power").then(Commands.argument("value", BoolArgumentType.bool())
+                        .executes(context -> SGComputerCommands.set(context.getSource(), ComputerSettings.current()
+                                .withRequiresPower(BoolArgumentType.getBool(context, "value"))))))
+                .then(Commands.literal("energy_per_tick").then(Commands.argument("energy",
+                        DoubleArgumentType.doubleArg(0))
+                        .executes(context -> SGComputerCommands.set(context.getSource(), ComputerSettings.current()
+                                .withEnergyPerTick(DoubleArgumentType.getDouble(context, "energy"))))))
+                .then(Commands.literal("power_reach").then(Commands.argument("blocks",
+                        IntegerArgumentType.integer(1, ComputerSettings.MAX_POWER_REACH))
+                        .executes(context -> SGComputerCommands.set(context.getSource(), "power_reach",
+                                IntegerArgumentType.getInteger(context, "blocks")))))
+                .then(Commands.literal("history_size").then(Commands.argument("addresses",
+                        IntegerArgumentType.integer(0, ComputerSettings.MAX_HISTORY_SIZE))
+                        .executes(context -> SGComputerCommands.set(context.getSource(), "history_size",
+                                IntegerArgumentType.getInteger(context, "addresses")))));
     }
 
     private static int show(final CommandSourceStack source) {
@@ -69,12 +94,19 @@ final class SGComputerCommands {
                 false);
         source.sendSuccess(() -> SGComputerCommands.line("link_range", settings.linkRange()), false);
         source.sendSuccess(() -> SGComputerCommands.line("chair_reach", settings.chairReach()), false);
+        source.sendSuccess(() -> SGComputerCommands.line("requires_power", settings.requiresPower()), false);
+        source.sendSuccess(() -> SGComputerCommands.line("energy_per_tick", settings.energyPerTick()), false);
+        source.sendSuccess(() -> SGComputerCommands.line("power_reach", settings.powerReach()), false);
+        source.sendSuccess(() -> SGComputerCommands.line("history_size", settings.historySize()), false);
         return 1;
     }
 
     private static int set(final CommandSourceStack source, final String name, final int value) {
-        final boolean saved = SGServer.require().stargates().setComputers(ComputerSettings.current().with(name,
-                value));
+        return SGComputerCommands.set(source, ComputerSettings.current().with(name, value));
+    }
+
+    private static int set(final CommandSourceStack source, final ComputerSettings settings) {
+        final boolean saved = SGServer.require().stargates().setComputers(settings);
         SGComputerCommands.show(source);
         if (!saved) {
             source.sendFailure(SGCommands.text("settings.not_saved",

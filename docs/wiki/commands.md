@@ -159,7 +159,7 @@ Ore changes apply to chunks generated or loaded from then on and are saved. See 
 | `/sgcraft addresses cell_chunks <chunks> [<world>]` | Op | Set how many chunks wide each addressed cell is, for every world or one |
 | `/sgcraft addresses point_of_origin <symbol> [<world>]` | Op | Set the point of origin: a letter, a digit, `giza` for `@`, or `none` |
 | `/sgcraft addresses clear <world> [<part>]` | Op | Give a world the server's cell size and point of origin again, or only one: `cell_chunks` or `point_of_origin` |
-| `/sgcraft addresses groups` | Op | Each group, its symbol and how many of its 37 worlds it has |
+| `/sgcraft addresses groups` | Op | Each group, its symbol and how many of its 39 worlds it has |
 | `/sgcraft addresses group create <name> [<symbol>]` | Op | Make a group, with a symbol or, left out or `auto`, one SGCraft chooses |
 | `/sgcraft addresses group remove <name>` | Op | Remove a group; its worlds go to the default group |
 | `/sgcraft addresses group symbol <name> <symbol>` | Op | Set a group's symbol: a letter, a digit, `giza` for `@`, or `auto` |
@@ -204,6 +204,10 @@ Every command here needs level 2.
 | `/sgcraft computers` | The server's dialing computer settings |
 | `/sgcraft computers link_range <blocks>` | Set how far from a computer, 1 to 64 blocks, the gate it dials may be (saved) |
 | `/sgcraft computers chair_reach <blocks>` | Set how far in front of a computer, 1 to 4 blocks, its chair may stand (saved) |
+| `/sgcraft computers requires_power <true\|false>` | Set whether dialing computers and MALP consoles need gate energy to run (saved) |
+| `/sgcraft computers energy_per_tick <energy>` | Set how much gate energy a computer uses each tick; it may be a fraction (saved) |
+| `/sgcraft computers power_reach <blocks>` | Set how far from a computer, 1 to 16 blocks along each axis, its power may stand (saved) |
+| `/sgcraft computers history_size <addresses>` | Set how many of the addresses last dialed from a computer it keeps, 0 to 10 (saved) |
 
 See [Dialing Computer](blocks/dialing-computer.md) and [Settings](settings.md#dialing-computers).
 
@@ -225,7 +229,7 @@ Every command here needs level 2. Name a MALP by its name or the start of its UU
 | `/sgcraft malp pair_tablet <malp>` | Pair a MALP with the MALP tablet in your hand, whoever owns the MALP |
 | `/sgcraft malp unpair_tablet <malp>` | Take a MALP off the tablet in your hand |
 | `/sgcraft malp console_damage_interrupts [<bool>]` | Show or set whether damage takes a player off a console or tablet (saved) |
-| `/sgcraft malp console_spectators [<0-64>]` | Show or set how many players near a driven console see its monitor (saved) |
+| `/sgcraft malp console_spectators [<0-64>]` | Show or set how many players near a console see its monitor (saved) |
 | `/sgcraft malp spectator_range [<1-64>]` | Show or set how near a console those players must be, in blocks (saved) |
 | `/sgcraft malp tablet_drain [<ge>]` | Show or set the GE a tick a tablet uses while its feed is live (saved) |
 | `/sgcraft battery` | The charge of the battery in your main hand: "Your battery holds <held> of <capacity> GE" |

@@ -28,6 +28,7 @@ package com.almuradev.sgcraft.mod.settings;
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.computer.ComputerSettings;
 import com.almuradev.sgcraft.mod.energy.DialCosts;
 import com.almuradev.sgcraft.mod.worldgen.NaquadahOre;
 import com.almuradev.sgcraft.mod.worldgen.NaquadahOreSettings;
@@ -407,6 +408,31 @@ public final class SettingsCatalog {
         add.whole("tools.range", SettingsCatalog.text("tools.range", "Tool reach"), SettingsCatalog.text(
                 "tools.range.tip", "How far from a player, in blocks, the handheld tools look for a gate"), 1, 64,
                 SGConfig::toolRange);
+        add.section(SettingsCatalog.text("section.computers", "Dialing computers"));
+        add.whole("computers.link_range", SettingsCatalog.text("computers.link_range", "Link range"),
+                SettingsCatalog.text("computers.link_range.tip", "How far from a dialing computer, in blocks, the "
+                        + "base of the gate it dials can be"), 1, ComputerSettings.MAX_LINK_RANGE,
+                config -> config.options().computers().linkRange());
+        add.whole("computers.chair_reach", SettingsCatalog.text("computers.chair_reach", "Chair reach"),
+                SettingsCatalog.text("computers.chair_reach.tip", "How far in front of a dialing computer, in blocks, "
+                        + "its office chair can stand"), 1, ComputerSettings.MAX_CHAIR_REACH,
+                config -> config.options().computers().chairReach());
+        add.bool("computers.requires_power", SettingsCatalog.text("computers.requires_power", "Computers need "
+                + "power"), SettingsCatalog.text("computers.requires_power.tip", "Whether dialing computers and MALP "
+                + "consoles need gate energy from power units or ZPMs near them to run"),
+                config -> config.options().computers().requiresPower());
+        add.decimal("computers.energy_per_tick", SettingsCatalog.text("computers.energy_per_tick", "Computer energy "
+                + "per tick"), SettingsCatalog.text("computers.energy_per_tick.tip", "How much gate energy a dialing "
+                + "computer or MALP console uses each tick while it is switched on. It can be a fraction"), 0, false,
+                config -> config.options().computers().energyPerTick());
+        add.whole("computers.power_reach", SettingsCatalog.text("computers.power_reach", "Computer power reach"),
+                SettingsCatalog.text("computers.power_reach.tip", "How far from a dialing computer or MALP console, "
+                        + "in blocks along each axis, the power units and ZPMs it draws on can be"), 1,
+                ComputerSettings.MAX_POWER_REACH, config -> config.options().computers().powerReach());
+        add.whole("computers.history_size", SettingsCatalog.text("computers.history_size", "Dialing history"),
+                SettingsCatalog.text("computers.history_size.tip", "How many of the addresses last dialed from a "
+                        + "dialing computer its screen lists, to dial again. 0 keeps none"), 0,
+                ComputerSettings.MAX_HISTORY_SIZE, config -> config.options().computers().historySize());
         add.section(SettingsCatalog.text("section.remote_view", "Remote view"));
         add.restart();
         add.whole("remote_view.horizontal_radius", SettingsCatalog.text("remote_view.horizontal_radius", "View "
@@ -559,8 +585,9 @@ public final class SettingsCatalog {
                 + "MALP console who takes damage is taken off it"),
                 config -> config.malp().consoleDamageInterrupts());
         add.whole("malp.console_spectators", SettingsCatalog.text("malp.console_spectators", "Spectators"),
-                SettingsCatalog.text("malp.console_spectators.tip", "How many of the players near a console someone "
-                        + "is driving at, nearest first, see the feed on its monitor. 0 shows it to none"), 0, 64,
+                SettingsCatalog.text("malp.console_spectators.tip", "How many of the players near a console, nearest "
+                        + "first, see the feed on its monitor, whether or not anyone is at it. Each costs the server a "
+                        + "stream of the world around the MALP. 0 shows it to none"), 0, 64,
                 config -> config.malp().consoleSpectators());
         add.whole("malp.spectator_range", SettingsCatalog.text("malp.spectator_range", "Spectator range"),
                 SettingsCatalog.text("malp.spectator_range.tip", "How near a console, in blocks, a player must be to "

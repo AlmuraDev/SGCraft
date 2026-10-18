@@ -51,6 +51,9 @@ public interface Platform {
 
     String loaderName();
 
+    /** @return the version of SGCraft the loader runs, as its mod metadata gives it */
+    String modVersion();
+
     boolean isDevelopmentEnvironment();
 
     /**

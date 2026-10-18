@@ -39,6 +39,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Locale;
+import java.util.function.BiConsumer;
 import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 
@@ -95,12 +96,16 @@ public final class DhdActions {
 
     /** Tells the player why a dial failed, over their hotbar, once it has. */
     public static void report(final ServerPlayer player, final CompletionStage<DialResult> result) {
+        DhdActions.report(result, (key, fallback) -> player.sendOverlayMessage(
+                Component.translatableWithFallback(key, fallback).withStyle(ChatFormatting.RED)));
+    }
+
+    /** Says why a dial failed, as a translation key and the text without one, once it has. */
+    public static void report(final CompletionStage<DialResult> result, final BiConsumer<String, String> tell) {
         result.thenAccept(outcome -> {
             if (outcome != DialResult.CONNECTED) {
-                player.sendOverlayMessage(Component.translatableWithFallback(
-                        "message.sgcraft.dial_failed." + outcome.name().toLowerCase(Locale.ROOT),
-                        "Dialing failed: " + outcome.name().toLowerCase(Locale.ROOT).replace('_', ' '))
-                        .withStyle(ChatFormatting.RED));
+                final String name = outcome.name().toLowerCase(Locale.ROOT);
+                tell.accept("message.sgcraft.dial_failed." + name, "Dialing failed: " + name.replace('_', ' '));
             }
         });
     }

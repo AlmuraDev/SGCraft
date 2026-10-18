@@ -113,7 +113,7 @@ The `addresses` section lays each world out into addresses. See [Addresses](addr
 }
 ```
 
-A group's name is lowercase letters, digits and underscores, up to 32 of them. A server has up to 37 groups and a group up to 37 worlds. See [World symbols and groups](addresses.md#world-symbols-and-groups).
+A group's name is lowercase letters, digits and underscores, up to 32 of them. A server has up to 39 groups and a group up to 39 worlds. See [World symbols and groups](addresses.md#world-symbols-and-groups).
 
 Bigger cells reach further from the center with the same symbols but leave more space between gates. With cells 8 chunks across, 7 symbols reach about 2,985,984 blocks out each way.
 
@@ -259,7 +259,7 @@ By default the plains, desert, savanna, snowy and taiga villages get a plaza in 
 | `signal_range` | `256` | How far a console or tablet reaches a MALP directly, and reaches a gate to relay through, in blocks |
 | `linger_ticks` | `600` | How long a MALP's chunks stay loaded after the last person stops watching it, in ticks |
 | `console_damage_interrupts` | `true` | A player at a MALP console or tablet who takes damage is taken off it |
-| `console_spectators` | `4` | How many players near a driven console see its feed on the monitor, nearest first (0 to 64) |
+| `console_spectators` | `8` | How many players near a console see a feed on its monitor, nearest first, whether or not anyone is at it (0 to 64). Each costs the server a stream of the world around the MALP |
 | `spectator_range` | `16` | How near a console a player must be to see its monitor, in blocks (1 to 64) |
 | `tablet_drain` | `0.025` | GE a MALP tablet uses from its own battery each tick while it shows a live feed |
 
@@ -292,12 +292,16 @@ A ZPM holds GE, which gates and city shields draw on as on any other source. The
 
 ### Dialing computers
 
-`computers` sets the [dialing computer](blocks/dialing-computer.md).
+`computers` sets the [dialing computer](blocks/dialing-computer.md), and the power of dialing computers and [MALP consoles](blocks/malp-console.md#power).
 
 | Field | Default | Meaning |
 | --- | --- | --- |
 | `link_range` | `32` | How far from a dialing computer, in blocks, the base of the gate it dials may be (1 to 64) |
 | `chair_reach` | `2` | How far in front of a dialing computer, in blocks, its office chair may stand (1 to 4) |
+| `requires_power` | `true` | Whether dialing computers and MALP consoles need gate energy to run |
+| `energy_per_tick` | `0.05` | How much gate energy a computer uses each tick while it is switched on; it may be a fraction |
+| `power_reach` | `6` | How far from a computer, in blocks along each axis, the power units and ZPM blocks it draws on may stand (1 to 16) |
+| `history_size` | `10` | How many of the addresses last dialed from a dialing computer its screen lists, to dial again (0 to 10, 0 keeps none) |
 
 ### The whole file
 
@@ -424,7 +428,7 @@ Every server setting at its default. You never need to write all of this. Settin
     "signal_range": 256,
     "linger_ticks": 600,
     "console_damage_interrupts": true,
-    "console_spectators": 4,
+    "console_spectators": 8,
     "spectator_range": 16,
     "tablet_drain": 0.025
   },
@@ -445,7 +449,11 @@ Every server setting at its default. You never need to write all of this. Settin
   },
   "computers": {
     "link_range": 32,
-    "chair_reach": 2
+    "chair_reach": 2,
+    "requires_power": true,
+    "energy_per_tick": 0.05,
+    "power_reach": 6,
+    "history_size": 10
   }
 }
 ```
@@ -586,7 +594,7 @@ Operators see these tabs:
 | --- | --- |
 | Worlds | Each world's point of origin, cell size and group, and every world's point of origin and cell size. See [Addresses](addresses.md#the-settings-screen) |
 | Groups | The groups of worlds |
-| Gates | The `gates` and `tools` settings, and `remote_view` |
+| Gates | The `gates`, `tools` and `computers` settings, and `remote_view` |
 | Energy | The `energy` settings and `zpm` |
 | Shields | `shields` |
 | MALP | `malp` |

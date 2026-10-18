@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.network;
 
+import com.almuradev.sgcraft.mod.computer.ComputerConfigurator;
 import com.almuradev.sgcraft.mod.computer.ComputerPayloads;
 import com.almuradev.sgcraft.mod.computer.DialingComputers;
 import com.almuradev.sgcraft.mod.dhd.DhdActions;
@@ -78,15 +79,18 @@ final class SGPayloads {
         // Remote views, streamed to the player watching one
         SGNetwork.clientbound(RemoteViewPackets.Begin.TYPE, RemoteViewPackets.Begin::new);
         SGNetwork.clientbound(RemoteViewPackets.Sections.TYPE, RemoteViewPackets.Sections::new);
+        SGNetwork.clientbound(RemoteViewPackets.Heights.TYPE, RemoteViewPackets.Heights::new);
         SGNetwork.clientbound(RemoteViewPackets.BlockEntities.TYPE, RemoteViewPackets.BlockEntities::new);
         SGNetwork.clientbound(RemoteViewPackets.Entities.TYPE, RemoteViewPackets.Entities::new);
         SGNetwork.clientbound(RemoteViewPackets.Frame.TYPE, RemoteViewPackets.Frame::new);
+        SGNetwork.clientbound(RemoteViewPackets.Own.TYPE, RemoteViewPackets.Own::new);
         SGNetwork.clientbound(RemoteViewPackets.End.TYPE, RemoteViewPackets.End::new);
         // The MALP console: its state out, its buttons and controls in
         SGNetwork.clientbound(MalpPayloads.ConsoleState.TYPE, MalpPayloads.ConsoleState::new);
         SGNetwork.serverbound(MalpPayloads.ConsoleAction.TYPE, MalpPayloads.ConsoleAction::new, MalpLinks::action);
         SGNetwork.serverbound(MalpPayloads.Drive.TYPE, MalpPayloads.Drive::new, MalpLinks::drive);
         SGNetwork.clientbound(MalpPayloads.ConsoleUse.TYPE, MalpPayloads.ConsoleUse::new);
+        SGNetwork.clientbound(MalpPayloads.MonitorState.TYPE, MalpPayloads.MonitorState::new);
         // A MALP's configurator: its settings out, the changes and unpairing in
         SGNetwork.clientbound(MalpPayloads.ConfigState.TYPE, MalpPayloads.ConfigState::new);
         SGNetwork.serverbound(MalpPayloads.ConfigApply.TYPE, MalpPayloads.ConfigApply::new, MalpConfigurator::apply);
@@ -94,7 +98,11 @@ final class SGPayloads {
                 MalpConfigurator::unpair);
         // The dialing computer: its screen opened and closed, its buttons in
         SGNetwork.clientbound(ComputerPayloads.Screen.TYPE, ComputerPayloads.Screen::new);
+        SGNetwork.clientbound(ComputerPayloads.Notice.TYPE, ComputerPayloads.Notice::new);
         SGNetwork.serverbound(ComputerPayloads.Action.TYPE, ComputerPayloads.Action::new, DialingComputers::action);
+        SGNetwork.clientbound(ComputerPayloads.ConfigState.TYPE, ComputerPayloads.ConfigState::new);
+        SGNetwork.serverbound(ComputerPayloads.ConfigApply.TYPE, ComputerPayloads.ConfigApply::new,
+                ComputerConfigurator::apply);
         // The explorer dialer: its list out, its buttons in
         SGNetwork.clientbound(ExplorerPayloads.State.TYPE, ExplorerPayloads.State::new);
         SGNetwork.serverbound(ExplorerPayloads.Action.TYPE, ExplorerPayloads.Action::new, ExplorerDialer::action);

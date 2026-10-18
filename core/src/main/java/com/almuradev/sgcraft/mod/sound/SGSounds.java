@@ -70,6 +70,12 @@ public final class SGSounds {
     public static final SoundEvent ORI_LINK = SGSounds.create("ori_link");
     // A storm sending a wormhole astray
     public static final SoundEvent MALFUNCTION = SGSounds.create("malfunction");
+    // A dialing computer's alarm, looping while a wormhole comes in
+    public static final SoundEvent COMPUTER_ALARM = SGSounds.fixed("computer_alarm");
+    // A key pressed on a dialing computer's keyboard, one of several taps picked at random
+    public static final SoundEvent COMPUTER_KEY = SGSounds.fixed("computer_key");
+    // One of a dialing computer's larger keys pressed, such as dial or clear
+    public static final SoundEvent COMPUTER_KEY_BIG = SGSounds.fixed("computer_key_big");
 
     private static final SoundEvent[] ALL = {
             SGSounds.MILKY_WAY_ROLL, SGSounds.MILKY_WAY_CHEVRON_OUTGOING, SGSounds.MILKY_WAY_CHEVRON_INCOMING,
@@ -77,7 +83,8 @@ public final class SGSounds {
             SGSounds.PEGASUS_CHEVRON_INCOMING, SGSounds.PEGASUS_OPEN, SGSounds.PEGASUS_FAIL, SGSounds.EVENT_HORIZON,
             SGSounds.CLOSE, SGSounds.TELEPORT, SGSounds.MILKY_WAY_DHD_PRESS, SGSounds.MILKY_WAY_DHD_DIAL,
             SGSounds.PEGASUS_DHD_PRESS, SGSounds.IRIS_OPEN, SGSounds.IRIS_CLOSE, SGSounds.IRIS_HIT,
-            SGSounds.SHIELD_UP, SGSounds.SHIELD_DOWN, SGSounds.ORI_LINK, SGSounds.MALFUNCTION,
+            SGSounds.SHIELD_UP, SGSounds.SHIELD_DOWN, SGSounds.ORI_LINK, SGSounds.MALFUNCTION, SGSounds.COMPUTER_ALARM,
+            SGSounds.COMPUTER_KEY, SGSounds.COMPUTER_KEY_BIG,
     };
 
     private SGSounds() {

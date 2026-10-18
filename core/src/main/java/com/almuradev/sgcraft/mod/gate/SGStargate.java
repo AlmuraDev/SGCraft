@@ -744,7 +744,7 @@ public final class SGStargate implements Stargate {
     }
 
     /**
-     * Copies what the gate is doing, and its iris, to its base, if the base is loaded, and lights the ring under its
+     * Copies what the gate is doing, its iris and its chevrons, to its base, if the base is loaded, and lights the ring under its
      * lit chevrons.
      */
     public void sync() {
@@ -753,7 +753,14 @@ public final class SGStargate implements Stargate {
         final boolean signal = this.state() != GateState.IDLE && this.get(GateProperties.REDSTONE_OUTPUT).orElse(true);
         final boolean transparent = this.get(GateProperties.HORIZON_TRANSPARENT).orElse(true);
         final boolean irisIncluded = this.irisIncluded();
+        final int chevrons = this.chevrons();
+        final boolean ori = OriGate.is(this.typeKey());
         this.withBase(base -> {
+            // A base that has somehow come to show other chevrons than the gate has takes the gate's, as included
+            // chevrons, so it gives no upgrades back for them
+            if (!ori && chevrons > 0 && base.chevrons() != chevrons) {
+                base.giveChevrons(chevrons);
+            }
             base.setDialView(this.view);
             base.setIris(iris.orElse(null));
             base.setIrisIncluded(irisIncluded);

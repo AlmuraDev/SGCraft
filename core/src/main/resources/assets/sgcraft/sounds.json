@@ -141,5 +141,30 @@
     "sounds": [
       "sgcraft:malfunction"
     ]
+  },
+  "computer_alarm": {
+    "sounds": [
+      {
+        "name": "sgcraft:computer_alarm",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.sgcraft.computer_alarm"
+  },
+  "computer_key": {
+    "sounds": [
+      "sgcraft:computer_key_1",
+      "sgcraft:computer_key_2",
+      "sgcraft:computer_key_3",
+      "sgcraft:computer_key_4",
+      "sgcraft:computer_key_5",
+      "sgcraft:computer_key_6"
+    ]
+  },
+  "computer_key_big": {
+    "sounds": [
+      "sgcraft:computer_key_big_1",
+      "sgcraft:computer_key_big_2"
+    ]
   }
 }

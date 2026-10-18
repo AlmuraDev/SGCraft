@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.fabric;
 
 import com.almuradev.sgcraft.mod.Platform;
+import com.almuradev.sgcraft.mod.SGCraft;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.fabricmc.loader.api.FabricLoader;
@@ -50,6 +51,12 @@ public final class PlatformFabric implements Platform {
     @Override
     public String loaderName() {
         return "Fabric";
+    }
+
+    @Override
+    public String modVersion() {
+        return FabricLoader.getInstance().getModContainer(SGCraft.MOD_ID)
+                .map(container -> container.getMetadata().getVersion().getFriendlyString()).orElse("");
     }
 
     @Override

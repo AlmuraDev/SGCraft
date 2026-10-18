@@ -47,6 +47,15 @@ The gates' sounds (`sounds`) and the event horizon's textures (`textures/gate/ev
 `event_horizon_plain.png`, the 1.12 mod's `eventhorizon.png`) come from the 1.12 mod as they were, along with the timings, the order chevrons lock in and the wave simulation of the
 wormhole's surface, which gcewing designed.
 
+### Keyboard Soundpack 1
+
+- By unicaegames, recorded on a Cherry KC 1000:
+  https://opengameart.org/content/keyboard-soundpack-1-typing-and-single-keystrokes
+- License: CC0, public domain
+- Used for: the dialing computer's key presses, `sounds/computer_key_1.ogg` to `computer_key_6.ogg` and
+  `computer_key_big_1.ogg` and `computer_key_big_2.ogg`, cut from its single keystrokes by
+  `tools/computer/import_keys.py`
+
 ## Iris, items and naquadah
 
 The iris's textures (`textures/gate/*/iris.png`) and sounds (`sounds/iris_open.ogg`, `iris_close.ogg` and

@@ -30,6 +30,7 @@ import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.api.gate.GateTypes;
 import com.almuradev.sgcraft.api.gate.IrisState;
 import com.almuradev.sgcraft.api.gate.IrisTypes;
+import com.almuradev.sgcraft.mod.Platform;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.block.entity.DialingComputerBlockEntity;
 import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
@@ -44,13 +45,16 @@ import net.minecraft.world.level.Level;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Paints a dialing computer's screen: the SGC's dialing program, drawn after the show's. A column of scrolling data
  * and a light for each chevron stand on the left, the gate's ring in the middle, and a numbered box for each symbol
  * of the address on the right. As the gate dials, the symbol being dialed shows large inside the ring; when its
  * chevron locks, the chevron turns red on the ring and the symbol flies to its box. An incoming wormhole flashes the
- * screen red, and an open one fills the ring with the event horizon.
+ * screen red, and an open one fills the ring with the event horizon. The status line says how far the wormhole
+ * reaches, by how many symbols its address has: 7 within this world, 8 to another world, and 9 to another group of
+ * worlds, out of this reality.
  *
  * <p>Everything is read from the linked gate's base as the client has it, so every player near the computer sees
  * the same as the player working it.</p>
@@ -61,15 +65,16 @@ final class ComputerDisplay {
     static final int WIDTH = 460;
     static final int HEIGHT = 170;
 
-    private static final int BACKGROUND = 0xFF040E1A;
-    private static final int GRID = 0xFF081A28;
-    private static final int CYAN = 0xFF46D6E6;
-    private static final int CYAN_DIM = 0x8046D6E6;
-    private static final int CYAN_FAINT = 0x3046D6E6;
-    private static final int TEAL = 0xFF2E9FA8;
-    private static final int RED = 0xFFE8463C;
-    private static final int GREEN = 0xFF5BE38A;
-    private static final int WHITE = 0xFFE6F6FA;
+    // The program's colors, which its keyboard shares
+    static final int BACKGROUND = 0xFF040E1A;
+    static final int GRID = 0xFF081A28;
+    static final int CYAN = 0xFF46D6E6;
+    static final int CYAN_DIM = 0x8046D6E6;
+    static final int CYAN_FAINT = 0x3046D6E6;
+    static final int TEAL = 0xFF2E9FA8;
+    static final int RED = 0xFFE8463C;
+    static final int GREEN = 0xFF5BE38A;
+    static final int WHITE = 0xFFE6F6FA;
     private static final int HORIZON = 0xFF0B3C78;
     private static final int HORIZON_LIGHT = 0x6082C8FF;
 
@@ -82,6 +87,8 @@ final class ComputerDisplay {
     private static final int RING_GLYPHS = 39;
     // How long a locked symbol takes to fly from the middle of the ring to its box, in ticks
     private static final double FLY_TICKS = 12;
+    // How long a hidden caller's box shows each symbol it flickers through
+    private static final double SCRAMBLE_TICKS = 3;
     // The symbol being dialed, shown large in the middle of the ring
     private static final int BIG_GLYPH = 66;
     // The boxes on the right: where their column starts, and the space they share
@@ -101,10 +108,11 @@ final class ComputerDisplay {
      * @param chevrons how many chevrons the gate has
      * @param dial the gate's dialing, as its base shows it
      * @param iris the gate's iris, if it has one
+     * @param alarmOff whether the alarm has been turned off
      * @param time the world's time, in ticks, with the part of a tick drawn
      */
     record View(boolean linked, ResourceKey<GateType> type, int chevrons, DialView dial, @Nullable IrisView iris,
-            double time) {
+            boolean alarmOff, double time) {
 
         /** @return what a computer's screen shows now */
         static View of(final Level level, final DialingComputerBlockEntity computer, final float partialTick) {
@@ -112,9 +120,10 @@ final class ComputerDisplay {
             if (computer.linked().isPresent()
                     && level.getBlockEntity(computer.linked().get()) instanceof final StargateBaseBlockEntity gate
                     && gate.isFormed()) {
-                return new View(true, gate.gateType(), gate.chevrons(), gate.dialView(), gate.iris(), time);
+                return new View(true, gate.gateType(), gate.chevrons(), gate.dialView(), gate.iris(),
+                        computer.alarmOff(), time);
             }
-            return new View(false, GateTypes.MILKY_WAY, 7, DialView.IDLE, null, time);
+            return new View(false, GateTypes.MILKY_WAY, 7, DialView.IDLE, null, false, time);
         }
     }
 
@@ -134,19 +143,43 @@ final class ComputerDisplay {
         if (alarm) {
             canvas.rect(2, 2, ComputerDisplay.WIDTH - 4, ComputerDisplay.HEIGHT - 4, ComputerDisplay.RED);
         }
-        final int length = dial.active() ? Math.max(1, dial.length()) : 7;
+        // An idle gate shows a box and a light for each chevron it has; a dialing one, for each symbol it dials
+        final int length = dial.active() ? Math.max(1, dial.length()) : view.linked() ? view.chevrons() : 7;
         ComputerDisplay.data(canvas, view);
         ComputerDisplay.status(canvas, view, length);
         ComputerDisplay.ring(canvas, view, length);
+        if (!view.linked()) {
+            // No gate in reach, large across the empty ring
+            canvas.centeredText("NO GATE", ComputerDisplay.RING_X, ComputerDisplay.RING_Y - 17, 2, ComputerDisplay.RED);
+            canvas.centeredText("FOUND", ComputerDisplay.RING_X, ComputerDisplay.RING_Y + 2, 2, ComputerDisplay.RED);
+        }
         ComputerDisplay.boxes(canvas, view, length);
         ComputerDisplay.statusBar(canvas, view, length);
         ComputerDisplay.scanLines(canvas);
+    }
+
+    // The version the program shows, read once, such as V26.3.0.0
+    private static @Nullable String version;
+
+    private static String version() {
+        if (ComputerDisplay.version == null) {
+            final String mod = Platform.get().modVersion();
+            ComputerDisplay.version = mod.isEmpty() ? "" : "V" + mod.toUpperCase(Locale.ROOT);
+        }
+        return ComputerDisplay.version;
     }
 
     // The scrolling columns of ones and zeros, faster while the gate is busy
     private static void data(final ComputerCanvas canvas, final View view) {
         canvas.rect(4, 4, 114, 13, ComputerDisplay.CYAN_DIM);
         canvas.text("SGC DIAL PROGRAM", 8, 7, 1, ComputerDisplay.CYAN);
+        // The program's version, SGCraft's own, tagged on beside its name
+        final String version = ComputerDisplay.version();
+        if (!version.isEmpty()) {
+            final int width = canvas.textWidth(version, 1) + 8;
+            canvas.rect(120, 4, width, 13, ComputerDisplay.CYAN_DIM);
+            canvas.text(version, 124, 7, 1, ComputerDisplay.CYAN_DIM);
+        }
         canvas.rect(4, 19, 114, 86, ComputerDisplay.CYAN_DIM);
         final long scroll = (long) (view.time() / (view.dial().active() ? 2 : 10));
         for (int row = 0; row < 9; row++) {
@@ -190,7 +223,9 @@ final class ComputerDisplay {
             final boolean shut = iris.state() == IrisState.CLOSED || iris.state() == IrisState.CLOSING;
             final String text = (shield ? "SHIELD " : "IRIS ") + (shut ? (shield ? "UP" : "CLOSED")
                     : (shield ? "DOWN" : "OPEN"));
-            canvas.text(text, 62, 156, 1, shut ? ComputerDisplay.RED : ComputerDisplay.CYAN);
+            // Against the box's right edge, clear of the chevron lights
+            canvas.text(text, 114 - canvas.textWidth(text, 1), 156, 1, shut ? ComputerDisplay.RED
+                    : ComputerDisplay.CYAN);
         }
     }
 
@@ -223,12 +258,15 @@ final class ComputerDisplay {
             final double edge = Math.toRadians(slot - 180.0 / ComputerDisplay.RING_GLYPHS);
             canvas.line(cx + Math.sin(edge) * inner, cy - Math.cos(edge) * inner, cx + Math.sin(edge) * outer,
                     cy - Math.cos(edge) * outer, ComputerDisplay.CYAN_FAINT);
-            if (glyph == 0 || glyph > 36) {
+            // A Universe gate carries no @
+            if (glyph == 0 && style == DialStyle.UNIVERSE) {
                 continue;
             }
-            final char character = new Symbol(glyph - 1).character();
+            // Glyph 0, the point of origin, stands for @, as on the gate; the other symbols follow it in order
+            final Symbol symbol = DialStyle.milkyWaySymbol(glyph);
+            final char character = symbol.character();
             final double angle = style == DialStyle.UNIVERSE
-                    ? DialStyle.universeOffset(glyph - 1) - turn : slot;
+                    ? DialStyle.universeOffset(symbol.index()) - turn : slot;
             final double radians = Math.toRadians(angle);
             final double radius = outer - ComputerDisplay.BAND / 2.0;
             final boolean top = Math.abs(((angle % 360) + 540) % 360 - 180) < 180.0 / ComputerDisplay.RING_GLYPHS;
@@ -291,25 +329,28 @@ final class ComputerDisplay {
         }
     }
 
-    // The numbered boxes, a symbol in each once its chevron has locked, wired to the ring
+    // The numbered boxes, a symbol in each once its chevron has locked, wired to the ring. A caller that hides its
+    // address sends none of its symbols, so each box it locks flickers through symbols at random, never settling
     private static void boxes(final ComputerCanvas canvas, final View view, final int length) {
         final DialView dial = view.dial();
         final List<Symbol> symbols = dial.symbols();
+        final boolean hidden = dial.addressHidden();
         final Identifier glyphs = ComputerDisplay.glyphs(view.type());
         final int engaged = dial.engaged();
         final boolean flying = view.time() - dial.lockTick() < ComputerDisplay.FLY_TICKS;
         for (int i = 0; i < length; i++) {
             final int[] box = ComputerDisplay.box(i, length);
-            final boolean locked = i < engaged && i < symbols.size();
-            final boolean landed = locked && !(flying && i == engaged - 1);
+            final boolean locked = i < engaged && (hidden || i < symbols.size());
+            final boolean landed = locked && (hidden || !(flying && i == engaged - 1));
             final boolean next = dial.active() && dial.initiator() && i == engaged
                     && ((long) (view.time() / 6)) % 2 == 0;
             canvas.text(String.valueOf(i + 1), box[0] - 10, box[1] + box[3] / 2 - 4, 1, ComputerDisplay.CYAN);
             canvas.rect(box[0], box[1], box[2], box[3], landed ? ComputerDisplay.RED
                     : next ? ComputerDisplay.WHITE : ComputerDisplay.CYAN_DIM);
             if (landed) {
-                canvas.glyph(glyphs, symbols.get(i).character(), box[0] + box[2] / 2.0, box[1] + box[3] / 2.0,
-                        box[3] - 4, ComputerDisplay.WHITE);
+                canvas.glyph(glyphs, hidden ? ComputerDisplay.scrambled(view, i) : symbols.get(i).character(),
+                        box[0] + box[2] / 2.0, box[1] + box[3] / 2.0, box[3] - 4,
+                        hidden ? ComputerDisplay.RED : ComputerDisplay.WHITE);
                 // A wire from the box to its chevron on the ring, for the chevrons on the ring's near side, each
                 // bending at its own place so the wires don't run together
                 final int[] positions = ChevronOrder.positions(view.chevrons(), length);
@@ -329,6 +370,17 @@ final class ComputerDisplay {
         }
     }
 
+    // The symbol a hidden caller's box shows now: a new one at random every few ticks, each box its own
+    private static char scrambled(final View view, final int index) {
+        final long step = (long) (view.time() / ComputerDisplay.SCRAMBLE_TICKS);
+        final long mixed = (step * 0x9E3779B97F4A7C15L + index * 0xBF58476D1CE4E5B9L) >>> 33;
+        // A Universe gate carries no @, so it is passed over there
+        final boolean universe = DialStyle.of(view.type()) == DialStyle.UNIVERSE;
+        final int count = universe ? Symbol.COUNT - 1 : Symbol.COUNT;
+        final int pick = (int) (mixed % count);
+        return new Symbol(universe && pick >= Symbol.GIZA.index() ? pick + 1 : pick).character();
+    }
+
     // Where a box is: its left, top, width and height
     private static int[] box(final int index, final int length) {
         final int space = (ComputerDisplay.BOXES_BOTTOM - ComputerDisplay.BOXES_TOP) / Math.max(7, length);
@@ -346,11 +398,14 @@ final class ComputerDisplay {
         String detail = "";
         int color = ComputerDisplay.CYAN;
         if (!view.linked()) {
-            main = "NO STARGATE LINKED";
+            main = "NO GATE FOUND";
+            detail = "NONE IN REACH";
             color = ComputerDisplay.RED;
         } else if (!dial.initiator() && dial.active()) {
-            main = dial.phase() == DialPhase.CONNECTED ? "INCOMING WORMHOLE" : "OFFWORLD ACTIVATION";
-            detail = engaged > 0 ? "CHEVRON " + engaged + " LOCKED" : "";
+            main = dial.phase() == DialPhase.CONNECTED ? "INCOMING WORMHOLE" : ComputerDisplay.activation(length);
+            detail = view.alarmOff() ? "ALARM OFF" : dial.phase() == DialPhase.CONNECTED
+                    ? ComputerDisplay.origin(length) : dial.addressHidden() ? "ADDRESS HIDDEN"
+                    : engaged > 0 ? "CHEVRON " + engaged + " LOCKED" : "";
             color = ComputerDisplay.RED;
         } else {
             switch (dial.phase()) {
@@ -364,6 +419,7 @@ final class ComputerDisplay {
                 }
                 case CONNECTED -> {
                     main = "WORMHOLE ESTABLISHED";
+                    detail = ComputerDisplay.destination(length);
                     color = ComputerDisplay.GREEN;
                 }
                 case DISCONNECTING -> main = "WORMHOLE DISENGAGED";
@@ -376,10 +432,24 @@ final class ComputerDisplay {
         }
     }
 
+    // What an incoming dial is called, by how far it comes from: within this world, from another, or from another
+    // group of worlds
+    private static String activation(final int length) {
+        return length <= 7 ? "LOCAL ACTIVATION" : length >= 9 ? "OFF-REALITY ACTIVATION" : "OFFWORLD ACTIVATION";
+    }
+
+    private static String origin(final int length) {
+        return length <= 7 ? "FROM THIS WORLD" : length >= 9 ? "FROM ANOTHER REALITY" : "FROM OFFWORLD";
+    }
+
+    private static String destination(final int length) {
+        return length <= 7 ? "LOCAL DESTINATION" : length >= 9 ? "OFF-REALITY DESTINATION" : "OFFWORLD DESTINATION";
+    }
+
     // Darkens every other row a little, as on a tube's screen
-    private static void scanLines(final ComputerCanvas canvas) {
-        for (int y = 1; y < ComputerDisplay.HEIGHT; y += 2) {
-            for (int x = 0; x < ComputerDisplay.WIDTH; x++) {
+    static void scanLines(final ComputerCanvas canvas) {
+        for (int y = 1; y < canvas.height; y += 2) {
+            for (int x = 0; x < canvas.width; x++) {
                 canvas.blend(x, y, 0xFF000000, 0.18F);
             }
         }
@@ -390,7 +460,7 @@ final class ComputerDisplay {
     }
 
     // The glyph font a gate's type is drawn with
-    private static Identifier glyphs(final ResourceKey<GateType> type) {
+    static Identifier glyphs(final ResourceKey<GateType> type) {
         final String name = type.equals(GateTypes.PEGASUS) ? "pegasus"
                 : type.equals(GateTypes.UNIVERSE) ? "universe" : "milkyway";
         return SGCraft.id("textures/font/glyphs_" + name + ".png");

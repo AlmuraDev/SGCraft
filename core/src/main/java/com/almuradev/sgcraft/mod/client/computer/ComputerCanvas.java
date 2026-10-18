@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.client.computer;
 
+import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
@@ -38,18 +39,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A picture painted pixel by pixel in memory, in ARGB, with the drawing a dialing computer's screen needs: lines,
- * circles, the game's own pixel font, and the gates' glyphs at any size. Colors are blended by their alpha.
+ * A picture painted pixel by pixel in memory, in ARGB, with the drawing a computer's screen needs, such as a dialing
+ * computer's or a MALP console's monitor: lines, circles, the game's own pixel font, and the gates' glyphs at any
+ * size. Colors are blended by their alpha over what is there, which may itself be see-through.
  */
-final class ComputerCanvas {
+public final class ComputerCanvas {
 
     // The game's pixel font: sixteen rows of sixteen characters, eight pixels square, by character code
     private static final Identifier FONT = Identifier.withDefaultNamespace("textures/font/ascii.png");
     private static final int CELL = 8;
-    // The glyph fonts: ten glyphs to a row, each 64 pixels square, in the order of the address characters
+    // The glyph fonts: ten glyphs to a row, each 64 pixels square, in the order of the symbols
     private static final int GLYPH_CELL = 64;
     private static final int GLYPH_COLUMNS = 10;
-    private static final String GLYPH_ORDER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@";
 
     // Each character's shape, and how wide it is, read once from the font
     private static boolean @Nullable [][] font;
@@ -58,29 +59,29 @@ final class ComputerCanvas {
     private static final Map<Identifier, float[][]> GLYPHS = new HashMap<>();
     private static final Map<String, float[]> SCALED = new HashMap<>();
 
-    final int width;
-    final int height;
-    final int[] pixels;
+    public final int width;
+    public final int height;
+    public final int[] pixels;
 
-    ComputerCanvas(final int width, final int height) {
+    public ComputerCanvas(final int width, final int height) {
         this.width = width;
         this.height = height;
         this.pixels = new int[width * height];
     }
 
     /** Forgets the fonts read, so they are read again after the resources reload. */
-    static void forgetFonts() {
+    public static void forgetFonts() {
         ComputerCanvas.font = null;
         ComputerCanvas.GLYPHS.clear();
         ComputerCanvas.SCALED.clear();
     }
 
-    void clear(final int color) {
+    public void clear(final int color) {
         Arrays.fill(this.pixels, color);
     }
 
     /** Blends a color into a pixel, by the color's alpha, and by {@code cover} on top. */
-    void blend(final int x, final int y, final int color, final float cover) {
+    public void blend(final int x, final int y, final int color, final float cover) {
         if (x < 0 || y < 0 || x >= this.width || y >= this.height) {
             return;
         }
@@ -90,13 +91,24 @@ final class ComputerCanvas {
         }
         final int index = y * this.width + x;
         final int under = this.pixels[index];
-        final int r = (int) (((color >> 16) & 0xFF) * alpha + ((under >> 16) & 0xFF) * (1 - alpha));
-        final int g = (int) (((color >> 8) & 0xFF) * alpha + ((under >> 8) & 0xFF) * (1 - alpha));
-        final int b = (int) ((color & 0xFF) * alpha + (under & 0xFF) * (1 - alpha));
-        this.pixels[index] = 0xFF000000 | r << 16 | g << 8 | b;
+        // What is under shows through by what is left, as far as it is itself not see-through
+        final float below = ((under >>> 24) / 255F) * (1 - alpha);
+        final float out = alpha + below;
+        final int r = (int) ((((color >> 16) & 0xFF) * alpha + ((under >> 16) & 0xFF) * below) / out);
+        final int g = (int) ((((color >> 8) & 0xFF) * alpha + ((under >> 8) & 0xFF) * below) / out);
+        final int b = (int) (((color & 0xFF) * alpha + (under & 0xFF) * below) / out);
+        this.pixels[index] = Math.round(out * 255) << 24 | r << 16 | g << 8 | b;
     }
 
-    void fill(final int x, final int y, final int w, final int h, final int color) {
+    /** Sets every pixel in a rectangle to a color as it is, see-through or not, rather than blending it in. */
+    public void set(final int x, final int y, final int w, final int h, final int color) {
+        for (int j = Math.max(0, y); j < Math.min(this.height, y + h); j++) {
+            Arrays.fill(this.pixels, j * this.width + Math.max(0, x), j * this.width + Math.min(this.width, x + w),
+                    color);
+        }
+    }
+
+    public void fill(final int x, final int y, final int w, final int h, final int color) {
         for (int j = y; j < y + h; j++) {
             for (int i = x; i < x + w; i++) {
                 this.blend(i, j, color, 1);
@@ -104,7 +116,7 @@ final class ComputerCanvas {
         }
     }
 
-    void rect(final int x, final int y, final int w, final int h, final int color) {
+    public void rect(final int x, final int y, final int w, final int h, final int color) {
         this.fill(x, y, w, 1, color);
         this.fill(x, y + h - 1, w, 1, color);
         this.fill(x, y + 1, 1, h - 2, color);
@@ -112,7 +124,7 @@ final class ComputerCanvas {
     }
 
     /** Draws a line a pixel wide, smoothed along its length. */
-    void line(final double x0, final double y0, final double x1, final double y1, final int color) {
+    public void line(final double x0, final double y0, final double x1, final double y1, final int color) {
         final double length = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
         final int steps = Math.max(1, (int) Math.ceil(length * 2));
         for (int i = 0; i <= steps; i++) {
@@ -134,12 +146,12 @@ final class ComputerCanvas {
     }
 
     /** Draws a circle's outline, about a pixel wide. */
-    void circle(final double cx, final double cy, final double radius, final int color) {
+    public void circle(final double cx, final double cy, final double radius, final int color) {
         this.arc(cx, cy, radius, 0, 360, color);
     }
 
     /** Draws part of a circle's outline, from one angle to another, in degrees clockwise from the top. */
-    void arc(final double cx, final double cy, final double radius, final double from, final double to,
+    public void arc(final double cx, final double cy, final double radius, final double from, final double to,
             final int color) {
         final int steps = Math.max(8, (int) (Math.abs(to - from) / 360 * radius * Math.PI * 4));
         for (int i = 0; i <= steps; i++) {
@@ -149,7 +161,7 @@ final class ComputerCanvas {
     }
 
     /** Fills a disc. */
-    void disc(final double cx, final double cy, final double radius, final int color) {
+    public void disc(final double cx, final double cy, final double radius, final int color) {
         for (int y = (int) (cy - radius - 1); y <= cy + radius + 1; y++) {
             for (int x = (int) (cx - radius - 1); x <= cx + radius + 1; x++) {
                 final double distance = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
@@ -159,7 +171,7 @@ final class ComputerCanvas {
     }
 
     /** @return how wide a line of text is in the pixel font, at a scale */
-    int textWidth(final String text, final int scale) {
+    public int textWidth(final String text, final int scale) {
         ComputerCanvas.loadFont();
         int width = 0;
         for (final char character : text.toCharArray()) {
@@ -169,7 +181,7 @@ final class ComputerCanvas {
     }
 
     /** Draws text in the pixel font, its top left at a place, each font pixel {@code scale} pixels square. */
-    void text(final String text, final int x, final int y, final int scale, final int color) {
+    public void text(final String text, final int x, final int y, final int scale, final int color) {
         ComputerCanvas.loadFont();
         final boolean[][] shapes = ComputerCanvas.font;
         if (shapes == null) {
@@ -191,7 +203,7 @@ final class ComputerCanvas {
     }
 
     /** Draws text centered on a place. */
-    void centeredText(final String text, final int x, final int y, final int scale, final int color) {
+    public void centeredText(final String text, final int x, final int y, final int scale, final int color) {
         this.text(text, x - this.textWidth(text, scale) / 2, y, scale, color);
     }
 
@@ -202,7 +214,7 @@ final class ComputerCanvas {
      * @param character the address character the glyph stands for
      * @param size how many pixels across the glyph's square is
      */
-    void glyph(final Identifier glyphs, final char character, final double cx, final double cy, final int size,
+    public void glyph(final Identifier glyphs, final char character, final double cx, final double cy, final int size,
             final int color) {
         final float[] mask = ComputerCanvas.scaled(glyphs, character, size);
         if (mask == null) {
@@ -221,7 +233,7 @@ final class ComputerCanvas {
     }
 
     /** Copies the picture into an image of the same size. */
-    void copyTo(final NativeImage image) {
+    public void copyTo(final NativeImage image) {
         for (int y = 0; y < this.height; y++) {
             for (int x = 0; x < this.width; x++) {
                 image.setPixel(x, y, this.pixels[y * this.width + x]);
@@ -231,7 +243,7 @@ final class ComputerCanvas {
 
     // A glyph scaled down to a size, each pixel covered by the share of the glyph's own pixels that fall in it
     private static float @Nullable [] scaled(final Identifier glyphs, final char character, final int size) {
-        final int index = ComputerCanvas.GLYPH_ORDER.indexOf(Character.toUpperCase(character));
+        final int index = Symbol.of(character).map(Symbol::index).orElse(-1);
         if (index < 0 || size <= 0) {
             return null;
         }
@@ -268,7 +280,7 @@ final class ComputerCanvas {
     }
 
     private static float[][] readGlyphs(final Identifier glyphs) {
-        final int count = ComputerCanvas.GLYPH_ORDER.length();
+        final int count = Symbol.COUNT;
         final float[][] all = new float[count][ComputerCanvas.GLYPH_CELL * ComputerCanvas.GLYPH_CELL];
         try (NativeImage image = ComputerCanvas.read(glyphs)) {
             if (image == null) {

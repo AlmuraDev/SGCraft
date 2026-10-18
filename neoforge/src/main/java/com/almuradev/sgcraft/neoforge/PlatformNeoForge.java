@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.neoforge;
 
 import com.almuradev.sgcraft.mod.Platform;
+import com.almuradev.sgcraft.mod.SGCraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -36,6 +37,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
+import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.capabilities.Capabilities;
@@ -51,6 +53,12 @@ public final class PlatformNeoForge implements Platform {
     @Override
     public String loaderName() {
         return "NeoForge";
+    }
+
+    @Override
+    public String modVersion() {
+        return ModList.get().getModContainerById(SGCraft.MOD_ID)
+                .map(container -> container.getModInfo().getVersion().toString()).orElse("");
     }
 
     @Override
