@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.mixin;
 
+import com.almuradev.sgcraft.mod.computer.DialingComputers;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import net.minecraft.server.level.ServerEntity;
 import net.minecraft.server.level.ServerPlayer;
@@ -48,6 +49,7 @@ abstract class ServerEntityMixin {
     private void sgcraft$consoleUse(final ServerPlayer player, final CallbackInfo callback) {
         if (this.entity instanceof ServerPlayer seen) {
             MalpLinks.startTracking(seen, player);
+            DialingComputers.startTracking(seen, player);
         }
     }
 }

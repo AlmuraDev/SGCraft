@@ -131,9 +131,9 @@ public final class SGBlocks {
         // The original's power unit, as hard as its machines
         SGBlocks.POWER_UNIT = SGBlocks.register(sink, "power_unit",
                 properties -> new PowerUnitBlock(properties.strength(1.5F, 10.0F)));
-        // The MALP's console, a desk that doesn't fill its block, and the charger for its batteries
+        // The MALP's console, six parts of a desk that don't fill their blocks, and the charger for its batteries
         SGBlocks.MALP_CONSOLE = SGBlocks.register(sink, "malp_console",
-                properties -> new MalpConsoleBlock(properties.noOcclusion()));
+                properties -> new MalpConsoleBlock(properties.noOcclusion().pushReaction(PushReaction.IMMOVEABLE)));
         SGBlocks.BATTERY_CHARGER = SGBlocks.register(sink, "battery_charger", BatteryChargerBlock::new);
         // The SGC's dialing computer, six parts that don't fill their blocks, and the chair its operator sits in
         SGBlocks.DIALING_COMPUTER = SGBlocks.register(sink, "dialing_computer",

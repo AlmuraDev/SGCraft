@@ -39,7 +39,8 @@ import java.util.Optional;
  *
  * @param phase the step of the dial the gate is at
  * @param initiator whether this gate dialed, rather than being dialed
- * @param address the symbols in play: those the gate dialed, or, for the dialed gate, the dialing gate's address
+ * @param address the symbols in play: those the gate dialed, or, for the dialed gate, the dialing gate's address,
+ *     each symbol being {@link #HIDDEN} when the dialing gate hides its address
  * @param engaged how many chevrons have locked
  * @param ringFrom the dialing gate's ring angle when it started its current move, in degrees anticlockwise
  * @param ringTo the angle it is moving to
@@ -59,9 +60,28 @@ public record DialView(DialPhase phase, boolean initiator, String address, int e
     /** A gate doing nothing. */
     public static final DialView IDLE = new DialView(DialPhase.IDLE, false, "", 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 
+    /** Stands for each symbol of a dialing gate's address that the dialing gate hides. */
+    public static final char HIDDEN = '?';
+
     /** @return how many symbols the address has, or will have; which chevron each locks at depends on it */
     public int length() {
-        return Math.max(this.expected, this.symbols().size());
+        final long hidden = this.address.chars().filter(character -> character == DialView.HIDDEN).count();
+        return Math.max(this.expected, this.symbols().size() + (int) hidden);
+    }
+
+    /** @return whether the dialing gate hides its address, so this view holds none of its symbols */
+    public boolean addressHidden() {
+        return this.address.indexOf(DialView.HIDDEN) >= 0;
+    }
+
+    /**
+     * @return this view with each of its symbols replaced by {@link #HIDDEN}, keeping how many there are, as a
+     *     dialed gate is shown the address of a dialing gate that hides it
+     */
+    public DialView hidingAddress() {
+        return new DialView(this.phase, this.initiator, String.valueOf(DialView.HIDDEN).repeat(this.length()),
+                this.engaged, this.ringFrom, this.ringTo, this.ringStart, this.ringEnd, this.lockTick, this.fillStart,
+                this.fillEnd, this.phaseStart, this.expected);
     }
 
     /** @return the symbols in play, in order */

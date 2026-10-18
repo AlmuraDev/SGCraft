@@ -1,6 +1,6 @@
 # Office Chair
 
-The Office Chair is a black swivel chair you sit in. Put in front of a [dialing computer](dialing-computer.md), facing it, it is where you work the computer from.
+The Office Chair is a black swivel chair you sit in. Put in front of a [dialing computer](dialing-computer.md) or a [MALP console](malp-console.md), facing it, it is where you work the computer from, though you can also work either standing.
 
 ```infobox
 Office Chair
@@ -29,10 +29,11 @@ sgcraft:office_chair
 
 Place the chair. It faces the way you look as you place it, so place it while looking at the computer.
 
-Use the chair to sit in it. You face the way the chair does. If a dialing computer stands up to 2 blocks (`computers.chair_reach`) in front of the chair, with its screen facing the chair, its screen opens. Sneak, or close the computer's screen, to get up. You get up behind the chair, or beside it if there is no room behind.
+Use the chair to sit in it. You face the way the chair does. If a dialing computer or a MALP console stands up to 2 blocks (`computers.chair_reach`) in front of the chair, with its screen facing the chair, its screen opens. Sneak, or close the computer's screen, to get up. You get up behind the chair, or beside it if there is no room behind.
 
 One player sits in a chair at a time. Breaking the chair, or the computer, gets its sitter up.
 
 ## See also
 
 - [Dialing Computer](dialing-computer.md)
+- [MALP Console](malp-console.md)

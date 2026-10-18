@@ -656,8 +656,8 @@ public final class SGConnection implements Connection {
         this.toTarget.drawn = 0;
         this.toDialer.drawn = 0;
         from.play(SGSounds.CLOSE);
-        from.detach(this, new DialView(DialPhase.DISCONNECTING, false, this.homeAddress, this.engaged, 0, 0, 0, 0,
-                this.lockTick, this.fillStart, this.fillEnd, this.now(), 0), cause);
+        from.detach(this, this.shownToTarget(new DialView(DialPhase.DISCONNECTING, false, this.homeAddress,
+                this.engaged, 0, 0, 0, 0, this.lockTick, this.fillStart, this.fillEnd, this.now(), 0)), cause);
         this.left.put(from, this.now() + SGConnection.DISCONNECTING_TICKS);
         this.target = to;
         this.targetTravel = new GateTravel(to);
@@ -713,11 +713,17 @@ public final class SGConnection implements Connection {
                 this.fillStart, this.fillEnd, this.phaseStart, 0);
         // A dialed Ori supergate links in step with the one dialing it, so it is shown each symbol's timing too
         final boolean ori = this.style == DialStyle.ORI;
-        final DialView targetView = new DialView(this.phase, false, this.homeAddress, this.engaged, 0, 0,
-                ori ? this.phaseStart : 0, ori ? ringEnd : 0, this.lockTick, this.fillStart, this.fillEnd,
-                this.phaseStart, ori ? this.address.size() : 0);
+        final DialView targetView = this.shownToTarget(new DialView(this.phase, false, this.homeAddress,
+                this.engaged, 0, 0, ori ? this.phaseStart : 0, ori ? ringEnd : 0, this.lockTick, this.fillStart,
+                this.fillEnd, this.phaseStart, ori ? this.address.size() : 0));
         this.dialer.enter(this, dialerView, cause);
         this.target.enter(this, targetView, cause);
+    }
+
+    // What the dialed gate is shown: none of the dialing gate's symbols, only how many, if the dialing gate hides its
+    // address, so no client near the dialed gate learns it
+    private DialView shownToTarget(final DialView view) {
+        return this.dialer.get(GateProperties.ADDRESS_VISIBLE).orElse(true) ? view : view.hidingAddress();
     }
 
     MinecraftServer server() {

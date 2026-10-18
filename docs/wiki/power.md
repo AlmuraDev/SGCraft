@@ -250,6 +250,10 @@ Its cost grows with its size: 0.333 gate energy a tick for every million blocks 
 
 A full power unit holds 50,000 GE, and a full ZPM 26,843,546 GE. Raising the shield needs 10 seconds' worth of energy, and the shield falls when its sources run dry. The generator's screen shows the energy available and how long it will keep the shield up.
 
+## Computers
+
+The [Dialing Computer](blocks/dialing-computer.md#power) and the [MALP Console](blocks/malp-console.md#power) use 0.05 gate energy a tick while switched on (`computers.energy_per_tick`), paid once a second. They draw from the power units within 6 blocks of the middle of their desk along each axis (`computers.power_reach`), nearest first, and then from the ZPM consoles, interface carts and hubs within that reach, nearest first. They use no DHD fuel. A full power unit runs one for about 14 hours, and a full ZPM for about 310 days. Without power, a computer goes dark until there is power again. Sneak and use one with an empty hand to switch it off, so that it uses nothing. Turn `computers.requires_power` off to run every computer for free, or use a configurator on one computer to run it free. Its owner, the player who placed it, and operators can.
+
 ## Batteries and the battery charger
 
 Batteries hold gate energy for the [MALP](malp.md) and the MALP tablet. Gates don't use them.

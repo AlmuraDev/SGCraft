@@ -1,7 +1,10 @@
-"""Makes the dialing computer's and the office chair's textures, block models, item models and blockstates.
+"""Makes the dialing computer's, the MALP console's and the office chair's textures, block models, item models and
+blockstates.
 
 The art is drawn here, after the SGC's control room on the show: a gray steel desk three blocks wide with a keyboard,
-a wide monitor in a putty plastic case standing on it, and a black office chair. Nothing is copied from the show.
+a wide monitor in a putty plastic case standing on it, and a black office chair. The MALP console is the same desk,
+its monitor's idle screen green, with a joystick to drive by in place of the switches on its right. Nothing is copied
+from the show.
 
 Run from the repository root: python tools/computer/make_computer_art.py
 Needs Pillow.
@@ -43,6 +46,86 @@ def shade(image, box, amount):
                                     max(0, min(255, b + amount)), a))
 
 
+# The keyboard's keys as the operator sees them, the far edge at the top: a letter key (k), a gray key (m), the space
+# bar (s) and the enter key (e), each run of one letter being one key, and the tray showing between them (.). Each
+# row of keys is two pixels deep, its cap and the front of the cap below. The main keys are on the left, the number
+# pad on the right
+KEY_ROWS = [
+    'm.kk.kk.kk.kk.m.mm.m',
+    'mm.kk.kk.kk.eee.kk.k',
+    'mmm.kk.kk.kk.ee.kk.k',
+    'mm.sssssssss.mm.kk.k',
+]
+# The keyboard's top, in pixels: a pixel of tray round the keys, and its front lip
+KEYBOARD_WIDTH = 22
+KEYBOARD_DEPTH = 11
+# Where the keyboard's sides are drawn, below its top
+KEYBOARD_SIDE = 12
+
+
+def make_keyboard():
+    """The keyboard: off-white keys and gray ones in a dark tray, like the panels beside it, drawn a pixel a key's width
+    as the game's own blocks are, with two green lamps over the number pad."""
+    rng = random.Random(7)
+    tray = (56, 60, 64)
+    keys = {'k': ((228, 223, 208), (170, 164, 146)), 's': ((228, 223, 208), (170, 164, 146)),
+            'm': ((158, 158, 152), (112, 112, 108)), 'e': ((158, 158, 152), (112, 112, 108))}
+    top = Image.new('RGBA', (KEYBOARD_WIDTH, KEYBOARD_DEPTH))
+
+    def put(x, y, color, spread=3):
+        d = rng.randint(-spread, spread)
+        top.putpixel((x, y), tuple(max(0, min(255, c + d)) for c in color) + (255,))
+
+    for y in range(KEYBOARD_DEPTH):
+        for x in range(KEYBOARD_WIDTH):
+            put(x, y, tray)
+    # The tray's far edge catches the light, and its front lip is a little darker
+    for x in range(KEYBOARD_WIDTH):
+        put(x, 0, tuple(c + 12 for c in tray))
+        put(x, KEYBOARD_DEPTH - 1, tuple(c - 18 for c in tray))
+    for x in (17, 19):
+        put(x, 0, (90, 220, 110), 0)
+    grid = [row for row in KEY_ROWS for _ in range(2)]
+    for gy, row in enumerate(grid):
+        for gx, key in enumerate(row):
+            x, y = gx + 1, gy + 1
+            if key == '.':
+                put(x, y, (32, 34, 38))
+                continue
+            cap, front = keys[key]
+            # A key reaching down into the next row, as the enter key does, shows its front only at its foot
+            below = grid[gy + 1][gx] if gy + 1 < len(grid) else None
+            foot = below != key or key in 'km' and gy % 2 == 1
+            # The first pixel of each cap, lit from the left
+            first = gx == 0 or row[gx - 1] != key
+            if foot:
+                put(x, y, front)
+            else:
+                put(x, y, tuple(c + 10 for c in cap) if first else cap)
+    keyboard = noisy(tray, 4, 12)
+    # Its top, turned to face the operator, who stands at the north looking south: the game draws a top face with
+    # north at the top and west at the left
+    keyboard.paste(top.rotate(180), (0, 0))
+    # Its sides: the plastic's edge, and its shadow below
+    shade(keyboard, (0, KEYBOARD_SIDE, SIZE, KEYBOARD_SIDE + 1), 8)
+    shade(keyboard, (0, KEYBOARD_SIDE + 1, SIZE, KEYBOARD_SIDE + 2), -24)
+    return keyboard
+
+
+def keyboard(start, end):
+    """The keyboard: its top shows the whole drawing of its keys, its sides the strip below it."""
+    (x0, y0, z0), (x1, y1, z1) = start, end
+    width, depth, height = x1 - x0, z1 - z0, y1 - y0
+    side = KEYBOARD_SIDE / 2
+    sides = {
+        'up': {'uv': [0, 0, KEYBOARD_WIDTH / 2, KEYBOARD_DEPTH / 2], 'texture': '#keyboard'},
+        'down': {'uv': uv('down', start, end), 'texture': '#case'},
+    }
+    for face, length in (('north', width), ('south', width), ('east', depth), ('west', depth)):
+        sides[face] = {'uv': [0, side, length, side + height], 'texture': '#keyboard'}
+    return {'from': list(start), 'to': list(end), 'faces': sides}
+
+
 def textures():
     # The monitor's case: putty plastic, a seam round its edge
     case = noisy((196, 189, 168), 5, 1)
@@ -76,18 +159,7 @@ def textures():
         shade(cabinet, (12, top + 5, 20, top + 7), 50)
     # A plain steel panel for the desk's sides and the knee hole's back
     steel = noisy((98, 104, 110), 5, 6)
-    # A keyboard: off-white keys on a dark tray
-    keyboard = Image.new('RGBA', (SIZE, SIZE), (58, 61, 64, 255))
-    rng = random.Random(7)
-    for row in range(5):
-        for column in range(13):
-            x, y = 1 + column * 2 + (row % 2), 6 + row * 4
-            if x + 1 < SIZE:
-                tone = 214 + rng.randint(-8, 8)
-                for dx in range(2 if column < 12 else 1):
-                    keyboard.putpixel((x + dx, y), (tone, tone - 4, tone - 14, 255))
-                    keyboard.putpixel((x + dx, y + 1), (tone - 30, tone - 34, tone - 44, 255))
-    ImageDraw.Draw(keyboard).rectangle((8, 26, 22, 27), fill=(214, 210, 200, 255))
+    keyboard = make_keyboard()
     # A small panel of switches and lamps
     panel = noisy((52, 56, 60), 4, 8)
     lamps = [(230, 64, 52), (90, 220, 120), (255, 180, 60), (80, 200, 230)]
@@ -103,13 +175,26 @@ def textures():
     metal = noisy((64, 68, 74), 6, 10)
     shade(metal, (0, 0, 32, 3), 24)
     caster = noisy((22, 22, 24), 3, 11)
+    # The MALP console's screen with nothing on it: dark green glass, faint scan lines, a grid and a sheen
+    malp_screen = noisy((6, 26, 14), 2, 13)
+    for i in range(0, SIZE, 2):
+        shade(malp_screen, (0, i, SIZE, i + 1), -3)
+    for i in range(0, SIZE, 8):
+        shade(malp_screen, (i, 0, i + 1, SIZE), 9)
+        shade(malp_screen, (0, i, SIZE, i + 1), 9)
+    for i in range(10):
+        shade(malp_screen, (i * 2, i, i * 2 + 6, i + 1), 12)
+    # The joystick's knob: red plastic, lit on top
+    knob = noisy((176, 34, 30), 6, 14)
+    shade(knob, (0, 0, 32, 4), 30)
     TEXTURES.mkdir(parents=True, exist_ok=True)
     for name, image in [('dialing_computer_case', case), ('dialing_computer_vents', vents),
                         ('dialing_computer_bezel', bezel), ('dialing_computer_screen', screen),
                         ('dialing_computer_desk', desk), ('dialing_computer_cabinet', cabinet),
                         ('dialing_computer_steel', steel), ('dialing_computer_keyboard', keyboard),
                         ('dialing_computer_panel', panel), ('office_chair_fabric', fabric),
-                        ('office_chair_metal', metal), ('office_chair_caster', caster)]:
+                        ('office_chair_metal', metal), ('office_chair_caster', caster),
+                        ('malp_console_screen', malp_screen), ('malp_console_knob', knob)]:
         image.save(TEXTURES / f'{name}.png', optimize=True)
 
 
@@ -147,8 +232,8 @@ def box(start, end, texture, faces=None, north=None):
 COLUMNS = {'left': 1, 'middle': 0, 'right': -1}
 
 
-def part(column, row):
-    """The cuboids of one part of the computer, in its own block."""
+def part(column, row, malp=False):
+    """The cuboids of one part of the computer, or of the MALP console, in its own block."""
     elements = []
     outer_east = column == 'left'
     outer_west = column == 'right'
@@ -157,13 +242,17 @@ def part(column, row):
         if column == 'middle':
             # The knee hole, with a panel at its back, and the keyboard in front of the screen
             elements.append(box((0, 2, 12), (16, 11, 14), 'steel'))
-            elements.append(box((3, 12, 1.5), (13, 12.75, 6), 'keyboard', faces={'north': 'case', 'east': 'case',
-                                                                               'west': 'case', 'south': 'case',
-                                                                               'down': 'case'}))
+            elements.append(keyboard((2.5, 12, 1), (2.5 + KEYBOARD_WIDTH / 2, 12.75, 1 + KEYBOARD_DEPTH / 2)))
         else:
             elements.append(box((0, 0, 1), (16, 11, 16), 'steel', north='cabinet'))
-            # A panel of switches and lamps on the desk to either side
-            elements.append(box((4, 12, 2), (12, 13, 6), 'steel', faces={'up': 'panel'}))
+            if malp and outer_west:
+                # The MALP console's joystick, on the operator's right: its base, its stick and its knob
+                elements.append(box((5, 12, 2), (11, 13, 6), 'steel', faces={'up': 'bezel'}))
+                elements.append(box((7.5, 13, 3.5), (8.5, 15.5, 4.5), 'stick'))
+                elements.append(box((7, 15.5, 3), (9, 17, 5), 'knob'))
+            else:
+                # A panel of switches and lamps on the desk to either side
+                elements.append(box((4, 12, 2), (12, 13, 6), 'steel', faces={'up': 'panel'}))
         # The monitor's case from the desk up, its face at z = 8, and the bezel's lower edge in front of it
         elements.append(box((0, 12, 8), (16, 16, 15), 'case', north='screen'))
         elements.append(box((0, 12, 7.5), (16, 13.5, 8), 'bezel'))
@@ -195,6 +284,14 @@ COMPUTER_TEXTURES = {
 }
 
 
+# The MALP console's: the same, with its own idle screen and the joystick's stick and knob
+MALP_CONSOLE_TEXTURES = dict(COMPUTER_TEXTURES, **{
+    'screen': 'sgcraft:block/malp_console_screen',
+    'stick': 'sgcraft:block/office_chair_metal',
+    'knob': 'sgcraft:block/malp_console_knob',
+})
+
+
 def chair():
     """The office chair, facing north: its seat, its back to the south, arms, and a five footed base."""
     elements = [
@@ -220,17 +317,20 @@ def write(path, data):
     path.write_text(json.dumps(data, indent=2) + '\n', encoding='utf-8', newline='\n')
 
 
-def models():
-    rotations = {'north': 0, 'east': 90, 'south': 180, 'west': 270}
+ROTATIONS = {'north': 0, 'east': 90, 'south': 180, 'west': 270}
+
+
+def desk(block, textures, malp=False):
+    """The six parts' models and the blockstate of a computer at a desk, and its item's model and definition."""
     variants = {}
     whole = []
     for column, offset in COLUMNS.items():
         for row in ('lower', 'upper'):
-            name = f'dialing_computer_{column}_{row}'
-            elements = part(column, row)
-            write(MODELS / f'{name}.json', {'parent': 'minecraft:block/block', 'textures': COMPUTER_TEXTURES,
+            name = f'{block}_{column}_{row}'
+            elements = part(column, row, malp)
+            write(MODELS / f'{name}.json', {'parent': 'minecraft:block/block', 'textures': textures,
                                             'elements': elements})
-            for facing, y in rotations.items():
+            for facing, y in ROTATIONS.items():
                 variant = {'model': f'sgcraft:block/{name}'}
                 if y:
                     variant['y'] = y
@@ -244,10 +344,10 @@ def models():
                 moved['from'][1] += dy
                 moved['to'][1] += dy
                 whole.append(moved)
-    write(BLOCKSTATES / 'dialing_computer.json', {'variants': variants})
-    write(ITEM_MODELS / 'dialing_computer.json', {
+    write(BLOCKSTATES / f'{block}.json', {'variants': variants})
+    write(ITEM_MODELS / f'{block}.json', {
         'parent': 'minecraft:block/block',
-        'textures': COMPUTER_TEXTURES,
+        'textures': textures,
         'elements': whole,
         'display': {
             'gui': {'rotation': [30, 225, 0], 'translation': [0, -1.5, 0], 'scale': [0.3, 0.3, 0.3]},
@@ -259,8 +359,12 @@ def models():
             'firstperson_lefthand': {'rotation': [0, 225, 0], 'translation': [0, 0, 0], 'scale': [0.2, 0.2, 0.2]},
         },
     })
-    write(ITEMS / 'dialing_computer.json', {'model': {'type': 'minecraft:model',
-                                                      'model': 'sgcraft:item/dialing_computer'}})
+    write(ITEMS / f'{block}.json', {'model': {'type': 'minecraft:model', 'model': f'sgcraft:item/{block}'}})
+
+
+def models():
+    desk('dialing_computer', COMPUTER_TEXTURES)
+    desk('malp_console', MALP_CONSOLE_TEXTURES, malp=True)
     write(MODELS / 'office_chair.json', {'parent': 'minecraft:block/block', 'textures': {
         'particle': 'sgcraft:block/office_chair_fabric',
         'fabric': 'sgcraft:block/office_chair_fabric',
@@ -270,11 +374,11 @@ def models():
     write(BLOCKSTATES / 'office_chair.json', {'variants': {
         f'facing={facing}': ({'model': 'sgcraft:block/office_chair', 'y': y} if y
                              else {'model': 'sgcraft:block/office_chair'})
-        for facing, y in rotations.items()}})
+        for facing, y in ROTATIONS.items()}})
     write(ITEMS / 'office_chair.json', {'model': {'type': 'minecraft:model', 'model': 'sgcraft:block/office_chair'}})
 
 
 if __name__ == '__main__':
     textures()
     models()
-    print('Made the dialing computer and office chair art')
+    print('Made the dialing computer, MALP console and office chair art')

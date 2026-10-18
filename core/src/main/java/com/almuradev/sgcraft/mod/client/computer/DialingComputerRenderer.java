@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.client.computer;
 
+import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.block.entity.DialingComputerBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -40,13 +41,14 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.LightCoordsUtil;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
 /**
  * Draws the dialing program on a dialing computer's monitor, lit by its own light, for every player who can see it,
  * so those standing behind the operator watch the gate dial too. The picture spans the monitor's screen across all
- * three columns of the computer.
+ * three columns of the computer. Switched off, or without power, the monitor is dark.
  */
 public final class DialingComputerRenderer implements BlockEntityRenderer<DialingComputerBlockEntity,
         DialingComputerRenderer.State> {
@@ -61,13 +63,19 @@ public final class DialingComputerRenderer implements BlockEntityRenderer<Dialin
     private static final float FACE = 8 / 16F - 0.002F;
     // How near a player must be for the picture to be drawn
     private static final double VIEW_DISTANCE = 48;
+    // Any texture with no see-through pixels, drawn all black for a dark screen
+    private static final Identifier DARK = SGCraft.id("textures/gui/malp_static.png");
+    private static final int WHITE = 0xFFFFFFFF;
+    private static final int BLACK = 0xFF000000;
 
     public DialingComputerRenderer(final BlockEntityRendererProvider.Context context) {
     }
 
-    /** The computer's facing, and its picture, if it is near enough to be drawn. */
+    /** The computer's facing, whether it runs, and its picture, if it is near enough to be drawn. */
     public static final class State extends BlockEntityRenderState {
         Direction facing = Direction.NORTH;
+        boolean near;
+        boolean running;
         @Nullable Identifier picture;
     }
 
@@ -82,15 +90,17 @@ public final class DialingComputerRenderer implements BlockEntityRenderer<Dialin
             final ModelFeatureRenderer.@Nullable CrumblingOverlay breakProgress) {
         BlockEntityRenderer.super.extractRenderState(computer, state, partialTicks, cameraPosition, breakProgress);
         state.facing = computer.getBlockState().getValue(HorizontalDirectionalBlock.FACING);
-        state.picture = Vec3.atCenterOf(computer.getBlockPos()).closerThan(cameraPosition,
-                DialingComputerRenderer.VIEW_DISTANCE) ? ComputerDisplays.texture(computer, partialTicks) : null;
+        state.near = Vec3.atCenterOf(computer.getBlockPos()).closerThan(cameraPosition,
+                DialingComputerRenderer.VIEW_DISTANCE);
+        state.running = computer.running();
+        state.picture = state.near && state.running ? ComputerDisplays.texture(computer, partialTicks) : null;
     }
 
     @Override
     public void submit(final State state, final PoseStack poseStack, final SubmitNodeCollector collector,
             final CameraRenderState camera) {
         final Identifier picture = state.picture;
-        if (picture == null) {
+        if (picture == null && (!state.near || state.running)) {
             return;
         }
         poseStack.pushPose();
@@ -98,22 +108,27 @@ public final class DialingComputerRenderer implements BlockEntityRenderer<Dialin
         poseStack.translate(0.5, 0, 0.5);
         poseStack.rotateDegrees(Axis.YP, 180 - state.facing.toYRot());
         poseStack.translate(-0.5, 0, -0.5);
-        collector.submitCustomGeometry(poseStack, RenderTypes.textPolygonOffset(picture),
-                DialingComputerRenderer::quad);
+        if (picture != null) {
+            collector.submitCustomGeometry(poseStack, RenderTypes.textPolygonOffset(picture),
+                    (pose, buffer) -> DialingComputerRenderer.quad(pose, buffer, DialingComputerRenderer.WHITE));
+        } else {
+            collector.submitCustomGeometry(poseStack, RenderTypes.textPolygonOffset(DialingComputerRenderer.DARK),
+                    (pose, buffer) -> DialingComputerRenderer.quad(pose, buffer, DialingComputerRenderer.BLACK));
+        }
         poseStack.popPose();
     }
 
     // The screen's rectangle, facing north, at full brightness, its corners counterclockwise as seen from in front
-    private static void quad(final PoseStack.Pose pose, final VertexConsumer buffer) {
+    private static void quad(final PoseStack.Pose pose, final VertexConsumer buffer, final int color) {
         final int light = LightCoordsUtil.FULL_BRIGHT;
         final float z = DialingComputerRenderer.FACE;
-        buffer.addVertex(pose, DialingComputerRenderer.LEFT, DialingComputerRenderer.TOP, z).setColor(-1)
+        buffer.addVertex(pose, DialingComputerRenderer.LEFT, DialingComputerRenderer.TOP, z).setColor(color)
                 .setUv(0, 0).setLight(light);
-        buffer.addVertex(pose, DialingComputerRenderer.LEFT, DialingComputerRenderer.BOTTOM, z).setColor(-1)
+        buffer.addVertex(pose, DialingComputerRenderer.LEFT, DialingComputerRenderer.BOTTOM, z).setColor(color)
                 .setUv(0, 1).setLight(light);
-        buffer.addVertex(pose, DialingComputerRenderer.RIGHT, DialingComputerRenderer.BOTTOM, z).setColor(-1)
+        buffer.addVertex(pose, DialingComputerRenderer.RIGHT, DialingComputerRenderer.BOTTOM, z).setColor(color)
                 .setUv(1, 1).setLight(light);
-        buffer.addVertex(pose, DialingComputerRenderer.RIGHT, DialingComputerRenderer.TOP, z).setColor(-1)
+        buffer.addVertex(pose, DialingComputerRenderer.RIGHT, DialingComputerRenderer.TOP, z).setColor(color)
                 .setUv(1, 0).setLight(light);
     }
 
@@ -121,5 +136,14 @@ public final class DialingComputerRenderer implements BlockEntityRenderer<Dialin
     @Override
     public boolean shouldRenderOffScreen() {
         return true;
+    }
+
+    /**
+     * The space the whole screen can take up, whichever way the computer faces: a block either side of the block
+     * entity and up through the upper row, so it isn't culled while any of it is in view. NeoForge culls block
+     * entities by this box; it isn't part of the vanilla interface, so there is no {@code @Override}.
+     */
+    public AABB getRenderBoundingBox(final DialingComputerBlockEntity computer) {
+        return new AABB(computer.getBlockPos()).inflate(1, 0, 1).expandTowards(0, 1, 0);
     }
 }

@@ -49,8 +49,8 @@ import java.util.Map;
 
 /**
  * An office chair, as the SGC's operators sit in. Used, it seats the player facing the way the chair does; a player
- * seated facing a dialing computer works it. The chair faces the way the player placing it looks, so a chair put
- * down while looking at a computer faces that computer.
+ * seated facing a dialing computer or a MALP console works it. The chair faces the way the player placing it looks,
+ * so a chair put down while looking at a computer faces that computer.
  */
 public final class OfficeChairBlock extends HorizontalDirectionalBlock {
 

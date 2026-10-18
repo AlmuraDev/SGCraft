@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.mod.entity;
 
 import com.almuradev.sgcraft.mod.block.OfficeChairBlock;
 import com.almuradev.sgcraft.mod.computer.DialingComputers;
+import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -46,8 +47,8 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * The unseen seat of an office chair, which a seated player rides. It stands where the sitter's hips go, and goes as
- * soon as its sitter gets up or its chair is gone. Seats aren't saved.
+ * The unseen seat of an office chair, which a seated player rides. It stands where the sitter's hips go, and goes the
+ * tick after its sitter gets up or its chair is gone. Seats aren't saved.
  */
 public final class SeatEntity extends Entity {
 
@@ -87,15 +88,14 @@ public final class SeatEntity extends Entity {
         }
     }
 
-    // The seat goes as its sitter gets up
+    // The sitter's screen closes as they get up. The seat stays until its next tick: the game finds where the sitter
+    // gets up only after this, and puts them on top of a seat that is already gone rather than beside the chair
     @Override
     protected void removePassenger(final Entity passenger) {
         super.removePassenger(passenger);
         if (passenger instanceof final ServerPlayer player) {
             DialingComputers.stoodUp(player);
-        }
-        if (!this.level().isClientSide() && this.getPassengers().isEmpty()) {
-            this.discard();
+            MalpLinks.stoodUp(player);
         }
     }
 

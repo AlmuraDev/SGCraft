@@ -1,4 +1,5 @@
 {
+  "minecraft:black_wool": "Black Wool",
   "minecraft:blue_dye": "Blue Dye",
   "minecraft:charcoal": "Charcoal",
   "minecraft:chiseled_sandstone": "Chiseled Sandstone",
@@ -40,6 +41,7 @@
   "sgcraft:core_crystal": "Stargate Core Crystal",
   "sgcraft:dhd": "Milky Way DHD",
   "sgcraft:dhd_pegasus": "Pegasus DHD",
+  "sgcraft:dialing_computer": "Dialing Computer",
   "sgcraft:edd": "Explorer Dialer Device",
   "sgcraft:energy_converter": "Energy Converter",
   "sgcraft:gate_control_tablet": "Gate Control Tablet",
@@ -55,6 +57,7 @@
   "sgcraft:naquadah_block": "Block of Naquadah Alloy",
   "sgcraft:naquadah_ingot": "Naquadah Alloy Ingot",
   "sgcraft:naquadah_ore": "Naquadah Ore",
+  "sgcraft:office_chair": "Office Chair",
   "sgcraft:ori_supergate_spawner": "Ori Supergate Spawner",
   "sgcraft:pdd": "Personal Dialing Device",
   "sgcraft:pegasus_stargate_spawner": "Pegasus Stargate Spawner",
