@@ -74,10 +74,13 @@ public final class SGAddressing implements Addressing {
     // What changed or couldn't be followed at this start, for operators who join
     private final List<Component> notices = new ArrayList<>();
     private final AddressPlan plan;
+    // The server's secret order, which worlds with a secret layout put their cells in
+    private final SecretOrder order;
 
     public SGAddressing(final MinecraftServer server, final SGConfig config) {
         this.server = server;
         this.settings = config.addresses();
+        this.order = new SecretOrder(this.store().addressKey());
         this.plan = this.recordAddresses();
         for (final AddressPlan.Group group : this.plan.groups()) {
             this.groups.put(group.name(), new PlannedGroup(group));
@@ -285,7 +288,8 @@ public final class SGAddressing implements Addressing {
     public AddressPartition partition(final ResourceKey<Level> world) {
         return this.partitions.computeIfAbsent(world, key -> {
             final AddressLayout layout = this.layoutOf(key);
-            return new SimplePartition(layout.cellChunks(), layout.originSymbol());
+            return new LaidOutPartition(layout.cellChunks(), layout.originSymbol(),
+                    layout.secret() ? Optional.of(this.order) : Optional.empty());
         });
     }
 
@@ -312,9 +316,6 @@ public final class SGAddressing implements Addressing {
     @Override
     public WorldGroup groupOf(final ResourceKey<Level> world) {
         return this.groups.getOrDefault(this.plan.groupOf(world), this.groups.get(AddressSettings.DEFAULT_GROUP));
-    }
-
-    private record SimplePartition(int cellChunks, Optional<Symbol> pointOfOrigin) implements AddressPartition {
     }
 
     private final class PlannedGroup implements WorldGroup {

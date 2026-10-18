@@ -33,14 +33,17 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.Optional;
 
 /**
- * How one world is laid out into addresses: how many chunks wide and long each addressed cell is, and the symbol its
- * addresses end with. Changing either changes every address in the world.
+ * How one world is laid out into addresses: how many chunks wide and long each addressed cell is, the symbol its
+ * addresses end with, and whether the server's secret key orders its cells. Changing any of them changes every address
+ * in the world.
  *
  * @param cellChunks how many chunks wide and long each addressed cell is, from 1 to {@link #MAX_CELL_CHUNKS}
  * @param pointOfOrigin the symbol every address dialed from the world ends with, as one character, or {@code ""} for
  *     addresses without one
+ * @param secret whether the cells are given their addresses in an order only the server's secret key can follow, so
+ *     no one can work out where a gate is from its address
  */
-public record AddressLayout(int cellChunks, String pointOfOrigin) {
+public record AddressLayout(int cellChunks, String pointOfOrigin, boolean secret) {
 
     /** The most chunks wide and long a cell can be. */
     public static final int MAX_CELL_CHUNKS = 256;
@@ -55,8 +58,14 @@ public record AddressLayout(int cellChunks, String pointOfOrigin) {
     /** Reads a layout as it is recorded with the server's data. */
     public static final Codec<AddressLayout> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             AddressLayout.CELL_CHUNKS_CODEC.fieldOf("cell_chunks").forGetter(AddressLayout::cellChunks),
-            Codec.STRING.fieldOf("point_of_origin").forGetter(AddressLayout::pointOfOrigin)
+            Codec.STRING.fieldOf("point_of_origin").forGetter(AddressLayout::pointOfOrigin),
+            Codec.BOOL.optionalFieldOf("secret", false).forGetter(AddressLayout::secret)
     ).apply(instance, AddressLayout::new));
+
+    /** A layout whose addresses anyone can work out from where the cell is. */
+    public AddressLayout(final int cellChunks, final String pointOfOrigin) {
+        this(cellChunks, pointOfOrigin, false);
+    }
 
     private static DataResult<String> validOrigin(final String origin) {
         if (origin.isEmpty() || origin.length() == 1 && Symbol.of(origin.charAt(0)).isPresent()) {
@@ -70,9 +79,13 @@ public record AddressLayout(int cellChunks, String pointOfOrigin) {
         return this.pointOfOrigin.length() == 1 ? Symbol.of(this.pointOfOrigin.charAt(0)) : Optional.empty();
     }
 
-    /** @return the layout written as people read it, such as {@code 1 chunk per cell, point of origin @} */
+    /**
+     * @return the layout written as people read it, such as {@code 1 chunk per cell, point of origin @} or
+     *     {@code 8 chunks per cell, point of origin @, secret layout}
+     */
     public String describe() {
         return this.cellChunks + (this.cellChunks == 1 ? " chunk" : " chunks") + " per cell, "
-                + (this.pointOfOrigin.isEmpty() ? "no point of origin" : "point of origin " + this.pointOfOrigin);
+                + (this.pointOfOrigin.isEmpty() ? "no point of origin" : "point of origin " + this.pointOfOrigin)
+                + (this.secret ? ", secret layout" : "");
     }
 }

@@ -946,5 +946,6 @@
   "setting.sgcraft.computers.history_size": "Dialing history",
   "setting.sgcraft.computers.history_size.tip": "How many of the addresses last dialed from a dialing computer its screen lists, to dial again. 0 keeps none",
   "screen.sgcraft.dialing_computer.iris.none": "This gate has no iris",
-  "screen.sgcraft.dialing_computer.iris.tip": "Shuts the gate's iris, or raises its shield, when it is open, and opens it when it is shut. It shows red while open, since anything can come through"
+  "screen.sgcraft.dialing_computer.iris.tip": "Shuts the gate's iris, or raises its shield, when it is open, and opens it when it is shut. It shows red while open, since anything can come through",
+  "message.sgcraft.addresses.bad_secret_layout": "The secret layout is true or false"
 }

@@ -57,7 +57,7 @@ Each world is divided into cells, 8 chunks (128 blocks) across by default. A gat
 
 - A position symbol is any symbol but `@`, 38 of them. The 6 position symbols give 38 to the power 6 codes, a grid 54,872 cells square, centered on x 0, z 0. With the default 8 chunk cells that covers about 3,511,808 blocks out from the center in each direction.
 - A gate beyond the grid has no address.
-- The codes are scrambled, so gates near each other don't get addresses that look alike.
+- The codes are scrambled, so gates near each other don't get addresses that look alike. The scramble is the same on every server, so anyone who reads SGCraft's code can work out from an address which cell it names. A [secret layout](#secret-layout) stops that.
 - `@` is never a position symbol.
 - Two gates in one cell share an address, and a dial reaches only one of them. Build one gate per cell, unless you want a backup: if the gate a wormhole reaches breaks while it is open, the wormhole jumps to the other. See [Wormhole jumps](dialing.md#wormhole-jumps).
 
@@ -72,9 +72,19 @@ The server setting `addresses.cell_chunks` sets how many chunks wide and long ea
 | `4` | 64 blocks | 1,755,904 blocks |
 | `8` (default) | 128 blocks | 3,511,808 blocks |
 
+### Secret layout
+
+With `addresses.secret_layout` on, the server gives cells their addresses in an order set by a secret key of its own. Each cell still has one address, and dialing works as before, but no one can work out from an address where its gate is, nor from one gate's address and place what any other gate's address is. It is off by default.
+
+The key is 32 random bytes the server makes the first time it starts, kept with the world's saved data. It never leaves the server. Copy the world and the copy has the same addresses; start a new world and it gets a new key.
+
+Turning it on or off changes every gate address in every world, as a new cell size does, so set it before players build gates. `/sgcraft addresses secret_layout <true|false>` sets it, and it takes effect when the server next starts.
+
+Players can still find gates by dialing address after address. With 6 position symbols a world has about 3 trillion codes, so that only works where few cells can hold a gate, such as a small world inside a world border with large cells.
+
 ### Changing the layout
 
-Changing `cell_chunks` or `point_of_origin` changes every gate address in the worlds it reaches. Moving a world to another group, or changing its group's symbol, changes its gates' addresses of 8 and 9 symbols. Old addresses in address books, default addresses, PDDs and tablets then reach another gate or none, and a bigger cell can put two gates in one cell. Set the layout and groups before players build gates.
+Changing `cell_chunks` or `point_of_origin` changes every gate address in the worlds it reaches, and changing `secret_layout` every gate address in every world. Moving a world to another group, or changing its group's symbol, changes its gates' addresses of 8 and 9 symbols. Old addresses in address books, default addresses, PDDs and tablets then reach another gate or none, and a bigger cell can put two gates in one cell. Set the layout and groups before players build gates.
 
 The server records each world's layout, group and symbol. When a world that has gates starts with different ones, the server log shows a large `STARGATE ADDRESSES HAVE CHANGED` warning naming each such world, how many gates it has, and what changed. Operators who join also get a warning in chat. The warning shows once, as the new addresses are then recorded. To get the old addresses back, set the old values again and restart. A world without gates changes quietly.
 
@@ -84,6 +94,7 @@ Operators can change the layout in game, with the commands below or the [setting
 - `/sgcraft addresses cell_chunks <chunks> [<world>]`
 - `/sgcraft addresses point_of_origin <symbol> [<world>]`, where the symbol is a letter, a digit, `+`, `.`, `giza` (or `"@"`) for `@`, or `none`.
 - `/sgcraft addresses clear <world>` gives a world the server's cell size and point of origin again. It stays in its group.
+- `/sgcraft addresses secret_layout <true|false>` turns the [secret layout](#secret-layout) on or off for every world.
 
 ## World symbols and groups
 

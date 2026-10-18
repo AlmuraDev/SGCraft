@@ -75,7 +75,9 @@ public final class AddressChanges {
         /** Removes a group; its worlds go to the default group. */
         REMOVE_GROUP,
         /** Sets a group's symbol, or, when the value is empty, has SGCraft choose one. */
-        GROUP_SYMBOL
+        GROUP_SYMBOL,
+        /** Turns the secret layout on or off for every world, by a value of {@code true} or {@code false}. */
+        SECRET_LAYOUT
     }
 
     /**
@@ -84,7 +86,7 @@ public final class AddressChanges {
      * @param kind what it does
      * @param world the world it changes, or empty for every world
      * @param group the group it names, or {@code ""}
-     * @param value its value: a number of chunks, or one symbol, or {@code ""}
+     * @param value its value: a number of chunks, one symbol, {@code true} or {@code false}, or {@code ""}
      */
     public record Change(Kind kind, Optional<Identifier> world, String group, String value) {
     }
@@ -274,6 +276,10 @@ public final class AddressChanges {
                 }
                 return exists ? Optional.empty() : Optional.of(AddressChanges.noGroup(group));
             }
+            case SECRET_LAYOUT -> {
+                return change.value().equals("true") || change.value().equals("false") ? Optional.empty()
+                        : Optional.of(AddressChanges.text("bad_secret_layout", "The secret layout is true or false"));
+            }
             case WORLD_GROUP -> {
                 if (!exists) {
                     return Optional.of(AddressChanges.noGroup(group));
@@ -362,6 +368,7 @@ public final class AddressChanges {
                     }
                 }
             }
+            case SECRET_LAYOUT -> addresses.addProperty("secret_layout", Boolean.parseBoolean(change.value()));
             case GROUP_SYMBOL -> {
                 final JsonObject group = AddressChanges.section(AddressChanges.section(addresses, "groups"),
                         change.group());

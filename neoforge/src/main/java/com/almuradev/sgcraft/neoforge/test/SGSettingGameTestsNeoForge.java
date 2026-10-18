@@ -33,10 +33,13 @@ import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.address.AddressLayout;
 import com.almuradev.sgcraft.mod.address.AddressSettings;
 import com.almuradev.sgcraft.mod.address.GridReach;
+import com.almuradev.sgcraft.mod.address.LaidOutPartition;
 import com.almuradev.sgcraft.mod.address.SGAddressing;
+import com.almuradev.sgcraft.mod.address.SecretOrder;
 import com.almuradev.sgcraft.mod.address.WorldAddress;
 import com.almuradev.sgcraft.mod.block.entity.GateSpawnerBlockEntity;
 import com.almuradev.sgcraft.mod.gate.DialStyle;
+import com.almuradev.sgcraft.mod.gate.GateStore;
 import com.almuradev.sgcraft.mod.villager.SGVillagers;
 import com.almuradev.sgcraft.mod.worldgen.StructureGates;
 import com.google.gson.JsonParser;
@@ -56,6 +59,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlaceSettings;
 import net.minecraft.world.phys.AABB;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -179,6 +183,57 @@ final class SGSettingGameTestsNeoForge {
         helper.assertTrue(glyphs.size() == Symbol.COUNT && DialStyle.milkyWayGlyph(Symbol.GIZA) == 0,
                 "The Milky Way ring's glyphs aren't one to a symbol, @ first");
         helper.assertTrue(arches.size() == Symbol.COUNT, "The Universe gate's arches aren't one to a symbol");
+        helper.succeed();
+    }
+
+    // A secret layout gives every cell one address of its own that names it again, in an order that differs from the
+    // public one and from another key's; it is off unless the settings turn it on, and the server keeps its key
+    static void secretLayout(final GameTestHelper helper, final BlockPos origin) {
+        final byte[] key = new byte[SecretOrder.KEY_BYTES];
+        final byte[] other = new byte[SecretOrder.KEY_BYTES];
+        Arrays.fill(other, (byte) 7);
+        final SecretOrder order = new SecretOrder(key);
+        // Over a small grid, every code is used exactly once and leads back to its cell
+        final long codes = 38 * 38;
+        final Set<Long> seen = new HashSet<>();
+        for (long cell = 0; cell < codes; cell++) {
+            final long code = order.scramble(cell, codes);
+            helper.assertTrue(code >= 0 && code < codes, "Cell " + cell + " got the code " + code);
+            helper.assertTrue(seen.add(code), "Two cells got the code " + code);
+            helper.assertTrue(order.unscramble(code, codes) == cell, "Code " + code + " leads to another cell");
+        }
+        final AddressPartition open = SGSettingGameTestsNeoForge.partition(8);
+        final AddressPartition secret = new LaidOutPartition(8, Optional.of(Symbol.GIZA), Optional.of(order));
+        final AddressPartition otherKey = new LaidOutPartition(8, Optional.of(Symbol.GIZA),
+                Optional.of(new SecretOrder(other)));
+        int same = 0;
+        int sameKeys = 0;
+        for (int x = -2000; x < 2000; x += 97) {
+            for (int z = -2000; z < 2000; z += 89) {
+                final ChunkPos chunk = new ChunkPos(x, z);
+                final ChunkPos cell = new ChunkPos(Math.floorDiv(x, 8) * 8, Math.floorDiv(z, 8) * 8);
+                final List<Symbol> symbols = GridReach.encode(chunk, secret, 6).orElseThrow();
+                helper.assertTrue(GridReach.decode(symbols, secret).orElseThrow().equals(cell),
+                        "The secret address of chunk " + x + ", " + z + " names another cell");
+                same += symbols.equals(GridReach.encode(chunk, open, 6).orElseThrow()) ? 1 : 0;
+                sameKeys += symbols.equals(GridReach.encode(chunk, otherKey, 6).orElseThrow()) ? 1 : 0;
+            }
+        }
+        helper.assertTrue(same == 0, same + " cells have the same address with and without the secret layout");
+        helper.assertTrue(sameKeys == 0, sameKeys + " cells have the same address with two keys");
+        // Off by default, on for every world when set
+        helper.assertTrue(!SGSettingGameTestsNeoForge.parse("{}").orElseThrow().addresses().layoutOf(Level.NETHER)
+                .secret(), "The secret layout is on by default");
+        SGSettingGameTestsNeoForge.layoutIs(helper, SGSettingGameTestsNeoForge.parse(
+                "{\"addresses\": {\"secret_layout\": true}}").orElseThrow(), Level.NETHER,
+                new AddressLayout(8, "@", true));
+        helper.assertTrue(new WorldAddress(AddressLayout.DEFAULTS, AddressSettings.DEFAULT_GROUP, Optional.empty(),
+                Optional.empty()).changesEveryAddress(new WorldAddress(new AddressLayout(8, "@", true),
+                AddressSettings.DEFAULT_GROUP, Optional.empty(), Optional.empty())),
+                "Turning on the secret layout doesn't change every address");
+        // The server makes its key once and keeps it
+        final GateStore store = helper.getLevel().getServer().getDataStorage().computeIfAbsent(GateStore.TYPE);
+        helper.assertTrue(Arrays.equals(store.addressKey(), store.addressKey()), "The server's key changed");
         helper.succeed();
     }
 

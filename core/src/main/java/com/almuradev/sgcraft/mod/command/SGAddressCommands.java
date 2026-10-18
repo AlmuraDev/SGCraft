@@ -38,6 +38,7 @@ import com.almuradev.sgcraft.mod.address.AddressSettings;
 import com.almuradev.sgcraft.mod.address.SGAddressing;
 import com.almuradev.sgcraft.mod.address.WorldAddress;
 import com.almuradev.sgcraft.mod.gate.GateStore;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -68,9 +69,10 @@ import java.util.stream.Stream;
  * addresses, now and after a restart, and {@code groups} lists the groups. {@code cell_chunks <chunks> [<world>]},
  * {@code point_of_origin <symbol> [<world>]}, {@code clear <world> [cell_chunks|point_of_origin]},
  * {@code group create <name> [<symbol>]},
- * {@code group remove <name>}, {@code group symbol <name> <symbol>} and {@code group assign <world> <group>} change
- * them. Changes are written to the settings file and take effect when the server next starts, as they change
- * addresses in the worlds they reach; each warns about the worlds whose gates get new addresses.
+ * {@code group remove <name>}, {@code group symbol <name> <symbol>}, {@code group assign <world> <group>} and
+ * {@code secret_layout <true|false>} change them. Changes are written to the settings file and take effect when the
+ * server next starts, as they change addresses in the worlds they reach; each warns about the worlds whose gates get
+ * new addresses.
  */
 final class SGAddressCommands {
 
@@ -121,6 +123,11 @@ final class SGAddressCommands {
                                 .then(Commands.literal("point_of_origin")
                                         .executes(context -> SGAddressCommands.change(context, Kind.CLEAR_ORIGIN,
                                                 SGAddressCommands.world(context), "", "")))))
+                .then(Commands.literal("secret_layout")
+                        .then(Commands.argument("on", BoolArgumentType.bool())
+                                .executes(context -> SGAddressCommands.change(context, Kind.SECRET_LAYOUT,
+                                        Optional.empty(), "",
+                                        String.valueOf(BoolArgumentType.getBool(context, "on"))))))
                 .then(Commands.literal("groups")
                         .executes(context -> SGAddressCommands.groups(context.getSource())))
                 .then(Commands.literal("group")

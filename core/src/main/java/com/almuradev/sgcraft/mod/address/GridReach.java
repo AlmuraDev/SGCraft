@@ -49,7 +49,8 @@ import java.util.Optional;
  * <p>A position uses every symbol but {@code @}, 38 of them, so with {@code p} position symbols there are
  * {@code 38^p} codes. The grid is as many cells square as fit in them, the whole square root of {@code 38^p},
  * centered on the world's middle; the codes past its last cell name none. The cell's code is scrambled so that gates
- * near each other don't get addresses that look alike.</p>
+ * near each other don't get addresses that look alike. In a world with a secret layout, the server's
+ * {@link SecretOrder} scrambles it instead, so no one without the key can work out where a gate is.</p>
  */
 public final class GridReach implements AddressReach {
 
@@ -214,8 +215,12 @@ public final class GridReach implements AddressReach {
             return Optional.empty();
         }
         final BigInteger codes = BigInteger.valueOf(GridReach.BASE).pow(positions);
-        BigInteger code = BigInteger.valueOf(column).multiply(BigInteger.valueOf(side)).add(BigInteger.valueOf(row))
-                .multiply(GridReach.SCRAMBLE).add(GridReach.OFFSET).mod(codes);
+        final BigInteger cell = BigInteger.valueOf(column).multiply(BigInteger.valueOf(side))
+                .add(BigInteger.valueOf(row));
+        final Optional<SecretOrder> order = GridReach.order(partition);
+        BigInteger code = order.isPresent()
+                ? BigInteger.valueOf(order.get().scramble(cell.longValueExact(), codes.longValueExact()))
+                : cell.multiply(GridReach.SCRAMBLE).add(GridReach.OFFSET).mod(codes);
         final Symbol[] symbols = new Symbol[positions];
         final BigInteger base = BigInteger.valueOf(GridReach.BASE);
         for (int i = positions - 1; i >= 0; i--) {
@@ -238,8 +243,11 @@ public final class GridReach implements AddressReach {
             code = code.multiply(base).add(BigInteger.valueOf(GridReach.digit(symbol)));
         }
         final BigInteger codes = base.pow(positions);
-        final long cell = code.subtract(GridReach.OFFSET).multiply(GridReach.SCRAMBLE.modInverse(codes)).mod(codes)
-                .longValueExact();
+        final Optional<SecretOrder> order = GridReach.order(partition);
+        final long cell = order.isPresent()
+                ? order.get().unscramble(code.longValueExact(), codes.longValueExact())
+                : code.subtract(GridReach.OFFSET).multiply(GridReach.SCRAMBLE.modInverse(codes)).mod(codes)
+                        .longValueExact();
         final long side = GridReach.side(positions);
         if (cell >= side * side) {
             return Optional.empty();
@@ -252,6 +260,11 @@ public final class GridReach implements AddressReach {
             return Optional.empty();
         }
         return Optional.of(new ChunkPos((int) x, (int) z));
+    }
+
+    // The secret order a world's cells are in, if its layout is secret
+    private static Optional<SecretOrder> order(final AddressPartition partition) {
+        return partition instanceof final LaidOutPartition laidOut ? laidOut.order() : Optional.empty();
     }
 
     // How many cells wide and long the grid is: the whole square root of 38^positions

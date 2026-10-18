@@ -163,6 +163,7 @@ Ore changes apply to chunks generated or loaded from then on and are saved. See 
 | `/sgcraft addresses group remove <name>` | Op | Remove a group; its worlds go to the default group |
 | `/sgcraft addresses group symbol <name> <symbol>` | Op | Set a group's symbol: a letter, a digit, `giza` for `@`, or `auto` |
 | `/sgcraft addresses group assign <world> <group>` | Op | Put a world in a group, or in `default` |
+| `/sgcraft addresses secret_layout true` | Op | Turn on the secret layout for every world, so no one can work out where a gate is from its address. `false` turns it off |
 
 Your book keeps each address in the form that names its world, so it dials from any world. Default address changes reach PDDs and tablets used for the first time after the change. Address layout and group changes take effect when the server next starts. A layout change changes every gate address in the worlds it reaches, and a group change their addresses of 8 and 9 symbols. Each warns about the worlds whose gates it reaches. See [Changing the layout](addresses.md#changing-the-layout).
 

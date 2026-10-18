@@ -262,6 +262,7 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("address_settings_by_world", SGSettingGameTestsNeoForge::addressSettings);
         SGGameTestsNeoForge.TESTS.put("cell_size_groups_chunks", SGSettingGameTestsNeoForge::cellSize);
         SGGameTestsNeoForge.TESTS.put("thirty_nine_symbols", SGSettingGameTestsNeoForge::thirtyNineSymbols);
+        SGGameTestsNeoForge.TESTS.put("secret_layout_hides_positions", SGSettingGameTestsNeoForge::secretLayout);
         AddressGroupGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
         SettingsCatalogGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
         SGGameTestsNeoForge.TESTS.put("layout_change_warns_with_gates",

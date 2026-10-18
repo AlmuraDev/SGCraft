@@ -97,6 +97,7 @@ The `addresses` section lays each world out into addresses. See [Addresses](addr
 | `point_of_origin` | `"@"` | The symbol every address ends with, which the last chevron locks; `""` for addresses without one |
 | `groups` | `{}` | The groups of worlds, by name, each `{ "symbol": "<symbol>" }`. Leave out `symbol` for one SGCraft chooses. List `default` only to give the default group another symbol than `@` |
 | `worlds` | `{}` | A world's own `cell_chunks`, `point_of_origin` and `group`, by world ID. A value left out is the one above, and a world without a `group` is in the default group |
+| `secret_layout` | `false` | Whether every world's cells get their addresses in an order set by the server's secret key, so no one can work out where a gate is from its address. See [Secret layout](addresses.md#secret-layout) |
 
 ```json
 "addresses": {
@@ -115,9 +116,9 @@ The `addresses` section lays each world out into addresses. See [Addresses](addr
 
 A group's name is lowercase letters, digits and underscores, up to 32 of them. A server has up to 39 groups and a group up to 39 worlds. See [World symbols and groups](addresses.md#world-symbols-and-groups).
 
-Bigger cells reach further from the center with the same symbols but leave more space between gates. With cells 8 chunks across, 7 symbols reach about 2,985,984 blocks out each way.
+Bigger cells reach farther from the center with the same symbols but leave more space between gates. With cells 8 chunks across, 7 symbols reach about 3,511,808 blocks out each way.
 
-> **Warning:** Changing `cell_chunks` or `point_of_origin` changes every gate address in the worlds it reaches. Changing a world's `group`, or a group's `symbol`, changes its gates' addresses of 8 and 9 symbols. Address books, default addresses and anything else holding an old address stop reaching the gate. Choose them before players build gates.
+> **Warning:** Changing `cell_chunks` or `point_of_origin` changes every gate address in the worlds it reaches, and changing `secret_layout` every gate address in every world. Changing a world's `group`, or a group's `symbol`, changes its gates' addresses of 8 and 9 symbols. Address books, default addresses and anything else holding an old address stop reaching the gate. Choose them before players build gates.
 >
 > The server records each world's layout, group and symbol. When a world that has gates starts with different ones, the server log shows a large `STARGATE ADDRESSES HAVE CHANGED` warning naming each world, its gate count and what changed, and operators who join get a warning in chat. It shows once, as the new addresses are then recorded. To get the old addresses back, set the old values again and restart. A world with no gates changes without a warning.
 

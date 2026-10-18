@@ -47,9 +47,11 @@ import java.util.regex.Pattern;
  * @param groups the groups of worlds, by name; {@value #DEFAULT_GROUP} is the group of every world not put in another,
  *     and is there whether it is listed or not
  * @param worlds single worlds' own values, by the world's identifier
+ * @param secretLayout whether every world's cells get their addresses in an order only the server's secret key can
+ *     follow, so no one can work out where a gate is from its address
  */
 public record AddressSettings(int cellChunks, String pointOfOrigin, Map<String, GroupSettings> groups,
-        Map<Identifier, WorldLayout> worlds) {
+        Map<Identifier, WorldLayout> worlds, boolean secretLayout) {
 
     /** The name of the group every world is in unless the settings put it in another. */
     public static final String DEFAULT_GROUP = "default";
@@ -60,7 +62,7 @@ public record AddressSettings(int cellChunks, String pointOfOrigin, Map<String, 
     private static final Pattern GROUP_NAME = Pattern.compile("[a-z0-9_]{1," + AddressSettings.MAX_GROUP_NAME + "}");
 
     public static final AddressSettings DEFAULTS = new AddressSettings(AddressLayout.DEFAULTS.cellChunks(),
-            AddressLayout.DEFAULTS.pointOfOrigin(), Map.of(), Map.of());
+            AddressLayout.DEFAULTS.pointOfOrigin(), Map.of(), Map.of(), false);
 
     /** Reads a group's name: lowercase letters, digits and underscores, up to {@value #MAX_GROUP_NAME} of them. */
     public static final Codec<String> GROUP_NAME_CODEC = Codec.STRING.validate(name -> AddressSettings.isGroupName(name)
@@ -77,7 +79,9 @@ public record AddressSettings(int cellChunks, String pointOfOrigin, Map<String, 
                     .optionalFieldOf("groups", Map.of())
                     .forGetter(AddressSettings::groups),
             Codec.unboundedMap(Identifier.CODEC, WorldLayout.CODEC).optionalFieldOf("worlds", Map.of())
-                    .forGetter(AddressSettings::worlds)
+                    .forGetter(AddressSettings::worlds),
+            Codec.BOOL.optionalFieldOf("secret_layout", AddressSettings.DEFAULTS.secretLayout)
+                    .forGetter(AddressSettings::secretLayout)
     ).apply(instance, AddressSettings::new));
 
     public AddressSettings {
@@ -95,7 +99,7 @@ public record AddressSettings(int cellChunks, String pointOfOrigin, Map<String, 
     public AddressLayout layoutOf(final ResourceKey<Level> world) {
         final Optional<WorldLayout> own = Optional.ofNullable(this.worlds.get(world.identifier()));
         return new AddressLayout(own.flatMap(WorldLayout::cellChunks).orElse(this.cellChunks),
-                own.flatMap(WorldLayout::pointOfOrigin).orElse(this.pointOfOrigin));
+                own.flatMap(WorldLayout::pointOfOrigin).orElse(this.pointOfOrigin), this.secretLayout);
     }
 
     /** @return the name of the group the settings put a world in, which is {@value #DEFAULT_GROUP} unless set */

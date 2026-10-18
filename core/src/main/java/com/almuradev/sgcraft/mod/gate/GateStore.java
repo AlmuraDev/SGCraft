@@ -31,6 +31,7 @@ import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.address.AddressLayout;
 import com.almuradev.sgcraft.mod.address.AddressSettings;
+import com.almuradev.sgcraft.mod.address.SecretOrder;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -44,6 +45,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.saveddata.SavedDataType;
 
+import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -54,8 +57,8 @@ import java.util.UUID;
 
 /**
  * Every formed gate on the server, kept with the server's data so gates in unloaded chunks can still be found and
- * dialed, the symbol each world was given within its group, each group's symbol, and the address layout each
- * world's addresses were made with.
+ * dialed, the symbol each world was given within its group, each group's symbol, the address layout each
+ * world's addresses were made with, and the server's secret address key.
  */
 public final class GateStore extends SavedData {
 
@@ -83,7 +86,8 @@ public final class GateStore extends SavedData {
                     .forGetter(store -> store.worldGroups),
             Codec.unboundedMap(Codec.STRING, GateStore.SYMBOL_CODEC)
                     .optionalFieldOf("group_symbols", Map.of())
-                    .forGetter(store -> store.groupSymbols)
+                    .forGetter(store -> store.groupSymbols),
+            Codec.STRING.optionalFieldOf("address_key").forGetter(store -> store.addressKey)
     ).apply(instance, GateStore::new));
 
     public static final SavedDataType<GateStore> TYPE =
@@ -103,6 +107,8 @@ public final class GateStore extends SavedData {
     // The point of origin every world's addresses were made with, as saved before layouts were kept by world; with
     // cells one chunk across, as they then were
     private Optional<String> legacyOrigin = Optional.empty();
+    // The secret key worlds with a secret layout order their cells by, in Base64; made the first time it is needed
+    private Optional<String> addressKey = Optional.empty();
 
     private GateStore() {
     }
@@ -110,8 +116,9 @@ public final class GateStore extends SavedData {
     private GateStore(final List<GateRecord> gates, final Map<ResourceKey<Level>, Symbol> worldSymbols,
             final List<CompoundTag> connections, final Optional<String> legacyOrigin,
             final Map<ResourceKey<Level>, AddressLayout> layouts, final Map<ResourceKey<Level>, String> worldGroups,
-            final Map<String, Symbol> groupSymbols) {
+            final Map<String, Symbol> groupSymbols, final Optional<String> addressKey) {
         this.legacyOrigin = legacyOrigin;
+        this.addressKey = addressKey;
         this.worldGroups.putAll(worldGroups);
         this.groupSymbols.putAll(groupSymbols);
         this.layouts.putAll(layouts);
@@ -210,6 +217,28 @@ public final class GateStore extends SavedData {
         if (changed) {
             this.setDirty();
         }
+    }
+
+    /**
+     * @return the server's secret address key, {@value SecretOrder#KEY_BYTES} random bytes made the first time it is
+     *     asked for and kept from then on
+     */
+    public byte[] addressKey() {
+        final Optional<byte[]> kept = this.addressKey.map(text -> {
+            try {
+                return Base64.getDecoder().decode(text);
+            } catch (final IllegalArgumentException e) {
+                return new byte[0];
+            }
+        }).filter(key -> key.length == SecretOrder.KEY_BYTES);
+        if (kept.isPresent()) {
+            return kept.get();
+        }
+        final byte[] key = new byte[SecretOrder.KEY_BYTES];
+        new SecureRandom().nextBytes(key);
+        this.addressKey = Optional.of(Base64.getEncoder().encodeToString(key));
+        this.setDirty();
+        return key;
     }
 
     /** @return the symbol each group had when the server last started, by the group's name */
