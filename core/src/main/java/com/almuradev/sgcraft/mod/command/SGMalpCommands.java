@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.block.ComputerDeskBlock;
 import com.almuradev.sgcraft.mod.block.MalpConsoleBlock;
 import com.almuradev.sgcraft.mod.entity.MalpEntity;
 import com.almuradev.sgcraft.mod.item.BatteryItem;
@@ -57,6 +58,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Relative;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 import java.math.BigDecimal;
@@ -81,10 +83,10 @@ import java.util.Set;
  *     <li>{@code malp signal <malp> [<pos>]}: how its console, or the console at a position, reaches a MALP</li>
  *     <li>{@code malp console_damage_interrupts [<true|false>]}: whether a player at a console who takes damage is
  *     taken off it, or sets it</li>
- *     <li>{@code malp console_spectators [<count>]}: how many of the players near a console someone is driving at,
- *     nearest first, see the feed on its monitor, or sets it; 0 shows it to none</li>
- *     <li>{@code malp spectator_range [<blocks>]}: how near a driven console players see the feed on its monitor,
- *     or sets it</li>
+ *     <li>{@code malp console_spectators [<count>]}: how many of the players near a console, nearest first, see the
+ *     feed on its monitor, or sets it; 0 shows it to none</li>
+ *     <li>{@code malp spectator_range [<blocks>]}: how near a console players see the feed on its monitor, or
+ *     sets it</li>
  *     <li>{@code malp tablet_drain [<ge>]}: how much gate energy a MALP tablet uses from its battery each tick while it
  *     shows a live feed, or sets it</li>
  *     <li>{@code malp pair_tablet <malp>} and {@code malp unpair_tablet <malp>}: adds a MALP to, or takes it off,
@@ -226,14 +228,14 @@ final class SGMalpCommands {
     private static int showSpectators(final CommandSourceStack source) {
         final int count = MalpSettings.current().consoleSpectators();
         source.sendSuccess(() -> SGCommands.text("malp.console_spectators.show",
-                "Up to %s players near a driven MALP console see the feed on its monitor", count), false);
+                "Up to %s players near a MALP console see the feed on its monitor", count), false);
         return count;
     }
 
     private static int setSpectators(final CommandSourceStack source, final int count) {
         final boolean saved = SGServer.require().stargates().setConsoleSpectators(count);
         source.sendSuccess(() -> SGCommands.text("malp.console_spectators.set",
-                "Up to %s players near a driven MALP console now see the feed on its monitor", count), true);
+                "Up to %s players near a MALP console now see the feed on its monitor", count), true);
         if (!saved) {
             source.sendFailure(SGCommands.text("settings.not_saved",
                     "The settings file couldn't be written, so the change lasts only until the server stops"));
@@ -244,14 +246,14 @@ final class SGMalpCommands {
     private static int showSpectatorRange(final CommandSourceStack source) {
         final int range = MalpSettings.current().spectatorRange();
         source.sendSuccess(() -> SGCommands.text("malp.spectator_range.show",
-                "Players within %s blocks of a driven MALP console see the feed on its monitor", range), false);
+                "Players within %s blocks of a MALP console see the feed on its monitor", range), false);
         return range;
     }
 
     private static int setSpectatorRange(final CommandSourceStack source, final int range) {
         final boolean saved = SGServer.require().stargates().setSpectatorRange(range);
         source.sendSuccess(() -> SGCommands.text("malp.spectator_range.set",
-                "Players within %s blocks of a driven MALP console now see the feed on its monitor", range), true);
+                "Players within %s blocks of a MALP console now see the feed on its monitor", range), true);
         if (!saved) {
             source.sendFailure(SGCommands.text("settings.not_saved",
                     "The settings file couldn't be written, so the change lasts only until the server stops"));
@@ -349,10 +351,13 @@ final class SGMalpCommands {
                     malp.displayName()), true);
             return 1;
         }
-        final BlockPos pos = BlockPosArgument.getLoadedBlockPos(context, "pos");
-        if (!(context.getSource().getLevel().getBlockState(pos).getBlock() instanceof MalpConsoleBlock)) {
+        final BlockPos part = BlockPosArgument.getLoadedBlockPos(context, "pos");
+        final BlockState state = context.getSource().getLevel().getBlockState(part);
+        if (!(state.getBlock() instanceof MalpConsoleBlock)) {
             throw SGMalpCommands.NOT_A_CONSOLE.create();
         }
+        // Any part of the console names it
+        final BlockPos pos = ComputerDeskBlock.main(part, state);
         malp.setConsole(GlobalPos.of(context.getSource().getLevel().dimension(), pos));
         context.getSource().sendSuccess(() -> SGCommands.text("malp.paired", "%s is paired with the console at %s",
                 malp.displayName(), pos.toShortString()), true);

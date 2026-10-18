@@ -26,92 +26,74 @@
 package com.almuradev.sgcraft.mod.block;
 
 import com.almuradev.sgcraft.mod.block.entity.MalpConsoleBlockEntity;
+import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
+import com.almuradev.sgcraft.mod.computer.DialingComputers;
+import com.almuradev.sgcraft.mod.entity.SeatEntity;
 import com.almuradev.sgcraft.mod.item.SGDataComponents;
 import com.almuradev.sgcraft.mod.item.SGItems;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jspecify.annotations.Nullable;
 
 /**
- * A MALP console: a desk with a screen that shows the feed of the MALPs paired with it, and drives them. It faces
- * the player who placed it. Used with a MALP item, it pairs that MALP with itself; any number of MALPs can be paired
- * with one console, and pairing a MALP again moves it to the new console. While someone drives at it, its monitor
- * shows their feed to the players around it.
+ * A MALP console, a {@link ComputerDeskBlock computer at a desk}, whose wide monitor shows the feed of a MALP paired
+ * with it, and from which players drive them. Used with a MALP item, it pairs that MALP with itself; any number of
+ * MALPs can be paired with one console, and pairing a MALP again moves it to the new console.
+ *
+ * <p>A player works it from an office chair in front of it, or standing at it. Its monitor shows the players near it
+ * the feed of the player at it, or, with no one at it, the feed of the MALP last chosen at it; see
+ * {@link MalpLinks}.</p>
+ *
+ * <p>Used sneaking with an empty hand, it is switched off, and its monitor goes dark, or on again; using it to work it
+ * switches it on too. It needs power to run, as {@link com.almuradev.sgcraft.mod.computer.ComputerPower} says.
+ * Switched off or without power, it shows no feed, and anyone at it is taken off it.</p>
  */
-public final class MalpConsoleBlock extends HorizontalDirectionalBlock implements EntityBlock {
-
-    // The desk, ten pixels high; the monitor stands on its far half
-    private static final VoxelShape DESK = Block.box(0, 0, 0, 16, 10, 16);
+public final class MalpConsoleBlock extends ComputerDeskBlock implements EntityBlock {
 
     public MalpConsoleBlock(final Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(HorizontalDirectionalBlock.FACING,
-                Direction.NORTH));
     }
 
     @Override
-    protected void createBlockStateDefinition(final StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(HorizontalDirectionalBlock.FACING);
+    public @Nullable BlockEntity newBlockEntity(final BlockPos pos, final BlockState state) {
+        return state.getValue(ComputerDeskBlock.PART) == Part.MIDDLE_LOWER
+                ? new MalpConsoleBlockEntity(pos, state) : null;
     }
 
     @Override
-    public @Nullable BlockState getStateForPlacement(final BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING,
-                context.getHorizontalDirection().getOpposite());
-    }
-
-    @Override
-    protected VoxelShape getShape(final BlockState state, final BlockGetter level, final BlockPos pos,
-            final CollisionContext context) {
-        return Shapes.or(MalpConsoleBlock.DESK, MalpConsoleBlock.monitor(state.getValue(
-                HorizontalDirectionalBlock.FACING)));
-    }
-
-    // The monitor sits on the half of the desk away from the player using it
-    private static VoxelShape monitor(final Direction facing) {
-        return switch (facing) {
-            case SOUTH -> Block.box(2, 10, 1, 14, 16, 8);
-            case WEST -> Block.box(8, 10, 2, 15, 16, 14);
-            case EAST -> Block.box(1, 10, 2, 8, 16, 14);
-            default -> Block.box(2, 10, 8, 14, 16, 15);
-        };
-    }
-
-    @Override
-    public BlockEntity newBlockEntity(final BlockPos pos, final BlockState state) {
-        return new MalpConsoleBlockEntity(pos, state);
+    public <T extends BlockEntity> @Nullable BlockEntityTicker<T> getTicker(final Level level, final BlockState state,
+            final BlockEntityType<T> type) {
+        if (type != SGBlockEntityTypes.MALP_CONSOLE || level.isClientSide()) {
+            return null;
+        }
+        return (tickLevel, pos, tickState, entity) -> MalpConsoleBlockEntity.serverTick((ServerLevel) tickLevel, pos,
+                (MalpConsoleBlockEntity) entity);
     }
 
     @Override
     protected InteractionResult useItemOn(final ItemStack stack, final BlockState state, final Level level,
             final BlockPos pos, final Player player, final InteractionHand hand, final BlockHitResult hit) {
         if (!stack.is(SGItems.MALP)) {
-            return InteractionResult.TRY_WITH_EMPTY_HAND;
+            return super.useItemOn(stack, state, level, pos, player, hand, hit);
         }
         if (!level.isClientSide()) {
-            MalpConsoleBlock.pair(stack, GlobalPos.of(level.dimension(), pos));
+            MalpConsoleBlock.pair(stack, GlobalPos.of(level.dimension(), ComputerDeskBlock.main(pos, state)));
             player.sendSystemMessage(Component.translatableWithFallback("message.sgcraft.malp.paired",
                     "The MALP is paired with this console").withStyle(ChatFormatting.GREEN));
         }
@@ -123,11 +105,28 @@ public final class MalpConsoleBlock extends HorizontalDirectionalBlock implement
         malp.set(SGDataComponents.MALP_CONSOLE, console);
     }
 
+    // Sneaking, switches the console off or on; otherwise seats the player in a free chair in front of the console,
+    // which opens its screen, or else opens it with the player standing at it
     @Override
     protected InteractionResult useWithoutItem(final BlockState state, final Level level, final BlockPos pos,
             final Player player, final BlockHitResult hit) {
-        if (player instanceof ServerPlayer serverPlayer) {
-            MalpLinks.open(serverPlayer, GlobalPos.of(level.dimension(), pos));
+        if (player instanceof final ServerPlayer serverPlayer) {
+            final ServerLevel serverLevel = serverPlayer.level();
+            final BlockPos main = ComputerDeskBlock.main(pos, state);
+            if (player.isSecondaryUseActive()) {
+                DialingComputers.togglePower(serverPlayer, main);
+                return InteractionResult.SUCCESS;
+            }
+            if (!DialingComputers.startUp(serverPlayer, main)) {
+                return InteractionResult.SUCCESS;
+            }
+            final BlockPos chair = serverPlayer.getVehicle() instanceof SeatEntity ? null
+                    : DialingComputers.freeChair(serverLevel, main);
+            if (chair != null) {
+                DialingComputers.sit(serverPlayer, chair);
+            } else {
+                MalpLinks.open(serverPlayer, GlobalPos.of(level.dimension(), main));
+            }
         }
         return InteractionResult.SUCCESS;
     }

@@ -25,7 +25,6 @@
 
 package com.almuradev.sgcraft.mod.client.malp;
 
-import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.Use;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.player.PlayerModel;
@@ -33,15 +32,18 @@ import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.world.entity.Pose;
 
 /**
- * How a player at a MALP console or looking at a MALP tablet is drawn. At a console: body and head turned to the
- * console, head tilted down at it, and both arms reaching forward onto its controls. At a tablet: body turned the way
- * the head faces, head tilted further down, and both arms holding the tablet out in front of the chest. Only a player
- * standing or crouching is posed, so one asleep, swimming or gliding is drawn as usual.
+ * How a player standing at a MALP console or a dialing computer, or looking at a MALP tablet, is drawn. At a
+ * computer: body and head turned to it, the head looking up at the monitor, and both arms reaching forward onto its
+ * keyboard. At a tablet: body turned the way the head faces, head tilted down, and both arms holding the tablet out
+ * in front of the chest. Only a player standing or crouching is posed, so one asleep, swimming or gliding is drawn as
+ * usual.
  */
 public final class MalpConsolePose {
 
     // How far down, in degrees, a player looks at a tablet held in front of them
     private static final float TABLET_TILT = 40;
+    // How far down, in degrees, a player at a dialing computer looks, at its monitor
+    private static final float COMPUTER_TILT = 5;
     // How far forward the arms reach, in radians below level; at a console the hands rest on its top, in front of the
     // player's waist, and with a tablet they hold it up in front of the chest
     private static final float CONSOLE_REACH = -1.1F;
@@ -64,7 +66,10 @@ public final class MalpConsolePose {
         }
         state.bodyRot += state.yRot;
         state.yRot = 0;
-        state.xRot = use == Use.TABLET ? MalpConsolePose.TABLET_TILT : MalpLinks.CONSOLE_TILT;
+        state.xRot = switch (use) {
+            case TABLET -> MalpConsolePose.TABLET_TILT;
+            default -> MalpConsolePose.COMPUTER_TILT;
+        };
         state.leftArmPose = HumanoidModel.ArmPose.EMPTY;
         state.rightArmPose = HumanoidModel.ArmPose.EMPTY;
     }

@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.neoforge.test;
 
 import com.almuradev.sgcraft.api.SGCraftApi;
+import com.almuradev.sgcraft.api.gate.Connection;
 import com.almuradev.sgcraft.api.gate.DialMode;
 import com.almuradev.sgcraft.api.gate.DialResult;
 import com.almuradev.sgcraft.api.gate.GatePlacement;
@@ -40,7 +41,9 @@ import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.block.SGBlocks;
 import com.almuradev.sgcraft.mod.block.entity.BatteryChargerBlockEntity;
+import com.almuradev.sgcraft.mod.block.entity.MalpConsoleBlockEntity;
 import com.almuradev.sgcraft.mod.block.entity.PowerUnitBlockEntity;
+import com.almuradev.sgcraft.mod.computer.DialingComputers;
 import com.almuradev.sgcraft.mod.entity.MalpEntity;
 import com.almuradev.sgcraft.mod.entity.SGEntityTypes;
 import com.almuradev.sgcraft.mod.gate.GateFrame;
@@ -92,6 +95,7 @@ import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -101,6 +105,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
@@ -157,6 +162,12 @@ final class MalpGameTestsNeoForge {
         tests.put("malp_console_centers_camera", MalpGameTestsNeoForge::consoleCentersCamera);
         tests.put("malp_console_second_player_views_only", MalpGameTestsNeoForge::consoleViewOnly);
         tests.put("malp_console_monitor_spectators_come_and_go", MalpGameTestsNeoForge::consoleSpectators);
+        tests.put("malp_console_hands_feed_to_monitor", MalpGameTestsNeoForge::handsFeedToMonitor);
+        tests.put("malp_console_switched_off_goes_dark", MalpGameTestsNeoForge::switchedOffGoesDark);
+        tests.put("malp_console_monitor_keeps_feed_powered_down", MalpGameTestsNeoForge::monitorKeepsFeedDown);
+        tests.put("malp_console_unpairs_by_owner", MalpGameTestsNeoForge::consoleUnpairs);
+        tests.put("malp_renamed_by_configurator", MalpGameTestsNeoForge::renamedByConfigurator);
+        tests.put("malp_runs_mobs_across_its_view", MalpGameTestsNeoForge::runsMobsAcrossView);
         tests.put("malp_console_monitor_spectators_capped", MalpGameTestsNeoForge::consoleSpectatorCap);
         tests.put("malp_tablet_paired_by_owner_and_operators", MalpGameTestsNeoForge::tabletPairs);
         tests.put("malp_tablet_drives_within_range", MalpGameTestsNeoForge::tabletDrives);
@@ -266,7 +277,7 @@ final class MalpGameTestsNeoForge {
     private static void watchedDrains(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
-        level.setBlock(at, SGBlocks.MALP_CONSOLE.defaultBlockState(), Block.UPDATE_ALL);
+        MalpGameTestsNeoForge.placeConsole(level, at, Direction.NORTH);
         final GlobalPos console = GlobalPos.of(level.dimension(), at);
         final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)), 3.75, console);
         final ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -297,7 +308,7 @@ final class MalpGameTestsNeoForge {
     private static void drivesWithoutPower(final GameTestHelper helper, final ItemStack battery) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
-        level.setBlock(at, SGBlocks.MALP_CONSOLE.defaultBlockState(), Block.UPDATE_ALL);
+        MalpGameTestsNeoForge.placeConsole(level, at, Direction.NORTH);
         final GlobalPos console = GlobalPos.of(level.dimension(), at);
         final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)), 0, console);
         malp.setBattery(battery);
@@ -375,7 +386,7 @@ final class MalpGameTestsNeoForge {
     private static void unpairedByOwner(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
-        level.setBlock(at, SGBlocks.MALP_CONSOLE.defaultBlockState(), Block.UPDATE_ALL);
+        MalpGameTestsNeoForge.placeConsole(level, at, Direction.NORTH);
         final GlobalPos console = GlobalPos.of(level.dimension(), at);
         final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)),
                 BatteryItem.capacity(),
@@ -447,7 +458,7 @@ final class MalpGameTestsNeoForge {
     private static void streamsUntilSignalLost(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
-        level.setBlock(at, SGBlocks.MALP_CONSOLE.defaultBlockState(), Block.UPDATE_ALL);
+        MalpGameTestsNeoForge.placeConsole(level, at, Direction.NORTH);
         final GlobalPos console = GlobalPos.of(level.dimension(), at);
         final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)),
                 BatteryItem.capacity(),
@@ -478,11 +489,11 @@ final class MalpGameTestsNeoForge {
         });
     }
 
-    // A player who opens a console turns to face it, looking a little down, and is at it until they close its screen
+    // A player who opens a console turns to its monitor, and is at it until they close its screen
     private static void consoleUserFlagged(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
-        level.setBlock(at, SGBlocks.MALP_CONSOLE.defaultBlockState(), Block.UPDATE_ALL);
+        MalpGameTestsNeoForge.placeConsole(level, at, Direction.NORTH);
         final ServerPlayer player = helper.makeMockServerPlayerInLevel();
         player.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() - 1.5);
         player.setYRot(180);
@@ -492,21 +503,20 @@ final class MalpGameTestsNeoForge {
         // The console is to the south, which a yaw of 0 faces
         helper.assertTrue(Math.abs(Mth.wrapDegrees(player.getYRot())) < 1, "The player faces " + player.getYRot()
                 + ", not the console");
-        helper.assertTrue(Math.abs(player.getXRot() - MalpLinks.CONSOLE_TILT) < 1, "The player looks "
-                + player.getXRot() + " down, not at the console's controls");
+        helper.assertTrue(MalpGameTestsNeoForge.looksAtMonitor(player, at), "The player looks "
+                + player.getXRot() + " down, not at the console's monitor");
         MalpLinks.action(player, MalpPayloads.ConsoleAction.of(MalpPayloads.ConsoleAction.Kind.CLOSE));
         helper.assertTrue(!MalpLinks.atConsole(player), "The player is still at the console after closing it");
         helper.assertTrue(MalpLinks.feed(player).isEmpty(), "The closed console still has a feed");
         helper.succeed();
     }
 
-    // A player who opens a console from two blocks away steps up to its front, facing it, unless something stands in
-    // the way there, which leaves them where they were, still turned to the console
+    // A player who opens a console from two blocks away steps up to its front, facing its monitor, unless something
+    // stands in the way there, which leaves them where they were, still turned to the monitor
     private static void consoleStepsUp(final GameTestHelper helper, final boolean blocked) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
-        level.setBlock(at, SGBlocks.MALP_CONSOLE.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING,
-                Direction.EAST), Block.UPDATE_ALL);
+        MalpGameTestsNeoForge.placeConsole(level, at, Direction.EAST);
         if (blocked) {
             level.setBlock(at.east().above(), Blocks.STONE.defaultBlockState(), Block.UPDATE_ALL);
         }
@@ -515,7 +525,7 @@ final class MalpGameTestsNeoForge {
         player.teleportTo(start.x, start.y, start.z);
         player.setYRot(0);
         MalpLinks.open(player, GlobalPos.of(level.dimension(), at));
-        final Vec3 front = Vec3.atBottomCenterOf(at).add(0.85, 0, 0);
+        final Vec3 front = Vec3.atBottomCenterOf(at).add(0.95, 0, 0);
         final Vec3 expected = blocked ? start : front;
         helper.assertTrue(player.position().distanceTo(expected) < 0.01, "The player stands at " + player.position()
                 + ", not " + expected);
@@ -523,8 +533,8 @@ final class MalpGameTestsNeoForge {
         final float yaw = blocked ? (float) Math.toDegrees(Math.atan2(1, 2.5)) + 90 : 90;
         helper.assertTrue(Math.abs(Mth.wrapDegrees(player.getYRot() - yaw)) < 1, "The player faces "
                 + player.getYRot() + ", not the console");
-        helper.assertTrue(Math.abs(player.getXRot() - MalpLinks.CONSOLE_TILT) < 1, "The player looks "
-                + player.getXRot() + " down, not at the console's controls");
+        helper.assertTrue(MalpGameTestsNeoForge.looksAtMonitor(player, at), "The player looks "
+                + player.getXRot() + " down, not at the console's monitor");
         MalpLinks.close(player);
         helper.succeed();
     }
@@ -533,7 +543,7 @@ final class MalpGameTestsNeoForge {
     private static void consoleDamageInterrupts(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
-        level.setBlock(at, SGBlocks.MALP_CONSOLE.defaultBlockState(), Block.UPDATE_ALL);
+        MalpGameTestsNeoForge.placeConsole(level, at, Direction.NORTH);
         final GlobalPos console = GlobalPos.of(level.dimension(), at);
         final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)),
                 BatteryItem.capacity(),
@@ -561,7 +571,10 @@ final class MalpGameTestsNeoForge {
             helper.assertTrue(!MalpLinks.atConsole(player), "Damage didn't take the player off the console");
             helper.assertTrue(MalpLinks.feed(player).isEmpty(), "The console still has a feed after damage");
             helper.assertTrue(!RemoteViews.watching(player, malp), "The player still watches the MALP after damage");
-            helper.assertTrue(packets.getLast() instanceof RemoteViewPackets.End, "The view wasn't ended");
+            // The screen's view goes on, on the console's monitor, rather than ending
+            helper.assertTrue(packets.getLast() instanceof RemoteViewPackets.Own own && !own.own(),
+                    "The view wasn't left on the monitor");
+            RemoteViews.stopAll(player);
             RemoteViews.unredirect(player);
             malp.discard();
             helper.succeed();
@@ -572,7 +585,7 @@ final class MalpGameTestsNeoForge {
     private static void consoleCentersCamera(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
-        level.setBlock(at, SGBlocks.MALP_CONSOLE.defaultBlockState(), Block.UPDATE_ALL);
+        MalpGameTestsNeoForge.placeConsole(level, at, Direction.NORTH);
         final GlobalPos console = GlobalPos.of(level.dimension(), at);
         final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)),
                 BatteryItem.capacity(),
@@ -600,9 +613,25 @@ final class MalpGameTestsNeoForge {
         helper.succeed();
     }
 
+    // Places a console as its item does, its middle lower part at a place, its screen facing a way, with a full power
+    // unit under it to run on
+    private static void placeConsole(final ServerLevel level, final BlockPos at, final Direction facing) {
+        final BlockState state = SGBlocks.MALP_CONSOLE.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING,
+                facing);
+        level.setBlock(at, state, Block.UPDATE_ALL);
+        SGBlocks.MALP_CONSOLE.setPlacedBy(level, at, state, null, new ItemStack(SGItems.MALP_CONSOLE));
+        ComputerGameTestsNeoForge.powerUnder(level, at);
+    }
+
+    // Whether a player looks at the middle of a console's monitor
+    private static boolean looksAtMonitor(final ServerPlayer player, final BlockPos console) {
+        final Vec3 screen = Vec3.atBottomCenterOf(console).add(0, 1.25, 0);
+        return player.getLookAngle().dot(screen.subtract(player.getEyePosition()).normalize()) > 0.9995;
+    }
+
     // A console at a spot, and the player who will drive at it, at its front
     private static ServerPlayer driverAt(final GameTestHelper helper, final BlockPos at) {
-        helper.getLevel().setBlock(at, SGBlocks.MALP_CONSOLE.defaultBlockState(), Block.UPDATE_ALL);
+        MalpGameTestsNeoForge.placeConsole(helper.getLevel(), at, Direction.NORTH);
         final ServerPlayer driver = helper.makeMockServerPlayerInLevel();
         driver.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() - 1.5);
         return driver;
@@ -681,7 +710,8 @@ final class MalpGameTestsNeoForge {
     }
 
     // A player near a console someone drives at, who isn't at it, sees the feed on its monitor while the feed is
-    // live, loses it when they walk out of range and gets it back when they return, and loses it when the driver stops
+    // live, loses it when they walk out of range and gets it back when they return. Once the driver leaves, the
+    // monitor goes on showing them the MALP the driver chose, which uses its idle gate energy, until they walk away
     private static void consoleSpectators(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
@@ -710,13 +740,192 @@ final class MalpGameTestsNeoForge {
             helper.assertTrue(RemoteViews.watchingOnDisplay(near, at, malp),
                     "The monitor's feed didn't come back with the player");
             MalpLinks.close(driver);
+            helper.assertTrue(RemoteViews.watchingOnDisplay(near, at, malp),
+                    "The monitor's feed stopped when the driver left");
+            helper.assertTrue(MalpLinks.spectators(console).isEmpty(), "The console lists the driver's spectators");
+            // The test's chunk doesn't tick its block entities, so the console's look and tick are run here
+            final MalpConsoleBlockEntity entity = (MalpConsoleBlockEntity) level.getBlockEntity(at);
+            helper.assertTrue(malp.getUUID().equals(entity.shown()), "The console didn't remember the MALP");
+            MalpLinks.refreshMonitor(level, at, entity);
+            helper.assertTrue(RemoteViews.watchingOnDisplay(near, at, malp),
+                    "The monitor doesn't show the MALP with no one at the console");
+            final double energy = malp.energy();
+            MalpLinks.monitor(level, at, entity);
+            helper.assertTrue(malp.energy() < energy, "Showing the MALP on the monitor used none of its energy");
+            near.teleportTo(at.getX() + 0.5 - 30, at.getY(), at.getZ() + 0.5);
+            MalpLinks.refreshMonitor(level, at, entity);
             helper.assertTrue(!RemoteViews.watchingOnDisplay(near, at, malp),
-                    "The monitor's feed went on after the driver left");
-            helper.assertTrue(MalpLinks.spectators(console).isEmpty(), "The console still lists spectators");
+                    "The monitor's feed went on with no one near");
+            final double left = malp.energy();
+            MalpLinks.monitor(level, at, entity);
+            helper.assertTrue(malp.energy() == left, "The MALP used energy with no one near the monitor");
             RemoteViews.unredirect(near);
             malp.discard();
             helper.succeed();
         });
+    }
+
+    // A driver who leaves the console goes on seeing its MALP on the monitor without the feed beginning again, and
+    // takes the same feed back on the screen when they use the console again
+    private static void handsFeedToMonitor(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
+        final ServerPlayer driver = MalpGameTestsNeoForge.driverAt(helper, at);
+        final GlobalPos console = GlobalPos.of(level.dimension(), at);
+        final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)),
+                BatteryItem.capacity(), console);
+        final AtomicInteger begun = new AtomicInteger();
+        final AtomicInteger moved = new AtomicInteger();
+        RemoteViews.redirect(driver, packet -> {
+            if (packet instanceof RemoteViewPackets.Begin) {
+                begun.incrementAndGet();
+            } else if (packet instanceof RemoteViewPackets.Own) {
+                moved.incrementAndGet();
+            }
+        });
+        MalpLinks.open(driver, console);
+        helper.assertTrue(RemoteViews.watching(driver, malp), "The driver doesn't see the MALP");
+        MalpLinks.close(driver);
+        helper.assertTrue(!RemoteViews.watching(driver, malp), "The driver's screen still shows the feed");
+        helper.assertTrue(RemoteViews.watchingOnDisplay(driver, at, malp),
+                "The monitor doesn't show the driver the MALP");
+        MalpLinks.refreshMonitor(level, at, (MalpConsoleBlockEntity) level.getBlockEntity(at));
+        helper.assertTrue(RemoteViews.watchingOnDisplay(driver, at, malp), "The monitor stopped the handed-over feed");
+        MalpLinks.open(driver, console);
+        helper.assertTrue(RemoteViews.watching(driver, malp), "The driver didn't get the feed back");
+        helper.assertTrue(!RemoteViews.displays(driver).contains(at), "The monitor still shows the driver the MALP");
+        helper.assertTrue(begun.get() == 1, "The feed began " + begun.get() + " times, not once");
+        helper.assertTrue(moved.get() == 2, "The feed moved " + moved.get() + " times, not twice");
+        MalpLinks.close(driver);
+        RemoteViews.stopAll(driver);
+        RemoteViews.unredirect(driver);
+        malp.discard();
+        helper.succeed();
+    }
+
+    // A feed powered down at the console stays down on its monitor once the driver leaves, and when they come back
+    private static void monitorKeepsFeedDown(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
+        final ServerPlayer driver = MalpGameTestsNeoForge.driverAt(helper, at);
+        final GlobalPos console = GlobalPos.of(level.dimension(), at);
+        final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)),
+                BatteryItem.capacity(), console);
+        final ServerPlayer near = helper.makeMockServerPlayerInLevel();
+        near.teleportTo(at.getX() + 6.5, at.getY(), at.getZ() + 0.5);
+        RemoteViews.redirect(near, packet -> {
+        });
+        MalpLinks.open(driver, console);
+        MalpLinks.action(driver, MalpPayloads.ConsoleAction.of(MalpPayloads.ConsoleAction.Kind.FEED));
+        helper.assertTrue(MalpLinks.feed(driver).orElse(null) == MalpPayloads.Feed.OFF,
+                "The feed wasn't powered down: " + MalpLinks.feed(driver));
+        helper.assertTrue(!RemoteViews.watchingOnDisplay(near, at, malp), "The monitor shows a powered-down feed");
+        MalpLinks.close(driver);
+        final MalpConsoleBlockEntity entity = (MalpConsoleBlockEntity) level.getBlockEntity(at);
+        MalpLinks.refreshMonitor(level, at, entity);
+        helper.assertTrue(!RemoteViews.watchingOnDisplay(near, at, malp),
+                "The monitor shows the feed powered down at the console once the driver left");
+        MalpLinks.open(driver, console);
+        helper.assertTrue(MalpLinks.feed(driver).orElse(null) == MalpPayloads.Feed.OFF,
+                "The feed came back powered up: " + MalpLinks.feed(driver));
+        MalpLinks.close(driver);
+        RemoteViews.stopAll(near);
+        RemoteViews.unredirect(near);
+        malp.discard();
+        helper.succeed();
+    }
+
+    // The player driving at a console unpairs a MALP from it there, if they own the MALP; no one else does
+    private static void consoleUnpairs(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
+        final ServerPlayer driver = MalpGameTestsNeoForge.driverAt(helper, at);
+        final GlobalPos console = GlobalPos.of(level.dimension(), at);
+        final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)),
+                BatteryItem.capacity(), console);
+        MalpLinks.open(driver, console);
+        final MalpPayloads.ConsoleAction remove = new MalpPayloads.ConsoleAction(
+                MalpPayloads.ConsoleAction.Kind.REMOVE, Optional.of(malp.getUUID()));
+        malp.setOwner(UUID.randomUUID());
+        MalpLinks.action(driver, remove);
+        helper.assertTrue(console.equals(malp.console()), "Someone else's MALP was unpaired at the console");
+        malp.setOwner(driver.getUUID());
+        MalpLinks.action(driver, remove);
+        helper.assertTrue(malp.console() == null, "The owner couldn't unpair the MALP at the console");
+        helper.assertTrue(MalpLinks.selected(driver).isEmpty(), "The console still shows the unpaired MALP");
+        MalpLinks.close(driver);
+        malp.discard();
+        helper.succeed();
+    }
+
+    // The configurator renames a MALP, and a blank name gives it back its first name
+    private static void renamedByConfigurator(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final BlockPos at = MalpGameTestsNeoForge.inside(helper, 4, 3);
+        final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at), 0,
+                GlobalPos.of(level.dimension(), at));
+        final ServerPlayer owner = helper.makeMockServerPlayerInLevel();
+        owner.teleportTo(at.getX() + 1.5, at.getY(), at.getZ() + 0.5);
+        malp.setOwner(owner.getUUID());
+        MalpConfigurator.apply(owner, new MalpPayloads.ConfigApply(malp.getUUID(), false, malp.options(),
+                Optional.of("  Rover  ")));
+        helper.assertTrue("Rover".equals(malp.displayName()), "The MALP is called " + malp.displayName());
+        MalpConfigurator.apply(owner, new MalpPayloads.ConfigApply(malp.getUUID(), false, malp.options(),
+                Optional.of("")));
+        helper.assertTrue(MalpEntity.defaultName(malp.getUUID()).equals(malp.displayName()),
+                "A blank name didn't give the MALP its first name back: " + malp.displayName());
+        malp.discard();
+        helper.succeed();
+    }
+
+    // Mobs as far from a watched MALP as its camera sees run, not just those beside it
+    private static void runsMobsAcrossView(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel nether = helper.getLevel().getServer().getLevel(Level.NETHER);
+        if (nether == null) {
+            throw helper.assertionException(Component.literal("There is no Nether"));
+        }
+        final int x0 = SectionPos.blockToSectionCoord(origin.getX() - 8192) * 16 + 8;
+        final int z0 = SectionPos.blockToSectionCoord(origin.getZ()) * 16 + 8;
+        final MalpEntity malp = MalpGameTestsNeoForge.malp(nether, new Vec3(x0 + 0.5, 100, z0 + 0.5),
+                BatteryItem.capacity(), GlobalPos.of(helper.getLevel().dimension(), origin));
+        MalpLinks.load(nether.getServer(), malp.getUUID());
+        final BlockPos far = new BlockPos(x0 + 32, 100, z0);
+        helper.succeedWhen(() -> {
+            helper.assertTrue(nether.isPositionEntityTicking(far), "Mobs 32 blocks from the MALP don't run");
+            malp.discard();
+        });
+    }
+
+    // Switching a console off takes the driver off it and stops the feed on its monitor; it won't show a feed again
+    // until it is used, which switches it on
+    private static void switchedOffGoesDark(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
+        final ServerPlayer driver = MalpGameTestsNeoForge.driverAt(helper, at);
+        final GlobalPos console = GlobalPos.of(level.dimension(), at);
+        final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)),
+                BatteryItem.capacity(), console);
+        final ServerPlayer near = helper.makeMockServerPlayerInLevel();
+        near.teleportTo(at.getX() + 6.5, at.getY(), at.getZ() + 0.5);
+        RemoteViews.redirect(near, packet -> {
+        });
+        MalpLinks.open(driver, console);
+        helper.assertTrue(RemoteViews.watchingOnDisplay(near, at, malp), "The nearby player doesn't see the monitor");
+        final MalpConsoleBlockEntity entity = (MalpConsoleBlockEntity) level.getBlockEntity(at);
+        DialingComputers.togglePower(driver, at);
+        helper.assertTrue(!entity.power().on(), "The console wasn't switched off");
+        helper.assertTrue(!MalpLinks.linked(driver), "The driver is still at the switched-off console");
+        helper.assertTrue(!RemoteViews.watchingOnDisplay(near, at, malp), "The dark monitor still shows the feed");
+        MalpLinks.monitor(level, at, entity);
+        helper.assertTrue(!RemoteViews.watchingOnDisplay(near, at, malp), "The dark monitor began a feed");
+        MalpLinks.open(driver, console);
+        helper.assertTrue(entity.running(), "Using the console didn't switch it on");
+        helper.assertTrue(MalpLinks.linked(driver), "The driver couldn't use the console once on");
+        MalpLinks.close(driver);
+        RemoteViews.stopAll(near);
+        RemoteViews.unredirect(near);
+        malp.discard();
+        helper.succeed();
     }
 
     // Only the nearest players around a driven console, as many as the setting says, see its monitor, and the command
@@ -731,7 +940,7 @@ final class MalpGameTestsNeoForge {
                 console);
         // Nearest first, on alternate sides of the console
         final List<ServerPlayer> crowd = new ArrayList<>();
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 10; i++) {
             final ServerPlayer player = helper.makeMockServerPlayerInLevel();
             player.teleportTo(at.getX() + 0.5 + (i % 2 == 0 ? 1 : -1) * (2 + i), at.getY(), at.getZ() + 0.5);
             RemoteViews.redirect(player, packet -> {
@@ -780,7 +989,7 @@ final class MalpGameTestsNeoForge {
     private static void pairsOnConsole(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
-        level.setBlock(at, SGBlocks.MALP_CONSOLE.defaultBlockState(), Block.UPDATE_ALL);
+        MalpGameTestsNeoForge.placeConsole(level, at, Direction.NORTH);
         final GlobalPos console = GlobalPos.of(level.dimension(), at);
         final ServerPlayer player = helper.makeMockServerPlayerInLevel();
         player.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() - 1.5);
@@ -819,8 +1028,8 @@ final class MalpGameTestsNeoForge {
         helper.succeed();
     }
 
-    // With too short a range to reach directly, the signal goes through an open wormhole, even past a shut iris,
-    // and is lost when the wormhole shuts
+    // With too short a range to reach directly, the signal goes through an open wormhole, even past a shut iris, but
+    // not through the kawoosh before the wormhole steadies, and is lost when the wormhole shuts
     private static void relayedSignal(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final Stargate a = SGGameTestsNeoForge.place(helper, origin, 9);
@@ -837,20 +1046,39 @@ final class MalpGameTestsNeoForge {
         final AtomicReference<DialResult> result = new AtomicReference<>();
         a.dial(SGGameTestsNeoForge.addressOf(b, a), DialMode.QUICK, SGGameTestsNeoForge.server(helper))
                 .thenAccept(result::set);
-        helper.runAfterDelay(SGIris.MOVE_TICKS + 40, () -> {
-            helper.assertTrue(result.get() == DialResult.CONNECTED, "The dial ended " + result.get());
-            helper.assertTrue(b.iris().orElseThrow().state() == IrisState.CLOSED, "Gate B's iris isn't shut");
-            final MalpSignal signal = MalpSignal.between(console, level.dimension(), malp, range);
-            helper.assertTrue(signal.kind() == MalpSignal.Kind.RELAYED, "The signal is " + signal.kind());
-            helper.assertTrue(signal.near().equals(Optional.of(a.position()))
-                    && signal.far().equals(Optional.of(b.position())), "The signal went the wrong way");
-            a.disconnect(SGGameTestsNeoForge.server(helper));
+        // Each tick of the kawoosh: whether one was seen, and whether the signal got through it
+        final AtomicBoolean kawoosh = new AtomicBoolean();
+        final AtomicBoolean throughKawoosh = new AtomicBoolean();
+        helper.onEachTick(() -> {
+            if (a.state() == GateState.CONNECTED && a.connection().map(Connection::ticksOpen).orElse(0) == 0) {
+                kawoosh.set(true);
+                throughKawoosh.compareAndSet(false, MalpSignal.between(console, level.dimension(), malp, range)
+                        .reaches());
+            }
         });
-        helper.runAfterDelay(SGIris.MOVE_TICKS + 41, () -> helper.succeedWhen(() -> {
-            helper.assertTrue(a.state() != GateState.CONNECTED, "The gate is still connected");
-            helper.assertTrue(!MalpSignal.between(console, level.dimension(), malp, range).reaches(),
-                    "The signal outlived the wormhole");
-        }));
+        helper.startSequence()
+                .thenWaitUntil(() -> {
+                    helper.assertTrue(result.get() == DialResult.CONNECTED, "The dial ended " + result.get());
+                    helper.assertTrue(a.connection().map(Connection::ticksOpen).orElse(0) > 0,
+                            "The wormhole hasn't steadied");
+                    // A quick dial can steady before the iris has finished shutting
+                    helper.assertTrue(b.iris().orElseThrow().state() == IrisState.CLOSED, "Gate B's iris isn't shut");
+                })
+                .thenExecute(() -> {
+                    helper.assertTrue(kawoosh.get(), "No kawoosh was seen");
+                    helper.assertTrue(!throughKawoosh.get(), "The signal went through the kawoosh");
+                    final MalpSignal signal = MalpSignal.between(console, level.dimension(), malp, range);
+                    helper.assertTrue(signal.kind() == MalpSignal.Kind.RELAYED, "The signal is " + signal.kind());
+                    helper.assertTrue(signal.near().equals(Optional.of(a.position()))
+                            && signal.far().equals(Optional.of(b.position())), "The signal went the wrong way");
+                    a.disconnect(SGGameTestsNeoForge.server(helper));
+                })
+                .thenWaitUntil(() -> {
+                    helper.assertTrue(a.state() != GateState.CONNECTED, "The gate is still connected");
+                    helper.assertTrue(!MalpSignal.between(console, level.dimension(), malp, range).reaches(),
+                            "The signal outlived the wormhole");
+                })
+                .thenSucceed();
     }
 
     // A watched MALP in another world, far from any player or forced chunk, keeps ticking and drives on across
@@ -1094,7 +1322,7 @@ final class MalpGameTestsNeoForge {
     private static void tabletPairs(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
-        level.setBlock(at, SGBlocks.MALP_CONSOLE.defaultBlockState(), Block.UPDATE_ALL);
+        MalpGameTestsNeoForge.placeConsole(level, at, Direction.NORTH);
         final GlobalPos console = GlobalPos.of(level.dimension(), at);
         final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at.south(3)),
                 BatteryItem.capacity(),

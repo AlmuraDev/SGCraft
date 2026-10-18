@@ -55,9 +55,9 @@ import java.util.Map;
 public final class RemoteViewDisplays {
 
     /** How wide a display's picture is, in pixels. */
-    public static final int WIDTH = 256;
+    public static final int WIDTH = 384;
     /** How high a display's picture is, in pixels. */
-    public static final int HEIGHT = 144;
+    public static final int HEIGHT = 216;
     // The server streams a display's view only to players near it, as near as its settings say; this only caps how
     // far off a display that has a view may be and still be drawn
     private static final double RANGE = 64;

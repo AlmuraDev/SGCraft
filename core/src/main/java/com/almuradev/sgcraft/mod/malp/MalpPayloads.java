@@ -83,10 +83,10 @@ public final class MalpPayloads {
     public enum Use {
         /** As usual. */
         NONE,
-        /** Working a console's controls. */
-        CONSOLE,
         /** Holding a tablet out in front of them with both hands, looking down at it. */
-        TABLET
+        TABLET,
+        /** Standing at a dialing computer or a MALP console, hands on its keyboard, looking at its monitor. */
+        COMPUTER
     }
 
     /**
@@ -124,16 +124,21 @@ public final class MalpPayloads {
      * @param battery its battery's charge, in percent
      * @param lamp whether its lamp is on
      * @param powerRequired whether it runs on its battery; when false, {@code battery} means nothing
+     * @param pos the block it stands in
+     * @param yaw which way it faces, as Minecraft turns an entity
+     * @param gate the nearest gate in its world within the signal's range, if any
      */
     public record Readout(String signal, String relay, String world, String biome, float temperature, int time,
-            int light, int hostiles, int battery, boolean lamp, boolean powerRequired) {
+            int light, int hostiles, int battery, boolean lamp, boolean powerRequired, BlockPos pos, float yaw,
+            Optional<NearGate> gate) {
 
         public static final Readout NONE = new Readout(MalpSignal.Kind.NONE.name(), "", "", "", 0, 0, 0, 0, 0, false,
-                true);
+                true, BlockPos.ZERO, 0, Optional.empty());
 
         public Readout(final FriendlyByteBuf buf) {
             this(buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readFloat(), buf.readVarInt(),
-                    buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readBoolean());
+                    buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readBoolean(), buf.readBoolean(),
+                    buf.readBlockPos(), buf.readFloat(), buf.readOptional(NearGate::new));
         }
 
         public void write(final FriendlyByteBuf buf) {
@@ -148,6 +153,29 @@ public final class MalpPayloads {
             buf.writeVarInt(this.battery);
             buf.writeBoolean(this.lamp);
             buf.writeBoolean(this.powerRequired);
+            buf.writeBlockPos(this.pos);
+            buf.writeFloat(this.yaw);
+            buf.writeOptional(this.gate, (out, gate) -> gate.write(out));
+        }
+    }
+
+    /**
+     * The gate nearest a MALP, as its readout gives it.
+     *
+     * @param address the gate's address as dialed from its own world, or empty if the gate hides it
+     * @param distance how far it is from the MALP, in blocks
+     * @param yaw which way it lies from the MALP, as Minecraft turns an entity to face it
+     */
+    public record NearGate(String address, int distance, float yaw) {
+
+        public NearGate(final FriendlyByteBuf buf) {
+            this(buf.readUtf(), buf.readVarInt(), buf.readFloat());
+        }
+
+        public void write(final FriendlyByteBuf buf) {
+            buf.writeUtf(this.address);
+            buf.writeVarInt(this.distance);
+            buf.writeFloat(this.yaw);
         }
     }
 
@@ -199,6 +227,41 @@ public final class MalpPayloads {
         @Override
         public Type<ConsoleState> type() {
             return ConsoleState.TYPE;
+        }
+    }
+
+    /**
+     * What a console's monitor shows, sent to the players near it a couple of times a second while it is switched on,
+     * for their clients to draw around the feed, or in place of it.
+     *
+     * @param console the console's middle lower part
+     * @param malps the MALPs paired with it, by name
+     * @param selected the MALP the monitor shows, if any
+     * @param inUse whether someone is at the console
+     */
+    public record MonitorState(BlockPos console, List<MalpInfo> malps, Optional<UUID> selected, Feed feed,
+            Readout readout, boolean inUse) implements SGPacket {
+
+        public static final Type<MonitorState> TYPE = new Type<>(SGCraft.id("malp_monitor_state"));
+
+        public MonitorState(final FriendlyByteBuf buf) {
+            this(buf.readBlockPos(), SGPacket.readList(buf, MalpInfo::new), buf.readOptional(UUIDUtil.STREAM_CODEC),
+                    buf.readEnum(Feed.class), new Readout(buf), buf.readBoolean());
+        }
+
+        @Override
+        public void write(final FriendlyByteBuf buf) {
+            buf.writeBlockPos(this.console);
+            SGPacket.writeList(buf, this.malps, (out, malp) -> malp.write(out));
+            buf.writeOptional(this.selected, UUIDUtil.STREAM_CODEC);
+            buf.writeEnum(this.feed);
+            this.readout.write(buf);
+            buf.writeBoolean(this.inUse);
+        }
+
+        @Override
+        public Type<MonitorState> type() {
+            return MonitorState.TYPE;
         }
     }
 
@@ -341,13 +404,21 @@ public final class MalpPayloads {
      * @param malp the MALP's UUID
      * @param refresh true to change nothing and only send the settings again
      * @param options every setting, as it should be
+     * @param name the name to give the MALP, blank for the name of a MALP with no custom name, or empty to keep its
+     *     name
      */
-    public record ConfigApply(UUID malp, boolean refresh, MalpOptions options) implements SGPacket {
+    public record ConfigApply(UUID malp, boolean refresh, MalpOptions options, Optional<String> name)
+            implements SGPacket {
 
         public static final Type<ConfigApply> TYPE = new Type<>(SGCraft.id("malp_config_apply"));
 
+        /** The settings, keeping the MALP's name. */
+        public ConfigApply(final UUID malp, final boolean refresh, final MalpOptions options) {
+            this(malp, refresh, options, Optional.empty());
+        }
+
         public ConfigApply(final FriendlyByteBuf buf) {
-            this(buf.readUUID(), buf.readBoolean(), new MalpOptions(buf));
+            this(buf.readUUID(), buf.readBoolean(), new MalpOptions(buf), buf.readOptional(in -> in.readUtf(64)));
         }
 
         @Override
@@ -355,6 +426,7 @@ public final class MalpPayloads {
             buf.writeUUID(this.malp);
             buf.writeBoolean(this.refresh);
             this.options.write(buf);
+            buf.writeOptional(this.name, (out, name) -> out.writeUtf(name, 64));
         }
 
         @Override

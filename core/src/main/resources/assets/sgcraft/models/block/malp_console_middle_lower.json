@@ -1,0 +1,359 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "sgcraft:block/dialing_computer_case",
+    "case": "sgcraft:block/dialing_computer_case",
+    "vents": "sgcraft:block/dialing_computer_vents",
+    "bezel": "sgcraft:block/dialing_computer_bezel",
+    "screen": "sgcraft:block/malp_console_screen",
+    "desk": "sgcraft:block/dialing_computer_desk",
+    "cabinet": "sgcraft:block/dialing_computer_cabinet",
+    "steel": "sgcraft:block/dialing_computer_steel",
+    "keyboard": "sgcraft:block/dialing_computer_keyboard",
+    "panel": "sgcraft:block/dialing_computer_panel",
+    "stick": "sgcraft:block/office_chair_metal",
+    "knob": "sgcraft:block/malp_console_knob"
+  },
+  "elements": [
+    {
+      "from": [
+        0,
+        11,
+        0
+      ],
+      "to": [
+        16,
+        12,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            4,
+            16,
+            5
+          ],
+          "texture": "#desk"
+        },
+        "east": {
+          "uv": [
+            0,
+            4,
+            16,
+            5
+          ],
+          "texture": "#desk"
+        },
+        "south": {
+          "uv": [
+            0,
+            4,
+            16,
+            5
+          ],
+          "texture": "#desk"
+        },
+        "west": {
+          "uv": [
+            0,
+            4,
+            16,
+            5
+          ],
+          "texture": "#desk"
+        },
+        "up": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#desk"
+        },
+        "down": {
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ],
+          "texture": "#desk"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        2,
+        12
+      ],
+      "to": [
+        16,
+        11,
+        14
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            5,
+            16,
+            14
+          ],
+          "texture": "#steel"
+        },
+        "east": {
+          "uv": [
+            2,
+            5,
+            4,
+            14
+          ],
+          "texture": "#steel"
+        },
+        "south": {
+          "uv": [
+            0,
+            5,
+            16,
+            14
+          ],
+          "texture": "#steel"
+        },
+        "west": {
+          "uv": [
+            12,
+            5,
+            14,
+            14
+          ],
+          "texture": "#steel"
+        },
+        "up": {
+          "uv": [
+            0,
+            12,
+            16,
+            14
+          ],
+          "texture": "#steel"
+        },
+        "down": {
+          "uv": [
+            0,
+            2,
+            16,
+            4
+          ],
+          "texture": "#steel"
+        }
+      }
+    },
+    {
+      "from": [
+        2.5,
+        12,
+        1
+      ],
+      "to": [
+        13.5,
+        12.75,
+        6.5
+      ],
+      "faces": {
+        "up": {
+          "uv": [
+            0,
+            0,
+            11.0,
+            5.5
+          ],
+          "texture": "#keyboard"
+        },
+        "down": {
+          "uv": [
+            2.5,
+            9.5,
+            13.5,
+            15
+          ],
+          "texture": "#case"
+        },
+        "north": {
+          "uv": [
+            0,
+            6.0,
+            11.0,
+            6.75
+          ],
+          "texture": "#keyboard"
+        },
+        "south": {
+          "uv": [
+            0,
+            6.0,
+            11.0,
+            6.75
+          ],
+          "texture": "#keyboard"
+        },
+        "east": {
+          "uv": [
+            0,
+            6.0,
+            5.5,
+            6.75
+          ],
+          "texture": "#keyboard"
+        },
+        "west": {
+          "uv": [
+            0,
+            6.0,
+            5.5,
+            6.75
+          ],
+          "texture": "#keyboard"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        12,
+        8
+      ],
+      "to": [
+        16,
+        16,
+        15
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "texture": "#screen"
+        },
+        "east": {
+          "uv": [
+            1,
+            0,
+            8,
+            4
+          ],
+          "texture": "#case"
+        },
+        "south": {
+          "uv": [
+            0,
+            0,
+            16,
+            4
+          ],
+          "texture": "#case"
+        },
+        "west": {
+          "uv": [
+            8,
+            0,
+            15,
+            4
+          ],
+          "texture": "#case"
+        },
+        "up": {
+          "uv": [
+            0,
+            8,
+            16,
+            15
+          ],
+          "texture": "#case"
+        },
+        "down": {
+          "uv": [
+            0,
+            1,
+            16,
+            8
+          ],
+          "texture": "#case"
+        }
+      }
+    },
+    {
+      "from": [
+        0,
+        12,
+        7.5
+      ],
+      "to": [
+        16,
+        13.5,
+        8
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            0,
+            2.5,
+            16,
+            4
+          ],
+          "texture": "#bezel"
+        },
+        "east": {
+          "uv": [
+            8,
+            2.5,
+            8.5,
+            4
+          ],
+          "texture": "#bezel"
+        },
+        "south": {
+          "uv": [
+            0,
+            2.5,
+            16,
+            4
+          ],
+          "texture": "#bezel"
+        },
+        "west": {
+          "uv": [
+            7.5,
+            2.5,
+            8,
+            4
+          ],
+          "texture": "#bezel"
+        },
+        "up": {
+          "uv": [
+            0,
+            7.5,
+            16,
+            8
+          ],
+          "texture": "#bezel"
+        },
+        "down": {
+          "uv": [
+            0,
+            8,
+            16,
+            8.5
+          ],
+          "texture": "#bezel"
+        }
+      }
+    }
+  ]
+}

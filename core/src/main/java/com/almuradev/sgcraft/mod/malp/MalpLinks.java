@@ -27,8 +27,12 @@ package com.almuradev.sgcraft.mod.malp;
 
 import com.almuradev.sgcraft.api.SGCraftApi;
 import com.almuradev.sgcraft.api.address.Address;
+import com.almuradev.sgcraft.api.gate.GateProperties;
+import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGCraft;
-import com.almuradev.sgcraft.mod.block.MalpConsoleBlock;
+import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.block.entity.MalpConsoleBlockEntity;
+import com.almuradev.sgcraft.mod.computer.DialingComputers;
 import com.almuradev.sgcraft.mod.entity.MalpEntity;
 import com.almuradev.sgcraft.mod.item.BatteryItem;
 import com.almuradev.sgcraft.mod.item.MalpTabletItem;
@@ -39,19 +43,24 @@ import com.almuradev.sgcraft.mod.malp.MalpPayloads.ConsoleUse;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.Drive;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.Feed;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.MalpInfo;
+import com.almuradev.sgcraft.mod.malp.MalpPayloads.MonitorState;
+import com.almuradev.sgcraft.mod.malp.MalpPayloads.NearGate;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.Readout;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.Role;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.Use;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
 import com.almuradev.sgcraft.mod.shield.CityShieldBlockEntity;
+import com.almuradev.sgcraft.mod.view.RemoteViewConfig;
 import com.almuradev.sgcraft.mod.view.RemoteViews;
+import net.minecraft.ChatFormatting;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -97,9 +106,11 @@ import java.util.UUID;
  * energy or it needing none, the feed is live: the player sees what the MALP sees, the MALP uses gate energy if it
  * needs power, a tablet uses gate energy from its own battery, and the MALP takes the driver's controls.
  *
- * <p>A player who opens a console steps up to its front, if there is safe ground there within their reach, and turns
- * to face it, and every client draws them working its controls. A player with a tablet's screen open is drawn holding
- * it out in front of them, looking down at it. If the server's settings say so, damage takes them off either.</p>
+ * <p>A player works a console from an office chair in front of it, or standing at it, as at a dialing computer: one
+ * who stands steps up to its front, if there is safe ground there within their reach, and turns to its monitor, and
+ * every client draws them with their hands on its keyboard; getting up from the chair closes the screen. A player with
+ * a tablet's screen open is drawn holding it out in front of them, looking down at it. If the server's settings say
+ * so, damage takes them off either.</p>
  *
  * <p>One player at a time drives a MALP: the first to choose it, from a console or a tablet. A player who chooses a
  * MALP someone else drives only watches it, while their own console or tablet reaches it, and may choose another
@@ -108,35 +119,35 @@ import java.util.UUID;
  * player someone watches leaves, or turns to another MALP, the watcher sees the feed go offline.</p>
  *
  * <p>While the feed of the player at a console is live, the players nearest it who aren't at it see the feed on its
- * monitor, as many as the server's settings allow, within the settings' range. A tablet has no monitor. Watching, on
- * a screen or a monitor, uses none of the MALP's gate energy beyond what the driver's feed uses.</p>
+ * monitor, as many as the server's settings allow, within the settings' range. With no one at a console, its monitor
+ * shows those players the feed of the MALP last chosen at it, or else of the first MALP paired with it, while the
+ * console reaches it and it has power: while anyone is near enough to see it, the MALP's chunk is kept loaded and the
+ * MALP uses its idle gate energy, unless someone drives it, whose feed pays for it. With no one near, nothing is sent
+ * and nothing is used. A tablet has no monitor. Watching, on a screen or a monitor, uses none of the MALP's gate
+ * energy beyond what the driver's feed uses.</p>
  */
 public final class MalpLinks {
-
-    /** How far down, in degrees, a player at a console looks at its controls. */
-    public static final float CONSOLE_TILT = 30;
 
     /** The ticket that keeps a watched MALP's chunk loaded, and running, for a moment at a time. */
     public static final TicketType TICKET = new TicketType(40L, TicketType.FLAG_LOADING | TicketType.FLAG_SIMULATION
             | TicketType.FLAG_KEEP_DIMENSION_ACTIVE);
     // A ticket's level falls by one a chunk out from its center, and entities only tick at two below a full chunk's,
-    // so this runs the MALP's chunk and the eight around it, which it can drive into before the next renewal, and
-    // loads chunks three out, as far as a remote view reads at its default reach
-    private static final int TICKET_RADIUS = 3;
+    // so a ticket this many chunks out runs every chunk two fewer out, and loads chunks this far out
+    private static final int TICKET_LEVEL_DROP = 2;
     private static final int TICKET_TICKS = 20;
     private static final int SIGNAL_TICKS = 5;
     private static final int STATE_TICKS = 10;
     // How often a tablet's battery pays for the gate energy its feed used, so the tablet isn't changed every tick
     private static final int TABLET_PAY_TICKS = 20;
-    // How often a driven console looks for the players near it who see its monitor
+    // How often a console looks for the players near it who see its monitor
     private static final int SPECTATOR_TICKS = 10;
+    // How long a MALP whose feed a monitor shows with no one at the console is kept loaded past each look
+    private static final int MONITOR_LOAD_TICKS = 2 * MalpLinks.TICKET_TICKS;
     // How far past the range a player who sees a monitor may step before it stops, so one at the edge doesn't flicker
     private static final double SPECTATOR_MARGIN = 2;
     private static final int HOSTILE_RANGE = 32;
     // The most the camera can be turned by one message, in degrees
     private static final float MAX_AIM = 30;
-    // How far from the console's center, toward its front, a player at it stands, so their hands rest on its keys
-    private static final double FRONT = 0.85;
     // Where the dragon's fight looks for players from, and how far
     private static final Vec3 ARENA_CENTER = new Vec3(0, 128, 0);
     private static final double ARENA_RANGE = 192;
@@ -145,6 +156,8 @@ public final class MalpLinks {
     private static final Map<UUID, Link> LINKS = new HashMap<>();
     // Each MALP whose chunk is kept loaded, and the tick it may unload after
     private static final Map<UUID, Long> LOADED = new HashMap<>();
+    // What the monitor of each console no one is at shows, by the console
+    private static final Map<GlobalPos, Monitor> MONITORS = new HashMap<>();
 
     private MalpLinks() {
     }
@@ -193,6 +206,17 @@ public final class MalpLinks {
         }
     }
 
+    // A monitor's feed with no one at its console: the players near it who see it, and the MALP it shows, if any
+    private static final class Monitor {
+
+        private Set<UUID> spectators = new HashSet<>();
+        private @Nullable MalpEntity malp;
+        // The MALP it would show, and what its feed shows
+        private @Nullable UUID selected;
+        private Feed feed = Feed.OFF;
+        private MalpSignal signal = MalpSignal.NONE;
+    }
+
     /** Registers the ticket types: the MALP's, and the city shield's. */
     public static void registerTickets(final RegistrySink<TicketType> sink) {
         sink.register(ResourceKey.create(Registries.TICKET_TYPE, SGCraft.id("malp")), MalpLinks.TICKET);
@@ -202,11 +226,17 @@ public final class MalpLinks {
 
     /**
      * Opens a console for a player. If someone else is at it, the player only watches what that player sees.
-     * Otherwise the player is at the console: they step up to its front, if that spot is within their reach and safe
-     * to stand on, and turn to face it, and they choose a MALP paired with it, as {@link #openTablet} describes.
+     * Otherwise the player is at the console, seated in a chair in front of it or standing: one standing steps up to
+     * its front, if that spot is within their reach and safe to stand on, and turns to its monitor. They choose a MALP
+     * paired with it, as {@link #openTablet} describes, and the console remembers it, to show on its monitor once they
+     * leave. Those who saw the monitor's feed go on seeing the feed of the player at it.
+     *
+     * @param console the console's middle lower part
      */
     public static void open(final ServerPlayer player, final GlobalPos console) {
-        MalpLinks.open(player, new MalpController.Console(console));
+        if (DialingComputers.startUp(player, console.pos())) {
+            MalpLinks.open(player, new MalpController.Console(console));
+        }
     }
 
     /**
@@ -251,6 +281,10 @@ public final class MalpLinks {
             if (before != null && before.role != Role.CONSOLE_WATCHER && before.controller.equals(controller)) {
                 keep = before.selected;
                 link.feedOn = before.feedOn;
+            } else if (controller instanceof MalpController.Console console) {
+                // The feed is as it was left at the console, powered down or not
+                final MalpConsoleBlockEntity entity = MalpLinks.consoleAt(server, console.pos());
+                link.feedOn = entity == null || !entity.feedOff();
             }
             MalpLinks.choose(link, MalpLinks.initial(link, controller.malps(server), keep));
             if (before != null && before.atConsole() && link.atConsole() && before.controller.equals(controller)) {
@@ -258,16 +292,24 @@ public final class MalpLinks {
                 link.spectators = before.spectators;
                 before.spectators = new HashSet<>();
             }
+            if (link.atConsole() && controller instanceof MalpController.Console console) {
+                // Those who saw the monitor's feed with no one at the console go on seeing it, now this player's
+                final Monitor monitor = MalpLinks.MONITORS.remove(console.pos());
+                if (monitor != null) {
+                    link.spectators.addAll(monitor.spectators);
+                }
+            }
         }
         if (before != null) {
             MalpLinks.stopSpectators(before);
         }
-        link.use = link.atConsole() ? Use.CONSOLE : controller instanceof MalpController.Tablet ? Use.TABLET
-                : Use.NONE;
+        // Seated in a chair, the player is drawn sitting, as usual
+        link.use = link.atConsole() ? player.isPassenger() ? Use.NONE : Use.COMPUTER
+                : controller instanceof MalpController.Tablet ? Use.TABLET : Use.NONE;
         MalpLinks.LINKS.put(player.getUUID(), link);
         if (link.atConsole() && controller instanceof MalpController.Console console) {
-            MalpLinks.stepUp(player, console.pos().pos());
-            MalpLinks.face(player, console.pos().pos());
+            DialingComputers.stepUp(player, console.pos().pos());
+            MalpLinks.remember(link);
         }
         if (link.use != (before == null ? Use.NONE : before.use)) {
             MalpLinks.broadcastUse(player, link.use);
@@ -334,53 +376,30 @@ public final class MalpLinks {
         MalpLinks.stopViewing(link);
         MalpLinks.choose(link, malp);
         MalpLinks.keepLoaded(link.player.level().getServer(), link);
+        MalpLinks.remember(link);
     }
 
-    // Steps the player to the console's front, if they are on their own feet and the spot is within their reach and
-    // safe to stand on
-    private static void stepUp(final ServerPlayer player, final BlockPos console) {
-        final Level level = player.level();
-        final BlockState state = level.getBlockState(console);
-        if (!(state.getBlock() instanceof MalpConsoleBlock) || player.isPassenger()) {
+    // The console the player is at remembers the MALP they chose, and whether they powered the feed down, for its
+    // monitor to keep to once they leave
+    private static void remember(final Link link) {
+        if (!link.atConsole() || !(link.controller instanceof MalpController.Console console)) {
             return;
         }
-        final Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
-        final Vec3 spot = Vec3.atBottomCenterOf(console).add(facing.getStepX() * MalpLinks.FRONT, 0,
-                facing.getStepZ() * MalpLinks.FRONT);
-        if (player.position().distanceTo(spot) > player.blockInteractionRange()
-                || !MalpLinks.safe(level, player, spot)) {
-            return;
+        final MalpConsoleBlockEntity entity = MalpLinks.consoleAt(link.player.level().getServer(), console.pos());
+        if (entity != null) {
+            if (link.selected != null) {
+                entity.setShown(link.selected);
+            }
+            entity.setFeedOff(!link.feedOn);
         }
-        player.teleportTo(spot.x, spot.y, spot.z);
-        player.resetFallDistance();
     }
 
-    // Whether a player can stand at a spot: room for them standing, solid ground under them, and no fluid or block
-    // that hurts them there or underfoot
-    private static boolean safe(final Level level, final ServerPlayer player, final Vec3 spot) {
-        final AABB box = player.getDimensions(Pose.STANDING).makeBoundingBox(spot);
-        final BlockPos ground = BlockPos.containing(spot).below();
-        return level.getBlockState(ground).isFaceSturdy(level, ground, Direction.UP) && level.noCollision(player, box)
-                && !level.containsAnyLiquid(box)
-                && level.getBlockStates(box.expandTowards(0, -0.01, 0)).noneMatch(MalpLinks::harmful);
-    }
-
-    // Whether a block burns, pricks or freezes a player in or on it
-    private static boolean harmful(final BlockState state) {
-        return NodeEvaluator.isBurningBlock(state) || state.is(Blocks.CACTUS) || state.is(Blocks.SWEET_BERRY_BUSH)
-                || state.is(Blocks.WITHER_ROSE) || state.is(Blocks.POWDER_SNOW) || state.is(BlockTags.SPELEOTHEMS);
-    }
-
-    // Turns the player to the console, looking a little down at its controls
-    private static void face(final ServerPlayer player, final BlockPos console) {
-        final Vec3 eyes = player.getEyePosition();
-        final Vec3 center = Vec3.atCenterOf(console);
-        final double across = center.subtract(eyes).horizontalDistance();
-        if (across < 0.01) {
-            return;
-        }
-        player.lookAt(EntityAnchorArgument.Anchor.EYES, new Vec3(center.x, eyes.y
-                - across * Math.tan(Math.toRadians(MalpLinks.CONSOLE_TILT)), center.z));
+    // A console's middle lower part, if it is there and loaded
+    private static @Nullable MalpConsoleBlockEntity consoleAt(final MinecraftServer server, final GlobalPos console) {
+        final ServerLevel level = server.getLevel(console.dimension());
+        return level != null && level.isLoaded(console.pos())
+                && level.getBlockEntity(console.pos()) instanceof final MalpConsoleBlockEntity entity
+                && !entity.isRemoved() ? entity : null;
     }
 
     /** @return whether a player has the screen of a MALP console or MALP tablet open, driving or only watching */
@@ -471,7 +490,7 @@ public final class MalpLinks {
         }
         final boolean allowed = switch (action.kind()) {
             case SELECT -> link.role != Role.CONSOLE_WATCHER;
-            case REMOVE -> link.controller instanceof MalpController.Tablet;
+            case REMOVE -> link.controller instanceof MalpController.Tablet || link.role == Role.DRIVER;
             default -> link.role == Role.DRIVER;
         };
         if (!allowed) {
@@ -491,6 +510,8 @@ public final class MalpLinks {
                 if (gone != null && link.controller instanceof MalpController.Tablet tablet
                         && MalpTabletItem.unpair(tablet.stack(), gone) && gone.equals(link.selected)) {
                     MalpLinks.select(link, MalpLinks.initial(link, link.controller.malps(server), null));
+                } else if (gone != null && link.controller instanceof MalpController.Console) {
+                    MalpLinks.unpairAtConsole(link, gone);
                 }
             }
             case LAMP -> {
@@ -498,7 +519,10 @@ public final class MalpLinks {
                     link.viewing.setLamp(!link.viewing.lamp());
                 }
             }
-            case FEED -> link.feedOn = !link.feedOn;
+            case FEED -> {
+                link.feedOn = !link.feedOn;
+                MalpLinks.remember(link);
+            }
             case CENTER -> {
                 if (link.viewing != null) {
                     link.viewing.centerMast();
@@ -537,6 +561,7 @@ public final class MalpLinks {
         if (link == null) {
             return;
         }
+        MalpLinks.leaveOnMonitor(link);
         MalpLinks.stopViewing(link);
         MalpLinks.pay(link);
         MalpLinks.stopSpectators(link);
@@ -544,6 +569,50 @@ public final class MalpLinks {
             MalpLinks.broadcastUse(player, Use.NONE);
         }
         MalpLinks.updateWatchers(player);
+    }
+
+    // A player leaving a console whose monitor goes on to show the MALP they saw sees it go on there, as those around
+    // it do, without the feed beginning again
+    private static void leaveOnMonitor(final Link link) {
+        final MalpEntity malp = link.viewing;
+        if (!link.atConsole() || link.feed != Feed.LIVE || malp == null
+                || !(link.controller instanceof MalpController.Console console)) {
+            return;
+        }
+        final MalpConsoleBlockEntity entity = MalpLinks.consoleAt(link.player.level().getServer(), console.pos());
+        if (entity == null || !entity.running() || !malp.getUUID().equals(entity.shown())
+                || !RemoteViews.leaveOnDisplay(link.player)) {
+            return;
+        }
+        if (!link.watcher()) {
+            malp.stop();
+        }
+        link.viewing = null;
+        MalpLinks.MONITORS.computeIfAbsent(console.pos(), at -> new Monitor()).spectators.add(link.player.getUUID());
+    }
+
+    /**
+     * A console was switched off: everyone at it, or watching whoever is, is taken off it, as though they had closed
+     * its screen, and its monitor's feed stops for those near it.
+     */
+    public static void switchedOff(final MinecraftServer server, final GlobalPos console) {
+        final MalpController.Console controller = new MalpController.Console(console);
+        for (final Link link : List.copyOf(MalpLinks.LINKS.values())) {
+            if (link.controller.equals(controller) && MalpLinks.LINKS.get(link.player.getUUID()) == link) {
+                MalpLinks.close(link.player);
+                MalpLinks.send(link, false, true);
+            }
+        }
+        MalpLinks.stopMonitor(server, console);
+    }
+
+    /** A player got up from a chair: takes them off the console they sat at, and closes its screen. */
+    public static void stoodUp(final ServerPlayer player) {
+        final Link link = MalpLinks.LINKS.get(player.getUUID());
+        if (link != null && link.controller instanceof MalpController.Console) {
+            MalpLinks.close(player);
+            MalpLinks.send(link, false, true);
+        }
     }
 
     /** Loads a MALP's chunk for a while, as though someone had just stopped watching it. */
@@ -597,6 +666,35 @@ public final class MalpLinks {
         return true;
     }
 
+    // The player driving at a console unpairs a MALP from it, if they own the MALP or are an operator; a MALP whose
+    // chunk isn't loaded is loaded, and they are asked to try again
+    private static void unpairAtConsole(final Link link, final UUID gone) {
+        final ServerPlayer player = link.player;
+        final MinecraftServer server = player.level().getServer();
+        if (link.controller.malps(server).stream().noneMatch(entry -> entry.id().equals(gone))) {
+            return;
+        }
+        final MalpEntity malp = MalpRegistry.find(server, gone);
+        if (malp == null) {
+            MalpLinks.load(server, gone);
+            player.sendOverlayMessage(Component.translatableWithFallback("message.sgcraft.malp.loading",
+                    "That MALP is loading. Try again in a moment").withStyle(ChatFormatting.YELLOW));
+            return;
+        }
+        if (!MalpConfigurator.mayConfigure(player, malp)) {
+            player.sendOverlayMessage(Component.translatableWithFallback("message.sgcraft.malp.cannot_configure",
+                    "You aren't allowed to configure this MALP").withStyle(ChatFormatting.RED));
+            return;
+        }
+        if (gone.equals(link.selected)) {
+            MalpLinks.select(link, null);
+        }
+        MalpLinks.unpair(malp);
+        if (link.selected == null) {
+            MalpLinks.select(link, MalpLinks.initial(link, link.controller.malps(server), null));
+        }
+    }
+
     /** @return what a player's feed shows, or empty if they have no console's or tablet's screen open */
     public static Optional<Feed> feed(final ServerPlayer player) {
         return Optional.ofNullable(MalpLinks.LINKS.get(player.getUUID())).map(link -> link.feed);
@@ -606,6 +704,7 @@ public final class MalpLinks {
     public static void clear() {
         MalpLinks.LINKS.clear();
         MalpLinks.LOADED.clear();
+        MalpLinks.MONITORS.clear();
         MalpPresence.clear();
     }
 
@@ -686,7 +785,8 @@ public final class MalpLinks {
     private static void ticket(final MinecraftServer server, final UUID id) {
         final MalpEntity malp = MalpRegistry.find(server, id);
         if (malp != null && malp.level() instanceof ServerLevel level) {
-            level.getChunkSource().addTicketWithRadius(MalpLinks.TICKET, malp.chunkPosition(), MalpLinks.TICKET_RADIUS);
+            level.getChunkSource().addTicketWithRadius(MalpLinks.TICKET, malp.chunkPosition(),
+                    MalpLinks.ticketRadius());
             MalpLinks.arena(level, malp);
             return;
         }
@@ -694,9 +794,17 @@ public final class MalpLinks {
             final ServerLevel level = server.getLevel(entry.position().dimension());
             if (level != null) {
                 level.getChunkSource().addTicketWithRadius(MalpLinks.TICKET, ChunkPos.containing(
-                        entry.position().pos()), MalpLinks.TICKET_RADIUS);
+                        entry.position().pos()), MalpLinks.ticketRadius());
             }
         });
+    }
+
+    // How far out the ticket at a MALP's chunk reaches: far enough that every chunk the camera's view reaches across
+    // runs, so the mobs in sight move, with a chunk to spare for a MALP at the edge of its own
+    private static int ticketRadius() {
+        final int reach = SGServer.current().map(server -> server.config().remoteView().horizontalRadius())
+                .orElse(RemoteViewConfig.DEFAULTS.horizontalRadius());
+        return Mth.ceil(reach / 16.0) + 1 + MalpLinks.TICKET_LEVEL_DROP;
     }
 
     // The dragon's fight runs its island only while a player is on it, so a MALP there runs it as a player would,
@@ -801,10 +909,14 @@ public final class MalpLinks {
             MalpLinks.stopViewing(link);
         }
         link.viewing = malp;
-        // Started again if the view ended on its own, such as when the player's client wasn't ready for it
+        // Started again if the view ended on its own, such as when the player's client wasn't ready for it; one the
+        // console's monitor already showed them is taken from there rather than begun again
         if (!RemoteViews.watching(link.player, malp)) {
-            RemoteViews.start(link.player, malp, link.controller instanceof MalpController.Console console
-                    ? console.pos().pos() : null);
+            final BlockPos shownAt = link.controller instanceof MalpController.Console console
+                    ? console.pos().pos() : null;
+            if (shownAt == null || !RemoteViews.takeFromDisplay(link.player, shownAt, malp.getUUID())) {
+                RemoteViews.start(link.player, malp, shownAt);
+            }
         }
     }
 
@@ -823,6 +935,219 @@ public final class MalpLinks {
         }
     }
 
+    /**
+     * Keeps the monitor of a console up to date while no one is at it: shows the players nearest it the feed of the
+     * MALP last chosen at it, or else of the first MALP paired with it, while the console reaches the MALP and the MALP
+     * has power, as many players as the settings allow, within the settings' range. While anyone is that near, the
+     * MALP's chunk is kept loaded and the MALP uses its idle gate energy, unless someone drives it. The console calls
+     * this each tick.
+     *
+     * @param pos the console's middle lower part
+     */
+    public static void monitor(final ServerLevel level, final BlockPos pos, final MalpConsoleBlockEntity console) {
+        final MinecraftServer server = level.getServer();
+        final GlobalPos at = GlobalPos.of(level.dimension(), pos);
+        if (!console.running()) {
+            // Switched off, or without power, its monitor shows nothing and no MALP is kept loaded for it
+            if (MalpLinks.MONITORS.containsKey(at)) {
+                MalpLinks.stopMonitor(server, at);
+            }
+            return;
+        }
+        final MalpController.Console controller = new MalpController.Console(at);
+        final Link occupant = MalpLinks.occupantAt(controller);
+        if (occupant != null) {
+            // The monitor shows the feed of the player at the console, to those who saw it before too
+            final Monitor monitor = MalpLinks.MONITORS.remove(at);
+            if (monitor != null) {
+                occupant.spectators.addAll(monitor.spectators);
+                MalpLinks.updateSpectators(occupant);
+            }
+            return;
+        }
+        if ((server.getTickCount() + pos.hashCode()) % MalpLinks.SPECTATOR_TICKS == 0) {
+            MalpLinks.refreshMonitor(level, pos, console);
+        }
+        // Its idle gate energy, which a driver's feed pays for instead
+        final Monitor monitor = MalpLinks.MONITORS.get(at);
+        if (monitor != null && monitor.malp != null && monitor.malp.isAlive()
+                && MalpLinks.liveDriverOf(monitor.malp.getUUID()) == null) {
+            monitor.malp.drain(MalpSettings.current().idleDrain());
+        }
+    }
+
+    /**
+     * Looks again at who is near a console no one is at, and what its monitor can show them, as {@link #monitor}
+     * does every few ticks, and starts or stops the feed on its monitor to match.
+     *
+     * @param pos the console's middle lower part
+     */
+    public static void refreshMonitor(final ServerLevel level, final BlockPos pos,
+            final MalpConsoleBlockEntity console) {
+        final MinecraftServer server = level.getServer();
+        final GlobalPos at = GlobalPos.of(level.dimension(), pos);
+        final MalpController.Console controller = new MalpController.Console(at);
+        if (MalpLinks.occupantAt(controller) != null) {
+            return;
+        }
+        Monitor monitor = MalpLinks.MONITORS.get(at);
+        final List<ServerPlayer> near = MalpLinks.near(level, pos, monitor == null ? Set.of() : monitor.spectators,
+                controller);
+        if (near.isEmpty()) {
+            if (monitor != null) {
+                MalpLinks.stopMonitor(server, at);
+            }
+            return;
+        }
+        if (monitor == null) {
+            monitor = new Monitor();
+            MalpLinks.MONITORS.put(at, monitor);
+        }
+        MalpLinks.monitored(server, controller, console.shown(), console.feedOff(), monitor);
+        MalpLinks.show(server, pos, monitor, monitor.malp == null ? List.of() : near);
+        final MalpEntity malp = monitor.malp;
+        MalpLinks.sendMonitor(near, pos, controller, monitor.selected, monitor.feed,
+                malp == null ? Readout.NONE : MalpLinks.readout(malp, monitor.signal), false);
+    }
+
+    // Works out what a console's monitor shows with no one at it: the MALP last chosen at it, if still paired with it,
+    // or else the first paired with it, kept loaded, while it is reached by the console's signal and has power; with
+    // no MALP paired, or the feed powered down at the console, the feed is offline
+    private static void monitored(final MinecraftServer server, final MalpController.Console console,
+            final @Nullable UUID shown, final boolean feedOff, final Monitor monitor) {
+        final List<MalpRegistry.Entry> paired = console.malps(server);
+        final UUID id = shown != null && paired.stream().anyMatch(entry -> entry.id().equals(shown)) ? shown
+                : paired.isEmpty() ? null : paired.getFirst().id();
+        monitor.selected = id;
+        monitor.malp = null;
+        monitor.feed = id == null ? Feed.OFF : Feed.NO_SIGNAL;
+        monitor.signal = MalpSignal.NONE;
+        if (id == null || feedOff) {
+            monitor.feed = Feed.OFF;
+            return;
+        }
+        final long until = server.getTickCount() + MalpLinks.MONITOR_LOAD_TICKS;
+        MalpLinks.LOADED.merge(id, until, Math::max);
+        final MalpEntity malp = MalpRegistry.find(server, id);
+        if (malp == null) {
+            // Not loaded yet, so loaded now, to show at the next look
+            MalpLinks.ticket(server, id);
+            return;
+        }
+        if (!console.lists(id, malp)) {
+            return;
+        }
+        final MalpSignal signal = MalpSignal.between(console.pos(), malp.level().dimension(), malp.position(),
+                MalpSettings.current().signalRange());
+        if (!signal.reaches()) {
+            return;
+        }
+        monitor.signal = signal;
+        if (!malp.hasPower()) {
+            monitor.feed = Feed.NO_POWER;
+            return;
+        }
+        monitor.feed = Feed.LIVE;
+        monitor.malp = malp;
+    }
+
+    // Tells the players near a console what its monitor shows, for their clients to draw around the feed, or in place
+    // of it
+    private static void sendMonitor(final List<ServerPlayer> near, final BlockPos console,
+            final MalpController controller, final @Nullable UUID selected, final Feed feed, final Readout readout,
+            final boolean inUse) {
+        if (near.isEmpty()) {
+            return;
+        }
+        final MonitorState state = new MonitorState(console, MalpLinks.infos(near.getFirst().level().getServer(),
+                controller), Optional.ofNullable(selected), feed, readout, inUse);
+        for (final ServerPlayer other : near) {
+            SGNetwork.send(other, state);
+        }
+    }
+
+    // The MALPs paired with a console or tablet, as its screen and its monitor list them
+    private static List<MalpInfo> infos(final MinecraftServer server, final MalpController controller) {
+        final List<MalpInfo> malps = new ArrayList<>();
+        for (final MalpRegistry.Entry entry : controller.malps(server)) {
+            final long capacity = BatteryItem.capacity();
+            malps.add(new MalpInfo(entry.id(), entry.name(), entry.position().dimension().identifier().toString(),
+                    entry.position().pos(), capacity <= 0 ? 0 : (int) Math.round(100.0 * entry.energy() / capacity)));
+        }
+        return malps;
+    }
+
+    // The link whose live feed comes from a MALP, as its driver's, if any
+    private static @Nullable Link liveDriverOf(final UUID malp) {
+        for (final Link link : MalpLinks.LINKS.values()) {
+            if (link.role == Role.DRIVER && link.feed == Feed.LIVE && malp.equals(link.selected)) {
+                return link;
+            }
+        }
+        return null;
+    }
+
+    // Shows a monitor's MALP to the first of the players given that the settings allow, and stops it for the rest
+    private static void show(final MinecraftServer server, final BlockPos at, final Monitor monitor,
+            final List<ServerPlayer> near) {
+        final Set<UUID> wanted = new HashSet<>();
+        final MalpEntity malp = monitor.malp;
+        if (malp != null) {
+            for (final ServerPlayer other : near.subList(0, Math.min(near.size(),
+                    MalpSettings.current().consoleSpectators()))) {
+                wanted.add(other.getUUID());
+                if (!RemoteViews.watchingOnDisplay(other, at, malp)) {
+                    RemoteViews.startOnDisplay(other, at, malp);
+                }
+            }
+        }
+        for (final UUID gone : monitor.spectators) {
+            final ServerPlayer other = server.getPlayerList().getPlayer(gone);
+            if (!wanted.contains(gone) && other != null) {
+                RemoteViews.stopOnDisplay(other, at);
+            }
+        }
+        monitor.spectators = wanted;
+    }
+
+    // Stops the feed a console's monitor shows with no one at it, for everyone who sees it
+    private static void stopMonitor(final MinecraftServer server, final GlobalPos at) {
+        final Monitor monitor = MalpLinks.MONITORS.remove(at);
+        if (monitor != null) {
+            monitor.malp = null;
+            MalpLinks.show(server, at.pos(), monitor, List.of());
+        }
+    }
+
+    /** Stops the feed on a console's monitor for everyone who sees it, as the console goes or its chunk unloads. */
+    public static void monitorGone(final MinecraftServer server, final GlobalPos console) {
+        MalpLinks.stopMonitor(server, console);
+    }
+
+    // The players near a console who may see its monitor, nearest first: alive, able to show a feed, not at it, and
+    // within the settings' range of it, or a little past it if they already see it
+    private static List<ServerPlayer> near(final ServerLevel level, final BlockPos at, final Set<UUID> seeing,
+            final MalpController console) {
+        final MalpSettings settings = MalpSettings.current();
+        final List<ServerPlayer> near = new ArrayList<>();
+        if (settings.consoleSpectators() <= 0) {
+            return near;
+        }
+        final Vec3 center = Vec3.atCenterOf(at);
+        for (final ServerPlayer other : level.players()) {
+            final double range = settings.spectatorRange()
+                    + (seeing.contains(other.getUUID()) ? MalpLinks.SPECTATOR_MARGIN : 0);
+            final Link theirs = MalpLinks.LINKS.get(other.getUUID());
+            if (other.isAlive() && !other.hasDisconnected()
+                    && (theirs == null || !theirs.controller.equals(console))
+                    && other.position().distanceToSqr(center) <= range * range && RemoteViews.canView(other)) {
+                near.add(other);
+            }
+        }
+        near.sort(Comparator.comparingDouble(other -> other.position().distanceToSqr(center)));
+        return near;
+    }
+
     // Shows the live feed of the player at a console on its monitor to the nearest players around it who aren't at
     // it, as many as the settings allow, and stops it for the rest
     private static void updateSpectators(final Link link) {
@@ -834,20 +1159,9 @@ public final class MalpLinks {
         final ServerLevel level = link.player.level().getServer().getLevel(console.pos().dimension());
         final BlockPos at = console.pos().pos();
         final Set<UUID> wanted = new HashSet<>();
-        if (malp != null && level != null && settings.consoleSpectators() > 0) {
-            final Vec3 center = Vec3.atCenterOf(at);
-            final List<ServerPlayer> near = new ArrayList<>();
-            for (final ServerPlayer other : level.players()) {
-                final double range = settings.spectatorRange()
-                        + (link.spectators.contains(other.getUUID()) ? MalpLinks.SPECTATOR_MARGIN : 0);
-                final Link theirs = MalpLinks.LINKS.get(other.getUUID());
-                if (other != link.player && other.isAlive() && !other.hasDisconnected()
-                        && (theirs == null || !theirs.controller.equals(link.controller))
-                        && other.position().distanceToSqr(center) <= range * range && RemoteViews.canView(other)) {
-                    near.add(other);
-                }
-            }
-            near.sort(Comparator.comparingDouble(other -> other.position().distanceToSqr(center)));
+        final List<ServerPlayer> near = level == null ? List.of()
+                : MalpLinks.near(level, at, link.spectators, link.controller);
+        if (malp != null) {
             for (final ServerPlayer other : near.subList(0, Math.min(near.size(), settings.consoleSpectators()))) {
                 wanted.add(other.getUUID());
                 if (!RemoteViews.watchingOnDisplay(other, at, malp)) {
@@ -855,6 +1169,9 @@ public final class MalpLinks {
                 }
             }
         }
+        final MalpEntity seen = link.viewing;
+        MalpLinks.sendMonitor(near, at, link.controller, link.selected, link.feed,
+                seen == null || !link.signal.reaches() ? Readout.NONE : MalpLinks.readout(seen, link.signal), true);
         for (final UUID gone : link.spectators) {
             if (!wanted.contains(gone)) {
                 final ServerPlayer other = link.player.level().getServer().getPlayerList().getPlayer(gone);
@@ -866,8 +1183,17 @@ public final class MalpLinks {
         link.spectators = wanted;
     }
 
+    // Stops the feed on a console's monitor for those who saw the feed of the player at it; with the console still
+    // there, they go on seeing it while its monitor shows them the feed it shows with no one at it
     private static void stopSpectators(final Link link) {
         if (link.controller instanceof MalpController.Console console) {
+            final MinecraftServer server = link.player.level().getServer();
+            if (link.atConsole() && !link.spectators.isEmpty() && MalpLinks.consoleAt(server, console.pos()) != null) {
+                MalpLinks.MONITORS.computeIfAbsent(console.pos(), at -> new Monitor()).spectators
+                        .addAll(link.spectators);
+                link.spectators = new HashSet<>();
+                return;
+            }
             for (final UUID id : link.spectators) {
                 final ServerPlayer other = link.player.level().getServer().getPlayerList().getPlayer(id);
                 if (other != null) {
@@ -891,12 +1217,7 @@ public final class MalpLinks {
 
     private static void send(final Link link, final boolean open, final boolean close) {
         final MinecraftServer server = link.player.level().getServer();
-        final List<MalpInfo> malps = new ArrayList<>();
-        for (final MalpRegistry.Entry entry : link.controller.malps(server)) {
-            final long capacity = BatteryItem.capacity();
-            malps.add(new MalpInfo(entry.id(), entry.name(), entry.position().dimension().identifier().toString(),
-                    entry.position().pos(), capacity <= 0 ? 0 : (int) Math.round(100.0 * entry.energy() / capacity)));
-        }
+        final List<MalpInfo> malps = MalpLinks.infos(server, link.controller);
         final MalpEntity malp = link.selected == null ? null : MalpRegistry.find(server, link.selected);
         final Readout readout = malp == null || !link.signal.reaches() ? Readout.NONE
                 : MalpLinks.readout(malp, link.signal);
@@ -920,7 +1241,30 @@ public final class MalpLinks {
                 biome.value().getBaseTemperature(), (int) (level.getDefaultClockTime() % 24000),
                 level.getMaxLocalRawBrightness(pos), hostiles,
                 malp.battery().isEmpty() ? 0 : BatteryItem.percent(malp.battery()), malp.lamp(),
-                malp.options().powerRequired());
+                malp.options().powerRequired(), pos, malp.getYRot(), MalpLinks.nearGate(malp));
+    }
+
+    // The gate nearest a MALP in its world, within the signal's range; one that hides its address is named by none
+    private static Optional<NearGate> nearGate(final MalpEntity malp) {
+        final ResourceKey<Level> world = malp.level().dimension();
+        final double range = MalpSettings.current().signalRange();
+        @Nullable Stargate nearest = null;
+        double best = range * range;
+        for (final Stargate gate : SGCraftApi.get().stargates().in(world)) {
+            final double distance = malp.position().distanceToSqr(Vec3.atCenterOf(gate.position().pos()));
+            if (distance <= best) {
+                best = distance;
+                nearest = gate;
+            }
+        }
+        if (nearest == null) {
+            return Optional.empty();
+        }
+        final Vec3 to = Vec3.atCenterOf(nearest.position().pos()).subtract(malp.position());
+        final String address = nearest.get(GateProperties.ADDRESS_VISIBLE).orElse(true)
+                ? MalpLinks.address(nearest.position(), world) : "";
+        return Optional.of(new NearGate(address, (int) Math.round(Math.sqrt(best)),
+                (float) Math.toDegrees(Math.atan2(-to.x, to.z))));
     }
 
     /** @return the addresses a relayed signal goes through, each as dialed from the other gate's world */

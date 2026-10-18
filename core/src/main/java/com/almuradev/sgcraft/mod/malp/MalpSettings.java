@@ -43,8 +43,9 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
  * @param lingerTicks how long a MALP's chunk stays loaded after the last person stops watching it, in ticks
  * @param consoleDamageInterrupts whether a player at a MALP console who takes damage is taken off it, as though they
  *     had closed its screen
- * @param consoleSpectators how many of the players near a console someone is driving at, nearest first, see the
- *     feed on its monitor; 0 shows it to none
+ * @param consoleSpectators how many of the players near a console, nearest first, see the feed on its monitor: the
+ *     feed of the player at it, or, with no one at it, of the MALP last chosen at it; 0 shows it to none. Each costs
+ *     the server a stream of the world around the MALP
  * @param spectatorRange how near a console, in blocks, a player must be to see the feed on its monitor
  * @param tabletDrain how much gate energy a MALP tablet uses from its own battery each tick while its screen shows a
  *     live feed
@@ -55,7 +56,7 @@ public record MalpSettings(long batteryCapacity, double powerUnitChargeRate, dou
 
     /** The defaults, the earlier FE amounts' worth at 80 FE to one gate energy. */
     public static final MalpSettings DEFAULTS = new MalpSettings(12_500L, 12.5, 12.5, 0.125, 1.25, 256,
-            600, true, 4, 16, 0.025);
+            600, true, 8, 16, 0.025);
 
     public static final Codec<MalpSettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.LONG.optionalFieldOf("battery_capacity", MalpSettings.DEFAULTS.batteryCapacity)

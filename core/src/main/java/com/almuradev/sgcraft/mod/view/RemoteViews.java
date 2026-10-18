@@ -176,6 +176,47 @@ public final class RemoteViews {
         RemoteViews.end(new Key(viewer.getUUID(), display), viewer);
     }
 
+    /**
+     * Leaves a viewer's own view, which a display in their world shows too, to that display alone: it goes on there
+     * as it was, in place of any other view that display showed them, without beginning again, while their screens
+     * no longer show it.
+     *
+     * @return whether they had an own view that a display shows
+     */
+    public static boolean leaveOnDisplay(final ServerPlayer viewer) {
+        final Key own = new Key(viewer.getUUID(), null);
+        final RemoteView view = RemoteViews.VIEWS.get(own);
+        if (view == null || view.display == null) {
+            return false;
+        }
+        final Key shown = new Key(viewer.getUUID(), view.display);
+        RemoteViews.end(shown, viewer);
+        RemoteViews.VIEWS.remove(own);
+        RemoteViews.VIEWS.put(shown, view);
+        view.own(viewer, false);
+        return true;
+    }
+
+    /**
+     * Makes the view of a source that a display in a viewer's world shows them their own view too, in place of any
+     * own view they had, without its beginning again; the display goes on showing it.
+     *
+     * @return whether the display showed them the source, or an entity that has its UUID
+     */
+    public static boolean takeFromDisplay(final ServerPlayer viewer, final BlockPos display, final UUID source) {
+        final Key shown = new Key(viewer.getUUID(), display);
+        final RemoteView view = RemoteViews.VIEWS.get(shown);
+        if (view == null || !view.source.equals(source)) {
+            return false;
+        }
+        final Key own = new Key(viewer.getUUID(), null);
+        RemoteViews.end(own, viewer);
+        RemoteViews.VIEWS.remove(shown);
+        RemoteViews.VIEWS.put(own, view);
+        view.own(viewer, true);
+        return true;
+    }
+
     /** Stops every view a viewer has, their own and those on displays. */
     public static void stopAll(final ServerPlayer viewer) {
         for (final Key key : List.copyOf(RemoteViews.VIEWS.keySet())) {

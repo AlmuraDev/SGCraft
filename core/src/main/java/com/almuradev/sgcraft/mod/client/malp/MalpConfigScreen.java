@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.client.malp;
 
 import com.almuradev.sgcraft.mod.client.ClientPlatform;
+import com.almuradev.sgcraft.mod.entity.MalpEntity;
 import com.almuradev.sgcraft.mod.malp.MalpOptions;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.ConfigApply;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.ConfigState;
@@ -33,19 +34,21 @@ import com.almuradev.sgcraft.mod.malp.MalpPayloads.ConfigUnpair;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
 
+import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
  * A MALP's settings, opened by using a configurator on it, laid out as the gate configurator lays out a gate's: two
- * columns of settings, each explained when the pointer rests on it, with Save, Revert, Unpair and Close along the
- * bottom. Changes wait until Save, which sends every setting; the server answers with the MALP's settings as they
- * then are. Unpair unpairs the MALP from the console the screen shows it paired with, at once, keeping unsaved
- * changes.
+ * columns of settings, each explained when the pointer rests on it, the MALP's name among them, with Save, Revert,
+ * Unpair and Close along the bottom. Changes wait until Save, which sends every setting; the server answers with the
+ * MALP's settings as they then are. Unpair unpairs the MALP from the console the screen shows it paired with, at
+ * once, keeping unsaved changes.
  */
 public final class MalpConfigScreen extends Screen {
 
@@ -59,8 +62,9 @@ public final class MalpConfigScreen extends Screen {
     private static final int SAVED = 0xFF80FF80;
 
     private ConfigState state;
-    // The settings being edited
+    // The settings being edited, and the name
     private MalpOptions options;
+    private String name;
     // Whether the settings shown are the ones just saved
     private boolean saved;
     // Whether the next state answers Unpair, so the settings being edited stay
@@ -70,6 +74,7 @@ public final class MalpConfigScreen extends Screen {
         super(Component.translatableWithFallback("screen.sgcraft.malp_config", "MALP Configurator"));
         this.state = state;
         this.options = state.options();
+        this.name = state.name();
         this.saved = state.saved();
     }
 
@@ -83,6 +88,7 @@ public final class MalpConfigScreen extends Screen {
             this.unpairing = false;
         } else {
             this.options = state.options();
+            this.name = state.name();
             this.saved = state.saved();
         }
         this.rebuildWidgets();
@@ -95,6 +101,21 @@ public final class MalpConfigScreen extends Screen {
         this.toggle(this.slot(left, i++), "power_required", "Requires power", "Whether the MALP runs on its "
                 + "battery. Off, it uses no energy, and drives and sends its feed with a flat battery or none",
                 this.options.powerRequired(), value -> this.options = this.options.withPowerRequired(value));
+        final int[] at = this.slot(left, i++);
+        final EditBox nameBox = this.addRenderableWidget(new EditBox(this.font, at[0], at[1], 150, 20,
+                Component.translatableWithFallback("screen.sgcraft.malp_config.name", "Name")));
+        nameBox.setMaxLength(MalpEntity.MAX_NAME);
+        nameBox.setValue(this.name);
+        nameBox.setHint(Component.translatableWithFallback("screen.sgcraft.malp_config.name", "Name"));
+        nameBox.setTooltip(Tooltip.create(Component.translatableWithFallback("screen.sgcraft.malp_config.name.tip",
+                "The MALP's name, as consoles, tablets and commands list it. Left blank, it takes its first name "
+                        + "back")));
+        nameBox.setResponder(value -> {
+            if (!value.equals(this.name)) {
+                this.name = value;
+                this.saved = false;
+            }
+        });
         this.addRenderableWidget(Button.builder(Component.translatableWithFallback("screen.sgcraft.configurator.save",
                 "Save"), b -> this.save()).bounds(this.bottom(0), this.height - 28, MalpConfigScreen.BUTTON, 20)
                 .build());
@@ -138,7 +159,8 @@ public final class MalpConfigScreen extends Screen {
     private void save() {
         // An Unpair the server refused gets no answer, so the next one answers Save
         this.unpairing = false;
-        ClientPlatform.get().sendToServer(new ConfigApply(this.state.malp(), false, this.options));
+        ClientPlatform.get().sendToServer(new ConfigApply(this.state.malp(), false, this.options,
+                Optional.of(this.name)));
     }
 
     private void unpair() {
@@ -148,6 +170,7 @@ public final class MalpConfigScreen extends Screen {
 
     private void revert() {
         this.options = this.state.options();
+        this.name = this.state.name();
         this.saved = false;
         this.rebuildWidgets();
     }

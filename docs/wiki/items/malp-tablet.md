@@ -82,7 +82,7 @@ Take the battery out to charge it in a {{item:sgcraft:power_unit}}, a {{item:sgc
 The radio of a tablet in your hands reaches 256 blocks (`signal_range`). The server checks it every 5 ticks.
 
 - **DIRECT**: you and the MALP are in the same world and within range of each other.
-- **RELAYED**: a gate within range of you has an open wormhole to a gate within range of the MALP. This works whichever end dialed, and through a shut iris.
+- **RELAYED**: a gate within range of you has an open wormhole to a gate within range of the MALP. It goes through only once the wormhole is steady, after its kawoosh. This works whichever end dialed, and through a shut iris.
 - **NO SIGNAL**: neither. The MALP stops responding until the signal comes back.
 
 ## Tooltip

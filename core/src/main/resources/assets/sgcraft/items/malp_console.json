@@ -1,6 +1,6 @@
 {
   "model": {
     "type": "minecraft:model",
-    "model": "sgcraft:block/malp_console"
+    "model": "sgcraft:item/malp_console"
   }
 }

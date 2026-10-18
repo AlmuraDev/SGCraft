@@ -50,6 +50,8 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -59,6 +61,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -97,6 +100,10 @@ public final class MalpConsoleScreen extends Screen {
     private static final int BACKDROP = 0xC0000000;
     private static final int STATIC_TINT = 0xFFB0D8C8;
     private static final int BRACKET = 12;
+    // How far apart the readouts' lines are, and the space between the parts on a line
+    private static final int READOUT_LINE = 11;
+    private static final String READOUT_GAP = "   ";
+    private static final String[] POINTS = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
     // How far the camera turns for each pixel the mouse is dragged
     private static final float AIM_PER_PIXEL = 0.6F;
     private static final int HOSTILE_RANGE = 32;
@@ -164,8 +171,9 @@ public final class MalpConsoleScreen extends Screen {
         this.feedBottom = this.height - MalpConsoleScreen.MARGIN;
         final int x = MalpConsoleScreen.MARGIN;
         int y = MalpConsoleScreen.MARGIN + 14;
-        // A tablet's list has a button beside each MALP to take it off
-        final int width = MalpConsoleScreen.PANEL - (this.state.tablet() ? MalpConsoleScreen.REMOVE_WIDTH + 2 : 0);
+        // A tablet's list has a button beside each MALP to take it off, and a console's, for its driver, to unpair it
+        final boolean removable = this.state.tablet() || this.state.role() == Role.DRIVER;
+        final int width = MalpConsoleScreen.PANEL - (removable ? MalpConsoleScreen.REMOVE_WIDTH + 2 : 0);
         for (final MalpInfo malp : this.state.malps()) {
             // The list stops above the help and the buttons along the bottom
             if (y + 18 > this.listBottom()) {
@@ -177,13 +185,17 @@ public final class MalpConsoleScreen extends Screen {
                     b -> this.send(new ConsoleAction(ConsoleAction.Kind.SELECT, Optional.of(malp.id()))))
                     .bounds(x, y, width, 18).build());
             button.active = !chosen && this.state.role() != Role.CONSOLE_WATCHER;
-            if (this.state.tablet()) {
+            if (removable) {
                 this.addRenderableWidget(Button.builder(Component.literal("x"),
                         b -> this.send(new ConsoleAction(ConsoleAction.Kind.REMOVE, Optional.of(malp.id()))))
                         .bounds(x + MalpConsoleScreen.PANEL - MalpConsoleScreen.REMOVE_WIDTH, y,
                                 MalpConsoleScreen.REMOVE_WIDTH, 18)
-                        .tooltip(Tooltip.create(Component.translatableWithFallback(
-                                "screen.sgcraft.malp_tablet.remove", "Take %s off this tablet", malp.name())))
+                        .tooltip(Tooltip.create(this.state.tablet()
+                                ? Component.translatableWithFallback("screen.sgcraft.malp_tablet.remove",
+                                        "Take %s off this tablet", malp.name())
+                                : Component.translatableWithFallback("screen.sgcraft.malp_console.unpair",
+                                        "Unpair %s from this console. Only its owner and operators can",
+                                        malp.name())))
                         .build());
             }
             y += MalpConsoleScreen.ROW;
@@ -435,9 +447,10 @@ public final class MalpConsoleScreen extends Screen {
         this.picture = picture;
         if (!picture) {
             graphics.fill(this.feedLeft, this.feedTop, this.feedRight, this.feedBottom, 0xFF000000);
-            // A watcher whose driver has gone sees static with the feed offline; a tablet with no power shows nothing
-            if (this.state.feed() != Feed.NO_TABLET_POWER
-                    && (this.state.feed() != Feed.OFF || this.state.viewOnly())) {
+            // Static while the feed looks for a signal or power; an offline feed, a tablet with no power, or no MALPs
+            // paired at all shows nothing
+            if (this.state.feed() != Feed.NO_TABLET_POWER && this.state.feed() != Feed.OFF
+                    && !this.state.malps().isEmpty()) {
                 this.staticNoise(graphics);
             }
         }
@@ -593,13 +606,18 @@ public final class MalpConsoleScreen extends Screen {
 
     // NO SIGNAL, NO POWER, FEED OFFLINE or NO TABLET POWER, large in the middle of the feed
     private void warning(final GuiGraphicsExtractor graphics) {
-        final Component text = switch (this.state.feed()) {
-            case NO_POWER -> Component.translatableWithFallback("screen.sgcraft.malp_console.no_power", "NO POWER");
-            case NO_TABLET_POWER -> Component.translatableWithFallback("screen.sgcraft.malp_tablet.no_power",
-                    "NO TABLET POWER");
-            case OFF -> Component.translatableWithFallback("screen.sgcraft.malp_console.off", "FEED OFFLINE");
-            default -> Component.translatableWithFallback("screen.sgcraft.malp_console.no_signal", "NO SIGNAL");
-        };
+        final Component text = this.state.malps().isEmpty()
+                ? Component.translatableWithFallback("screen.sgcraft.malp_console.no_feeds", "NO FEEDS AVAILABLE")
+                : switch (this.state.feed()) {
+                    case NO_POWER -> Component.translatableWithFallback("screen.sgcraft.malp_console.no_power",
+                            "NO POWER");
+                    case NO_TABLET_POWER -> Component.translatableWithFallback("screen.sgcraft.malp_tablet.no_power",
+                            "NO TABLET POWER");
+                    case OFF -> Component.translatableWithFallback("screen.sgcraft.malp_console.off",
+                            "FEED OFFLINE");
+                    default -> Component.translatableWithFallback("screen.sgcraft.malp_console.no_signal",
+                            "NO SIGNAL");
+                };
         final int x = (this.feedLeft + this.feedRight) / 2;
         final int y = (this.feedTop + this.feedBottom) / 2;
         final int width = this.font.width(text);
@@ -611,18 +629,33 @@ public final class MalpConsoleScreen extends Screen {
         graphics.pose().popMatrix();
     }
 
+    // The MALP's readouts along the bottom of the feed: where it is and the gate nearest it, where that is, what is
+    // about it, and the gates its signal goes through, if relayed, run on together as far as the feed is wide; and
+    // which way it faces, in the feed's top corner
     private void readouts(final GuiGraphicsExtractor graphics) {
         final Readout readout = this.state.readout();
         final int l = this.feedLeft;
+        final int r = this.feedRight;
         final int b = this.feedBottom;
-        graphics.fill(l + 1, b - 26, this.feedRight - 1, b - 1, MalpConsoleScreen.BACKDROP);
-        final Component first = Component.translatableWithFallback("screen.sgcraft.malp_console.readout_place",
+        final boolean relayed = MalpSignal.Kind.RELAYED.name().equals(readout.signal());
+        final List<Component> lines = new ArrayList<>();
+        final BlockPos pos = readout.pos();
+        final Component gate = readout.gate().map(near -> Component.translatableWithFallback(
+                "screen.sgcraft.malp_console.readout_gate", "GATE %s %sm %s", near.address().isEmpty()
+                        ? Component.translatableWithFallback("screen.sgcraft.malp_console.readout_gate_hidden",
+                                "HIDDEN")
+                        : near.address(), near.distance(), MalpConsoleScreen.compass(near.yaw(), false)))
+                .orElseGet(() -> Component.translatableWithFallback("screen.sgcraft.malp_console.readout_no_gate",
+                        "NO GATE IN RANGE"));
+        lines.add(Component.translatableWithFallback("screen.sgcraft.malp_console.readout_position",
+                "POS X %s Y %s Z %s   CHUNK %s, %s   %s", pos.getX(), pos.getY(), pos.getZ(),
+                SectionPos.blockToSectionCoord(pos.getX()), SectionPos.blockToSectionCoord(pos.getZ()), gate));
+        lines.add(Component.translatableWithFallback("screen.sgcraft.malp_console.readout_place",
                 "WORLD %s   BIOME %s   TEMP %s C   TIME %s", MalpConsoleScreen.path(readout.world()),
                 MalpConsoleScreen.path(readout.biome()), Math.round(readout.temperature() * 25),
-                MalpConsoleScreen.clock(readout.time()));
-        final Component signal = MalpSignal.Kind.RELAYED.name().equals(readout.signal())
-                ? Component.translatableWithFallback("screen.sgcraft.malp_console.signal_relayed", "RELAYED %s",
-                        readout.relay())
+                MalpConsoleScreen.clock(readout.time())));
+        final Component signal = relayed
+                ? Component.translatableWithFallback("screen.sgcraft.malp_console.signal_relay", "RELAYED")
                 : Component.translatableWithFallback("screen.sgcraft.malp_console.signal_direct", "DIRECT");
         // A MALP that needs no power says so in place of its battery's charge
         final Component battery = readout.powerRequired()
@@ -630,22 +663,78 @@ public final class MalpConsoleScreen extends Screen {
                         readout.battery())
                 : Component.translatableWithFallback("screen.sgcraft.malp_console.readout_no_power",
                         "NEEDS NO POWER");
-        final Component second = Component.translatableWithFallback("screen.sgcraft.malp_console.readout_status",
+        lines.add(Component.translatableWithFallback("screen.sgcraft.malp_console.readout_status",
                 "LIGHT %s   HOSTILES %s/%sm   %s   SIGNAL %s", readout.light(), readout.hostiles(),
-                MalpConsoleScreen.HOSTILE_RANGE, battery, signal);
-        graphics.text(this.font, first, l + 6, b - 23, MalpConsoleScreen.TEXT);
-        graphics.text(this.font, second, l + 6, b - 12, readout.powerRequired() && readout.battery() <= 10
-                ? MalpConsoleScreen.WARNING : MalpConsoleScreen.TEXT);
+                MalpConsoleScreen.HOSTILE_RANGE, battery, signal));
+        if (relayed) {
+            lines.add(Component.translatableWithFallback("screen.sgcraft.malp_console.readout_route", "ROUTE %s",
+                    readout.relay()));
+        }
+        // Each part goes on the line before it while it fits
+        final int width = r - l - 12;
+        final int gap = this.font.width(MalpConsoleScreen.READOUT_GAP);
+        final List<Integer> rows = new ArrayList<>();
+        int used = width;
+        for (final Component part : lines) {
+            final int partWidth = this.font.width(part);
+            if (used + gap + partWidth > width) {
+                rows.add(1);
+                used = partWidth;
+            } else {
+                rows.set(rows.size() - 1, rows.getLast() + 1);
+                used += gap + partWidth;
+            }
+        }
+        final int line = MalpConsoleScreen.READOUT_LINE;
+        final int top = b - 1 - rows.size() * line - 3;
+        graphics.fill(l + 1, top, r - 1, b - 1, MalpConsoleScreen.BACKDROP);
+        int part = 0;
+        for (int row = 0; row < rows.size(); row++) {
+            int x = l + 6;
+            for (int i = 0; i < rows.get(row); i++, part++) {
+                // The status warns of a low battery
+                final int color = part == 2 && readout.powerRequired() && readout.battery() <= 10
+                        ? MalpConsoleScreen.WARNING : MalpConsoleScreen.TEXT;
+                graphics.text(this.font, lines.get(part), x, top + 3 + row * line, color);
+                x += this.font.width(lines.get(part)) + gap;
+            }
+        }
+        this.heading(graphics, readout);
+    }
+
+    // Which way the MALP faces, boxed in the feed's top corner, under its header
+    private void heading(final GuiGraphicsExtractor graphics, final Readout readout) {
+        final Component label = Component.translatableWithFallback("screen.sgcraft.malp_console.heading", "HEADING");
+        final String facing = MalpConsoleScreen.compass(readout.yaw(), true);
+        final int width = Math.max(this.font.width(label), this.font.width(facing)) + 8;
+        final int height = 2 * MalpConsoleScreen.READOUT_LINE + 4;
+        final int right = this.feedRight - 4;
+        final int top = this.feedTop + 18;
+        graphics.fill(right - width, top, right, top + height, MalpConsoleScreen.BACKDROP);
+        graphics.outline(right - width, top, width, height, MalpConsoleScreen.FRAME_DIM);
+        graphics.text(this.font, label, right - width + 4, top + 3, MalpConsoleScreen.FRAME);
+        graphics.text(this.font, facing, right - width + 4, top + 3 + MalpConsoleScreen.READOUT_LINE,
+                MalpConsoleScreen.TEXT);
+    }
+
+    /**
+     * @return a way to face, as Minecraft turns an entity, as the compass point it is nearest, and, if asked, its
+     *     bearing in degrees from north
+     */
+    static String compass(final float yaw, final boolean degrees) {
+        final int bearing = Math.floorMod(Math.round(yaw) + 180, 360);
+        final String point = MalpConsoleScreen.POINTS[Math.floorMod(Math.round(bearing / 45.0F), 8)];
+        return degrees ? point + " " + bearing : point;
     }
 
     // An identifier's path, in capitals, as the show's readouts are
-    private static String path(final String id) {
+    static String path(final String id) {
         final int colon = id.indexOf(':');
         return (colon < 0 ? id : id.substring(colon + 1)).toUpperCase(Locale.ROOT).replace('_', ' ');
     }
 
     // Minecraft's day starts at six in the morning
-    private static String clock(final int ticks) {
+    static String clock(final int ticks) {
         final int hours = (ticks / 1000 + 6) % 24;
         final int minutes = ticks % 1000 * 60 / 1000;
         return String.format(Locale.ROOT, "%02d:%02d", hours, minutes);

@@ -2,16 +2,23 @@
   "type": "minecraft:block",
   "pools": [
     {
-      "rolls": 1,
+      "condition": {
+        "type": "minecraft:survives_explosion"
+      },
       "entries": [
         {
           "type": "minecraft:item",
+          "condition": {
+            "type": "minecraft:match_block",
+            "blocks": "sgcraft:malp_console",
+            "state": {
+              "part": "middle_lower"
+            }
+          },
           "name": "sgcraft:malp_console"
         }
       ],
-      "condition": {
-        "type": "minecraft:survives_explosion"
-      }
+      "rolls": 1
     }
   ],
   "random_sequence": "sgcraft:blocks/malp_console"

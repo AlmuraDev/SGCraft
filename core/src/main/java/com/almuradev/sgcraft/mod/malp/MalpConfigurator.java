@@ -79,6 +79,7 @@ public final class MalpConfigurator {
         }
         if (!apply.refresh()) {
             malp.setOptions(apply.options());
+            apply.name().filter(name -> !name.strip().equals(malp.displayName())).ifPresent(malp::rename);
         }
         MalpConfigurator.send(player, malp, false, !apply.refresh());
     }
