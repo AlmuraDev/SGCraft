@@ -4,17 +4,17 @@ Every gate has an address: the symbols you dial to reach it. An address has 7, 8
 
 ## Symbols
 
-There are 37 symbols: the letters `A` to `Z`, the digits `0` to `9`, and `@`, the point of origin (Giza). Gates and DHDs draw them as glyphs. Each gate type has its own:
+There are 39 symbols, as on the Milky Way gate's ring: the letters `A` to `Z`, the digits `0` to `9`, `@`, the point of origin (Giza), and `+` and `.`. Gates and DHDs draw them as glyphs. Each gate type has its own:
 
 | Type | Glyphs |
 | --- | --- |
-| Milky Way | {{glyphs:ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@}} |
+| Milky Way | {{glyphs:ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@+.}} |
 | Pegasus | {{glyphs-pegasus:ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789}} |
-| Universe | {{glyphs-universe:ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789}} |
+| Universe | {{glyphs-universe:ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+.}} |
 
-The Pegasus gate has no `@` glyph of its own, so it borrows the Milky Way one.
+The Pegasus gate has no `@`, `+` or `.` glyph of its own, and the Universe gate no `@`, so they borrow the Milky Way ones. The Universe gate carries 38 symbols round its ring, every one but `@`: four to each ninth of the ring, but five to the two ninths either side of its bottom.
 
-An address is written in groups: 4 symbols, a dash, 3 symbols, then a dash before any symbols after the seventh. For example `XOBF-R3@` or `XOBF-R3A-@@`. When you type an address, case, dashes and spaces don't matter: `xobf r3a@` is the same as `XOBF-R3A-@`.
+An address is written in groups: 4 symbols, a dash, 3 symbols, then a dash before any symbols after the seventh. For example `XOBF-R3@` or `XOBF-R3A-@@`. When you type an address, case, dashes and spaces don't matter: `xobf r3a@` is the same as `XOBF-R3A-@`. Type `+` and `.` as themselves.
 
 ## Address lengths
 
@@ -48,14 +48,14 @@ Every address ends with the point of origin, `@`, which the top chevron locks la
 
 ### Server admins
 
-- `addresses.point_of_origin` is `"@"` by default. Set it to `""` for addresses without one: the seventh symbol then becomes a position symbol, and the grid is 6 times as wide each way.
+- `addresses.point_of_origin` is `"@"` by default. Set it to `""` for addresses without one: the seventh symbol then becomes a position symbol, and the grid is about 6 times as wide each way.
 - Changing the point of origin changes every address. See [Changing the layout](#changing-the-layout).
 
 ## Cells and the grid
 
 Each world is divided into cells, 8 chunks (128 blocks) across by default. A gate's address is the address of the cell holding its base.
 
-- The 6 position symbols give 36 to the power 6 codes, a grid 46,656 cells square, centered on x 0, z 0. With the default 8 chunk cells that covers about 2,985,984 blocks out from the center in each direction.
+- A position symbol is any symbol but `@`, 38 of them. The 6 position symbols give 38 to the power 6 codes, a grid 54,872 cells square, centered on x 0, z 0. With the default 8 chunk cells that covers about 3,511,808 blocks out from the center in each direction.
 - A gate beyond the grid has no address.
 - The codes are scrambled, so gates near each other don't get addresses that look alike.
 - `@` is never a position symbol.
@@ -67,10 +67,10 @@ The server setting `addresses.cell_chunks` sets how many chunks wide and long ea
 
 | `cell_chunks` | Cell | Grid reaches, each way from x 0, z 0 |
 | --- | --- | --- |
-| `1` | 16 blocks | 373,248 blocks |
-| `2` | 32 blocks | 746,496 blocks |
-| `4` | 64 blocks | 1,492,992 blocks |
-| `8` (default) | 128 blocks | 2,985,984 blocks |
+| `1` | 16 blocks | 438,976 blocks |
+| `2` | 32 blocks | 877,952 blocks |
+| `4` | 64 blocks | 1,755,904 blocks |
+| `8` (default) | 128 blocks | 3,511,808 blocks |
 
 ### Changing the layout
 
@@ -82,14 +82,14 @@ Operators can change the layout in game, with the commands below or the [setting
 
 - `/sgcraft addresses` shows each world's layout, group and symbol, how many gates it has, and what changes after a restart.
 - `/sgcraft addresses cell_chunks <chunks> [<world>]`
-- `/sgcraft addresses point_of_origin <symbol> [<world>]`, where the symbol is a letter, a digit, `giza` (or `"@"`) for `@`, or `none`.
+- `/sgcraft addresses point_of_origin <symbol> [<world>]`, where the symbol is a letter, a digit, `+`, `.`, `giza` (or `"@"`) for `@`, or `none`.
 - `/sgcraft addresses clear <world>` gives a world the server's cell size and point of origin again. It stays in its group.
 
 ## World symbols and groups
 
 Worlds are sorted into groups. Every world is in the `default` group, whose symbol is `@`, until the server puts it in another. That is why a 9 symbol address in the default group ends in `@@`.
 
-A server has up to 37 groups, the default one included, and each group holds up to 37 worlds. A group's symbol names it in 9 symbol addresses, so no two groups share one. Two worlds in one group never share a symbol, but worlds in different groups can.
+A server has up to 39 groups, the default one included, and each group holds up to 39 worlds. A group's symbol names it in 9 symbol addresses, so no two groups share one. Two worlds in one group never share a symbol, but worlds in different groups can.
 
 Each world gets a symbol within its group, `A`, `B`, `C` and so on, in the order the server first sees the worlds. SGCraft gives it and it can't be set. A world keeps its symbol, even while the server doesn't have the world, so the world gets it back when it returns. The server log records each one, as "World ... has the symbol ... in group ...". A world moved to another group keeps its symbol there if no world in that group has it, and otherwise takes the first free one.
 
@@ -102,9 +102,9 @@ With more than one group, an 8 symbol address only means something within a grou
 - Make a group with `/sgcraft addresses group create <name> [<symbol>]`, or in the [settings screen](#the-settings-screen). A group's name is lowercase letters, digits and underscores. Leave out the symbol, or give `auto`, for one SGCraft chooses.
 - Put a world in a group with `/sgcraft addresses group assign <world> <group>`. Assign it to `default` to take it out again.
 - Change a group's symbol with `/sgcraft addresses group symbol <name> <symbol>`, and remove a group with `/sgcraft addresses group remove <name>`. A removed group's worlds go to the default group.
-- `/sgcraft addresses groups` lists the groups, their symbols and how many of their 37 worlds each has.
+- `/sgcraft addresses groups` lists the groups, their symbols and how many of their 39 worlds each has.
 - These changes are written to the settings file and take effect when the server next starts. Moving a world, or changing its group's symbol, gives its gates new addresses of 8 and 9 symbols. Each change warns about the worlds whose gates it reaches. See [Changing the layout](#changing-the-layout).
-- SGCraft refuses a change past the limits: a 38th group, a 38th world in a group, or a symbol another group has. If the settings file asks for one anyway, the server log says so as it starts, and the group or world goes to the default group.
+- SGCraft refuses a change past the limits: a 40th group, a 40th world in a group, or a symbol another group has. If the settings file asks for one anyway, the server log says so as it starts, and the group or world goes to the default group.
 
 ### The settings screen
 
@@ -130,7 +130,7 @@ A book keeps each address in its lasting form: the shortest form that names its 
 
 ### Hidden addresses
 
-When a gate's `address_visible` property is off (**Address shown** in the configurator), its base screen shows "... Gate Address Hidden ..." and the PDD shows "address hidden". The gate can still be dialed by anyone who knows the address.
+When a gate's `address_visible` property is off (**Address shown** in the configurator), its base screen shows "... Gate Address Hidden ..." and the PDD shows "address hidden". When it dials another gate, that gate is told only how many symbols the address has, so a [dialing computer](blocks/dialing-computer.md) there shows **ADDRESS HIDDEN** and scrambled symbols, and a Universe gate it dials lights none of its symbols. The gate can still be dialed by anyone who knows the address.
 
 ### Default addresses
 

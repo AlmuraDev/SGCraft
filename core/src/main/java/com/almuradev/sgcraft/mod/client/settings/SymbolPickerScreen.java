@@ -41,7 +41,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 
 /**
- * Picks one of the 37 symbols, each shown as its letter and its glyph, or one of a few choices that aren't a symbol,
+ * Picks one of the 39 symbols, each shown as its letter and its glyph, or one of a few choices that aren't a symbol,
  * such as none. The symbol already chosen can't be picked again, and neither can those {@code taken} names.
  */
 final class SymbolPickerScreen extends Screen {

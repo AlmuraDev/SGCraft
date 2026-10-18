@@ -58,14 +58,14 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * A DHD seen face on: an outer ring of 26 symbols, an inner ring of 11, and the dome in the middle.
+ * A DHD seen face on: an outer ring of 26 symbols, an inner ring of 13, and the dome in the middle.
  *
- * <p>Symbols pressed light up, and a right click takes back the last. The keyboard works too: a letter, digit or
- * {@code @} presses its symbol, whatever the case, Backspace takes one back and Enter presses the dome. A key with no
- * symbol shows in red. The dome then dials them: the gate turns its ring for each symbol, as the original's did, or
- * locks every chevron at once when its {@code chevrons_lock_on_dial} property is on. While the gate is active the
- * buttons show the address it dialed, and the dome shuts it down. A button pressed sinks into the face for a
- * moment.</p>
+ * <p>Symbols pressed light up, and a right click takes back the last. The keyboard works too: a letter, digit,
+ * {@code @}, {@code +} or {@code .} presses its symbol, whatever the case, Backspace takes one back and Enter presses
+ * the dome. A key with no symbol shows in red. The dome then dials them: the gate turns its ring for each symbol, as
+ * the original's did, or locks every chevron at once when its {@code chevrons_lock_on_dial} property is on. While the
+ * gate is active the buttons show the address it dialed, and the dome shuts it down. A button pressed sinks into the
+ * face for a moment.</p>
  */
 public final class DhdScreen extends Screen {
 
@@ -74,7 +74,7 @@ public final class DhdScreen extends Screen {
     private static final double BETWEEN = 0.58;
     private static final double INNER = 0.28;
     private static final int OUTER_BUTTONS = 26;
-    private static final int INNER_BUTTONS = 11;
+    private static final int INNER_BUTTONS = Symbol.COUNT - DhdScreen.OUTER_BUTTONS;
     // The most symbols any address has, entered when the linked gate isn't loaded here to say how many it can dial
     private static final int MAX_SYMBOLS = 9;
     // The face's size on screen, at most, and the room left round it
@@ -278,22 +278,22 @@ public final class DhdScreen extends Screen {
         graphics.pose().popMatrix();
     }
 
-    // A symbol's glyph, from its style's sheet. Pegasus has no @ of its own, so it borrows the Milky Way's
+    // A symbol's glyph, from its style's sheet. Pegasus has no @, + or . of its own, so it borrows the Milky Way's
     private void drawGlyph(final GuiGraphicsExtractor graphics, final Symbol symbol, final boolean pegasus,
             final int x, final int y, final int size, final int color) {
-        if (pegasus && symbol.index() < 36) {
+        if (pegasus && symbol.index() < Symbol.GIZA.index()) {
             graphics.blit(RenderPipelines.GUI_TEXTURED, DhdScreen.texture("pegasus_glyphs"), x, y,
                     symbol.index() % 6 * 128, symbol.index() / 6 * 128, size, size, 128, 128, 768, 768, color);
             return;
         }
-        // The Milky Way sheet: ten to a row; @ is its point of origin, the last glyph
-        final int cell = symbol.equals(Symbol.GIZA) ? 37 : symbol.index();
+        // The Milky Way sheet: ten to a row, in the order of the symbols
+        final int cell = symbol.index();
         graphics.blit(RenderPipelines.GUI_TEXTURED, DhdScreen.texture("milkyway_glyphs"), x, y, cell % 10 * 48,
                 cell / 10 * 48, size, size, 48, 48, 512, 256, color);
     }
 
-    // The middle of a symbol's button: A to Z round the outer ring and 0 to 9 then @ round the inner, each clockwise
-    // from the top
+    // The middle of a symbol's button: A to Z round the outer ring and 0 to 9, @, + and . round the inner, each
+    // clockwise from the top
     private double[] buttonCenter(final int index) {
         final boolean outer = index < DhdScreen.OUTER_BUTTONS;
         final int count = outer ? DhdScreen.OUTER_BUTTONS : DhdScreen.INNER_BUTTONS;

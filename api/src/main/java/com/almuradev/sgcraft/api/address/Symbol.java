@@ -30,8 +30,10 @@ import java.util.Optional;
 /**
  * One symbol of a gate address.
  *
- * <p>Symbols are numbered, and each has a character for writing addresses down. How a symbol looks on a gate
- * is up to the gate's type: the same symbol is a different glyph on a Milky Way gate and on a Pegasus gate.</p>
+ * <p>There are 39, as on the Milky Way gate's ring in the show: the letters {@code A} to {@code Z}, the digits
+ * {@code 0} to {@code 9}, {@code @} for the point of origin, and {@code +} and {@code .}. Symbols are numbered, and
+ * each has a character for writing addresses down. How a symbol looks on a gate is up to the gate's type: the same
+ * symbol is a different glyph on a Milky Way gate and on a Pegasus gate.</p>
  *
  * @param index the symbol's number, from 0 to {@link #COUNT} - 1
  * @since 0.1.0
@@ -39,7 +41,7 @@ import java.util.Optional;
 public record Symbol(int index) implements Comparable<Symbol> {
 
     /** How many symbols there are. */
-    public static final int COUNT = 37;
+    public static final int COUNT = 39;
 
     /**
      * The Giza symbol, Earth's point of origin in the show, written {@code @}. It is the default symbol of the
@@ -47,7 +49,7 @@ public record Symbol(int index) implements Comparable<Symbol> {
      */
     public static final Symbol GIZA = new Symbol(36);
 
-    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@";
+    private static final String CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@+.";
 
     /**
      * @throws IllegalArgumentException if {@code index} is outside 0 to {@link #COUNT} - 1
@@ -59,7 +61,7 @@ public record Symbol(int index) implements Comparable<Symbol> {
     }
 
     /**
-     * @param character a letter (either case), digit or {@code @}
+     * @param character a letter (either case), digit, {@code @}, {@code +} or {@code .}
      * @return the symbol written with that character, or empty if none is
      */
     public static Optional<Symbol> of(final char character) {

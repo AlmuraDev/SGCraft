@@ -46,9 +46,10 @@ import java.util.Optional;
 /**
  * A reach that names a cell of a world by its position on a grid, then names the world, the group, or neither.
  *
- * <p>With {@code p} position symbols there are {@code 36^p} codes, which is {@code (6^p)^2}, so the grid is
- * {@code 6^p} cells square, centered on the world's middle. The cell's code is scrambled so that gates near each other
- * don't get addresses that look alike. The {@code @} symbol is never a position symbol.</p>
+ * <p>A position uses every symbol but {@code @}, 38 of them, so with {@code p} position symbols there are
+ * {@code 38^p} codes. The grid is as many cells square as fit in them, the whole square root of {@code 38^p},
+ * centered on the world's middle; the codes past its last cell name none. The cell's code is scrambled so that gates
+ * near each other don't get addresses that look alike.</p>
  */
 public final class GridReach implements AddressReach {
 
@@ -68,7 +69,7 @@ public final class GridReach implements AddressReach {
         }
     }
 
-    // Symbols a position can use: every symbol but the last, @
+    // Symbols a position can use: every symbol but @, each standing for its digit, those after @ for one less
     private static final int BASE = Symbol.COUNT - 1;
     private static final BigInteger SCRAMBLE = BigInteger.valueOf(2_654_435_761L);
     private static final BigInteger OFFSET = BigInteger.valueOf(1_013_904_223L);
@@ -202,7 +203,7 @@ public final class GridReach implements AddressReach {
 
     /**
      * @return the position symbols of the cell holding a chunk: the cell's column and row on the grid, scrambled,
-     *     written in base 36 with the most significant symbol first; empty if the cell is off the grid
+     *     written in base 38 with the most significant symbol first; empty if the cell is off the grid
      */
     public static Optional<List<Symbol>> encode(final ChunkPos chunk, final AddressPartition partition,
             final int positions) {
@@ -219,7 +220,7 @@ public final class GridReach implements AddressReach {
         final BigInteger base = BigInteger.valueOf(GridReach.BASE);
         for (int i = positions - 1; i >= 0; i--) {
             final BigInteger[] division = code.divideAndRemainder(base);
-            symbols[i] = new Symbol(division[1].intValueExact());
+            symbols[i] = GridReach.symbol(division[1].intValueExact());
             code = division[0];
         }
         return Optional.of(List.of(symbols));
@@ -231,15 +232,18 @@ public final class GridReach implements AddressReach {
         final BigInteger base = BigInteger.valueOf(GridReach.BASE);
         BigInteger code = BigInteger.ZERO;
         for (final Symbol symbol : symbols) {
-            if (symbol.index() >= GridReach.BASE) {
+            if (symbol.equals(Symbol.GIZA)) {
                 return Optional.empty();
             }
-            code = code.multiply(base).add(BigInteger.valueOf(symbol.index()));
+            code = code.multiply(base).add(BigInteger.valueOf(GridReach.digit(symbol)));
         }
         final BigInteger codes = base.pow(positions);
         final long cell = code.subtract(GridReach.OFFSET).multiply(GridReach.SCRAMBLE.modInverse(codes)).mod(codes)
                 .longValueExact();
         final long side = GridReach.side(positions);
+        if (cell >= side * side) {
+            return Optional.empty();
+        }
         final long column = cell / side - side / 2;
         final long row = cell % side - side / 2;
         final long x = column * partition.cellChunks();
@@ -250,8 +254,18 @@ public final class GridReach implements AddressReach {
         return Optional.of(new ChunkPos((int) x, (int) z));
     }
 
-    // How many cells wide and long the grid is: 6^positions, the square root of 36^positions
+    // How many cells wide and long the grid is: the whole square root of 38^positions
     private static long side(final int positions) {
-        return BigInteger.valueOf(6).pow(positions).longValueExact();
+        return BigInteger.valueOf(GridReach.BASE).pow(positions).sqrt().longValueExact();
+    }
+
+    // The position symbol for a digit: the symbol of that number, skipping @
+    private static Symbol symbol(final int digit) {
+        return new Symbol(digit < Symbol.GIZA.index() ? digit : digit + 1);
+    }
+
+    // The digit a position symbol stands for
+    private static int digit(final Symbol symbol) {
+        return symbol.index() < Symbol.GIZA.index() ? symbol.index() : symbol.index() - 1;
     }
 }

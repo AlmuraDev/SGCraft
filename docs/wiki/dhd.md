@@ -38,7 +38,7 @@ Right-click the DHD to open the **Dial-Home Device** screen. You must stay withi
 The screen shows the DHD face on:
 
 - An outer ring of 26 buttons: `A` to `Z`, clockwise from the top.
-- An inner ring of 11 buttons: `0` to `9`, then `@`, clockwise from the top.
+- An inner ring of 13 buttons: `0` to `9`, then `@`, `+` and `.`, clockwise from the top.
 - The dome in the middle.
 
 To dial:
@@ -50,7 +50,7 @@ To dial:
 | --- | --- |
 | Left-click a button | Adds its symbol |
 | Right-click | Takes back the last symbol |
-| A letter, digit or `@` key | Adds that symbol, in either case |
+| A letter, digit, `@`, `+` or `.` key | Adds that symbol, in either case |
 | Backspace | Takes back the last symbol |
 | Enter | Presses the dome |
 

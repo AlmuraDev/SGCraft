@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.client.gate;
 
 import com.almuradev.sgcraft.mod.SGCraft;
+import com.almuradev.sgcraft.mod.gate.DialStyle;
 import org.jspecify.annotations.Nullable;
 
 import java.io.InputStream;
@@ -49,22 +50,24 @@ public final class UniverseGateMesh {
     private static final double METAL_REPEAT = 0.6;
     // How many steps round the gate its body is turned in
     private static final int STEPS = 180;
-    // How the symbols are laid round the ring: 36 of them, four to each ninth, with a gap under each chevron
-    private static final int SYMBOLS = 36;
-    private static final double GROUP_ANGLE = 360.0 / 9;
-    private static final double CHEVRON_SECTOR_ANGLE = 8;
-    private static final double SLOT_ANGLE = (UniverseGateMesh.GROUP_ANGLE - UniverseGateMesh.CHEVRON_SECTOR_ANGLE) / 4;
-    // The inside edge of the arches, as measured with the model: (degrees either side of the arch's center, radius)
-    // from the bottom up to the point of the arch
+    // The symbols' arches round the ring, as DialStyle lays them out
+    private static final int SYMBOLS = DialStyle.UNIVERSE_SYMBOLS;
+    // How wide the model's own arches are, four to each ninth, in degrees; an arch where five share a ninth is as much
+    // narrower, and its panel and symbol with it
+    private static final double MODEL_SLOT = 8;
+    // The inside edge of the model's arches, as measured with the model: (degrees either side of the arch's center,
+    // radius) from the bottom up to the point of the arch
     private static final double[][] ARCH_INSIDE = {
             {2.716, 2.669}, {2.685, 2.778}, {2.364, 2.946}, {2.141, 3.022}, {1.624, 3.099},
             {1.272, 3.137}, {0.809, 3.168}, {0.480, 3.183}, {0.143, 3.189}, {0, 3.191}
     };
     // The glyph sheet's cells are the panels measured with the model: GLYPH_HALF degrees either side of the arch's
-    // center, from GLYPH_INNER out to GLYPH_OUTER, six cells across and down
+    // center, from GLYPH_INNER out to GLYPH_OUTER, six cells across and seven down, in the order of the arches
     private static final double GLYPH_HALF = 2.0;
     private static final double GLYPH_INNER = 2.7424;
     private static final double GLYPH_OUTER = 3.1404;
+    private static final int GLYPH_COLUMNS = 6;
+    private static final int GLYPH_ROWS = 7;
     // Where a chevron's light and paint masks are laid: from LIGHTS_HALF degrees either side of its center, and from
     // LIGHTS_OUTER in to LIGHTS_INNER; only on faces turned at least LIGHT_FACING forward
     private static final double LIGHTS_HALF = 17;
@@ -156,7 +159,8 @@ public final class UniverseGateMesh {
 
     /** @return one symbol's cell of the glyph sheet, or null if the gate carries no such symbol */
     public float @Nullable [] symbol(final int symbol) {
-        return symbol >= 0 && symbol < UniverseGateMesh.SYMBOLS ? this.symbol[symbol] : null;
+        final int slot = DialStyle.universeSlot(symbol);
+        return slot >= 0 && slot < UniverseGateMesh.SYMBOLS ? this.symbol[slot] : null;
     }
 
     /** @return one of the overlays on a chevron at the top of the gate, on both its faces */
@@ -164,10 +168,14 @@ public final class UniverseGateMesh {
         return this.overlays[overlay];
     }
 
-    /** @return the center of a symbol, in degrees anticlockwise from the right, with the top chevron at 90 */
-    public static double symbolAngle(final int symbol) {
-        return 90 - (symbol / 4 * UniverseGateMesh.GROUP_ANGLE + UniverseGateMesh.CHEVRON_SECTOR_ANGLE / 2
-                + (symbol % 4 + 0.5) * UniverseGateMesh.SLOT_ANGLE);
+    /** @return the center of an arch, in degrees anticlockwise from the right, with the top chevron at 90 */
+    public static double symbolAngle(final int slot) {
+        return 90 - DialStyle.universeSlotOffset(slot);
+    }
+
+    // How much narrower an arch is than the model's
+    private static double narrowing(final int slot) {
+        return DialStyle.universeSlotWidth(slot) / UniverseGateMesh.MODEL_SLOT;
     }
 
     // Triangles in the metal laid flat on whichever of the gate's planes each faces most
@@ -195,12 +203,15 @@ public final class UniverseGateMesh {
         final GateGeometry.Builder out = new GateGeometry.Builder();
         final double k = 1 / UniverseGateMesh.METAL_REPEAT;
         final double[][] p = UniverseGateMesh.ARCH_INSIDE;
-        for (int symbol = 0; symbol < UniverseGateMesh.SYMBOLS; symbol++) {
-            final double center = UniverseGateMesh.symbolAngle(symbol);
+        for (int slot = 0; slot < UniverseGateMesh.SYMBOLS; slot++) {
+            final double center = UniverseGateMesh.symbolAngle(slot);
+            final double narrowing = UniverseGateMesh.narrowing(slot);
             for (int i = 0; i + 1 < p.length; i++) {
+                final double half = p[i][0] * narrowing;
+                final double nextHalf = p[i + 1][0] * narrowing;
                 // Anticlockwise seen from in front: bottom left, bottom right, top right, top left
-                final double[][] q = {{center + p[i][0], p[i][1]}, {center - p[i][0], p[i][1]},
-                        {center - p[i + 1][0], p[i + 1][1]}, {center + p[i + 1][0], p[i + 1][1]}};
+                final double[][] q = {{center + half, p[i][1]}, {center - half, p[i][1]},
+                        {center - nextHalf, p[i + 1][1]}, {center + nextHalf, p[i + 1][1]}};
                 final double[][] corners = new double[4][];
                 for (int c = 0; c < 4; c++) {
                     final double a = Math.toRadians(q[c][0]);
@@ -220,29 +231,31 @@ public final class UniverseGateMesh {
         return out.build();
     }
 
-    // A symbol's cell of the glyph sheet, a little in front of its panel, on the front only
-    private void addSymbol(final GateGeometry.Builder out, final int symbol) {
-        final double cell = 1.0 / 6;
+    // An arch's cell of the glyph sheet, a little in front of its panel, on the front only
+    private void addSymbol(final GateGeometry.Builder out, final int slot) {
+        final double cellU = 1.0 / UniverseGateMesh.GLYPH_COLUMNS;
+        final double cellV = 1.0 / UniverseGateMesh.GLYPH_ROWS;
         final double r0 = UniverseGateMesh.GLYPH_INNER;
         final double r1 = UniverseGateMesh.GLYPH_OUTER;
         final double lift = 0.0006;
         final double z0 = UniverseGateModel.faceZ(r0) + lift;
         final double z1 = UniverseGateModel.faceZ(r1) + lift;
         final int pieces = 6;
-        final double center = UniverseGateMesh.symbolAngle(symbol);
-        final double u0 = symbol % 6 * cell;
-        final double v0 = symbol / 6 * cell;
+        final double center = UniverseGateMesh.symbolAngle(slot);
+        final double half = UniverseGateMesh.GLYPH_HALF * UniverseGateMesh.narrowing(slot);
+        final double u0 = slot % UniverseGateMesh.GLYPH_COLUMNS * cellU;
+        final double v0 = slot / UniverseGateMesh.GLYPH_COLUMNS * cellV;
         for (int i = 0; i < pieces; i++) {
             // Left to right across the symbol: anticlockwise to clockwise
             final double fa = (double) i / pieces;
             final double fb = (double) (i + 1) / pieces;
-            final double aa = Math.toRadians(center + UniverseGateMesh.GLYPH_HALF * (1 - 2 * fa));
-            final double ab = Math.toRadians(center + UniverseGateMesh.GLYPH_HALF * (1 - 2 * fb));
-            final double ua = u0 + cell * fa;
-            final double ub = u0 + cell * fb;
+            final double aa = Math.toRadians(center + half * (1 - 2 * fa));
+            final double ab = Math.toRadians(center + half * (1 - 2 * fb));
+            final double ua = u0 + cellU * fa;
+            final double ub = u0 + cellU * fb;
             this.quad(out, new double[][] {
-                    {r0 * Math.cos(aa), r0 * Math.sin(aa), z0, ua, v0 + cell},
-                    {r0 * Math.cos(ab), r0 * Math.sin(ab), z0, ub, v0 + cell},
+                    {r0 * Math.cos(aa), r0 * Math.sin(aa), z0, ua, v0 + cellV},
+                    {r0 * Math.cos(ab), r0 * Math.sin(ab), z0, ub, v0 + cellV},
                     {r1 * Math.cos(ab), r1 * Math.sin(ab), z1, ub, v0},
                     {r1 * Math.cos(aa), r1 * Math.sin(aa), z1, ua, v0}});
         }

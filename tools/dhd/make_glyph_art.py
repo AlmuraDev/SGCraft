@@ -15,7 +15,7 @@ from PIL import Image
 OUT = Path('core/src/main/resources/assets/sgcraft/textures/gui/dhd')
 SIZE = 512
 OUTER, BETWEEN, INNER = 0.94, 0.58, 0.28
-OUTER_BUTTONS, INNER_BUTTONS = 26, 11
+OUTER_BUTTONS, INNER_BUTTONS = 26, 13
 GAP = 0.012
 LINE = 0.018
 

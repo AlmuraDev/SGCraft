@@ -176,7 +176,8 @@ final class AddressGroupGameTestsNeoForge {
         helper.succeed();
     }
 
-    // A server has at most 37 groups and a group at most 37 worlds; a group whose symbol another has is left out
+    // A server has at most as many groups as there are symbols, and a group at most as many worlds; a group whose
+    // symbol another has is left out
     static void limits(final GameTestHelper helper, final BlockPos origin) {
         final StringBuilder groups = new StringBuilder("{\"groups\": {");
         for (int index = 0; index < Symbol.COUNT; index++) {
@@ -186,7 +187,7 @@ final class AddressGroupGameTestsNeoForge {
                 Recorded.NONE, List.of());
         helper.assertTrue(many.groups().size() == Symbol.COUNT, "The server has " + many.groups().size()
                 + " groups, not " + Symbol.COUNT);
-        helper.assertTrue(many.group("g36").isEmpty(), "The 38th group wasn't left out");
+        helper.assertTrue(many.group("g" + (Symbol.COUNT - 1)).isEmpty(), "The group past the limit wasn't left out");
         helper.assertTrue(AddressGroupGameTestsNeoForge.has(many, "too_many_groups"),
                 "Too many groups raise no problem");
         final AddressPlan clash = AddressPlan.of(AddressGroupGameTestsNeoForge.parse("{\"groups\": {\"pegasus\": "
@@ -199,8 +200,9 @@ final class AddressGroupGameTestsNeoForge {
             worlds.add(AddressGroupGameTestsNeoForge.world("world_" + index));
         }
         final AddressPlan full = AddressPlan.of(AddressSettings.DEFAULTS, Recorded.NONE, worlds);
-        helper.assertTrue(full.symbolOf(worlds.get(Symbol.COUNT - 1)).isPresent(), "The 37th world has no symbol");
-        helper.assertTrue(full.symbolOf(worlds.get(Symbol.COUNT)).isEmpty(), "The 38th world has a symbol");
+        helper.assertTrue(full.symbolOf(worlds.get(Symbol.COUNT - 1)).isPresent(), "The last world within the limit "
+                + "has no symbol");
+        helper.assertTrue(full.symbolOf(worlds.get(Symbol.COUNT)).isEmpty(), "The world past the limit has a symbol");
         helper.assertTrue(AddressGroupGameTestsNeoForge.has(full, "group_full"), "A full group raises no warning");
         helper.succeed();
     }

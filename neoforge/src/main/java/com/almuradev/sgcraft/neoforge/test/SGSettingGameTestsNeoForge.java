@@ -36,6 +36,7 @@ import com.almuradev.sgcraft.mod.address.GridReach;
 import com.almuradev.sgcraft.mod.address.SGAddressing;
 import com.almuradev.sgcraft.mod.address.WorldAddress;
 import com.almuradev.sgcraft.mod.block.entity.GateSpawnerBlockEntity;
+import com.almuradev.sgcraft.mod.gate.DialStyle;
 import com.almuradev.sgcraft.mod.villager.SGVillagers;
 import com.almuradev.sgcraft.mod.worldgen.StructureGates;
 import com.google.gson.JsonParser;
@@ -56,9 +57,11 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructurePlac
 import net.minecraft.world.phys.AABB;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Game tests of the server's settings for addresses and generated gates. They run with {@link SGGameTestsNeoForge},
@@ -136,6 +139,46 @@ final class SGSettingGameTestsNeoForge {
         final List<Symbol> far = GridReach.encode(new ChunkPos(-9, 13), four, 6).orElseThrow();
         helper.assertTrue(GridReach.decode(far, four).orElseThrow().equals(new ChunkPos(-12, 12)),
                 "A 4 chunk cell's address names " + GridReach.decode(far, four).orElseThrow());
+        helper.succeed();
+    }
+
+    // There are 39 symbols, as on the Milky Way ring: + and . are written and read like the others, are position
+    // symbols as every symbol but @ is, and each has a glyph of its own on the Milky Way ring and the Universe gate's
+    static void thirtyNineSymbols(final GameTestHelper helper, final BlockPos origin) {
+        helper.assertTrue(Symbol.COUNT == 39, "There are " + Symbol.COUNT + " symbols, not 39");
+        helper.assertTrue(Symbol.of('+').orElseThrow().index() == 37 && Symbol.of('.').orElseThrow().index() == 38,
+                "+ and . aren't the last two symbols");
+        helper.assertTrue(Symbol.of('@').orElseThrow().equals(Symbol.GIZA), "@ isn't the point of origin");
+        // Every cell's position symbols name it again, and between them they use every symbol but @
+        final AddressPartition one = SGSettingGameTestsNeoForge.partition(1);
+        final Set<Symbol> used = new HashSet<>();
+        for (int x = -40; x < 40; x += 3) {
+            for (int z = -40; z < 40; z += 3) {
+                final List<Symbol> symbols = GridReach.encode(new ChunkPos(x, z), one, 6).orElseThrow();
+                used.addAll(symbols);
+                helper.assertTrue(GridReach.decode(symbols, one).orElseThrow().equals(new ChunkPos(x, z)),
+                        "The address of chunk " + x + ", " + z + " names another");
+            }
+        }
+        helper.assertTrue(!used.contains(Symbol.GIZA), "@ is a position symbol");
+        helper.assertTrue(used.size() == Symbol.COUNT - 1, "The positions use " + used.size() + " symbols, not "
+                + (Symbol.COUNT - 1));
+        // Each symbol has its own glyph on the Milky Way ring, @ the first, and on the Universe gate all but @ do
+        final Set<Integer> glyphs = new HashSet<>();
+        final Set<Long> arches = new HashSet<>();
+        for (int index = 0; index < Symbol.COUNT; index++) {
+            final Symbol symbol = new Symbol(index);
+            final int glyph = DialStyle.milkyWayGlyph(symbol);
+            helper.assertTrue(DialStyle.milkyWaySymbol(glyph).equals(symbol), "Glyph " + glyph + " isn't " + symbol);
+            glyphs.add(glyph);
+            final double offset = DialStyle.universeOffset(index);
+            helper.assertTrue(symbol.equals(Symbol.GIZA) == (offset == 0), "The Universe gate's " + symbol + " is at "
+                    + offset);
+            arches.add(Math.round(offset * 100));
+        }
+        helper.assertTrue(glyphs.size() == Symbol.COUNT && DialStyle.milkyWayGlyph(Symbol.GIZA) == 0,
+                "The Milky Way ring's glyphs aren't one to a symbol, @ first");
+        helper.assertTrue(arches.size() == Symbol.COUNT, "The Universe gate's arches aren't one to a symbol");
         helper.succeed();
     }
 

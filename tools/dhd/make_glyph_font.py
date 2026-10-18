@@ -1,7 +1,7 @@
 """Builds a chat font for each gate type's glyphs, so commands can show an address as the symbols a gate shows.
 
-Each font maps an address's characters (A to Z, 0 to 9 and @) to that type's glyph. Pegasus and Universe have no @
-of their own, so they borrow the Milky Way's point of origin.
+Each font maps an address's characters (A to Z, 0 to 9, @, + and .) to that type's glyph. Pegasus has no @, + or .
+of its own and Universe no @, so they borrow the Milky Way's.
 
 Run from the repository root: python tools/dhd/make_glyph_font.py
 Needs numpy and Pillow.
@@ -14,7 +14,7 @@ import numpy as np
 from PIL import Image
 
 ASSETS = Path('core/src/main/resources/assets/sgcraft')
-CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@'
+CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@+.'
 CELL = 64
 COLUMNS = 10
 
@@ -50,12 +50,13 @@ def sheet(path, cell, columns, count):
             for i in range(count)]
 
 
-milky = sheet(ASSETS / 'textures/gui/dhd/milkyway_glyphs.png', 48, 10, 38)
-origin = milky[37]
+# The Milky Way sheet has every symbol, in order; Pegasus's the first 36, and Universe's every one but @, in order
+milky = sheet(ASSETS / 'textures/gui/dhd/milkyway_glyphs.png', 48, 10, len(CHARS))
+universe = sheet(ASSETS / 'textures/gate/universe/glyphs.png', 128, 6, len(CHARS) - 1)
 fonts = {
-    'glyphs_milkyway': milky[:36] + [origin],
-    'glyphs_pegasus': sheet(ASSETS / 'textures/gui/dhd/pegasus_glyphs.png', 128, 6, 36) + [origin],
-    'glyphs_universe': sheet(ASSETS / 'textures/gate/universe/glyphs.png', 128, 6, 36) + [origin],
+    'glyphs_milkyway': milky,
+    'glyphs_pegasus': sheet(ASSETS / 'textures/gui/dhd/pegasus_glyphs.png', 128, 6, 36) + milky[36:],
+    'glyphs_universe': universe[:36] + [milky[36]] + universe[36:],
 }
 rows = [CHARS[i:i + COLUMNS] for i in range(0, len(CHARS), COLUMNS)]
 rows[-1] = rows[-1].ljust(COLUMNS, '\u0000')

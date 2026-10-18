@@ -49,7 +49,7 @@ Tools that look for a gate near you, such as the {{item:sgcraft:pdd}}, treat a D
 
 ## Dial screen
 
-Right-click the DHD to open the **Dial-Home Device** screen. It shows the DHD face on, with 26 buttons `A` to `Z` on the outer ring, 11 buttons `0` to `9` and `@` on the inner ring, and the dome in the middle. You must stay within 8 blocks of the DHD, or the screen closes.
+Right-click the DHD to open the **Dial-Home Device** screen. It shows the DHD face on, with 26 buttons `A` to `Z` on the outer ring, 13 buttons `0` to `9`, `@`, `+` and `.` on the inner ring, and the dome in the middle. You must stay within 8 blocks of the DHD, or the screen closes.
 
 | Input | Does |
 | --- | --- |

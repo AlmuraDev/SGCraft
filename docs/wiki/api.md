@@ -125,7 +125,7 @@ An add-on can register its own properties in the `sgcraft:gate_property` registr
 ## Addressing
 
 - `Address` is a list of `Symbol`s. `Address.parse(text)` reads any grouping and ignores case, dashes and spaces. `toString()` writes `XXXX-XXX`, then a dash before any symbols after the seventh. `Address.CODEC` saves it as that text.
-- `Symbol` has 37 values (`Symbol.COUNT`), written A to Z, 0 to 9 and `@`. `Symbol.GIZA` (index 36, `@`) is the default point of origin.
+- `Symbol` has 39 values (`Symbol.COUNT`), written A to Z, 0 to 9, `@`, `+` and `.`. `Symbol.GIZA` (index 36, `@`) is the default point of origin. Add-ons should use `Symbol.COUNT` rather than a number.
 - `Addressing.addressOf(target, from)` gives the shortest address that reaches a gate's base from a world. `resolve(address, from)` gives the world and chunk an address points to. `reachOf`, `reaches()`, `partition(world)`, `groups()`, `defaultGroup()` and `groupOf(world)` give the rest.
 
 Addresses are relative to the world they are dialed from. The three reaches every implementation registers (`AddressReaches`) are:

@@ -76,10 +76,10 @@ final class SGAddressCommands {
 
     private static final DynamicCommandExceptionType NOT_A_SYMBOL = new DynamicCommandExceptionType(
             text -> SGCommands.text("addresses.not_a_symbol",
-                    "%s isn't a point of origin. Give one letter or digit, giza or \"@\" for @, or none", text));
+                    "%s isn't a point of origin. Give one letter, digit, + or ., giza or \"@\" for @, or none", text));
     private static final DynamicCommandExceptionType NOT_A_GROUP_SYMBOL = new DynamicCommandExceptionType(
             text -> SGCommands.text("addresses.not_a_group_symbol",
-                    "%s isn't a group symbol. Give one letter or digit, giza or \"@\" for @, or auto", text));
+                    "%s isn't a group symbol. Give one letter, digit, + or ., giza or \"@\" for @, or auto", text));
 
     // The groups the server will next start with, to suggest
     private static final SuggestionProvider<CommandSourceStack> GROUPS = (context, builder) ->

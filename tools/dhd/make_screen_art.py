@@ -2,7 +2,7 @@
 draws over it; a soft glow for lit buttons; and the center dome seen from above. Writes PNGs into the mod's textures.
 
 Run from the repository root: python tools/dhd/make_screen_art.py
-Needs numpy and Pillow. The layout must match DhdLayout in the mod: the outer ring has 26 buttons, the inner ring 11.
+Needs numpy and Pillow. The layout must match DhdLayout in the mod: the outer ring has 26 buttons, the inner ring 13.
 """
 
 import math
@@ -20,7 +20,7 @@ PIXEL = 4
 SIZE = 512
 # Radii as fractions of the face's radius; DhdLayout uses the same
 RIM, OUTER, BETWEEN, INNER = 1.0, 0.94, 0.58, 0.28
-OUTER_BUTTONS, INNER_BUTTONS = 26, 11
+OUTER_BUTTONS, INNER_BUTTONS = 26, 13
 GAP = 0.012
 
 

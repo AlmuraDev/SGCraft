@@ -37,7 +37,7 @@ SCENE_CROP = {'supergate': 0.9}
 STANDARD_CROP = 0.62
 SCENE_WIDTH = 960
 ITEM_ID = re.compile(r'^[a-z0-9_.-]+:[a-z0-9_./-]+$')
-CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@'
+CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@+.'
 CELL = 64
 COLUMNS = 10
 # Each glyph style, and the color its glyphs are drawn in
@@ -123,8 +123,12 @@ def item(item_id):
     return f'<span class="item">{content}</span>'
 
 
+# The glyphs whose characters can't name a file
+GLYPH_NAMES = {'@': 'origin', '+': 'plus', '.': 'dot'}
+
+
 def glyph_name(char):
-    return 'origin' if char == '@' else char
+    return GLYPH_NAMES.get(char, char)
 
 
 def glyphs(address, style):

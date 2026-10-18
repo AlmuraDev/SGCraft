@@ -53,10 +53,13 @@ public enum DialStyle {
     private static final double RING_SPEED = 2.0;
     // How many glyphs the Milky Way ring carries; glyph 0 is the point of origin
     private static final int MILKY_WAY_GLYPHS = 39;
-    // The Universe gate's symbols: four to each ninth of the ring, past a gap under each chevron
+    // The Universe gate's symbols, every one but @: four to each ninth of the ring, between the gaps under its
+    // chevrons, but five to the two ninths either side of the bottom, the third and fifth clockwise from the top
+    private static final int[] UNIVERSE_GROUPS = {4, 4, 4, 5, 4, 5, 4, 4, 4};
     private static final double UNIVERSE_GROUP = 40;
     private static final double UNIVERSE_GAP = 4;
-    private static final double UNIVERSE_SLOT = 8;
+    /** How many symbols a Universe gate carries: every one but {@code @}. */
+    public static final int UNIVERSE_SYMBOLS = Symbol.COUNT - 1;
     // How long a Pegasus gate's light takes to pass one screen, and how far apart the screens are
     private static final double PEGASUS_TICKS_PER_GLYPH = 1.4;
     private static final double PEGASUS_GLYPH_ANGLE = 10;
@@ -156,17 +159,70 @@ public enum DialStyle {
         if (this == DialStyle.UNIVERSE) {
             return DialStyle.universeOffset(symbol.index());
         }
-        // The point of origin, glyph 0, stands for @; the other symbols follow it in order
-        final int glyph = symbol.equals(Symbol.GIZA) ? 0 : symbol.index() + 1;
-        return glyph * 360.0 / DialStyle.MILKY_WAY_GLYPHS;
+        return DialStyle.milkyWayGlyph(symbol) * 360.0 / DialStyle.MILKY_WAY_GLYPHS;
+    }
+
+    /**
+     * @return which of the Milky Way ring's 39 glyphs, counted anticlockwise from the top, stands for a symbol: glyph 0
+     *     is the point of origin, {@code @}, and the other symbols follow it in order
+     */
+    public static int milkyWayGlyph(final Symbol symbol) {
+        final int origin = Symbol.GIZA.index();
+        return symbol.index() == origin ? 0 : symbol.index() < origin ? symbol.index() + 1 : symbol.index();
+    }
+
+    /** @return the symbol a glyph of the Milky Way ring stands for, counted anticlockwise from the top */
+    public static Symbol milkyWaySymbol(final int glyph) {
+        final int origin = Symbol.GIZA.index();
+        return new Symbol(glyph == 0 ? origin : glyph <= origin ? glyph - 1 : glyph);
     }
 
     /** @return how far clockwise from the top a Universe gate's symbol sits, or 0 if it carries no such symbol */
     public static double universeOffset(final int symbol) {
-        if (symbol >= 36) {
-            return 0;
+        final int slot = DialStyle.universeSlot(symbol);
+        return slot < 0 ? 0 : DialStyle.universeSlotOffset(slot);
+    }
+
+    /**
+     * @return which of a Universe gate's arches, counted clockwise from the top, carries a symbol, or -1 for
+     *     {@code @}, which it carries none of: the symbols are in order, passing over {@code @}
+     */
+    public static int universeSlot(final int symbol) {
+        final int origin = Symbol.GIZA.index();
+        return symbol == origin ? -1 : symbol < origin ? symbol : symbol - 1;
+    }
+
+    /** @return how far clockwise from the top the middle of one of a Universe gate's arches is */
+    public static double universeSlotOffset(final int slot) {
+        int first = 0;
+        for (int group = 0; group < DialStyle.UNIVERSE_GROUPS.length; group++) {
+            final int size = DialStyle.UNIVERSE_GROUPS[group];
+            if (slot < first + size) {
+                return group * DialStyle.UNIVERSE_GROUP + DialStyle.UNIVERSE_GAP
+                        + (slot - first + 0.5) * DialStyle.universeSlotWidth(slot);
+            }
+            first += size;
         }
-        return symbol / 4 * DialStyle.UNIVERSE_GROUP + DialStyle.UNIVERSE_GAP
-                + (symbol % 4 + 0.5) * DialStyle.UNIVERSE_SLOT;
+        return 0;
+    }
+
+    /**
+     * @return how wide one of a Universe gate's arches is, in degrees: a ninth of the ring, less the gaps under its
+     *     chevrons, shared by the arches in it
+     */
+    public static double universeSlotWidth(final int slot) {
+        int first = 0;
+        for (final int size : DialStyle.UNIVERSE_GROUPS) {
+            if (slot < first + size) {
+                return (DialStyle.UNIVERSE_GROUP - 2 * DialStyle.UNIVERSE_GAP) / size;
+            }
+            first += size;
+        }
+        return 0;
+    }
+
+    /** @return how many arches the ninth of a Universe gate's ring clockwise from a chevron has */
+    public static int universeGroupSize(final int group) {
+        return DialStyle.UNIVERSE_GROUPS[group];
     }
 }

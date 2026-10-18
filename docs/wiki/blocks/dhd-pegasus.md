@@ -49,7 +49,7 @@ It links when you place it and checks its link every 20 ticks (1 second). If its
 
 ## Dial screen
 
-Right-click the DHD to open the **Dial-Home Device** screen. It shows the Pegasus face, with 26 buttons for `A` to `Z` on the outer ring and 11 buttons for `0` to `9` and `@` on the inner ring, drawn as Pegasus glyphs, with the Milky Way `@`. The dome is in the middle. You must stay within 8 blocks of the DHD, or the screen closes.
+Right-click the DHD to open the **Dial-Home Device** screen. It shows the Pegasus face, with 26 buttons for `A` to `Z` on the outer ring and 13 buttons for `0` to `9`, `@`, `+` and `.` on the inner ring, drawn as Pegasus glyphs, with the Milky Way `@`, `+` and `.`. The dome is in the middle. You must stay within 8 blocks of the DHD, or the screen closes.
 
 | Input | Does |
 | --- | --- |

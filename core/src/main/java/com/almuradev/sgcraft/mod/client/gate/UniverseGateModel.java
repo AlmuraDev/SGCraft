@@ -25,6 +25,8 @@
 
 package com.almuradev.sgcraft.mod.client.gate;
 
+import com.almuradev.sgcraft.mod.gate.DialStyle;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,6 +48,9 @@ import java.util.Map;
  * chevrons) is a set of faces, each an outline with a height at each corner, with sides dropping from its edges to the
  * body. Those are given for a ninth of a turn on the front, a whole chevron with half the way to the next one either
  * side of it, and the rest of the gate is that, turned, front and back.</p>
+ *
+ * <p>The model has four arches to each ninth. Where the gate has five, as {@link DialStyle} lays its symbols out, the
+ * four arches' frames and posts are drawn narrower, toward the chevron before them, and the first again after them.</p>
  */
 public final class UniverseGateModel {
 
@@ -56,6 +61,14 @@ public final class UniverseGateModel {
     /** The angle from a chevron to the next, which the faces are given for. */
     public static final double SECTION_ANGLE = 40;
     public static final int CHEVRONS = 9;
+    // Where a ninth's arches start, past the gap under the chevron before them, and how wide the model's are, in
+    // degrees. A post between arches is a thin face on the line between them: a face whose middle is within ARCH_EDGE
+    // of the line is the post, and within SLACK of the ninth's ends is still in the ninth
+    private static final double ARCHES_FROM = 4;
+    private static final double MODEL_ARCH = 8;
+    private static final int MODEL_ARCHES = 4;
+    private static final double ARCH_EDGE = 0.1;
+    private static final double SLACK = 0.5;
 
     // The body's profile on the front, (radius, z), from the middle of the slot round the inside of the ring where the
     // event horizon sits, up its inner edge, out across its face to the outer edge and down that to the middle of the
@@ -130,29 +143,93 @@ public final class UniverseGateModel {
     public void build(final Sink sink, final int bodySteps) {
         this.buildBody(sink, bodySteps);
         for (int g = 0; g < UniverseGateModel.CHEVRONS; g++) {
-            final double turn = Math.toRadians(90 - g * UniverseGateModel.SECTION_ANGLE);
-            final double cos = Math.cos(turn);
-            final double sin = Math.sin(turn);
-            for (int face = -1; face <= 1; face += 2) {
-                for (final double[] t : this.section) {
-                    final double[][] q = new double[3][];
-                    for (int k = 0; k < 3; k++) {
-                        // Mirrored through the ring onto the back as needed, then turned to the chevron
-                        final double x = t[1 + 3 * k];
-                        final double y = t[2 + 3 * k];
-                        final double z = t[3 + 3 * k] * face;
-                        q[k] = new double[] {x * cos - y * sin, x * sin + y * cos, z};
+            // The ninth clockwise from this chevron, and the one anticlockwise, and how many arches each has
+            final int after = DialStyle.universeGroupSize(g);
+            final int before = DialStyle.universeGroupSize((g + UniverseGateModel.CHEVRONS - 1)
+                    % UniverseGateModel.CHEVRONS);
+            for (final double[] t : this.section) {
+                final double middle = UniverseGateModel.clockwise(t);
+                double[] placed = t;
+                if ((int) t[0] == UniverseGateModel.RELIEF) {
+                    final double half = UniverseGateModel.SECTION_ANGLE / 2;
+                    final double start = UniverseGateModel.ARCHES_FROM;
+                    if (after > UniverseGateModel.MODEL_ARCHES && middle >= start - UniverseGateModel.SLACK
+                            && middle <= half + UniverseGateModel.SLACK) {
+                        placed = UniverseGateModel.narrowed(t, start, start, after);
+                    } else if (before > UniverseGateModel.MODEL_ARCHES
+                            && middle >= -half - UniverseGateModel.SLACK
+                            && middle < -start - UniverseGateModel.ARCH_EDGE) {
+                        // In the ninth's own terms, it starts a whole ninth back
+                        final double from = start - UniverseGateModel.SECTION_ANGLE;
+                        placed = UniverseGateModel.narrowed(t, from, from, before);
                     }
-                    final double[] n = {t[10] * cos - t[11] * sin, t[10] * sin + t[11] * cos, t[12] * face};
-                    // Mirroring turns the corners the other way round
-                    if (face > 0) {
-                        sink.triangle((int) t[0], q[0], q[1], q[2], n);
-                    } else {
-                        sink.triangle((int) t[0], q[0], q[2], q[1], n);
+                    // The first arch again, after the narrowed four, as many times as the ninth has more arches
+                    if (after > UniverseGateModel.MODEL_ARCHES && middle >= start - UniverseGateModel.SLACK
+                            && middle < start + UniverseGateModel.MODEL_ARCH - UniverseGateModel.ARCH_EDGE) {
+                        final double width = UniverseGateModel.MODEL_ARCH * UniverseGateModel.MODEL_ARCHES / after;
+                        for (int extra = UniverseGateModel.MODEL_ARCHES; extra < after; extra++) {
+                            this.emit(sink, UniverseGateModel.narrowed(t, start, start + extra * width, after), g);
+                        }
                     }
                 }
+                this.emit(sink, placed, g);
             }
         }
+    }
+
+    // Gives a triangle of the section to the sink at a chevron, on the front and, mirrored, the back
+    private void emit(final Sink sink, final double[] t, final int chevron) {
+        final double turn = Math.toRadians(90 - chevron * UniverseGateModel.SECTION_ANGLE);
+        final double cos = Math.cos(turn);
+        final double sin = Math.sin(turn);
+        for (int face = -1; face <= 1; face += 2) {
+            final double[][] q = new double[3][];
+            for (int k = 0; k < 3; k++) {
+                // Mirrored through the ring onto the back as needed, then turned to the chevron
+                final double x = t[1 + 3 * k];
+                final double y = t[2 + 3 * k];
+                final double z = t[3 + 3 * k] * face;
+                q[k] = new double[] {x * cos - y * sin, x * sin + y * cos, z};
+            }
+            final double[] n = {t[10] * cos - t[11] * sin, t[10] * sin + t[11] * cos, t[12] * face};
+            // Mirroring turns the corners the other way round
+            if (face > 0) {
+                sink.triangle((int) t[0], q[0], q[1], q[2], n);
+            } else {
+                sink.triangle((int) t[0], q[0], q[2], q[1], n);
+            }
+        }
+    }
+
+    // How far clockwise from the chevron a triangle of the section's middle is, in degrees
+    private static double clockwise(final double[] t) {
+        final double x = t[1] + t[4] + t[7];
+        final double y = t[2] + t[5] + t[8];
+        return -Math.toDegrees(Math.atan2(y, x));
+    }
+
+    // A triangle of a ninth's arches, narrowed for a ninth of the given number of arches: each corner as far past
+    // {@code to} as it was past {@code from}, made that much narrower, turned round the ring's center
+    private static double[] narrowed(final double[] t, final double from, final double to, final int arches) {
+        final double narrowing = (double) UniverseGateModel.MODEL_ARCHES / arches;
+        final double[] out = t.clone();
+        for (int k = 0; k < 3; k++) {
+            final double x = t[1 + 3 * k];
+            final double y = t[2 + 3 * k];
+            final double r = Math.hypot(x, y);
+            final double d = -Math.toDegrees(Math.atan2(y, x));
+            final double a = Math.toRadians(-(to + (d - from) * narrowing));
+            out[1 + 3 * k] = r * Math.cos(a);
+            out[2 + 3 * k] = r * Math.sin(a);
+        }
+        // The normal turns as the middle does
+        final double before = Math.toRadians(-UniverseGateModel.clockwise(t));
+        final double after = Math.toRadians(-UniverseGateModel.clockwise(out));
+        final double cos = Math.cos(after - before);
+        final double sin = Math.sin(after - before);
+        out[10] = t[10] * cos - t[11] * sin;
+        out[11] = t[10] * sin + t[11] * cos;
+        return out;
     }
 
     /** @return the forward faces of one chevron, as triangles {ax, ay, az, bx, ..., cz} with its center along x */
