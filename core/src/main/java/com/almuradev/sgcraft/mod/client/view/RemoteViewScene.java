@@ -55,7 +55,8 @@ final class RemoteViewScene implements AutoCloseable {
     private static final double JUMP = 8.0;
 
     final int id;
-    final RemoteViewPackets.Begin world;
+    // How the view began, with whether it is the client's own as it now is
+    RemoteViewPackets.Begin world;
     final RemoteViewLevel level;
     final RemoteViewMeshes meshes = new RemoteViewMeshes();
     final RemoteViewEntities entities = new RemoteViewEntities();
@@ -102,6 +103,17 @@ final class RemoteViewScene implements AutoCloseable {
             this.level.put(section.pos(), decoded);
             this.meshes.changed(section.pos());
             this.blockEntities.sectionArrived(section.pos(), this.level);
+        }
+    }
+
+    void heights(final RemoteViewPackets.Heights packet) {
+        for (final long chunk : packet.forgotten()) {
+            this.level.removeHeights(chunk);
+        }
+        for (final RemoteViewPackets.RainHeights chunk : packet.chunks()) {
+            if (chunk.heights().length == RemoteViewPackets.RainHeights.COLUMNS) {
+                this.level.putHeights(chunk.chunk(), chunk.heights());
+            }
         }
     }
 

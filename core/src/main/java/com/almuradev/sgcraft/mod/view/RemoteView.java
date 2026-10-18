@@ -54,6 +54,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -62,6 +63,7 @@ import org.joml.Vector4fc;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -92,7 +94,7 @@ final class RemoteView {
     final UUID viewer;
     final UUID source;
     // Whether this is the viewer's own view, and the display in their world it is shown on, if any
-    final boolean own;
+    boolean own;
     final @Nullable BlockPos display;
     private final RemoteViewConfig reach;
     private final @Nullable Consumer<CustomPacketPayload> sink;
@@ -102,6 +104,8 @@ final class RemoteView {
     private int missing;
     // Sent sections by position, with the hash of what was sent
     private final Long2LongMap sections = new Long2LongOpenHashMap();
+    // Chunks whose rain heights were sent, with the hash of what was sent
+    private final Long2LongMap heights = new Long2LongOpenHashMap();
     // Sent block entities by position, with a hash of what was sent
     private final Long2LongMap blockEntities = new Long2LongOpenHashMap();
     // Entities in view by id, with a hash of how they looked when sent
@@ -138,6 +142,12 @@ final class RemoteView {
         return this.resends;
     }
 
+    /** Makes the view the viewer's own, or no longer theirs, telling them, without its beginning again. */
+    void own(final ServerPlayer player, final boolean own) {
+        this.own = own;
+        this.send(player, new RemoteViewPackets.Own(this.id, own));
+    }
+
     /** Ends the view, telling the viewer if they are still here. */
     void end(final MinecraftServer server) {
         final ServerPlayer player = server.getPlayerList().getPlayer(this.viewer);
@@ -170,6 +180,7 @@ final class RemoteView {
         if (found.level() != this.level) {
             this.level = (ServerLevel) found.level();
             this.sections.clear();
+            this.heights.clear();
             this.blockEntities.clear();
             this.entities.clear();
             this.begin(player);
@@ -177,6 +188,7 @@ final class RemoteView {
         final RemoteViewPackets.Camera camera = RemoteView.camera(found);
         final Vec3 eye = new Vec3(camera.x(), camera.y(), camera.z());
         this.sendSections(player, eye);
+        this.sendHeights(player);
         if (this.ticks % RemoteView.BLOCK_ENTITY_CHECK_TICKS == 0) {
             this.sendBlockEntities(player);
         }
@@ -214,7 +226,7 @@ final class RemoteView {
         this.send(player, new RemoteViewPackets.Begin(this.id, this.own, Optional.ofNullable(this.display),
                 this.level.dimension().identifier(), type.hasSkyLight(), type.skybox().ordinal(),
                 type.cardinalLightType().ordinal(), type.ambientLight(), this.level.getMinY(), this.level.getHeight(),
-                this.reach.horizontalRadius(), this.reach.verticalRadius()));
+                this.level.getSeaLevel(), this.reach.horizontalRadius(), this.reach.verticalRadius()));
     }
 
     private static RemoteViewPackets.Camera camera(final Entity source) {
@@ -276,6 +288,64 @@ final class RemoteView {
             }
         }
         batch.flush();
+    }
+
+    // Rain heights, for the client to draw the source's weather: those of each chunk a section of which has been
+    // sent, once, and again when they change, looked at every few ticks as sent sections are; those of a chunk none of
+    // whose sections are sent any more are forgotten
+    private void sendHeights(final ServerPlayer player) {
+        final LongSet columns = new LongOpenHashSet();
+        for (final long pos : this.sections.keySet()) {
+            columns.add(ChunkPos.pack(SectionPos.x(pos), SectionPos.z(pos)));
+        }
+        final List<Long> forgotten = new ArrayList<>();
+        final LongIterator iterator = this.heights.keySet().iterator();
+        while (iterator.hasNext()) {
+            final long column = iterator.nextLong();
+            if (!columns.contains(column)) {
+                iterator.remove();
+                forgotten.add(column);
+            }
+        }
+        final List<RemoteViewPackets.RainHeights> changed = new ArrayList<>();
+        for (final long column : columns) {
+            final boolean sent = this.heights.containsKey(column);
+            if (sent && Math.floorMod(Long.hashCode(column) + this.ticks, RemoteView.SECTION_CHECK_TICKS) != 0) {
+                continue;
+            }
+            final LevelChunk chunk = this.level.getChunkSource().getChunkNow(ChunkPos.getX(column),
+                    ChunkPos.getZ(column));
+            if (chunk == null) {
+                continue;
+            }
+            final short[] heights = RemoteView.rainHeights(chunk);
+            final long hash = Arrays.hashCode(heights);
+            if (!sent || this.heights.get(column) != hash) {
+                this.heights.put(column, hash);
+                changed.add(new RemoteViewPackets.RainHeights(column, heights));
+            }
+        }
+        // As many chunks to a packet as keep it under the size each packet is kept to
+        final int perPacket = RemoteView.PACKET_BYTES / (Long.BYTES + RemoteViewPackets.RainHeights.COLUMNS
+                * Short.BYTES);
+        for (int from = 0; from < changed.size() || from == 0 && !forgotten.isEmpty(); from += perPacket) {
+            final List<RemoteViewPackets.RainHeights> some = changed.subList(from,
+                    Math.min(changed.size(), from + perPacket));
+            this.send(player, new RemoteViewPackets.Heights(this.id, List.copyOf(some),
+                    from == 0 ? forgotten : List.of()));
+        }
+    }
+
+    // Where rain stops in each block column of a chunk, as the game's own weather reads it: one above the highest
+    // block that blocks movement or holds a fluid
+    private static short[] rainHeights(final LevelChunk chunk) {
+        final short[] heights = new short[RemoteViewPackets.RainHeights.COLUMNS];
+        for (int z = 0; z < 16; z++) {
+            for (int x = 0; x < 16; x++) {
+                heights[x + z * 16] = (short) (chunk.getHeight(Heightmap.Types.MOTION_BLOCKING, x, z) + 1);
+            }
+        }
+        return heights;
     }
 
     // Sections in range not yet sent whose chunks are loaded, nearest first

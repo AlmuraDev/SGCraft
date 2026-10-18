@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.malp;
 
 import com.almuradev.sgcraft.api.SGCraftApi;
+import com.almuradev.sgcraft.api.gate.Connection;
 import com.almuradev.sgcraft.api.gate.GateState;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import net.minecraft.core.GlobalPos;
@@ -89,7 +90,8 @@ public record MalpSignal(Kind kind, Optional<GlobalPos> near, Optional<GlobalPos
             return new MalpSignal(Kind.DIRECT, Optional.empty(), Optional.empty());
         }
         for (final Stargate gate : SGCraftApi.get().stargates().in(radioWorld)) {
-            if (gate.state() != GateState.CONNECTED
+            // Only a steady wormhole carries the signal: not while it forms, nor through its kawoosh
+            if (gate.state() != GateState.CONNECTED || gate.connection().map(Connection::ticksOpen).orElse(0) <= 0
                     || from.distanceToSqr(Vec3.atCenterOf(gate.position().pos())) > reach) {
                 continue;
             }

@@ -25,7 +25,7 @@ It goes through gates like any other traveler. It keeps its battery, its console
 
 - To place a MALP, use the MALP item on a block face. It goes down on that face, facing the way you face, and won't go down where it doesn't fit.
 - The player who first puts a MALP down owns it. A MALP item that already has an owner keeps that owner.
-- A new MALP is called `MALP` and the first four characters of its UUID, such as `MALP 3F2A`. Use a name tag on it to rename it.
+- A new MALP is called `MALP` and the first four characters of its UUID, such as `MALP 3F2A`. Use a name tag on it, or change its name in its configurator screen, to rename it. Its name shows above it all the time, not only while you look at it.
 - Use the MALP with an empty hand to open its battery slot. The screen shows the battery's charge (or "Needs no power") and the console it is paired with. Stay within 8 blocks to keep it open.
 - To pick it up, sneak and use the MALP with an empty hand. The item keeps its battery, console pairing, name, owner and settings. Its tooltip shows the paired console and the battery's charge, or that it needs no power.
 
@@ -94,10 +94,10 @@ Recipe: [Crafting](#crafting)
 Dictionary: [MALP Console](blocks/malp-console.md)
 ```
 
-The console is a desk with a screen. It faces the player who placed it.
+The console is a desk three blocks wide with a wide monitor, two blocks high, like the [Dialing Computer](blocks/dialing-computer.md). It faces the player who placed it.
 
 - To pair a MALP, use the MALP item on the console. Any number of MALPs can pair with one console, but each MALP pairs with one console at a time. Pairing a MALP with a second console moves it there.
-- To open the feed, use the console with an empty hand. You step up to its front (if there is safe ground there within your reach), face it and look 30 degrees down at its keys. Other players see you working the controls.
+- To open the feed, use the console with an empty hand. With a free [office chair](blocks/office-chair.md) in front of it, you sit in the chair; otherwise you step up to its front (if there is safe ground there within your reach). Either way you face its monitor. Other players see you with your hands on its keyboard, or sitting.
 - The screen stays open while you stay within your reach of the console, plus 2 blocks.
 
 ## The MALP tablet
@@ -152,17 +152,21 @@ The feed fills the right of the screen. Its header reads **MALP SYSTEMS ONLINE**
 | **FEED OFFLINE** | The feed was powered down, or the player you were watching left. |
 | **NO TABLET POWER** | The tablet's own battery is flat or missing. |
 
-Two lines of readouts run along the bottom of the feed:
+Small lines of readouts run along the bottom of the feed:
 
+- `POS` with the MALP's X, Y and Z, its `CHUNK`, and the nearest gate in its world within the signal's range: `GATE`, its address, how far it is in meters and which way it lies, such as `GATE SJVC-5QC-@ 8m W`. A gate that hides its address shows `HIDDEN`. With no gate in range it says `NO GATE IN RANGE`.
 - `WORLD`, `BIOME`, `TEMP` and `TIME`. The temperature is the biome's base temperature times 25, in degrees C. The time is a 24-hour clock where a new day (tick 0) is 06:00.
-- `LIGHT`, `HOSTILES n/32m` (hostile mobs within 32 meters), `BATTERY` with its percent (or `NEEDS NO POWER`), and `SIGNAL` (`DIRECT`, or `RELAYED` with the gates it goes through). The line turns red when the battery is at 10% or less.
+- `LIGHT`, `HOSTILES n/32m` (hostile mobs within 32 meters), `BATTERY` with its percent (or `NEEDS NO POWER`), and `SIGNAL` (`DIRECT` or `RELAYED`). The line turns red when the battery is at 10% or less.
+- `ROUTE`, when the signal is relayed: the gates it goes through.
+
+A box in the feed's top right corner gives the MALP's `HEADING`: the compass point it faces and its bearing in degrees from north, such as `W 270`.
 
 ## Signal
 
 The console's radio, or the radio of a tablet in your hands, reaches 256 blocks (`signal_range`). The server checks the signal every 5 ticks.
 
 - **DIRECT:** the radio and the MALP are in the same world and within range of each other.
-- **RELAYED:** a gate within range of the radio has an open wormhole to a gate within range of the MALP. This works whichever end dialed, and through a shut [iris](iris.md). The signal is lost when the wormhole closes.
+- **RELAYED:** a gate within range of the radio has an open wormhole to a gate within range of the MALP. The signal goes through only once the wormhole is steady, after its kawoosh. This works whichever end dialed, and through a shut [iris](iris.md). The signal is lost when the wormhole closes.
 - **NO SIGNAL:** neither. The MALP stops responding until the signal comes back.
 
 > **Tip:** Dial the far world first (see [Dialing](dialing.md)), drive the MALP through, and keep the wormhole open while you look around. Watch the gate's open time (`open_ticks`, 6000 ticks by default).
@@ -176,18 +180,18 @@ One player drives each MALP at a time. Other players can watch:
 
 When the player you watch leaves or switches MALP, your feed goes to **FEED OFFLINE**.
 
-While the driver at a console has a live feed, the console's monitor shows that feed to the players nearest it as a faint green picture. Up to 4 players (`console_spectators`, 0 to 64) within 16 blocks (`spectator_range`, 1 to 64) see it. A spectator can step 2 blocks past the range before the picture stops. The server checks every 10 ticks. Watching costs no energy. A tablet has no monitor.
+The console's monitor shows a feed to the players nearest it as a faint green picture: up to 8 players (`console_spectators`, 0 to 64) within 16 blocks (`spectator_range`, 1 to 64). A spectator can step 2 blocks past the range before the picture stops. The server checks every 10 ticks. While someone drives at the console, it shows their live feed, which costs no extra energy. With no one at it, it shows the MALP last chosen there, while anyone is near: that MALP's chunk stays loaded and it uses its idle energy, unless someone drives it. With no one near, nothing is sent. A tablet has no monitor. See [MALP Console](blocks/malp-console.md#watchers-and-the-monitor).
 
 ## The world around a watched MALP
 
 A driven MALP makes the world around it behave as if a player stood there:
 
-- The chunk the MALP is in and the eight around it keep running, and chunks 3 out stay loaded, wherever the MALP is. The chunks stay loaded for 600 ticks (`linger_ticks`) after the last person stops watching.
+- The chunks as far out from the MALP as its camera sees keep running, so the mobs in sight move: 3 chunks out with the default view of 32 blocks (`remote_view.horizontal_radius`), and chunks 5 out stay loaded, wherever the MALP is. The chunks stay loaded for 600 ticks (`linger_ticks`) after the last person stops watching.
 - Mobs wander and despawn by the MALP the way they do by a player. Distances for despawning are measured from the nearest watched MALP when it is nearer than any player.
 - Mobs spawn around the MALP as around a player: in running chunks within 8 chunks (128 blocks) of it, with the mob cap growing by those chunks, and with spawn distances measured from the MALP.
 - In the End, a MALP within 192 blocks of the island's center (0, 128, 0) keeps the dragon fight's arena running, as a player there would.
 
-The feed shows the world around the MALP out to 32 blocks across and 24 blocks up and down by default. Server admins can change this in [settings](settings.md#remote-view).
+The feed shows the world around the MALP out to 32 blocks across and 24 blocks up and down by default, with its sky, its time of day and its weather: rain or snow falls round the camera as it does round a player there, by the biome, and stops under roofs. Server admins can change how far it reaches in [settings](settings.md#remote-view).
 
 ## Damage
 
@@ -272,7 +276,7 @@ The `malp` section of `config/sgcraft-server.json`. What one naquadah gives a ba
 | `signal_range` | `256` | Blocks a radio reaches, directly or to a gate |
 | `linger_ticks` | `600` | Ticks a MALP's chunks stay loaded after the last watcher leaves |
 | `console_damage_interrupts` | `true` | Damage takes a player off a console or tablet |
-| `console_spectators` | `4` | Players near a driven console who see its monitor (0 to 64) |
+| `console_spectators` | `8` | Players near a console who see its monitor (0 to 64) |
 | `spectator_range` | `16` | Blocks from a console to see its monitor (1 to 64) |
 | `tablet_drain` | `0.025` | GE a tick a tablet uses while its feed is live |
 

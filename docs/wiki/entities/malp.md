@@ -31,7 +31,7 @@ sgcraft:malp
 3. Use the MALP item on a {{item:sgcraft:malp_console}} to pair them, or sneak and use a {{item:sgcraft:malp_tablet}} on the MALP.
 4. Open the console or tablet and choose the MALP from the **PAIRED MALPS** list to drive it. See [Driving](../malp.md#driving).
 
-To pick the MALP up, sneak and use it with an empty hand. A name tag renames it. A new MALP is called `MALP` and the first four characters of its UUID, such as `MALP 3F2A`.
+To pick the MALP up, sneak and use it with an empty hand. A name tag renames it. A new MALP is called `MALP` and the first four characters of its UUID, such as `MALP 3F2A`. Its name shows above it all the time, not only while you look at it.
 
 ## Behavior
 

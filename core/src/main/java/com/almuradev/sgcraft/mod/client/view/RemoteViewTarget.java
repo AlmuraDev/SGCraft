@@ -80,8 +80,8 @@ import java.util.OptionalDouble;
 
 /**
  * A texture a remote view is drawn into, with everything drawing it needs. The view is drawn as the game draws its
- * world: the sky, then the solid and cut out blocks, the entities and block entities, then the translucent blocks,
- * from the source's camera with a perspective of its own, lit by a lightmap made from the view's own atmosphere, with
+ * world: the sky, then the solid and cut out blocks, the entities and block entities, then the translucent blocks and
+ * the rain or snow falling, from the source's camera with a perspective of its own, lit by a lightmap made from the view's own atmosphere, with
  * fog that hides where the streamed world ends. While it draws, it stands in its own projection, fog, global settings
  * and lightmap for the game's, and puts the game's back when it is done. Only the render thread uses this.
  */
@@ -102,6 +102,7 @@ final class RemoteViewTarget implements AutoCloseable {
     private @Nullable GpuTexture depth;
     private @Nullable GpuTextureView depthView;
     private @Nullable RemoteViewSky sky;
+    private @Nullable RemoteViewWeather weather;
     private @Nullable GpuSampler terrainSampler;
     private @Nullable GlobalSettingsUniform globals;
     private @Nullable GpuBuffer fog;
@@ -175,6 +176,7 @@ final class RemoteViewTarget implements AutoCloseable {
         }
         if (this.sky == null) {
             this.sky = new RemoteViewSky();
+            this.weather = new RemoteViewWeather();
             this.terrainSampler = device.createSampler(AddressMode.CLAMP_TO_EDGE, AddressMode.CLAMP_TO_EDGE,
                     FilterMode.LINEAR, FilterMode.LINEAR, 1, OptionalDouble.empty());
             this.globals = new GlobalSettingsUniform();
@@ -220,9 +222,12 @@ final class RemoteViewTarget implements AutoCloseable {
             this.submitFeatures(scene, camera, rotation, view, pitch, yaw, partialTick, now);
             final List<RemoteViewMeshes.SectionMesh> sections = new ArrayList<>(scene.meshes.sections());
             sections.sort(Comparator.comparingDouble(mesh -> RemoteViewMeshes.distanceSq(mesh.pos, camera)));
+            // The weather is written before the pass, as the game writes its own
+            this.weather.prepare(scene.level, atmosphere, camera, partialTick);
             // The shared quad indices are made large enough before the pass, as they can't grow during one
             final RenderSystem.AutoStorageIndexBuffer quads = RenderSystem.getSequentialBuffer(PrimitiveTopology.QUADS);
-            quads.getBuffer(Math.max(this.sky.indexCount(), RemoteViewTarget.largestIndexCount(sections)));
+            quads.getBuffer(Math.max(Math.max(this.sky.indexCount(), this.weather.indexCount()),
+                    RemoteViewTarget.largestIndexCount(sections)));
             final GpuBufferSlice[] sectionUniforms = this.writeSections(sections);
             try (FeatureRenderDispatcher.PreparedFrame prepared = features.prepareFrame(this.submits);
                     RenderPass pass = encoder.createRenderPass(() -> this.label, this.colorView,
@@ -237,6 +242,7 @@ final class RemoteViewTarget implements AutoCloseable {
                 RenderSystem.bindDefaultUniforms(pass);
                 this.drawTerrain(pass, sections, sectionUniforms, view, RemoteViewTarget.TRANSLUCENT, true);
                 prepared.executeTranslucentAfterTerrain(pass);
+                this.weather.draw(pass, view, this.lightmap.getTextureView());
             }
         } finally {
             RemoteViewRenderer.setLightmapOverride(null);
@@ -440,6 +446,10 @@ final class RemoteViewTarget implements AutoCloseable {
         if (this.sky != null) {
             this.sky.close();
             this.sky = null;
+        }
+        if (this.weather != null) {
+            this.weather.close();
+            this.weather = null;
         }
         if (this.terrainSampler != null) {
             this.terrainSampler.close();

@@ -122,6 +122,8 @@ public final class MalpEntity extends VehicleEntity implements RemoteViewSource 
     };
     private @Nullable GlobalPos console;
     private @Nullable UUID owner;
+    /** The most characters a MALP's name may have, set from its configurator. */
+    public static final int MAX_NAME = 32;
     private MalpOptions options = MalpOptions.DEFAULTS;
     private float driveForward;
     private float driveTurn;
@@ -241,6 +243,18 @@ public final class MalpEntity extends VehicleEntity implements RemoteViewSource 
     public String displayName() {
         final Component name = this.getCustomName();
         return name != null ? name.getString() : MalpEntity.defaultName(this.getUUID());
+    }
+
+    /**
+     * Renames the MALP, as a name tag does; a blank name gives it back the name of a MALP with no custom name.
+     *
+     * @param name the new name, cut to {@value #MAX_NAME} characters
+     */
+    public void rename(final String name) {
+        final String trimmed = name.strip();
+        this.setCustomName(trimmed.isEmpty() ? null : Component.literal(trimmed.length() > MalpEntity.MAX_NAME
+                ? trimmed.substring(0, MalpEntity.MAX_NAME) : trimmed));
+        this.record();
     }
 
     /** @return the name of a MALP with no custom name */
@@ -442,6 +456,18 @@ public final class MalpEntity extends VehicleEntity implements RemoteViewSource 
     @Override
     public boolean isPickable() {
         return !this.isRemoved();
+    }
+
+    // Its name tag shows all the time, not only while a player looks at it, so a MALP can be told apart from afar
+    @Override
+    public boolean shouldShowName() {
+        return true;
+    }
+
+    // With no custom name, it goes by MALP and the start of its UUID, on its name tag and wherever the game names it
+    @Override
+    protected Component getTypeName() {
+        return Component.literal(MalpEntity.defaultName(this.getUUID()));
     }
 
     @Override

@@ -58,19 +58,20 @@ public final class RemoteViewPackets {
      * @param skybox the world's sky, as the ordinal of its dimension type's skybox
      * @param cardinalLighting how the world shades block faces, as the ordinal of its cardinal light type
      * @param ambientLight the world's dimension type's ambient light
+     * @param seaLevel the world's sea level, above which a biome grows colder, and may snow where it would rain
      * @param horizontalRadius how far out from the camera the view reaches, in blocks
      * @param verticalRadius how far above and below the camera the view reaches, in blocks
      */
     public record Begin(int view, boolean own, Optional<BlockPos> display, Identifier world, boolean hasSkyLight,
-            int skybox, int cardinalLighting, float ambientLight, int minY, int height, int horizontalRadius,
-            int verticalRadius) implements SGPacket {
+            int skybox, int cardinalLighting, float ambientLight, int minY, int height, int seaLevel,
+            int horizontalRadius, int verticalRadius) implements SGPacket {
 
         public static final Type<Begin> TYPE = new Type<>(SGCraft.id("remote_view_begin"));
 
         public Begin(final FriendlyByteBuf buf) {
             this(buf.readVarInt(), buf.readBoolean(), buf.readOptional(BlockPos.STREAM_CODEC), buf.readIdentifier(),
                     buf.readBoolean(), buf.readVarInt(), buf.readVarInt(), buf.readFloat(), buf.readVarInt(),
-                    buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
+                    buf.readVarInt(), buf.readVarInt(), buf.readVarInt(), buf.readVarInt());
         }
 
         @Override
@@ -85,6 +86,7 @@ public final class RemoteViewPackets {
             buf.writeFloat(this.ambientLight);
             buf.writeVarInt(this.minY);
             buf.writeVarInt(this.height);
+            buf.writeVarInt(this.seaLevel);
             buf.writeVarInt(this.horizontalRadius);
             buf.writeVarInt(this.verticalRadius);
         }
@@ -136,6 +138,67 @@ public final class RemoteViewPackets {
         @Override
         public Type<Sections> type() {
             return Sections.TYPE;
+        }
+    }
+
+    /**
+     * Where rain stops falling in each block column of a chunk: one above the highest block that blocks movement or
+     * holds a fluid, as the game's own weather reads it.
+     *
+     * @param chunk the chunk's position, as {@code ChunkPos.pack} packs it
+     * @param heights the 256 columns' heights, by {@code x + z * 16} within the chunk
+     */
+    public record RainHeights(long chunk, short[] heights) {
+
+        /** How many columns a chunk has. */
+        public static final int COLUMNS = 256;
+
+        public RainHeights(final FriendlyByteBuf buf) {
+            this(buf.readLong(), RainHeights.readHeights(buf));
+        }
+
+        private static short[] readHeights(final FriendlyByteBuf buf) {
+            final short[] heights = new short[RainHeights.COLUMNS];
+            for (int i = 0; i < heights.length; i++) {
+                heights[i] = buf.readShort();
+            }
+            return heights;
+        }
+
+        public void write(final FriendlyByteBuf buf) {
+            buf.writeLong(this.chunk);
+            for (final short height : this.heights) {
+                buf.writeShort(height);
+            }
+        }
+    }
+
+    /**
+     * Where rain stops in chunks the client should take, each replacing what it had for that chunk, and chunks it
+     * should forget, for drawing the source's weather. A chunk is sent once a section of it has been, and again when
+     * its heights change.
+     *
+     * @param forgotten the positions of chunks to forget, packed as {@link RainHeights#chunk()} is
+     */
+    public record Heights(int view, List<RainHeights> chunks, List<Long> forgotten) implements SGPacket {
+
+        public static final Type<Heights> TYPE = new Type<>(SGCraft.id("remote_view_heights"));
+
+        public Heights(final FriendlyByteBuf buf) {
+            this(buf.readVarInt(), SGPacket.readList(buf, RainHeights::new), SGPacket.readList(buf,
+                    FriendlyByteBuf::readLong));
+        }
+
+        @Override
+        public void write(final FriendlyByteBuf buf) {
+            buf.writeVarInt(this.view);
+            SGPacket.writeList(buf, this.chunks, (out, chunk) -> chunk.write(out));
+            SGPacket.writeList(buf, this.forgotten, FriendlyByteBuf::writeLong);
+        }
+
+        @Override
+        public Type<Heights> type() {
+            return Heights.TYPE;
         }
     }
 
@@ -353,6 +416,32 @@ public final class RemoteViewPackets {
         @Override
         public Type<Entities> type() {
             return Entities.TYPE;
+        }
+    }
+
+    /**
+     * A view the viewer's screens and a display in their world both show becomes the display's alone, or one a
+     * display shows becomes the viewer's own as well: the client keeps all it has of it, which goes on as before.
+     *
+     * @param own whether the view is now the viewer's own
+     */
+    public record Own(int view, boolean own) implements SGPacket {
+
+        public static final Type<Own> TYPE = new Type<>(SGCraft.id("remote_view_own"));
+
+        public Own(final FriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readBoolean());
+        }
+
+        @Override
+        public void write(final FriendlyByteBuf buf) {
+            buf.writeVarInt(this.view);
+            buf.writeBoolean(this.own);
+        }
+
+        @Override
+        public Type<Own> type() {
+            return Own.TYPE;
         }
     }
 

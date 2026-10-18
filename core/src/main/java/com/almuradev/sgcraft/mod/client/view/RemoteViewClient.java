@@ -56,12 +56,15 @@ public final class RemoteViewClient {
         SGNetwork.onClient(RemoteViewPackets.Begin.TYPE, RemoteViewClient::begin);
         SGNetwork.onClient(RemoteViewPackets.Sections.TYPE, RemoteViewClient.forScene(
                 RemoteViewPackets.Sections::view, RemoteViewScene::sections));
+        SGNetwork.onClient(RemoteViewPackets.Heights.TYPE, RemoteViewClient.forScene(
+                RemoteViewPackets.Heights::view, RemoteViewScene::heights));
         SGNetwork.onClient(RemoteViewPackets.BlockEntities.TYPE, RemoteViewClient.forScene(
                 RemoteViewPackets.BlockEntities::view, RemoteViewScene::blockEntities));
         SGNetwork.onClient(RemoteViewPackets.Entities.TYPE, RemoteViewClient.forScene(
                 RemoteViewPackets.Entities::view, RemoteViewScene::entities));
         SGNetwork.onClient(RemoteViewPackets.Frame.TYPE, RemoteViewClient.forScene(
                 RemoteViewPackets.Frame::view, RemoteViewScene::frame));
+        SGNetwork.onClient(RemoteViewPackets.Own.TYPE, RemoteViewClient::own);
         SGNetwork.onClient(RemoteViewPackets.End.TYPE, end -> RemoteViewClient.close(end.view()));
     }
 
@@ -105,6 +108,26 @@ public final class RemoteViewClient {
             }
         }
         RemoteViewClient.SCENES.put(begin.view(), new RemoteViewScene(begin));
+    }
+
+    // A view that becomes the client's own, or a display's alone, keeps all it has, and replaces any other view in its
+    // new place, as one beginning there would
+    private static void own(final RemoteViewPackets.Own own) {
+        final RemoteViewScene moved = RemoteViewClient.SCENES.get(own.view());
+        if (moved == null) {
+            return;
+        }
+        final RemoteViewPackets.Begin was = moved.world;
+        moved.world = new RemoteViewPackets.Begin(was.view(), own.own(), was.display(), was.world(),
+                was.hasSkyLight(), was.skybox(), was.cardinalLighting(), was.ambientLight(), was.minY(), was.height(),
+                was.seaLevel(), was.horizontalRadius(), was.verticalRadius());
+        for (final RemoteViewScene scene : List.copyOf(RemoteViewClient.SCENES.values())) {
+            final boolean replaced = scene != moved && (own.own() ? scene.world.own()
+                    : !scene.world.own() && scene.world.display().equals(was.display()));
+            if (replaced) {
+                RemoteViewClient.close(scene.id);
+            }
+        }
     }
 
     // A packet left over from a view that has ended, or from before a view began, is dropped

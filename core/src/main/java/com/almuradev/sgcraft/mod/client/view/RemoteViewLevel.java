@@ -35,6 +35,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.SectionPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.CardinalLighting;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ColorResolver;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.biome.Biome;
@@ -48,8 +49,9 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * The client's copy of the world around a remote view's source, as the server has streamed it: blocks, fluids,
- * light, biomes and block entities, for the block and fluid renderers to read. A place the server hasn't sent is air,
- * open to the sky. The source's lamp, while it is on, adds block light in front of the camera.
+ * light, biomes and block entities, for the block and fluid renderers to read, and where rain stops in each column,
+ * for the weather. A place the server hasn't sent is air, open to the sky. The source's lamp, while it is on, adds
+ * block light in front of the camera.
  */
 final class RemoteViewLevel implements BlockAndTintGetter {
 
@@ -60,11 +62,14 @@ final class RemoteViewLevel implements BlockAndTintGetter {
     private static final double LAMP_NEAR = 2.5;
 
     private final Long2ObjectMap<RemoteViewSections.Decoded> sections = new Long2ObjectOpenHashMap<>();
+    // Where rain stops in each column of each chunk the server has sent them for, by x + z * 16 within the chunk
+    private final Long2ObjectMap<short[]> heights = new Long2ObjectOpenHashMap<>();
     private final Long2ObjectMap<BlockEntity> blockEntities;
     private final boolean hasSkyLight;
     private final CardinalLighting cardinalLighting;
     private final int minY;
     private final int height;
+    private final int seaLevel;
     private boolean lamp;
     private Vec3 lampPos = Vec3.ZERO;
     private Vec3 lampDirection = new Vec3(0, 0, 1);
@@ -76,6 +81,7 @@ final class RemoteViewLevel implements BlockAndTintGetter {
         this.cardinalLighting = types[Mth.clamp(begin.cardinalLighting(), 0, types.length - 1)].get();
         this.minY = begin.minY();
         this.height = begin.height();
+        this.seaLevel = begin.seaLevel();
     }
 
     void put(final long pos, final RemoteViewSections.Decoded section) {
@@ -88,6 +94,36 @@ final class RemoteViewLevel implements BlockAndTintGetter {
 
     boolean has(final long pos) {
         return this.sections.containsKey(pos);
+    }
+
+    void putHeights(final long chunk, final short[] heights) {
+        this.heights.put(chunk, heights);
+    }
+
+    void removeHeights(final long chunk) {
+        this.heights.remove(chunk);
+    }
+
+    /**
+     * @return where rain stops falling in a block column: one above the highest block that blocks movement or holds
+     *     a fluid; or {@link Integer#MIN_VALUE} if the server hasn't said
+     */
+    int rainHeight(final int x, final int z) {
+        final short[] chunk = this.heights.get(ChunkPos.pack(SectionPos.blockToSectionCoord(x),
+                SectionPos.blockToSectionCoord(z)));
+        return chunk == null ? Integer.MIN_VALUE : chunk[(x & 15) + (z & 15) * 16];
+    }
+
+    /** @return the biome at a block, if the server has sent its section */
+    @Nullable Holder<Biome> biome(final BlockPos pos) {
+        final RemoteViewSections.Decoded section = this.section(pos.getX(), pos.getY(), pos.getZ());
+        return section == null ? null
+                : section.blocks().getNoiseBiome(pos.getX() >> 2 & 3, pos.getY() >> 2 & 3, pos.getZ() >> 2 & 3);
+    }
+
+    /** @return the world's sea level, above which a biome grows colder */
+    int seaLevel() {
+        return this.seaLevel;
     }
 
     /** Sets where the lamp is and which way it points; a lamp that is off lights nothing. */
