@@ -210,8 +210,8 @@ public final class DhdBlockEntity extends BlockEntity {
     }
 
     /**
-     * The gate the DHD dials: its linked gate while that still accepts it, or else the nearest that does, which it
-     * links to then. Only on the server.
+     * The gate the DHD dials: its linked gate while that still accepts it and is in reach, or else the nearest that
+     * does, which it links to then. Only on the server.
      *
      * @return the gate, if there is one in reach
      */
@@ -234,6 +234,8 @@ public final class DhdBlockEntity extends BlockEntity {
         return SGServer.current()
                 .flatMap(server -> server.stargates().gate(GlobalPos.of(this.level.dimension(), this.linked)))
                 .filter(gate -> gate.type().value().acceptsDhd(this.style()))
+                // A gate whose DHD range has shrunk away from this DHD lets go of it
+                .filter(gate -> gate.position().pos().closerThan(this.worldPosition, DhdBlockEntity.range(gate)))
                 .map(Stargate.class::cast);
     }
 

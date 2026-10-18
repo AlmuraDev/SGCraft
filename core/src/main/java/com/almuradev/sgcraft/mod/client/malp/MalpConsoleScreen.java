@@ -496,7 +496,7 @@ public final class MalpConsoleScreen extends Screen {
         if (this.state.viewOnly()) {
             graphics.textWithWordWrap(this.font, this.state.role() == Role.MALP_WATCHER
                     ? Component.translatableWithFallback("screen.sgcraft.malp_console.malp_view_only_help",
-                            "Someone else is driving this MALP. You can watch, or choose another MALP.")
+                            "Someone else is driving this MALP. You can watch, or choose another MALP")
                     : Component.translatableWithFallback("screen.sgcraft.malp_console.view_only_help",
                             "Someone else is driving at this console. You can watch, but not drive"),
                     MalpConsoleScreen.MARGIN, this.helpTop(), MalpConsoleScreen.PANEL, 0xFF909090);

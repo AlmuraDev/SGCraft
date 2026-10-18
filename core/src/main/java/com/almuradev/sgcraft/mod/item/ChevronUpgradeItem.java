@@ -95,6 +95,11 @@ public final class ChevronUpgradeItem extends Item implements GateItem {
             return InteractionResult.FAIL;
         }
         final ActionResult result = gate.setChevrons(chevrons + 1, Cause.of(stack.copy(), player));
+        if (result == ActionResult.DENIED) {
+            player.sendOverlayMessage(Component.translatableWithFallback("message.sgcraft.chevron_denied",
+                    "You aren't allowed to change this gate").withStyle(ChatFormatting.RED));
+            return InteractionResult.FAIL;
+        }
         if (result != ActionResult.DONE) {
             player.sendOverlayMessage(Component.translatableWithFallback("message.sgcraft.chevron_not_fitted",
                     "You can't add a chevron to this gate while it's in use").withStyle(ChatFormatting.RED));

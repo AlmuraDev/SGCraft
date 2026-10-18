@@ -52,7 +52,7 @@ No item turns a gate back into a Milky Way gate. Only an operator or a creative 
 
 ## Breaking the gate
 
-The gate stays a Universe gate while its base stays in place, even if the ring breaks apart and forms again. Breaking the base gives the upgrade back whole; the chevron upgrades crafted into it don't drop on their own. The base block keeps its own kind: a Milky Way base turned into a Universe gate drops a Milky Way base and the upgrade, and forms a Milky Way gate when placed again. A type set by an operator, a creative player or a command drops no upgrade.
+The gate stays a Universe gate while its base stays in place, even if the ring breaks apart and forms again. Breaking the base gives the upgrade back whole; the chevron upgrades crafted into it don't drop on their own. The base block keeps its own kind: a Milky Way base turned into a Universe gate drops a Milky Way base and the upgrade, and forms a Milky Way gate when placed again. A type set by an operator, a creative player or a command drops no upgrade. When the gate's type changes again, by another upgrade or any other way, the Universe upgrade drops on top of the base.
 
 ## Commands
 

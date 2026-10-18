@@ -27,7 +27,7 @@ The device works only in a hand. In the rest of your inventory it does nothing.
 ## Behavior
 
 - It works for any living traveler holding it, so a mob holding it passes through as well. Dropped items and other things that aren't alive still hit the iris.
-- The far gate decides. Its **Phase shift passes iris** setting (the `sgcraft:phase_shift_passes_iris` property, on by default) must be on. With it off, a traveler holding the device dies against the shut iris like anyone else.
+- The far gate decides: its **Phase shift passes iris** setting (the `sgcraft:phase_shift_passes_iris` property, on by default) must be on. With it off, a traveler holding the device dies against the shut iris like anyone else.
 - Without the device, a traveler who arrives at a shut iris dies with the message "got splattered against a stargate iris". A creative player doesn't travel and sees "Destination blocked by iris".
 - The device keeps no data on the item.
 

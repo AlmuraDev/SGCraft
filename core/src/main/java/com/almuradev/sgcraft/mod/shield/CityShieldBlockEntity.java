@@ -319,7 +319,7 @@ public final class CityShieldBlockEntity extends BlockEntity {
     }
 
     /**
-     * Raises the shield, if there is enough energy round the generator for it to stand ten seconds.
+     * Raises the shield, if there is enough energy around the generator for it to stand ten seconds.
      *
      * @return whether it was raised, or already was
      */

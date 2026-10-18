@@ -12,7 +12,7 @@ There are 39 symbols, as on the Milky Way gate's ring: the letters `A` to `Z`, t
 | Pegasus | {{glyphs-pegasus:ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789}} |
 | Universe | {{glyphs-universe:ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+.}} |
 
-The Pegasus gate has no `@`, `+` or `.` glyph of its own, and the Universe gate no `@`, so they borrow the Milky Way ones. The Universe gate carries 38 symbols round its ring, every one but `@`: four to each ninth of the ring, but five to the two ninths either side of its bottom.
+The Pegasus gate has no `@`, `+` or `.` glyph of its own, and the Universe gate no `@`, so they borrow the Milky Way ones. The Universe gate carries 38 symbols around its ring, every one but `@`: four to each ninth of the ring, but five to the two ninths on either side of its bottom.
 
 An address is written in groups: 4 symbols, a dash, 3 symbols, then a dash before any symbols after the seventh. For example `XOBF-R3@` or `XOBF-R3A-@@`. When you type an address, case, dashes and spaces don't matter: `xobf r3a@` is the same as `XOBF-R3A-@`. Type `+` and `.` as themselves.
 
@@ -63,7 +63,7 @@ Each world is divided into cells, 8 chunks (128 blocks) across by default. A gat
 
 ### Cell size
 
-The server setting `addresses.cell_chunks` sets how many chunks wide and long each cell is, from 1 to 256, for every world or, under `addresses.worlds`, for one. Bigger cells make the grid reach further with the same symbols, at the cost of more space between gates:
+The server setting `addresses.cell_chunks` sets how many chunks wide and long each cell is, from 1 to 256, for every world or, under `addresses.worlds`, for one. Bigger cells make the grid reach farther with the same symbols, at the cost of more space between gates:
 
 | `cell_chunks` | Cell | Grid reaches, each way from x 0, z 0 |
 | --- | --- | --- |

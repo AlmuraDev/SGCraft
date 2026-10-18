@@ -175,6 +175,11 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         }
     }
 
+    /** @return whether the gate's type was set with a gate type upgrade, which the base gives back */
+    public boolean typeFitted() {
+        return this.typeFitted;
+    }
+
     /**
      * Records whether the gate's type was set with a gate type upgrade, so the base gives that upgrade back when it
      * breaks.

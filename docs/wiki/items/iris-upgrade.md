@@ -51,8 +51,8 @@ Operators and players in creative mode can fit or take off an iris freely with *
 
 ## Getting the upgrade back
 
-- **Breaking the gate:** breaking the base drops the iris upgrade, if the iris was fitted with one.
-- **The configurator:** an operator who takes off an iris that was fitted with an upgrade gets the upgrade back, unless in creative mode.
+- Breaking the base drops the iris upgrade, if the iris was fitted with one.
+- An operator who takes off an iris with the configurator gets the upgrade back if the iris was fitted with one, unless the operator is in creative mode.
 - An iris the gate came with (from the `sgcraft:iris` gate default), or one fitted by a command, an operator's configurator or a creative player's configurator, gives nothing back.
 
 `/sgcraft iris remove` takes the iris off and gives no upgrade back.

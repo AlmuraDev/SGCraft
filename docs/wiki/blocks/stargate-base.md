@@ -56,7 +56,7 @@ C R B R C
 
 1. Place the base where the bottom center of the ring goes. It faces you, and the gate faces the same way.
 2. Build the ring of 8 ring blocks and 7 chevron blocks across its front. The gate forms when you place the last block of the ring, or the base next to a complete ring. If there is no standing ring, the base looks for one lying flat at its own height, running out from the base along its back.
-3. Place a {{item:sgcraft:dhd}} less than 6 blocks from the base (`dhd_range`, default 6) and no more than 2 blocks above or below it. The DHD dials the gate and holds its fuel.
+3. Place a {{item:sgcraft:dhd}} less than 6 blocks from the base in a straight line (`dhd_range`, default 6) and no more than 2 blocks above or below it. The DHD dials the gate and holds its fuel.
 
 The player whose block finished the gate owns it. See [Building gates](../building-gates.md#forming-a-gate) for the full build.
 

@@ -321,7 +321,7 @@ final class GateTravel {
         for (final Entity rider : entity.getPassengersAndSelf().toList()) {
             if (rider instanceof ServerPlayer player && player.isCreative()) {
                 player.sendSystemMessage(Component.translatableWithFallback("message.sgcraft.reverse_wormhole",
-                        "You can't travel backwards through a one way wormhole").withStyle(ChatFormatting.RED));
+                        "You can't travel backwards through a one-way wormhole").withStyle(ChatFormatting.RED));
                 continue;
             }
             if (rider.level() instanceof ServerLevel level) {

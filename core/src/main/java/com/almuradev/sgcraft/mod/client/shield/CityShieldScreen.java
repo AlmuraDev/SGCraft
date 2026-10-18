@@ -211,7 +211,7 @@ public final class CityShieldScreen extends AbstractContainerScreen<CityShieldMe
                 "Reach from the generator (blocks, up to %s)", this.state.maxRadius()), left, 30,
                 CityShieldScreen.TEXT, false);
         graphics.text(this.font, Component.translatableWithFallback("screen.sgcraft.city_shield.width",
-                "Width (all round)"), left, 44, CityShieldScreen.TEXT, false);
+                "Width (all around)"), left, 44, CityShieldScreen.TEXT, false);
         graphics.text(this.font, Component.translatableWithFallback("screen.sgcraft.city_shield.above",
                 "Above generator"), left, 64, CityShieldScreen.TEXT, false);
         graphics.text(this.font, Component.translatableWithFallback("screen.sgcraft.city_shield.below",

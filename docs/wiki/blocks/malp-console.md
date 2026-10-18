@@ -1,6 +1,6 @@
 # MALP Console
 
-The MALP Console is a desk three blocks wide with a wide monitor, two blocks high, that you drive MALPs from, like the [Dialing Computer](dialing-computer.md) beside it in the SGC. It shows the camera feed of a paired MALP, and its monitor shows a MALP's feed to the players around it, whether or not anyone is at the console.
+The MALP Console is a desk with a wide monitor, three blocks wide and two blocks high, that you drive MALPs from, like the [Dialing Computer](dialing-computer.md) beside it in the SGC. Its screen shows the camera feed of a paired MALP, and its monitor shows a MALP's feed to the players around it, whether or not anyone is at the console.
 
 ```infobox
 MALP Console
@@ -39,7 +39,7 @@ Any number of MALPs can pair with one console, but each MALP pairs with one cons
 
 ## Screen
 
-If a free office chair stands in front of the console, using the console sits you in it; sitting in the chair yourself does the same. Without one, you step up to the console's front (if there is safe ground there within your reach), standing, and other players see you with your hands on its keyboard. Either way you turn to face the monitor and the screen opens. Getting up from the chair closes it, and so does walking away: the screen stays open while you stay within your reach of the console, plus 2 blocks.
+If a free office chair stands in front of the console, using the console sits you in it; sitting in the chair yourself does the same. Without one, you step up and stand at the console's front, if there is safe ground there within your reach, and other players see you with your hands on its keyboard. Either way you turn to face the monitor and the screen opens. Getting up from the chair closes it, and so does walking away: the screen stays open while you stay within your reach of the console, plus 2 blocks.
 
 The first player to choose a MALP drives it. You drive with your own movement keys:
 
@@ -60,7 +60,7 @@ The header reads **MALP SYSTEMS ONLINE** for the driver. When the feed has no pi
 
 The console needs gate energy to run: 0.05 GE a tick (`energy_per_tick`), 1 GE a second, paid once a second while it is switched on. It draws from the [power units](../power.md#the-power-unit) within 6 blocks of the middle of its desk along each axis (`power_reach`), nearest first, then from the ZPM consoles, interface carts and hubs within that reach, nearest first. A full power unit runs it for about 14 hours. When nothing in reach can pay, it has no power. Its monitor goes dark, anyone using it is taken off it, and using it says "The computer has no power". It starts again by itself once there is power, within a second. Turn `requires_power` off to run computers for free.
 
-Use a {{item:sgcraft:configurator}} on it to turn off its own need for power: its owner, the player who placed it, and operators can. A computer placed before computers had owners has none, so only operators can.
+The console's owner (the player who placed it) and operators can use a {{item:sgcraft:configurator}} on it to turn off its own need for power. A computer placed before computers had owners has none, so only operators can.
 
 Sneak and use the console with an empty hand to switch it off. Its monitor goes dark, anyone using it is taken off it, and it uses no energy. Do the same again to switch it on, or just use it. See [Computers](../power.md#computers).
 
@@ -89,9 +89,9 @@ It also shows static while the picture loads, and to players who aren't among th
 
 The monitor shows the picture, as a faint green image, to the players nearest it: up to 8 players (`console_spectators`, 0 to 64) within 16 blocks (`spectator_range`, 1 to 64). A spectator can step 2 blocks past the range before the picture stops. Players in that range are also told the list, the name and the readouts. The server checks every 10 ticks.
 
-- **Someone at the console:** the monitor shows their feed while it is live. Watching it costs no energy beyond the driver's feed.
-- **Leaving the console:** the player who leaves goes on seeing the same feed on the monitor, without it loading again, and gets it back on the screen the same way when they use the console again.
-- **No one at the console:** the monitor goes on showing the MALP last chosen at the console, or else the first MALP paired with it, while the console's signal reaches it and it has power. While anyone is near enough to see the monitor, the MALP's chunk stays loaded and the MALP uses its idle energy (`idle_drain`), unless someone drives it from elsewhere, whose feed pays for it. With no one near, nothing is sent and no energy is used.
+- When someone is at the console, the monitor shows their feed while it is live. Watching it costs no energy beyond the driver's feed.
+- A player who leaves the console goes on seeing the same feed on the monitor, without it loading again, and gets it back on the screen the same way when they use the console again.
+- When no one is at the console, the monitor goes on showing the MALP last chosen at the console, or else the first MALP paired with it, while the console's signal reaches it and it has power. While anyone is near enough to see the monitor, the MALP's chunk stays loaded and the MALP uses its idle energy (`idle_drain`), unless someone drives it from elsewhere, whose feed pays for it. With no one near, nothing is sent and no energy is used.
 
 Each player who sees the monitor costs the server a stream of the world around the MALP, which is why their number is capped. A dialing computer's monitor costs nothing like it: every client already knows what the gate is doing and draws the dialing program itself.
 

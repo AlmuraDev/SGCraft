@@ -672,7 +672,7 @@ public final class SettingsScreen extends Screen {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         final int center = this.width / 2;
         final Component note = this.unsaved() ? Component.translatableWithFallback(
-                "screen.sgcraft.settings.unsaved", "Changes not saved yet. Save makes them, and Discard drops them")
+                "screen.sgcraft.settings.unsaved", "Changes not saved yet. Save keeps them, and Discard drops them")
                 : switch (this.page) {
             case SettingsScreen.WORLDS -> Component.translatableWithFallback("screen.sgcraft.settings.note",
                     "Changes take effect when the server next starts");

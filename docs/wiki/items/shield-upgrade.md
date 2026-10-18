@@ -54,8 +54,8 @@ Operators and players in creative mode can choose **None**, **Metal Iris** or **
 
 ## Getting the upgrade back
 
-- **Breaking the gate:** breaking the base drops the shield upgrade, if the shield was fitted with one.
-- **The configurator:** an operator who takes off a shield, or swaps it for the metal iris, gets the upgrade back, unless in creative mode.
+- Breaking the gate's base drops the shield upgrade, if the shield was fitted with one.
+- An operator who takes off a shield with the configurator, or swaps it for the metal iris, gets the upgrade back, unless in creative mode.
 - A shield the gate came with gives nothing back.
 
 ## Power

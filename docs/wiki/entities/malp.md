@@ -62,14 +62,14 @@ Rolling on or being pushed costs nothing. With a flat battery or none, the MALP 
 A driver at a console or tablet sees a live picture from the MALP's camera while three things hold: the console or tablet reaches the MALP, the MALP has power, and a tablet has GE in its own battery.
 
 - The radio reaches 256 blocks (`signal_range`), directly in the same world, or relayed through an open wormhole between a gate near the radio and a gate near the MALP. The signal passes a shut iris. See [Signal](../malp.md#signal).
-- One player drives a MALP at a time. Others can watch from their own console or tablet, and up to 4 players within 16 blocks of a driven console see the feed on its monitor. See [Watchers and the console monitor](../malp.md#watchers-and-the-console-monitor).
+- One player drives a MALP at a time. Others can watch from their own console or tablet, and up to 8 players within 16 blocks of a console see the feed on its monitor. See [Watchers and the console monitor](../malp.md#watchers-and-the-console-monitor).
 - The feed shows the world around the MALP out to 32 blocks across and 24 blocks up and down by default. See [Remote view](../settings.md#remote-view).
 
 ## The world around a watched MALP
 
-A MALP someone drives makes the world near it act as if a player stood there.
+A MALP counts as watched while someone drives it, and while a console's monitor shows it to players nearby with no one at the console. A watched MALP makes the world near it act as if a player stood there.
 
-- Its chunk and the eight around it keep running, and chunks 3 out stay loaded. They stay loaded for 600 ticks (`linger_ticks`) after the last person stops watching.
+- The chunks 3 out from it keep running, and chunks 5 out stay loaded, with the default view of 32 blocks. They stay loaded for 600 ticks (`linger_ticks`) after its driver leaves it, or 40 ticks after its monitor last showed it.
 - Mobs wander and despawn by the MALP as they do by a player. Despawn distances are measured from the nearest watched MALP when it is nearer than any player.
 - Mobs spawn around it as around a player, in running chunks within 8 chunks (128 blocks) of it. The mob cap grows by those chunks only.
 - In the End, a watched MALP within 192 blocks of (0, 128, 0) keeps the dragon fight's arena running.

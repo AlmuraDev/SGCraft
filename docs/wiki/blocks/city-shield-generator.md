@@ -47,7 +47,7 @@ Only the owner and operators work the generator. Anyone else sees its screen and
 
 | Control | What it does |
 | --- | --- |
-| **Width (all round)** | How far the shield reaches out from the generator, every way across, 3 to 128 blocks |
+| **Width (all around)** | How far the shield reaches out from the generator, every way across, 3 to 128 blocks |
 | **Above generator** | How far it reaches up, 3 to 128 blocks |
 | **Below generator** | How far it reaches down, 3 to 128 blocks |
 | **Activate** | Raises the shield |
@@ -64,7 +64,7 @@ The screen also shows:
 
 ## Shape
 
-The shield is two half-ellipsoids that meet at the generator's level: the top half reaches **Above generator** up and the bottom half reaches **Below generator** down, and both reach **Width** out all round. The default size is 32 out, 24 up and 8 down.
+The shield is two half-ellipsoids that meet at the generator's level: the top half reaches **Above generator** up and the bottom half reaches **Below generator** down, and both reach **Width** out all around. The default size is 32 out, 24 up and 8 down.
 
 ## Power
 
@@ -122,7 +122,7 @@ See [Settings](../settings.md#shields). How far the ZPM consoles, carts and hubs
 Operators can use these:
 
 - `/sgcraft shields city <pos>` shows the generator at a position: whether its shield is up, its size, its cost and the energy it can draw on.
-- `/sgcraft shields city <pos> raise` raises its shield. Without the energy it says "There isn't enough energy round the generator to raise a shield that size".
+- `/sgcraft shields city <pos> raise` raises its shield. Without the energy it says "There isn't enough energy around the generator to raise a shield that size".
 - `/sgcraft shields city <pos> lower` lowers it.
 - `/sgcraft shields city <pos> size <width> <above> <below>` sets its size.
 

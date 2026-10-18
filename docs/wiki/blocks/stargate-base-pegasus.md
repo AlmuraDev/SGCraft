@@ -68,7 +68,7 @@ This base makes Pegasus gates (`sgcraft:pegasus`). A Pegasus gate's ring stays s
 
 A {{item:sgcraft:dhd_pegasus}} links to it and dials it. A Milky Way DHD doesn't link to a Pegasus gate. A {{item:sgcraft:pdd}}, a {{item:sgcraft:gate_control_tablet}} and `/sgcraft dial` dial it too, and it can dial gates of any type.
 
-Each time a standard gate forms, it takes the type of its base block. To change the type of a formed, idle gate, use a {{item:sgcraft:universe_upgrade}} on it. You need the right to configure the gate, and the upgrade is used up. Operators and creative players can set any type on the {{item:sgcraft:configurator}}'s **Gate** page, and operators can run `/sgcraft type <type>`.
+Each time a standard gate forms, it takes the type of its base block. To change the type of a formed, idle gate, use an upgrade on it: a {{item:sgcraft:universe_upgrade}} makes it a Universe gate, and a {{item:sgcraft:pegasus_upgrade}} makes a gate turned Universe a Pegasus gate again. You need the right to configure the gate, and the upgrade is used up. Operators and creative players can set any type on the {{item:sgcraft:configurator}}'s **Gate** page, and operators can run `/sgcraft type <type>`.
 
 A gate keeps the type an upgrade gave it while its base stays in place, even if the ring breaks apart and forms again. The base block keeps its own kind: a Pegasus base in a gate turned Universe drops a Pegasus base, and the upgrade drops beside it. See [Building gates](../building-gates.md#gate-type-upgrades).
 

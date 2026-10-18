@@ -628,6 +628,12 @@ public final class SGStargate implements Stargate {
         final boolean upgraded = cause.first(ItemStack.class)
                 .filter(stack -> stack.getItem() instanceof GateTypeUpgradeItem).isPresent();
         this.withBase(base -> {
+            // The type upgrade fitted before comes back out, dropped at the base, so changing type loses none
+            if (base.typeFitted() && base.getLevel() != null) {
+                GateTypeUpgradeItem.forType(base.gateType()).ifPresent(upgrade -> Containers.dropItemStack(
+                        base.getLevel(), base.getBlockPos().getX(), base.getBlockPos().getY() + 1,
+                        base.getBlockPos().getZ(), new ItemStack(upgrade)));
+            }
             base.setGateType(type);
             base.setTypeFitted(upgraded);
         });
@@ -744,8 +750,8 @@ public final class SGStargate implements Stargate {
     }
 
     /**
-     * Copies what the gate is doing, its iris and its chevrons, to its base, if the base is loaded, and lights the ring under its
-     * lit chevrons.
+     * Copies what the gate is doing, its iris and its chevrons, to its base, if the base is loaded, and lights the ring
+     * under its lit chevrons.
      */
     public void sync() {
         final Optional<IrisView> iris = this.get(GateProperties.IRIS)

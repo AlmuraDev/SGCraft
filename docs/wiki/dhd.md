@@ -27,7 +27,7 @@ The DHD faces the player who placed it, with its symbols tilted toward them. It 
 
 ## Linking to a gate
 
-A DHD links to the nearest gate of its type that is closer than the gate's DHD range, measured in a straight line from the DHD to the gate's base. The range is the gate property `dhd_range`: 6 blocks by default, 0 to 32. In the configurator it is **DHD reach**.
+A DHD links to the nearest gate of its type whose base is less than the gate's DHD range away, measured in a straight line from the DHD to the base. A base exactly that far away is out of range. If the range shrinks so the DHD is no longer in reach, the DHD unlinks within a second and links to the nearest gate still in reach, if any. The range is the gate property `dhd_range`: 6 blocks by default, 0 to 32. In the configurator it is **DHD reach**.
 
 The DHD links when placed, checks its link every 20 ticks (1 second), and links to the next nearest gate if its gate is broken or changes type. A DHD with no gate in range shows "This DHD isn't linked to a gate it can dial" when you try to use it.
 
@@ -71,7 +71,7 @@ Sneak and right-click the DHD with an empty hand to open **DHD Fuel**. It has 5 
 The fuel reaches the gate only when:
 
 - the DHD is linked to that gate,
-- the DHD is within the gate's DHD range of the base horizontally, and no more than 2 blocks above or below it, and
+- the DHD stands no more than 2 blocks above or below the base, and
 - the gate's `dhd_fuel` property is on (the default, **DHD fuel powers it** in the configurator).
 
 A dial to a gate nearby costs 4700 energy (7 chevrons at 100 and 4000 to open) plus 1 a tick while open, so one piece covers several dials. A dial to another world costs 10 times as much, and to another group of worlds 100 times. See [Power](power.md) for distance, other worlds and power from other mods.

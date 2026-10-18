@@ -21,7 +21,7 @@ These are the best-known places where Stargate fans meet today. Each link was ch
 
 GateWorld began on October 22, 1999, the night Showtime aired the SG-1 episode "Jolinar's Memories". Darren Sumner, a fan in Chicago, wanted a site that tracked the show's continuity, and he started it under the name STARGUIDE on his own web space. It moved to SciFiGuide.net within a year and later became GateWorld. More than 25 years later it still breaks news. When Amazon MGM Studios announced Martin Gero's series in November 2025, GateWorld had the story first, and Sumner and David Read talked it through with the producers.
 
-David Read, a former co-editor of GateWorld, hosts Dial the Gate. The show sits down with the people who made Stargate, from the leads to the crew, for interviews that often run several parts. In July 2026 Michael Shanks, who played Daniel Jackson, announced his own SG-1 rewatch podcast with Read as producer, planned to start in mid-October with guests from the show for every episode.
+David Read, a former co-editor of GateWorld, hosts Dial the Gate. The show sits down with the people who made Stargate, from the leads to the crew, for interviews that often run several parts. In July 2026 Michael Shanks, who played Daniel Jackson, announced his own SG-1 rewatch podcast with Read as producer. The announcement set the first episode for mid-October 2026 and promised a guest from the show on every episode.
 
 ### Conventions
 
@@ -29,7 +29,7 @@ Fans have met in person for more than 25 years. Gatecon, a fan-run convention in
 
 ### Save Stargate
 
-When Amazon MGM Studios dropped Martin Gero's series in June 2026 (see [The Stargate franchise](stargate-history.md#the-franchise-today)), fans organized within days. A petition on Change.org passed 100,000 verified signatures. Fans paid for a banner flown over Amazon MGM's studios in Culver City on June 12, rallied under billboards in Times Square on June 27, and brought the campaign to San Diego Comic-Con in July. GateWorld covered each step. The series has not come back, but the campaign showed how many people still care about the shows, close to 30 years after SG-1 began.
+When Amazon MGM Studios dropped Martin Gero's series in June 2026 (see [The Stargate franchise](stargate-history.md#the-franchise-today)), fans organized within days. A petition on Change.org passed 100,000 verified signatures. Fans paid for a banner flown over Amazon MGM's studios in Culver City on June 12, rallied under billboards in Times Square on June 27, and brought the campaign to San Diego Comic-Con in July. GateWorld covered each step. The series has not come back.
 
 ## Stargate in Minecraft
 
@@ -73,7 +73,7 @@ Thank you to gcewing, who made the mod and shared it, and to everyone who kept i
 
 SGCraft is open source. You can help by:
 
-- **Reporting a bug or asking for a feature** on the [issue tracker](https://github.com/AlmuraDev/SGCraft/issues). Say which version of SGCraft, Minecraft and the loader you use, and what you did.
-- **Sending code** as a pull request on [GitHub](https://github.com/AlmuraDev/SGCraft). The code is under the MIT license.
-- **Building an add-on** on the [API](api.md), for features or links to other mods that belong outside the base mod.
-- **Fixing or adding to this wiki**, which lives in the repository's `docs/wiki` folder.
+- reporting a bug or asking for a feature on the [issue tracker](https://github.com/AlmuraDev/SGCraft/issues). Say which version of SGCraft, Minecraft and the loader you use, and what you did.
+- sending code as a pull request on [GitHub](https://github.com/AlmuraDev/SGCraft). The code is under the MIT license.
+- building an add-on on the [API](api.md), for features or links to other mods that belong outside the base mod.
+- fixing or adding to this wiki, which lives in the repository's `docs/wiki` folder.

@@ -180,7 +180,7 @@ The rights are `GateRight.USE` (dial, close, travel), `GateRight.IRIS` and `Gate
 | `sgcraft:address_reach` | `AddressReach` | `same_world`, `same_group`, `other_group` |
 | `sgcraft:gate_type` | `GateType` | `milky_way`, `pegasus`, `universe`, `ori` (`GateTypes`) |
 | `sgcraft:iris_type` | `IrisType` | `metal`, `shield` (`IrisTypes`) |
-| `sgcraft:energy_source_provider` | `EnergySourceProvider` | `dhd_fuel`, `power_unit` |
+| `sgcraft:energy_source_provider` | `EnergySourceProvider` | `dhd_fuel`, `power_unit`, `zpm` |
 | `sgcraft:energy_bridge` | `EnergyBridge` | `direct`, `forge_energy` |
 | `sgcraft:gate_property` | `GateProperty<?>` | Every property in `GateProperties` |
 | `sgcraft:address_book_provider` | `AddressBookProvider` | `player`, `pdd` |

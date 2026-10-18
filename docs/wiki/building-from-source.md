@@ -6,8 +6,8 @@ Add-on authors who only need the API should read [API](api.md) first. An add-on 
 
 ## What you need
 
-- **JDK 25.** Eclipse Temurin 25 from [Adoptium](https://adoptium.net/temurin/releases/) works. Gradle's toolchain support finds an installed JDK 25 and can download one if it finds none.
-- **Git**, from [git-scm.com](https://git-scm.com/downloads).
+- JDK 25. Eclipse Temurin 25 from [Adoptium](https://adoptium.net/temurin/releases/) works. Gradle's toolchain support finds an installed JDK 25 and can download one if it finds none.
+- Git, from [git-scm.com](https://git-scm.com/downloads).
 
 You need nothing else. The Gradle wrapper in the repository downloads the right Gradle version (9.7.1) on first use.
 
@@ -72,13 +72,13 @@ SGCraft does not depend on any other mod, and `core` does not know about any oth
 
 Pull requests must follow these rules.
 
-- **American English** everywhere: identifiers, comments, javadoc, docs, lang files, commit messages and in-game text. Write color, gray, center, meter, behavior, neighbor, license, dialing, dialed, dialer, traveler, canceled. Text quoted from third-party works keeps its own spelling, and so do Minecraft's own names (such as `BlockBehaviour`).
-- **Final parameters.** Every method and constructor parameter is `final`, in interfaces too.
-- **Qualified calls.** Call instance methods as `this.method()` and static methods as `ClassName.staticMethod()`, even inside the same class.
-- **No star imports.** Import each class by name.
-- **License headers.** Every Java source file starts with the MIT header from `HEADER.txt`. Files that carry on gcewing's work use `HEADER-gcewing.txt` and are listed in `build-logic/src/main/groovy/multiloader-common.gradle`. Run `./gradlew licenseFormat` to add headers; `./gradlew build` fails without them.
-- **Line length.** Keep lines to 120 characters or fewer.
-- **API javadoc** states the contract an implementor must keep. It does not describe how SGCraft's own implementation works.
+- Use American English everywhere: identifiers, comments, javadoc, docs, lang files, commit messages and in-game text. Write color, gray, center, meter, behavior, neighbor, license, dialing, dialed, dialer, traveler, canceled. Text quoted from third-party works keeps its own spelling, and so do Minecraft's own names (such as `BlockBehaviour`).
+- Every method and constructor parameter is `final`, in interfaces too.
+- Call instance methods as `this.method()` and static methods as `ClassName.staticMethod()`, even inside the same class.
+- Import each class by name, with no star imports.
+- Every Java source file starts with the MIT license header from `HEADER.txt`. Files that carry on gcewing's work use `HEADER-gcewing.txt` and are listed in `build-logic/src/main/groovy/multiloader-common.gradle`. Run `./gradlew licenseFormat` to add headers; `./gradlew build` fails without them.
+- Keep lines to 120 characters or fewer.
+- API javadoc states the contract an implementor must keep. It does not describe how SGCraft's own implementation works.
 
 ## Building the wiki
 
@@ -96,8 +96,8 @@ To write or change a page, follow the format of the pages already there: a `#` t
 
 ## Contributing
 
-- **Bugs and ideas.** Open an issue on the [issue tracker](https://github.com/AlmuraDev/SGCraft/issues). For a bug, give the loader and its version, the SGCraft version, the steps that cause it and the log (`logs/latest.log`).
-- **Pull requests.** Fork the [repository](https://github.com/AlmuraDev/SGCraft), make your change on a branch of your own and open a pull request against the remake's branch.
+- Report bugs and ideas on the [issue tracker](https://github.com/AlmuraDev/SGCraft/issues). For a bug, give the loader and its version, the SGCraft version, the steps that cause it and the log (`logs/latest.log`).
+- To send a pull request, fork the [repository](https://github.com/AlmuraDev/SGCraft), make your change on a branch of your own and open a pull request against the remake's branch.
 - Before you open it, run `./gradlew build` and `./gradlew :neoforge:runGameTestServer`, and check your change on both loaders with `runClient` if it touches anything a player sees.
 - A new feature that admins would change also needs a `/sgcraft` command, so a server can run it without a screen. See [Commands](commands.md).
 

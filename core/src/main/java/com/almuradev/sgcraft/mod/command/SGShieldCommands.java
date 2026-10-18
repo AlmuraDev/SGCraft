@@ -139,7 +139,7 @@ final class SGShieldCommands {
 
     private static int city(final CommandSourceStack source, final CityShieldBlockEntity shield) {
         source.sendSuccess(() -> SGCommands.text("shields.city.state", "The city shield at %s is %s, reaching %s "
-                + "all round, %s up and %s down; it takes %s energy a tick, and can draw on %s",
+                + "all around, %s up and %s down; it takes %s energy a tick, and can draw on %s",
                 shield.getBlockPos().toShortString(), shield.active()
                         ? SGCommands.text("shields.city.raised", "raised")
                         : SGCommands.text("shields.city.lowered", "lowered"),

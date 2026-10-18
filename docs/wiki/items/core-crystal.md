@@ -46,7 +46,7 @@ See [World generation](../worldgen.md#chest-loot).
 
 ## Usage
 
-The crystal is a crafting part. It goes into the {{item:sgcraft:stargate_base}}, the {{item:sgcraft:pegasus_upgrade}} and the {{item:sgcraft:universe_upgrade}}, among other recipes.
+The crystal goes into the {{item:sgcraft:stargate_base}}, the {{item:sgcraft:pegasus_upgrade}} and the {{item:sgcraft:universe_upgrade}}, among other recipes.
 
 ## See also
 

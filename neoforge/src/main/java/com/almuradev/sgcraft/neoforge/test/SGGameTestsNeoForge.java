@@ -525,7 +525,7 @@ public final class SGGameTestsNeoForge {
                 "The dial ended " + result.get()));
     }
 
-    // A DHD further than the default reach links once the gate's reach covers it
+    // A DHD further than the default reach links once the gate's reach covers it, and lets go once it shrinks again
     private static void dhdRange(final GameTestHelper helper, final BlockPos origin) {
         final Stargate a = SGGameTestsNeoForge.place(helper, origin.offset(SGGameTestsNeoForge.A), 9);
         final BlockPos dhd = a.position().pos().north(9);
@@ -536,8 +536,12 @@ public final class SGGameTestsNeoForge {
             helper.assertTrue(entity.gate().isEmpty(), "The DHD linked from beyond the default reach");
             a.set(GateProperties.DHD_RANGE, 12.0, SGGameTestsNeoForge.server(helper));
         });
-        helper.runAfterDelay(31, () -> helper.succeedWhen(() -> helper.assertTrue(entity.gate().isPresent(),
-                "The DHD didn't link within the gate's reach")));
+        helper.runAfterDelay(31, () -> {
+            helper.assertTrue(entity.gate().isPresent(), "The DHD didn't link within the gate's reach");
+            a.set(GateProperties.DHD_RANGE, 6.0, SGGameTestsNeoForge.server(helper));
+        });
+        helper.runAfterDelay(32, () -> helper.succeedWhen(() -> helper.assertTrue(entity.gate().isEmpty(),
+                "The DHD stayed linked beyond the gate's shrunken reach")));
     }
 
     // Camouflage over the bottom row's corners draws a nine chevron gate's chevrons together, as the original did:
@@ -1608,7 +1612,8 @@ public final class SGGameTestsNeoForge {
                 .filter(drop -> drop.getItem().is(item)).mapToInt(drop -> drop.getItem().getCount()).sum();
     }
 
-    // A Pegasus upgrade used on a Milky Way gate turns it Pegasus and is used up; a second does nothing
+    // A Pegasus upgrade used on a Milky Way gate turns it Pegasus and is used up; a second does nothing. A Universe
+    // upgrade then turns it Universe and gives the Pegasus upgrade back, and the base gives the Universe one back
     private static void typeUpgrade(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final BlockPos at = origin.offset(SGGameTestsNeoForge.A);
@@ -1635,10 +1640,22 @@ public final class SGGameTestsNeoForge {
         helper.assertTrue(formed.isPresent(), "The gate didn't form again");
         helper.assertTrue(formed.get().type().is(GateTypes.PEGASUS), "The gate formed again as "
                 + formed.get().type());
-        // The base gives the upgrade back
+        // A Universe upgrade takes the Pegasus upgrade's place, which comes back out
+        formed.get().setOwner(Optional.of(player.getUUID()), SGGameTestsNeoForge.server(helper));
+        final ItemStack universe = new ItemStack(SGItems.UNIVERSE_UPGRADE);
+        player.setItemInHand(InteractionHand.MAIN_HAND, universe);
+        player.gameMode.useItemOn(player, level, player.getMainHandItem(), InteractionHand.MAIN_HAND,
+                new BlockHitResult(Vec3.atCenterOf(at.east()), Direction.NORTH, at.east(), false));
+        helper.assertTrue(formed.get().type().is(GateTypes.UNIVERSE), "The gate is " + formed.get().type());
+        helper.assertTrue(universe.isEmpty(), "The Universe upgrade wasn't used up");
+        final int returned = SGGameTestsNeoForge.dropped(level, gate.position().pos(), SGItems.PEGASUS_UPGRADE);
+        helper.assertTrue(returned == 1, "Changing type gave back " + returned + " Pegasus upgrades, not 1");
+        // The base gives the upgrade fitted last back
         level.destroyBlock(gate.position().pos(), false);
-        final int upgrades = SGGameTestsNeoForge.dropped(level, gate.position().pos(), SGItems.PEGASUS_UPGRADE);
-        helper.assertTrue(upgrades == 1, "The base dropped " + upgrades + " Pegasus upgrades, not 1");
+        final int upgrades = SGGameTestsNeoForge.dropped(level, gate.position().pos(), SGItems.UNIVERSE_UPGRADE);
+        helper.assertTrue(upgrades == 1, "The base dropped " + upgrades + " Universe upgrades, not 1");
+        final int pegasus = SGGameTestsNeoForge.dropped(level, gate.position().pos(), SGItems.PEGASUS_UPGRADE);
+        helper.assertTrue(pegasus == 1, "The base dropped " + (pegasus - 1) + " more Pegasus upgrades");
         helper.succeed();
     }
 

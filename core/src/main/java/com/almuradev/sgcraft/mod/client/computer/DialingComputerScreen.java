@@ -469,14 +469,14 @@ public final class DialingComputerScreen extends Screen {
             final int mouseY) {
         final Component tip = switch (kind) {
             case MODE -> Component.translatableWithFallback("screen.sgcraft.dialing_computer.mode.tip",
-                    "How this computer dials: as its gate's settings say, slowly, a chevron at a time, or quickly, "
-                            + "every chevron at once");
+                    "How this computer dials: as its gate's settings say, slowly (a chevron at a time) or "
+                            + "quickly (every chevron at once)");
             case IRIS -> this.iris() == null
                     ? Component.translatableWithFallback("screen.sgcraft.dialing_computer.iris.none",
                             "This gate has no iris")
                     : Component.translatableWithFallback("screen.sgcraft.dialing_computer.iris.tip",
-                            "Shuts the gate's iris, or raises its shield, if it is open, and opens it if it is shut. "
-                                    + "Red while it is open, as anything can come through");
+                            "Shuts the gate's iris, or raises its shield, when it is open, and opens it when it is "
+                                    + "shut. It shows red while open, since anything can come through");
             case ALARM -> Component.translatableWithFallback("screen.sgcraft.dialing_computer.alarm.tip",
                     "Turns off the alarm that sounds while a wormhole comes in, or turns it on again. It stays that "
                             + "way until changed");

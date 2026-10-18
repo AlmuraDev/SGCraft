@@ -35,13 +35,13 @@ The world puts a Milky Way DHD at the Milky Way gates it builds in desert pyrami
 ## Usage
 
 1. Build a Milky Way gate. See [Building gates](../building-gates.md).
-2. Place the DHD less than 6 blocks from the gate's base, and no more than 2 blocks above or below it. It faces you, with its symbols tilted toward you.
+2. Place the DHD less than 6 blocks from the gate's base in a straight line, and no more than 2 blocks above or below it. It faces you, with its symbols tilted toward you.
 3. Sneak and right-click it with an empty hand, then put naquadah in its fuel slots.
 4. Right-click it to open the dial screen, enter an address and click the dome.
 
 ## Linking to a gate
 
-The DHD links to the nearest Milky Way gate whose base is closer than that gate's DHD range, measured in a straight line from the DHD to the base. The range is the gate property `dhd_range` (default 6, from 0 to 32), shown as **DHD reach** in the configurator.
+The DHD links to the nearest Milky Way gate whose base is less than that gate's DHD range away, measured in a straight line from the DHD to the base. A base exactly that far away is out of range. The range is the gate property `dhd_range` (default 6, from 0 to 32), shown as **DHD reach** in the configurator.
 
 The DHD links when you place it and checks its link every 20 ticks (1 second). If its gate is broken or changes to another type, it links to the next nearest Milky Way gate in range. It never links to a Pegasus or Universe gate. A DHD with no gate in range shows "This DHD isn't linked to a gate it can dial" when you try to dial.
 
@@ -76,7 +76,7 @@ Sneak and right-click the DHD with an empty hand to open **DHD Fuel**. It has 5 
 The fuel reaches the gate only when all of these hold:
 
 - the DHD is linked to that gate,
-- the DHD stands within the gate's DHD range of the base across, and no more than 2 blocks above or below it,
+- the DHD stands no more than 2 blocks above or below the base,
 - the gate's `dhd_fuel` property is on (default `true`, **DHD fuel powers it** in the configurator).
 
 A dial to a gate nearby with a 7 symbol address costs 4700 gate energy, so one naquadah pays for about 20 such dials. See [Power](../power.md#what-a-wormhole-costs).

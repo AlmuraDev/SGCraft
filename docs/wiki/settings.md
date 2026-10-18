@@ -58,7 +58,7 @@ The `energy` section sets what naquadah and power units hold, the rates of other
 | `dial_costs` | See [Dial costs](#dial-costs) | What a wormhole costs the gate that dials it, before distance |
 | `multipliers` | See [Multipliers](#multipliers) | How many times more a wormhole costs with distance, more chevrons or a supergate |
 
-SGCraft has two bridges. FE has two rates, both 80 FE to one GE unless set. `"bridge_rates": { "fe_in_per_ge": 40, "fe_out_per_ge": 40 }` makes 40 FE worth one GE both ways, as do `/sgcraft costs fe_in_per_ge 40` and `/sgcraft costs fe_out_per_ge 40`. Writing `sgcraft:forge_energy` here is an error the server reports; use `fe_in_per_ge` and `fe_out_per_ge`. `sgcraft:direct` is energy already in GE, worth `1.0`. Add-ons can register more bridges and set their rates by ID, as GE per unit, such as `"bridge_rates": { "fe_in_per_ge": 80, "fe_out_per_ge": 80, "example:steam": 0.5 }`.
+SGCraft has two bridges of its own: `sgcraft:forge_energy` for FE and `sgcraft:direct` for energy already in GE. FE has two rates, `fe_in_per_ge` for FE coming in and `fe_out_per_ge` for GE going out as FE, both 80 FE to one GE unless set. `"bridge_rates": { "fe_in_per_ge": 40, "fe_out_per_ge": 40 }` makes 40 FE worth one GE both ways, as do `/sgcraft costs fe_in_per_ge 40` and `/sgcraft costs fe_out_per_ge 40`. Writing `sgcraft:forge_energy` here is an error the server reports; use `fe_in_per_ge` and `fe_out_per_ge`. One unit through `sgcraft:direct` is worth `1.0` GE unless `bridge_rates` gives it another rate under its ID. Add-ons can register more bridges and set their rates by ID, as GE per unit, such as `"bridge_rates": { "fe_in_per_ge": 80, "fe_out_per_ge": 80, "example:steam": 0.5 }`.
 
 Everything inside SGCraft stores and spends GE. The FE rates apply only where SGCraft meets other mods. The in rate covers cables filling power units and battery chargers, and other mods' chargers filling batteries. The out rate covers energy converters, and other mods drawing FE out of a battery.
 
@@ -257,7 +257,7 @@ By default the plains, desert, savanna, snowy and taiga villages get a plaza in 
 | `idle_drain` | `0.125` | GE a MALP uses each tick while someone watches its live feed |
 | `drive_drain` | `1.25` | GE a MALP uses for each block it drives |
 | `signal_range` | `256` | How far a console or tablet reaches a MALP directly, and reaches a gate to relay through, in blocks |
-| `linger_ticks` | `600` | How long a MALP's chunks stay loaded after the last person stops watching it, in ticks |
+| `linger_ticks` | `600` | How long a MALP's chunks stay loaded after its driver leaves it, in ticks |
 | `console_damage_interrupts` | `true` | A player at a MALP console or tablet who takes damage is taken off it |
 | `console_spectators` | `8` | How many players near a console see a feed on its monitor, nearest first, whether or not anyone is at it (0 to 64). Each costs the server a stream of the world around the MALP |
 | `spectator_range` | `16` | How near a console a player must be to see its monitor, in blocks (1 to 64) |
@@ -542,7 +542,7 @@ Change them with the [configurator](tools.md), with `/sgcraft property <id> set 
 | `iris` | None | The fitted iris: `"sgcraft:metal"` for the metal iris or `"sgcraft:shield"` for a shield. Setting it fits one, starting open (a shield starts lowered); removing it takes it off |
 | `phase_shift_passes_iris` | `true` | A traveler carrying a Tollan Phase Shift Device passes the shut iris |
 | `iris_restores_state` | `false` | The iris goes back to how it was before the connection once the wormhole closes |
-| `redstone_input` | `true` | Redstone can work the gate, such as closing its iris |
+| `redstone_input` | `true` | A redstone signal at the base shuts the iris, and the signal ending opens it |
 | `redstone_output` | `true` | The base gives out a redstone signal while the gate is busy |
 
 ### Access
@@ -592,7 +592,7 @@ Operators see these tabs:
 
 | Tab | What it changes |
 | --- | --- |
-| Worlds | Each world's point of origin, cell size and group, and every world's point of origin and cell size. See [Addresses](addresses.md#the-settings-screen) |
+| Worlds | The selected world's point of origin, group and cell size, and the point of origin and cell size for every world that has none of its own. See [Addresses](addresses.md#the-settings-screen) |
 | Groups | The groups of worlds |
 | Gates | The `gates`, `tools` and `computers` settings, and `remote_view` |
 | Energy | The `energy` settings and `zpm` |

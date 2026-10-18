@@ -1,6 +1,6 @@
 # Office Chair
 
-The Office Chair is a black swivel chair you sit in. Put in front of a [dialing computer](dialing-computer.md) or a [MALP console](malp-console.md), facing it, it is where you work the computer from, though you can also work either standing.
+The Office Chair is a black swivel chair you sit in. Placed in front of a [dialing computer](dialing-computer.md) or a [MALP console](malp-console.md) and facing it, the chair is where you work the computer from. You can also work either one standing.
 
 ```infobox
 Office Chair

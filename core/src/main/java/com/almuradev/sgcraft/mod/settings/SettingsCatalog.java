@@ -577,8 +577,8 @@ public final class SettingsCatalog {
                         + "directly, and reaches a gate to relay through"), 1, 4096,
                 config -> config.malp().signalRange());
         add.whole("malp.linger_ticks", SettingsCatalog.text("malp.linger_ticks", "Chunk stays loaded"),
-                SettingsCatalog.text("malp.linger_ticks.tip", "How long a MALP's chunk stays loaded after the last "
-                        + "person stops watching it, in ticks"), 0, 72_000, config -> config.malp().lingerTicks());
+                SettingsCatalog.text("malp.linger_ticks.tip", "How long a MALP's chunks stay loaded after its "
+                        + "driver leaves it, in ticks"), 0, 72_000, config -> config.malp().lingerTicks());
         add.section(SettingsCatalog.text("section.consoles", "Consoles and tablets"));
         add.bool("malp.console_damage_interrupts", SettingsCatalog.text("malp.console_damage_interrupts", "Damage "
                 + "interrupts"), SettingsCatalog.text("malp.console_damage_interrupts.tip", "Whether a player at a "

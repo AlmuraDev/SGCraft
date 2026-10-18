@@ -138,9 +138,9 @@ public final class ConfiguratorScreen extends Screen {
             Map.entry("opening_damage_amount", "How much harm the kawoosh does each tick to what stands in front of "
                     + "the gate, when Kawoosh damage is on. 20 is a player's full health"),
             Map.entry("dhd_fuel", "Whether naquadah in the DHDs linked to the gate powers it"),
-            Map.entry("preserve_inventory", "Whether a player the gate kills, against its shut iris or going "
-                    + "backwards through a one way wormhole, keeps what they carry. Off, it is lost, unless the "
-                    + "keepInventory game rule is on"),
+            Map.entry("preserve_inventory", "Whether a player the gate kills keeps what they "
+                    + "carry. That covers a player hitting a shut iris or walking backwards into a one-way wormhole. "
+                    + "When off, the items are lost unless the keepInventory game rule is on"),
             Map.entry("requires_power", "Whether dialing out costs this gate energy at all. Off, it dials for free"),
             Map.entry("energy_capacity", "How much gate energy the gate holds itself. It fills from power units and "
                     + "DHD fuel, and pays when they run short"),
@@ -158,7 +158,7 @@ public final class ConfiguratorScreen extends Screen {
                     + "distance. Fractions add up. Empty for the server's amount, shown faintly"),
             Map.entry("energy_per_naquadah", "Gate energy one naquadah gives when burned in a DHD linked to the "
                     + "gate. Empty for the server's amount, shown faintly"),
-            Map.entry("distance_factor_multiplier", "How much more a wormhole costs the further it reaches. 0 for no "
+            Map.entry("distance_factor_multiplier", "How much more a wormhole costs the farther it reaches. 0 for no "
                     + "extra. Empty for the server's amount, shown faintly"),
             Map.entry("inter_world_multiplier", "How many times more a wormhole costs with an eighth chevron, which "
                     + "reaches another world. Empty for the server's amount, shown faintly"),
@@ -182,7 +182,8 @@ public final class ConfiguratorScreen extends Screen {
             Map.entry("breach_breaks_blocks", "Whether that explosion breaks blocks, or only harms what stands near"),
             Map.entry("iris_restores_state", "Whether the iris goes back to how it was before the wormhole opened, "
                     + "once it closes"),
-            Map.entry("redstone_input", "Whether a redstone signal can work the gate, such as shutting its iris"),
+            Map.entry("redstone_input", "Whether a redstone signal at the base shuts the iris, and the signal ending "
+                    + "opens it"),
             Map.entry("redstone_output", "Whether the gate gives out a redstone signal showing what it is doing"),
             Map.entry("allow_incoming", "Whether other gates may dial this one, unless an address rule says "
                     + "otherwise"),
@@ -194,7 +195,7 @@ public final class ConfiguratorScreen extends Screen {
                     + "everything"),
             Map.entry("player", "A player's name, to give them rights of their own. List player adds them. Only "
                     + "the owner or an operator can change rights"),
-            Map.entry("rule", "An address, to let that gate connect or not whatever the settings above say"),
+            Map.entry("rule", "An address, to allow or block that gate whatever the settings above say"),
             Map.entry("rule.incoming", "Whether that gate may dial this one"),
             Map.entry("rule.outgoing", "Whether this gate may dial that one"),
             Map.entry("other", "A setting an add-on gave gates, written as JSON. Empty for its default")
@@ -440,7 +441,7 @@ public final class ConfiguratorScreen extends Screen {
 
     private void travelPage(final int left, final int top) {
         final String[][] toggles = {
-                {"one_way_travel", "One way travel", "true"},
+                {"one_way_travel", "One-way travel", "true"},
                 {"reverse_travel_kills", "Reverse travel kills", "false"},
                 {"close_from_either_end", "Close from either end", "true"},
                 {"opening_damage", "Kawoosh damage", "true"},

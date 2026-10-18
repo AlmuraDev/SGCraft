@@ -199,7 +199,7 @@ The cost defaults are the server's. **Use server's costs** clears the gate's own
 | Phase shift passes iris | `sgcraft:phase_shift_passes_iris` | on | Someone holding a [Tollan Phase Shift Device](#tollan-phase-shift-device) passes through this gate's shut iris |
 | Iris shuts again after | `sgcraft:iris_restores_state` | off | The iris goes back to how it was before the wormhole opened, once it closes |
 | Iris deaths keep items | `sgcraft:preserve_inventory` | off | A player the gate kills keeps what they carry |
-| Redstone works iris | `sgcraft:redstone_input` | on | A redstone signal can shut the iris |
+| Redstone works iris | `sgcraft:redstone_input` | on | A redstone signal at the base shuts the iris, and the signal ending opens it |
 | Redstone signal out | `sgcraft:redstone_output` | on | The gate gives out a redstone signal while it is busy |
 | Kawoosh harm | `sgcraft:opening_damage_amount` | 5000 | Harm the kawoosh does each tick. 20 is a player's full health |
 | Breach blast | `sgcraft:breach_explosion` | 10 | How strong an explosion goes off if the gate breaks while its wormhole is open. TNT is 4, 0 for none |

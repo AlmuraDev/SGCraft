@@ -44,7 +44,7 @@ Recipe: [Crafting](#crafting)
 Dictionary: [Battery](items/battery.md)
 ```
 
-A battery holds up to 12,500 GE (`malp.battery_capacity`). A green bar on the item shows its charge, and the tooltip shows the exact GE. The creative tab has an empty battery and a full one. On NeoForge and Fabric a battery is an ordinary FE item, so other mods' chargers can fill it, 80 FE for each GE.
+A battery holds up to 12,500 GE (`malp.battery_capacity`). A green bar on the item shows its charge, and the tooltip shows the exact GE. The creative tab has an empty battery and a full one. Other mods' chargers can fill a battery, 80 FE for each GE, and draw FE out of it: on NeoForge it is a NeoForge energy item, and on Fabric a Team Reborn Energy item.
 
 You can charge a battery three ways:
 
@@ -184,14 +184,14 @@ The console's monitor shows a feed to the players nearest it as a faint green pi
 
 ## The world around a watched MALP
 
-A driven MALP makes the world around it behave as if a player stood there:
+A MALP counts as watched while someone drives it from a console or tablet, and while a console's monitor shows it to players nearby with no one at the console. Players who watch a driver's feed add nothing of their own, since the driver's MALP already counts. A watched MALP makes the world around it behave as if a player stood there:
 
-- The chunks as far out from the MALP as its camera sees keep running, so the mobs in sight move: 3 chunks out with the default view of 32 blocks (`remote_view.horizontal_radius`), and chunks 5 out stay loaded, wherever the MALP is. The chunks stay loaded for 600 ticks (`linger_ticks`) after the last person stops watching.
+- The chunks as far out from the MALP as its camera sees keep running, so the mobs in sight move: 3 chunks out with the default view of 32 blocks (`remote_view.horizontal_radius`), and chunks 5 out stay loaded, wherever the MALP is. They stay loaded, and the MALP still counts as watched, for 600 ticks (`linger_ticks`) after its driver leaves it, or for 40 ticks after its monitor last showed it.
 - Mobs wander and despawn by the MALP the way they do by a player. Distances for despawning are measured from the nearest watched MALP when it is nearer than any player.
 - Mobs spawn around the MALP as around a player: in running chunks within 8 chunks (128 blocks) of it, with the mob cap growing by those chunks, and with spawn distances measured from the MALP.
 - In the End, a MALP within 192 blocks of the island's center (0, 128, 0) keeps the dragon fight's arena running, as a player there would.
 
-The feed shows the world around the MALP out to 32 blocks across and 24 blocks up and down by default, with its sky, its time of day and its weather: rain or snow falls round the camera as it does round a player there, by the biome, and stops under roofs. Server admins can change how far it reaches in [settings](settings.md#remote-view).
+The feed shows the world around the MALP out to 32 blocks across and 24 blocks up and down by default, with its sky, its time of day and its weather: rain or snow falls around the camera as it does around a player there, by the biome, and stops under roofs. Server admins can change how far it reaches in [settings](settings.md#remote-view).
 
 ## Damage
 
@@ -274,7 +274,7 @@ The `malp` section of `config/sgcraft-server.json`. What one naquadah gives a ba
 | `idle_drain` | `0.125` | GE a tick a MALP uses while its feed is live |
 | `drive_drain` | `1.25` | GE a MALP uses for each block it drives |
 | `signal_range` | `256` | Blocks a radio reaches, directly or to a gate |
-| `linger_ticks` | `600` | Ticks a MALP's chunks stay loaded after the last watcher leaves |
+| `linger_ticks` | `600` | Ticks a MALP's chunks stay loaded after its driver leaves it |
 | `console_damage_interrupts` | `true` | Damage takes a player off a console or tablet |
 | `console_spectators` | `8` | Players near a console who see its monitor (0 to 64) |
 | `spectator_range` | `16` | Blocks from a console to see its monitor (1 to 64) |

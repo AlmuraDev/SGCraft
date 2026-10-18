@@ -73,7 +73,7 @@ A platform stands on a stone brick foundation down to the ground. One platform i
 
 ## Village gates
 
-Plains, desert, savanna, snowy and taiga villages can build a gate plaza among their houses, including zombie villages. The plaza is one more piece the village's pools of houses can choose, so the other houses come up as often as before.
+Plains, desert, savanna, snowy and taiga villages can build a gate plaza among their houses, including zombie villages. The plaza joins each village's pool of houses as one more piece, with a weight of 2 by default. The houses keep their own weights, so the plaza takes a small share of the picks from each of them.
 
 A village builds one gate at most. A plaza within 80 blocks of a gate already built stays empty. A village gate is a Milky Way gate with a DHD, with 9 chevrons 25% of the time, and a Tok'ra stands in front of it.
 
@@ -113,7 +113,7 @@ Each trade gives the Tok'ra 5 experience. A data pack can change the trades thro
 ### Server admins
 
 - `worldgen.tokra_worlds` turns the Tok'ra on or off for each world's generated gates, by the world's identifier. The default is `{"minecraft:overworld": true}`. A world left out has Tok'ra wherever its structures' settings say.
-- `/sgcraft worldgen tokra` lists the worlds set off. `/sgcraft worldgen tokra <world> <true|false>` sets one.
+- `/sgcraft worldgen tokra` lists the worlds in `worldgen.tokra_worlds`, each on or off. `/sgcraft worldgen tokra <world> <true|false>` sets one.
 - `/sgcraft tokra` puts a Tok'ra in front of your selected gate, or the one you look at.
 
 ## Chest loot
@@ -145,7 +145,7 @@ The tables are `sgcraft:chests/simple_dungeon`, `spawn_bonus_chest`, `stronghold
 | `template` | | The structure template the gate is built from |
 | `chance` | 25 | How many structures in a hundred get a gate |
 | `placement` | `beside` | `inside` the structure, or `beside` it |
-| `min_distance`, `max_distance` | 10, 30 | How far from the structure a gate beside it stands, along each axis |
+| `min_distance`, `max_distance` | 10, 30 | How far from the structure a gate beside it stands, along each axis, from `min_distance` up to and including `max_distance` |
 | `ground` | `surface` | What the gate stands on: `surface` (land or the water on it), `ocean_floor`, `structure` (the bottom of the structure's first piece) or `structure_top` (its top) |
 | `y_offset` | 0 | Blocks up or down from there |
 | `foundation` | `full` | What holds up a gate beside a structure: `none`, `full` (the whole bottom layer filled down to solid ground) or `corners` (a 2 by 2 pillar under each corner) |
@@ -153,7 +153,7 @@ The tables are `sgcraft:chests/simple_dungeon`, `spawn_bonus_chest`, `stronghold
 | `chevron_upgrade_chance` | 25 | How many gates in a hundred have 9 chevrons |
 | `tokra` | true | Whether a Tok'ra stands at the gate |
 
-The defaults for the swamp hut and igloo use 10 to 29 blocks.
+The Default column gives what an entry gets for a field it leaves out. The default entries for the swamp hut and igloo set `max_distance` to 29, so their platforms stand 10 to 29 blocks away, as in the original. The default entries for the four structures with gates inside set `foundation` to `none`, and those for the ocean monument and Nether fortress set `tokra` to false.
 
 `worldgen.village_gates` sets the plazas:
 

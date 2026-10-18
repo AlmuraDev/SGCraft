@@ -44,7 +44,8 @@ A gate forms with 7 chevrons. One upgrade takes it to 8, and a second to 9.
 | --- | --- |
 | The gate now has N chevrons | The chevron was added. |
 | This gate already has nine chevrons | The gate is full. |
-| You can't add a chevron to this gate while it's in use | The gate is busy, or you lack the right. |
+| You can't add a chevron to this gate while it's in use | The gate isn't idle. |
+| You aren't allowed to change this gate | You lack the right to configure the gate. |
 | An Ori supergate takes no upgrades | The gate is an Ori supergate, which always reaches as far as 9 chevrons. |
 
 See [Addresses](../addresses.md#address-lengths) for what each length reaches. A dial with an eighth chevron costs 10 times as much energy, and one with a ninth 100 times. See [Power](../power.md#other-worlds-and-supergates).

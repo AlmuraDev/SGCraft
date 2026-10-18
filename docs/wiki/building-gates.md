@@ -161,7 +161,7 @@ Otherwise it works as any supergate, and a wormhole to or from it costs 8 times 
 
 ### The linking dial
 
-The ring doesn't turn. It is a circle of separate metal segments: 22 at radius 4, 26 at radius 7 and 105 at radius 30. As the gate dials, the segments link one after another, anticlockwise from the top. Each linked segment glows, a band of energy joins the linked segments, and arcs crackle across the gaps. The dialed gate links in step.
+The ring doesn't turn. It is a circle of separate metal segments: 22 at radius 4, 26 at radius 7 and 105 at radius 30. As the gate dials, the segments link one after another, counterclockwise from the top. Each linked segment glows, a band of energy joins the linked segments, and arcs crackle across the gaps. The dialed gate links in step.
 
 Each symbol takes its share of about 20 seconds. After the last symbol, the event horizon fills in from the ring to the middle over 1.5 seconds, then the kawoosh comes. The linking sounds rise in pitch and volume as the ring fills. An Ori supergate makes no chevron or ring sounds.
 

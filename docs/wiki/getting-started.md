@@ -82,7 +82,7 @@ The gate forms as soon as the last block goes in, whether that is the base or a 
 sgcraft:dhd
 ```
 
-Place the DHD less than 6 blocks from the base, and no more than 2 blocks above or below it, so its fuel reaches the gate. A spot 3 or 4 blocks in front of the gate, to one side, works well. The DHD links to the nearest Milky Way gate in range on its own. See [The DHD](dhd.md).
+Place the DHD less than 6 blocks from the base in a straight line, and no more than 2 blocks above or below it, so its fuel reaches the gate. A spot 3 or 4 blocks in front of the gate, to one side, works well. The DHD links to the nearest Milky Way gate in range on its own. See [The DHD](dhd.md).
 
 ## 6. Fuel it
 
@@ -116,6 +116,7 @@ The wormhole closes after 5 minutes. To close it sooner, click the DHD's dome ag
 
 ## Next steps
 
+- See [What to aim for](what-to-aim-for.md) for a plan beyond the first gate.
 - Fit an [iris](iris.md) so nothing can come through uninvited.
 - Add a [chevron upgrade](building-gates.md#chevrons-and-upgrades) to dial other worlds.
 - Carry a [PDD](tools.md) to dial without a DHD.

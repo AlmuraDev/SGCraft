@@ -58,7 +58,7 @@ No item turns a gate back into a Milky Way gate. Only an operator or a creative 
 
 ## Breaking the gate
 
-The gate stays a Pegasus gate while its base stays in place, even if the ring breaks apart and forms again. Breaking the base gives the upgrade back. The base block keeps its own kind: a Milky Way base turned into a Pegasus gate drops a Milky Way base and the upgrade, and forms a Milky Way gate when placed again. A type set by an operator, a creative player or a command drops no upgrade.
+The gate stays a Pegasus gate while its base stays in place, even if the ring breaks apart and forms again. Breaking the base gives the upgrade back. The base block keeps its own kind: a Milky Way base turned into a Pegasus gate drops a Milky Way base and the upgrade, and forms a Milky Way gate when placed again. A type set by an operator, a creative player or a command drops no upgrade. When the gate's type changes again, by another upgrade or any other way, the Pegasus upgrade drops on top of the base.
 
 ## Commands
 

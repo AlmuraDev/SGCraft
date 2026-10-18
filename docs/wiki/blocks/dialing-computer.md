@@ -1,6 +1,6 @@
 # Dialing Computer
 
-The Dialing Computer is the SGC's way to dial a gate: a desk three blocks wide with a wide monitor, worked from an [office chair](office-chair.md) in front of it or standing at it. It dials the nearest gate in reach as the gate's settings say, the slow way, the ring turning to each symbol and each chevron locking in turn, or the fast way, every chevron locking at once. Its monitor shows the dialing program to everyone who can see it, and its alarm sounds while a wormhole comes in.
+The Dialing Computer is the SGC's way to dial a gate: a desk three blocks wide with a wide monitor, worked from an [office chair](office-chair.md) in front of it or standing at it. It dials the nearest gate in reach as the gate's settings say: the slow way, with the ring turning to each symbol and each chevron locking in turn, or the fast way, with every chevron locking at once. Its monitor shows the dialing program to everyone who can see it, and its alarm sounds while a wormhole comes in.
 
 ```infobox
 Dialing Computer
@@ -44,7 +44,7 @@ The computer is one structure of six parts. Breaking any part breaks all six, an
 
 The computer needs gate energy to run: 0.05 GE a tick (`energy_per_tick`), 1 GE a second, paid once a second while it is switched on. It draws from the [power units](../power.md#the-power-unit) within 6 blocks of the middle of its desk along each axis (`power_reach`), nearest first, then from the ZPM consoles, interface carts and hubs within that reach, nearest first. A full power unit runs it for about 14 hours. When nothing in reach can pay, it has no power. Its monitor goes dark, anyone using it is taken off it, and using it says "The computer has no power". It starts again by itself once there is power, within a second. Turn `requires_power` off to run computers for free.
 
-Use a {{item:sgcraft:configurator}} on it to turn off its own need for power: its owner, the player who placed it, and operators can. A computer placed before computers had owners has none, so only operators can.
+Use a {{item:sgcraft:configurator}} on it to turn off its own need for power. The computer's owner (the player who placed it) and operators can do that. A computer placed before computers had owners has none, so only operators can.
 
 Sneak and use the computer with an empty hand to switch it off. Its monitor goes dark, anyone using it is taken off it, and it uses no energy. Do the same again to switch it on, or just use it. See [Computers](../power.md#computers).
 
@@ -94,13 +94,13 @@ The screen shows the dialing program, after the one on the show. The same pictur
 - **Right:** a numbered box for each symbol of the address, wired to its chevron once locked. While the gate is idle, there is a box for each of its 7 or 9 chevrons, and the status box shows a light for each. The next box blinks while its symbol is dialed. When the caller hides its address, each box it locks flickers through random symbols in red and never settles on the real one.
 - **Bottom:** the status line, such as **SYSTEM READY**, **SEQUENCE IN PROGRESS** with **CHEVRON 3 ENCODED**, **CHEVRON 7 LOCKED**, **WORMHOLE ESTABLISHED** or **WORMHOLE DISENGAGED**. With no gate in reach of the computer, the ring says **NO GATE FOUND** in red, and so does the status line.
 
-An incoming wormhole flashes the screen's border red. The status line says where it comes from, by how many symbols the caller dialed: **LOCAL ACTIVATION** for 7, from this world; **OFFWORLD ACTIVATION** for 8, from another world; and **OFF-REALITY ACTIVATION** for 9, from another group of worlds. Once it opens, the line says **INCOMING WORMHOLE**, with **FROM THIS WORLD**, **FROM OFFWORLD** or **FROM ANOTHER REALITY** under it, or **ALARM OFF** while the alarm is off. While a caller that hides its address dials in, the line under the activation says **ADDRESS HIDDEN** in place of the chevron count. A wormhole the computer dialed shows **WORMHOLE ESTABLISHED** with **LOCAL DESTINATION**, **OFFWORLD DESTINATION** or **OFF-REALITY DESTINATION**. An open wormhole fills the ring with the event horizon. With no gate in reach, the screen shows **NO STARGATE IN RANGE**.
+An incoming wormhole flashes the screen's border red. The status line says where it comes from, by how many symbols the caller dialed: **LOCAL ACTIVATION** for 7, from this world; **OFFWORLD ACTIVATION** for 8, from another world; and **OFF-REALITY ACTIVATION** for 9, from another group of worlds. Once it opens, the line says **INCOMING WORMHOLE**, with **FROM THIS WORLD**, **FROM OFFWORLD** or **FROM ANOTHER REALITY** under it, or **ALARM OFF** while the alarm is off. While a caller that hides its address dials in, the line under the activation says **ADDRESS HIDDEN** in place of the chevron count. A wormhole the computer dialed shows **WORMHOLE ESTABLISHED** with **LOCAL DESTINATION**, **OFFWORLD DESTINATION** or **OFF-REALITY DESTINATION**. An open wormhole fills the ring with the event horizon.
 
 ## The alarm
 
 While a wormhole comes in to the computer's gate, from its first chevron until it shuts, the computer sounds a klaxon, over and over. Anyone working the computer can press **Alarm off** to quiet it, before a wormhole comes in or while one does. It stays off for every wormhole after, until someone presses **Alarm on**. While it is off, the monitor shows ALARM OFF for each wormhole coming in. The alarm is SGCraft's own sound, made by `tools/computer/make_alarm.py`. A resource pack can replace `assets/sgcraft/sounds/computer_alarm.ogg` with another.
 
-The program shows the glyphs of the gate's own type: Milky Way, Pegasus or Universe. A Pegasus or Ori gate's ring doesn't turn on the screen.
+The program draws a Pegasus gate in Pegasus glyphs and a Universe gate in Universe glyphs. A Universe gate's glyphs are spaced as on its ring, with no `@`. Every other gate, the Ori supergate among them, shows the Milky Way glyphs. The ring on the screen turns for Milky Way and Universe gates and stays still for Pegasus and Ori gates, as their real rings do.
 
 Players within 48 blocks see the monitor. The picture is drawn 20 times a second, only while someone can see it.
 

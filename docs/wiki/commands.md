@@ -48,7 +48,7 @@ Chat output is clickable. A gate's position puts a teleport command in your chat
 | `/sgcraft camouflage` | All | Yes | The five camouflage blocks on the gate's bottom row, left to right |
 | `/sgcraft camouflage set <slot> <block>` | Op | Yes | Camouflage one block (slot 0 is the left of the bottom row, seen from the front, to 4 at the right) |
 | `/sgcraft camouflage clear [<slot>]` | Op | Yes | Clear one slot, or every slot; what was there is lost |
-| `/sgcraft tokra` | Op | Yes | A Tok'ra stands in front of the gate |
+| `/sgcraft tokra` | Op | Yes | Spawn a Tok'ra in front of the gate, or say "There's no room in front of the gate for a Tok'ra to stand" |
 
 `place` takes up to 9 chevrons (9 unless given) and a radius of `2` for a standard gate, or `4` to `30` for a [supergate](building-gates.md). `sgcraft:ori` builds an [Ori supergate](building-gates.md#ori-supergates), radius 7 unless given. A type built at a size it doesn't come in fails with a message naming the type, such as "Ori gates can't be built at that size". `type` gives the same message when it would turn a standard gate Ori. The last word is `standing` (the default), `face_up` or `face_down`. A flat gate's ring runs away from you. If the spot isn't clear, the gate goes in the nearest clear spot within 3 blocks. You own the gate you place.
 
@@ -136,7 +136,6 @@ Property IDs are listed in [Settings](settings.md#gate-properties). For example,
 | `/sgcraft ore chunk [<x z>]` | Op | Whether your chunk, or the chunk holding a position, has had its ore |
 | `/sgcraft ore chunk [<x z>] generate` | Op | Give that loaded chunk ore now |
 | `/sgcraft ore chunk [<x z>] unmark` | Op | Have that chunk get ore again the next time it loads, while `add_ores_to_existing_worlds` is on |
-| `/sgcraft tokra` | Op | A Tok'ra stands in front of the chosen gate |
 
 Ore changes apply to chunks generated or loaded from then on and are saved. See [World generation](worldgen.md).
 
@@ -178,9 +177,9 @@ Every command here needs level 2.
 | `/sgcraft shields city <pos>` | The city shield generator at a position in your world: whether its shield is up, its size, its cost and the energy in its power units |
 | `/sgcraft shields city <pos> raise` | Raise its shield |
 | `/sgcraft shields city <pos> lower` | Lower its shield |
-| `/sgcraft shields city <pos> size <width> <above> <below>` | Set how far its shield reaches out all round, up and down |
+| `/sgcraft shields city <pos> size <width> <above> <below>` | Set how far its shield reaches out all around, up and down |
 
-A position with no generator says "There is no city shield generator there". `raise` without the energy says "There isn't enough energy round the generator to raise a shield that size". A gate's shield is worked with the [iris commands](#iris). See [City Shield Generator](blocks/city-shield-generator.md) and [Settings](settings.md#shields).
+A position with no generator says "There is no city shield generator there". `raise` without the energy says "There isn't enough energy around the generator to raise a shield that size". A gate's shield is worked with the [iris commands](#iris). See [City Shield Generator](blocks/city-shield-generator.md) and [Settings](settings.md#shields).
 
 ## ZPMs
 

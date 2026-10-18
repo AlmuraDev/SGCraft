@@ -65,7 +65,7 @@ This base makes Universe gates (`sgcraft:universe`). A Universe gate turns its w
 
 The Universe gate had no DHD on the show, so SGCraft gives it none. Dial it with a {{item:sgcraft:pdd}}, a {{item:sgcraft:gate_control_tablet}} or `/sgcraft dial`. It can dial gates of any type, and gates of any type can dial it.
 
-Each time a standard gate forms, it takes the type of its base block. To change the type of a formed, idle gate, use a {{item:sgcraft:pegasus_upgrade}} on it. You need the right to configure the gate, and the upgrade is used up. Operators and creative players can set any type on the {{item:sgcraft:configurator}}'s **Gate** page, and operators can run `/sgcraft type <type>`.
+Each time a standard gate forms, it takes the type of its base block. To change the type of a formed, idle gate, use an upgrade on it: a {{item:sgcraft:pegasus_upgrade}} makes it a Pegasus gate, and a {{item:sgcraft:universe_upgrade}} makes a gate turned Pegasus a Universe gate again. You need the right to configure the gate, and the upgrade is used up. Operators and creative players can set any type on the {{item:sgcraft:configurator}}'s **Gate** page, and operators can run `/sgcraft type <type>`.
 
 A gate keeps the type an upgrade gave it while its base stays in place, even if the ring breaks apart and forms again. The base block keeps its own kind: a Universe base in a gate turned Pegasus drops a Universe base, and the upgrade drops beside it. See [Building gates](../building-gates.md#gate-type-upgrades).
 

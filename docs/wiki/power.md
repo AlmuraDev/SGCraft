@@ -12,7 +12,7 @@ A gate with **Needs energy** off (the `requires_power` property, on by default) 
 
 A gate has these energy sources:
 
-- Naquadah in the [DHDs](dhd.md) linked to the gate. A DHD counts when it stands within the gate's DHD reach (`dhd_range`, 6 blocks) of the base across, and no more than 2 blocks above or below it. One naquadah gives 96000 gate energy (`energy.per_naquadah`). The DHD burns a piece only when the gate needs more, last slot first, and keeps what is left of that piece for the next payment. Turn **DHD fuel powers it** off (`dhd_fuel`) to stop a gate taking DHD fuel.
+- Naquadah in the [DHDs](dhd.md) linked to the gate. A DHD links to a gate whose base is less than the gate's DHD reach away in a straight line (`dhd_range`, 6 blocks), and its fuel counts when it also stands no more than 2 blocks above or below the base. One naquadah gives 96000 gate energy (`energy.per_naquadah`). The DHD burns a piece only when the gate needs more, last slot first, and keeps what is left of that piece for the next payment. Turn **DHD fuel powers it** off (`dhd_fuel`) to stop a gate taking DHD fuel.
 - Every [power unit](#the-power-unit) within 4 blocks of the gate's base along each axis, in loaded chunks.
 - Every [ZPM](#zpms) in a ZPM console, interface cart or hub within 6 blocks of the gate's base along each axis, in loaded chunks, and for a supergate the ZPMs in its base's own slots.
 
@@ -252,7 +252,7 @@ A full power unit holds 50,000 GE, and a full ZPM 26,843,546 GE. Raising the shi
 
 ## Computers
 
-The [Dialing Computer](blocks/dialing-computer.md#power) and the [MALP Console](blocks/malp-console.md#power) use 0.05 gate energy a tick while switched on (`computers.energy_per_tick`), paid once a second. They draw from the power units within 6 blocks of the middle of their desk along each axis (`computers.power_reach`), nearest first, and then from the ZPM consoles, interface carts and hubs within that reach, nearest first. They use no DHD fuel. A full power unit runs one for about 14 hours, and a full ZPM for about 310 days. Without power, a computer goes dark until there is power again. Sneak and use one with an empty hand to switch it off, so that it uses nothing. Turn `computers.requires_power` off to run every computer for free, or use a configurator on one computer to run it free. Its owner, the player who placed it, and operators can.
+The [Dialing Computer](blocks/dialing-computer.md#power) and the [MALP Console](blocks/malp-console.md#power) use 0.05 gate energy a tick while switched on (`computers.energy_per_tick`), paid once a second. They draw from the power units within 6 blocks of the middle of their desk along each axis (`computers.power_reach`), nearest first, and then from the ZPM consoles, interface carts and hubs within that reach, nearest first. They use no DHD fuel. A full power unit runs one for about 14 hours, and a full ZPM for about 310 days. Without power, a computer goes dark until there is power again. Sneak and use one with an empty hand to switch it off, so that it uses nothing. Turn `computers.requires_power` off to run every computer for free, or use a configurator on one computer to run it free. The computer's owner (the player who placed it) and operators can do that.
 
 ## Batteries and the battery charger
 
@@ -268,7 +268,7 @@ Used by: MALP, MALP tablet
 Dictionary: [Battery](items/battery.md)
 ```
 
-A battery shows its charge as a green bar and in its tooltip, as GE held, capacity and percent. The creative tab has an empty battery and a full one. Both loaders see it as an FE item, so other mods' chargers can fill it at 80 FE for each GE. They see its charge as 80 FE for each GE it holds. They can also draw FE out of it, at the out rate.
+A battery shows its charge as a green bar and in its tooltip, as GE held, capacity and percent. The creative tab has an empty battery and a full one. Other mods see it as an energy item (FE on NeoForge, Team Reborn Energy on Fabric), so their chargers can fill it at 80 FE for each GE. They see its charge as 80 FE for each GE it holds. They can also draw FE out of it, at the out rate.
 
 Ways to charge a battery:
 

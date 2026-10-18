@@ -34,7 +34,7 @@ Use the gate's base or any ring block to open the **Stargate Address** screen. Y
 
 ### My gate has no address
 
-A gate gets an address only inside the address grid, about 373,248 blocks out from the world's center each way with the default settings. Only one gate in each chunk gets an address. See [Cells and the grid](addresses.md#cells-and-the-grid).
+A gate gets an address only inside the address grid, about 3,511,808 blocks out from the world's center each way with the default settings. Two gates in one cell share an address, and a dial reaches only one of them. See [Cells and the grid](addresses.md#cells-and-the-grid).
 
 ### Why does the Universe gate have no DHD
 
