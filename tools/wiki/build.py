@@ -46,7 +46,7 @@ LOGO_COLOR = 'e8892b'
 
 # The sidebar, in order: each section's title and its pages. Pages not listed still build, under "More"
 NAV = [
-    ('Start here', ['home', 'install', 'getting-started', 'faq', 'changes']),
+    ('Start here', ['home', 'install', 'getting-started', 'what-to-aim-for', 'faq', 'changes']),
     ('Playing', ['building-gates', 'dialing', 'addresses', 'dhd', 'iris', 'power', 'access', 'tools', 'malp',
                  'worldgen']),
     ('Dictionary', ['blocks', 'items', 'entities', 'recipes']),

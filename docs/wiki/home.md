@@ -14,7 +14,7 @@ License: MIT (code)
 
 SGCraft 3.0 is AlmuraDev's remake of gcewing's SGCraft, rebuilt for NeoForge and Fabric on Minecraft 26.3. It keeps the original's gates, timings and rules where it can. New in this version are a server command suite, an add-on API and the MALP. The gate models are measured from third-party models, which keep their own licenses; the mod's `CREDITS.md` lists them.
 
-Coming from SGCraft 2 on Minecraft 1.12? [Changes since SGCraft 2](changes.md) lists what is new, what works differently and what is not ported yet.
+If you are coming from SGCraft 2 on Minecraft 1.12, [Changes since SGCraft 2](changes.md) lists what is new, what works differently and what is not ported yet.
 
 ## What you can do
 
@@ -29,6 +29,7 @@ Coming from SGCraft 2 on Minecraft 1.12? [Changes since SGCraft 2](changes.md) l
 ## Playing
 
 - [Getting started](getting-started.md): your first gate, from mining naquadah to walking through.
+- [What to aim for](what-to-aim-for.md): where to find a gate, what to build first and what comes after.
 - [Building gates](building-gates.md): gate types, the ring's shape, supergates, chevrons and upgrades.
 - [Dialing](dialing.md): how a dial runs, what can stop it, and what crosses a wormhole.
 - [Addresses](addresses.md): the symbols, what 7, 8 and 9 symbol addresses reach, and address books.

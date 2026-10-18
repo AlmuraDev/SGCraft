@@ -360,8 +360,9 @@ article::after { content: ''; display: block; clear: both; }
 .search-results a:hover { background: var(--panel-2); text-decoration: none; }
 .search-results span { color: var(--muted); font-size: 13px; }
 
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin: 14px 0; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 12px; margin: 14px 0; }
 .card {
+  min-width: 0;
   display: flex;
   gap: 12px;
   padding: 12px;
@@ -381,7 +382,7 @@ article::after { content: ''; display: block; clear: both; }
   border-color: var(--slot-edge-dark) var(--slot-edge-light) var(--slot-edge-light) var(--slot-edge-dark);
 }
 .card-icon .icon-large { width: 40px; height: 40px; }
-.card-text { min-width: 0; }
+.card-text { min-width: 0; overflow-wrap: anywhere; }
 .card-title { font-weight: 600; color: #eef3f9; }
 .card-summary { font-size: 14px; color: var(--muted); line-height: 1.5; margin-top: 2px; }
 
