@@ -226,6 +226,13 @@ final class GateTravel {
             if (arrived instanceof final ServerPlayer player) {
                 ExplorerData.visit(player, to.position());
             }
+            // Players riding it are sent the world round where they came out at once: the server moves a rider's view
+            // only when it takes their vehicle's next move, which it may not until their client has that world
+            for (final Entity rider : arrived.getIndirectPassengers()) {
+                if (rider instanceof final ServerPlayer player && player.level() == destination) {
+                    destination.getChunkSource().move(player);
+                }
+            }
             GateTravel.playTeleport(destination, arrived, position);
             SGEventBus.get().post(new SGEvents.TravelPost(cause, this.gate, arrived, to));
         }

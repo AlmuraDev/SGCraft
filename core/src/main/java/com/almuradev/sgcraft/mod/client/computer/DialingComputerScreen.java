@@ -31,6 +31,8 @@ import com.almuradev.sgcraft.mod.block.entity.DialingComputerBlockEntity;
 import com.almuradev.sgcraft.mod.client.ClientPlatform;
 import com.almuradev.sgcraft.mod.computer.ComputerDialMode;
 import com.almuradev.sgcraft.mod.computer.ComputerPayloads;
+import com.almuradev.sgcraft.mod.computer.DialerRef;
+import com.almuradev.sgcraft.mod.computer.DialingTerminal;
 import com.almuradev.sgcraft.mod.gate.DialPhase;
 import com.almuradev.sgcraft.mod.gate.IrisView;
 import com.almuradev.sgcraft.mod.sound.SGSounds;
@@ -63,7 +65,8 @@ import java.util.Optional;
  * dialing, shutting the gate down, working the iris, and turning the alarm off or on. A key can be clicked or typed,
  * and lights either way; an address can be pasted whole. Beside them the computer's dialing history lists the
  * addresses last dialed from it: a double click on one dials it again, as does choosing one with Tab or the arrow keys
- * and pressing Enter. Closing the screen gets the player up from the chair, or away from the computer.
+ * and pressing Enter. Closing the screen gets the player up from the chair, or away from the computer; a player at
+ * the computer aboard a puddle jumper stays in their seat.
  */
 public final class DialingComputerScreen extends Screen {
 
@@ -83,7 +86,7 @@ public final class DialingComputerScreen extends Screen {
     private static final int NOTICE_BACKDROP = 0xE0040E1A;
     private static final int NOTICE_EDGE = 0xFFE8463C;
 
-    private final BlockPos computer;
+    private final DialerRef computer;
     private final List<Symbol> typed = new ArrayList<>();
     private final ComputerKeyboard keyboard = new ComputerKeyboard();
     private final Picture keyboardPicture;
@@ -102,13 +105,16 @@ public final class DialingComputerScreen extends Screen {
     public DialingComputerScreen(final ComputerPayloads.Screen open) {
         super(Component.translatableWithFallback("screen.sgcraft.dialing_computer", "Dialing Computer"));
         this.computer = open.computer();
-        final String pos = Long.toHexString(this.computer.asLong()).toLowerCase(Locale.ROOT);
-        this.keyboardPicture = new Picture("keyboard_" + pos, ComputerKeyboard.WIDTH, ComputerKeyboard.HEIGHT);
-        this.historyPicture = new Picture("history_" + pos, ComputerHistory.WIDTH, ComputerHistory.HEIGHT);
+        final String name = switch (this.computer) {
+            case DialerRef.Block(final BlockPos pos) -> Long.toHexString(pos.asLong()).toLowerCase(Locale.ROOT);
+            case DialerRef.Aboard() -> "aboard";
+        };
+        this.keyboardPicture = new Picture("keyboard_" + name, ComputerKeyboard.WIDTH, ComputerKeyboard.HEIGHT);
+        this.historyPicture = new Picture("history_" + name, ComputerHistory.WIDTH, ComputerHistory.HEIGHT);
     }
 
     /** @return the computer the screen works */
-    public BlockPos computer() {
+    public DialerRef computer() {
         return this.computer;
     }
 
@@ -134,15 +140,15 @@ public final class DialingComputerScreen extends Screen {
         this.minecraft.textInputManager().startTextInput(this);
     }
 
-    private @Nullable DialingComputerBlockEntity entity() {
-        return this.minecraft == null || this.minecraft.level == null ? null
-                : this.minecraft.level.getBlockEntity(this.computer) instanceof final DialingComputerBlockEntity entity
-                        ? entity : null;
+    // The computer the screen works, if it is still there: a jumper's only while the player still rides it
+    private @Nullable DialingTerminal entity() {
+        return this.minecraft == null || this.minecraft.player == null ? null
+                : this.computer.resolve(this.minecraft.player);
     }
 
     // How many symbols the computer's gate can dial: one for each of its chevrons
     private int limit() {
-        final DialingComputerBlockEntity entity = this.entity();
+        final DialingTerminal entity = this.entity();
         if (entity == null || this.minecraft.level == null) {
             return DialingComputerScreen.LIMIT;
         }
@@ -152,7 +158,7 @@ public final class DialingComputerScreen extends Screen {
 
     // How the computer dials, as the server last said
     private ComputerDialMode computerMode() {
-        final DialingComputerBlockEntity entity = this.entity();
+        final DialingTerminal entity = this.entity();
         return entity == null ? ComputerDialMode.GATE : entity.mode();
     }
 
@@ -164,7 +170,7 @@ public final class DialingComputerScreen extends Screen {
 
     // The addresses last dialed from the computer, newest first
     private List<DialingComputerBlockEntity.Dialed> history() {
-        final DialingComputerBlockEntity entity = this.entity();
+        final DialingTerminal entity = this.entity();
         return entity == null ? List.of() : entity.history();
     }
 
@@ -197,14 +203,14 @@ public final class DialingComputerScreen extends Screen {
 
     // The gate's iris, as its base shows it, or null if it has none
     private @Nullable IrisView iris() {
-        final DialingComputerBlockEntity entity = this.entity();
+        final DialingTerminal entity = this.entity();
         return entity == null || this.minecraft.level == null ? null
                 : ComputerDisplay.View.of(this.minecraft.level, entity, 0).iris();
     }
 
     // Whether the gate is dialing, open or shutting down, as its base shows it, so there is something to abort
     private boolean busy() {
-        final DialingComputerBlockEntity entity = this.entity();
+        final DialingTerminal entity = this.entity();
         return entity != null && this.minecraft.level != null
                 && ComputerDisplay.View.of(this.minecraft.level, entity, 0).dial().phase() != DialPhase.IDLE;
     }
@@ -383,7 +389,7 @@ public final class DialingComputerScreen extends Screen {
     public void extractRenderState(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY,
             final float partialTick) {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
-        final DialingComputerBlockEntity entity = this.entity();
+        final DialingTerminal entity = this.entity();
         if (entity == null || this.minecraft.level == null) {
             return;
         }

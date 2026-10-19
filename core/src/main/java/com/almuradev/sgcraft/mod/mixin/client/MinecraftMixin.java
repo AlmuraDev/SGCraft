@@ -27,6 +27,10 @@ package com.almuradev.sgcraft.mod.mixin.client;
 
 import com.almuradev.sgcraft.mod.client.dev.IconExportScreen;
 import com.almuradev.sgcraft.mod.client.dev.SceneExport;
+import com.almuradev.sgcraft.mod.client.jumper.JumperControls;
+import com.almuradev.sgcraft.mod.client.jumper.JumperFoliage;
+import com.almuradev.sgcraft.mod.client.jumper.JumperLights;
+import com.almuradev.sgcraft.mod.client.jumper.JumperSounds;
 import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -44,5 +48,9 @@ public abstract class MinecraftMixin {
     private void sgcraft$iconExport(final CallbackInfo callback) {
         IconExportScreen.tickClient((Minecraft) (Object) this);
         SceneExport.tickClient((Minecraft) (Object) this);
+        JumperControls.tickClient((Minecraft) (Object) this);
+        JumperLights.tick((Minecraft) (Object) this);
+        JumperFoliage.tick((Minecraft) (Object) this);
+        JumperSounds.tick((Minecraft) (Object) this);
     }
 }

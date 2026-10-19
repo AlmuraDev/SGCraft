@@ -32,11 +32,12 @@ import com.almuradev.sgcraft.mod.computer.ComputerDialMode;
 import com.almuradev.sgcraft.mod.computer.ComputerPower;
 import com.almuradev.sgcraft.mod.computer.ComputerSettings;
 import com.almuradev.sgcraft.mod.computer.DialingComputers;
+import com.almuradev.sgcraft.mod.computer.DialingTerminal;
+import com.almuradev.sgcraft.mod.computer.GateLinks;
 import com.almuradev.sgcraft.mod.computer.PoweredComputer;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -49,9 +50,8 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import org.jspecify.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -67,7 +67,7 @@ import java.util.Optional;
  * <p>It keeps the addresses last dialed from it too, newest first, as many as the server's
  * {@link ComputerSettings#historySize() history size}, for its screen to list and dial again.</p>
  */
-public final class DialingComputerBlockEntity extends BlockEntity implements PoweredComputer {
+public final class DialingComputerBlockEntity extends BlockEntity implements PoweredComputer, DialingTerminal {
 
     // How often a computer checks its link
     private static final int CHECK_TICKS = 20;
@@ -96,46 +96,30 @@ public final class DialingComputerBlockEntity extends BlockEntity implements Pow
         super(SGBlockEntityTypes.DIALING_COMPUTER, pos, state);
     }
 
-    /** @return the base of the gate the computer dials, in the computer's world, if it is linked */
+    @Override
     public Optional<BlockPos> linked() {
         return Optional.ofNullable(this.linked);
     }
 
-    /**
-     * The gate the computer dials: its linked gate while that lasts and is in reach, or else the nearest in reach,
-     * which it links to then. Only on the server.
-     *
-     * @return the gate, if there is one in reach
-     */
+    @Override
     public Optional<Stargate> gate() {
         if (!(this.level instanceof final ServerLevel serverLevel)) {
             return Optional.empty();
         }
-        final Optional<Stargate> linked = this.linkedGate();
+        final Optional<Stargate> linked = GateLinks.inReach(serverLevel, this.linked, this.worldPosition);
         if (linked.isPresent()) {
             return linked;
         }
-        this.relink(serverLevel);
-        return this.linkedGate();
+        this.setLinked(GateLinks.nearest(serverLevel, this.worldPosition));
+        return GateLinks.inReach(serverLevel, this.linked, this.worldPosition);
     }
 
-    private Optional<Stargate> linkedGate() {
-        if (this.linked == null || this.level == null) {
-            return Optional.empty();
-        }
-        final double range = ComputerSettings.current().linkRange();
-        return SGServer.current()
-                .flatMap(server -> server.stargates().gate(GlobalPos.of(this.level.dimension(), this.linked)))
-                .filter(gate -> gate.position().pos().closerThan(this.worldPosition, range))
-                .map(Stargate.class::cast);
-    }
-
-    /** @return how the computer dials */
+    @Override
     public ComputerDialMode mode() {
         return this.mode;
     }
 
-    /** Has the computer dial another way from now on. */
+    @Override
     public void setMode(final ComputerDialMode mode) {
         if (this.mode != mode) {
             this.mode = mode;
@@ -143,22 +127,25 @@ public final class DialingComputerBlockEntity extends BlockEntity implements Pow
         }
     }
 
-    /** @return the addresses last dialed from the computer, newest first */
+    @Override
     public List<Dialed> history() {
         return this.history;
     }
 
-    /**
-     * Puts an address dialed from the computer at the top of its history, taking it from lower down if it was there,
-     * and lets go of the oldest beyond the server's history size.
-     */
+    @Override
     public void remember(final String address, final boolean connected) {
-        final List<Dialed> history = new ArrayList<>();
-        history.add(new Dialed(address, connected));
-        this.history.stream().filter(dialed -> !dialed.address().equals(address)).forEach(history::add);
-        this.history = List.copyOf(history.subList(0, Math.min(history.size(),
-                ComputerSettings.current().historySize())));
+        this.history = DialingTerminal.remembering(this.history, address, connected);
         this.changed();
+    }
+
+    @Override
+    public String pictureName() {
+        return Long.toHexString(this.worldPosition.asLong()).toLowerCase(Locale.ROOT);
+    }
+
+    @Override
+    public boolean gone() {
+        return this.isRemoved();
     }
 
     /** @return whether a wormhole is coming in to the computer's gate, as the gate's base shows it */
@@ -168,7 +155,7 @@ public final class DialingComputerBlockEntity extends BlockEntity implements Pow
                 && base.isFormed() && base.dialView().active() && !base.dialView().initiator();
     }
 
-    /** @return whether the alarm has been turned off */
+    @Override
     public boolean alarmOff() {
         return this.alarmOff;
     }
@@ -197,7 +184,7 @@ public final class DialingComputerBlockEntity extends BlockEntity implements Pow
         }
     }
 
-    /** Turns the alarm off, or on again; it stays that way until changed. */
+    @Override
     public void setAlarmOff(final boolean off) {
         if (this.alarmOff != off) {
             this.alarmOff = off;
@@ -226,18 +213,6 @@ public final class DialingComputerBlockEntity extends BlockEntity implements Pow
     /** Keeps the alarm sounding while it should. Only clients call this. */
     public static void clientTick(final DialingComputerBlockEntity computer) {
         ClientTicks.computer(computer);
-    }
-
-    private void relink(final ServerLevel level) {
-        final BlockPos pos = this.worldPosition;
-        final double range = ComputerSettings.current().linkRange();
-        final BlockPos nearest = SGServer.current()
-                .flatMap(server -> server.stargates().in(level.dimension()).stream()
-                        .map(gate -> gate.position().pos())
-                        .filter(gate -> gate.closerThan(pos, range))
-                        .min(Comparator.comparingDouble(gate -> gate.distSqr(pos))))
-                .orElse(null);
-        this.setLinked(nearest);
     }
 
     private void setLinked(final @Nullable BlockPos linked) {

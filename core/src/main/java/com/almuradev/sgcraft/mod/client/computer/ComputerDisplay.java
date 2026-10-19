@@ -32,8 +32,8 @@ import com.almuradev.sgcraft.api.gate.IrisState;
 import com.almuradev.sgcraft.api.gate.IrisTypes;
 import com.almuradev.sgcraft.mod.Platform;
 import com.almuradev.sgcraft.mod.SGCraft;
-import com.almuradev.sgcraft.mod.block.entity.DialingComputerBlockEntity;
 import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
+import com.almuradev.sgcraft.mod.computer.DialingTerminal;
 import com.almuradev.sgcraft.mod.gate.ChevronOrder;
 import com.almuradev.sgcraft.mod.gate.DialPhase;
 import com.almuradev.sgcraft.mod.gate.DialStyle;
@@ -115,7 +115,7 @@ final class ComputerDisplay {
             boolean alarmOff, double time) {
 
         /** @return what a computer's screen shows now */
-        static View of(final Level level, final DialingComputerBlockEntity computer, final float partialTick) {
+        static View of(final Level level, final DialingTerminal computer, final float partialTick) {
             final double time = level.getGameTime() + partialTick;
             if (computer.linked().isPresent()
                     && level.getBlockEntity(computer.linked().get()) instanceof final StargateBaseBlockEntity gate
@@ -280,9 +280,8 @@ final class ComputerDisplay {
                 position++) {
             ComputerDisplay.chevron(canvas, 90 - ChevronOrder.angle(position), locked[position]);
         }
+        // An empty ring; paint writes across it that there is no gate
         if (!view.linked()) {
-            canvas.centeredText("NO STARGATE", cx, cy - 9, 1, ComputerDisplay.RED);
-            canvas.centeredText("IN RANGE", cx, cy + 2, 1, ComputerDisplay.RED);
             return;
         }
         final List<Symbol> symbols = dial.symbols();

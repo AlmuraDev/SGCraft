@@ -88,6 +88,10 @@ public final class SGSounds {
     public static final SoundEvent COMPUTER_KEY = SGSounds.fixed("computer_key");
     // One of a dialing computer's larger keys pressed, such as dial or clear
     public static final SoundEvent COMPUTER_KEY_BIG = SGSounds.fixed("computer_key_big");
+    // A puddle jumper's drive humming while it is on, and coming on and going off
+    public static final SoundEvent JUMPER_HUM = SGSounds.fixed("jumper_hum");
+    public static final SoundEvent JUMPER_POWER_ON = SGSounds.fixed("jumper_power_on");
+    public static final SoundEvent JUMPER_POWER_OFF = SGSounds.fixed("jumper_power_off");
 
     private static final SoundEvent[] ALL = {
             SGSounds.MILKY_WAY_ROLL, SGSounds.MILKY_WAY_CHEVRON_OUTGOING, SGSounds.MILKY_WAY_CHEVRON_INCOMING,
@@ -100,7 +104,8 @@ public final class SGSounds {
             SGSounds.RING_TRANSPORT,
             SGSounds.MALFUNCTION,
             SGSounds.COMPUTER_ALARM,
-            SGSounds.COMPUTER_KEY, SGSounds.COMPUTER_KEY_BIG,
+            SGSounds.COMPUTER_KEY, SGSounds.COMPUTER_KEY_BIG, SGSounds.JUMPER_HUM, SGSounds.JUMPER_POWER_ON,
+            SGSounds.JUMPER_POWER_OFF,
     };
 
     private SGSounds() {

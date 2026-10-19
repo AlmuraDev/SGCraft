@@ -38,6 +38,11 @@ import com.almuradev.sgcraft.mod.client.generator.GeneratorItemRenderer;
 import com.almuradev.sgcraft.mod.client.generator.GeneratorRenderer;
 import com.almuradev.sgcraft.mod.client.generator.GeneratorScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleRenderer;
+import com.almuradev.sgcraft.mod.client.jumper.JumperHud;
+import com.almuradev.sgcraft.mod.client.jumper.JumperKeys;
+import com.almuradev.sgcraft.mod.client.jumper.JumperModel;
+import com.almuradev.sgcraft.mod.client.jumper.DroneRenderer;
+import com.almuradev.sgcraft.mod.client.jumper.JumperRenderer;
 import com.almuradev.sgcraft.mod.client.malp.MalpModel;
 import com.almuradev.sgcraft.mod.client.malp.MalpRenderer;
 import com.almuradev.sgcraft.mod.client.malp.MalpScreen;
@@ -63,6 +68,7 @@ import com.almuradev.sgcraft.mod.rings.RingPlatformMenu;
 import com.almuradev.sgcraft.mod.shield.CityShieldMenu;
 import com.almuradev.sgcraft.mod.zpm.ZpmMenu;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
@@ -70,6 +76,9 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.FeatureRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.ModelLayerRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.PictureInPictureRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.special.SpecialModelRenderers;
@@ -98,6 +107,30 @@ public final class SGCraftClientFabric implements ClientModInitializer {
         ModelLayerRegistry.registerModelLayer(MalpModel.LAYER, MalpModel::createLayer);
         ModelLayerRegistry.registerModelLayer(MalpModel.GLOW_LAYER, MalpModel::createGlowLayer);
         EntityRendererRegistry.register(SGEntityTypes.MALP, MalpRenderer::new);
+        ModelLayerRegistry.registerModelLayer(JumperModel.LAYER, JumperModel::createLayer);
+        ModelLayerRegistry.registerModelLayer(JumperModel.GLASS_LAYER, JumperModel::createGlassLayer);
+        ModelLayerRegistry.registerModelLayer(JumperModel.GLOW_LAYER, JumperModel::createGlowLayer);
+        EntityRendererRegistry.register(SGEntityTypes.PUDDLE_JUMPER, JumperRenderer::new);
+        EntityRendererRegistry.register(SGEntityTypes.DRONE, DroneRenderer::new);
+        KeyMapping.Category.register(JumperKeys.CATEGORY.id());
+        KeyMappingHelper.registerKeyMapping(JumperKeys.DESCEND);
+        KeyMappingHelper.registerKeyMapping(JumperKeys.HEADLIGHTS);
+        KeyMappingHelper.registerKeyMapping(JumperKeys.POWER);
+        KeyMappingHelper.registerKeyMapping(JumperKeys.PODS);
+        KeyMappingHelper.registerKeyMapping(JumperKeys.DOOR);
+        KeyMappingHelper.registerKeyMapping(JumperKeys.COMPUTER);
+        KeyMappingHelper.registerKeyMapping(JumperKeys.ARM);
+        KeyMappingHelper.registerKeyMapping(JumperKeys.TARGET);
+        KeyMappingHelper.registerKeyMapping(JumperKeys.FIRE);
+        KeyMappingHelper.registerKeyMapping(JumperKeys.FRIENDLY_FIRE);
+        HudElementRegistry.attachElementAfter(VanillaHudElements.BOSS_BAR, JumperHud.ID,
+                JumperHud::extract);
+        // Aboard a jumper, the hotbar is drawn as its panels are
+        HudElementRegistry.replaceElement(VanillaHudElements.HOTBAR, hotbar -> (graphics, deltaTracker) -> {
+            if (!JumperHud.extractHotbar(graphics, deltaTracker)) {
+                hotbar.extractRenderState(graphics, deltaTracker);
+            }
+        });
         // Into vanilla's own list, which the access widener opens, as Fabric API has no way to register one
         SpecialModelRenderers.ID_MAPPER.put(DhdItemRenderer.TYPE, DhdItemRenderer.Unbaked.CODEC);
         SpecialModelRenderers.ID_MAPPER.put(GeneratorItemRenderer.TYPE, GeneratorItemRenderer.Unbaked.CODEC);

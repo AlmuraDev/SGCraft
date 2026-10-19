@@ -38,6 +38,7 @@ import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.mod.computer.ComputerConfigurator;
 import com.almuradev.sgcraft.mod.computer.ComputerDialMode;
 import com.almuradev.sgcraft.mod.computer.ComputerPayloads;
+import com.almuradev.sgcraft.mod.computer.DialerRef;
 import com.almuradev.sgcraft.mod.computer.DialingComputers;
 import com.almuradev.sgcraft.mod.computer.PoweredComputer;
 import com.almuradev.sgcraft.mod.entity.SeatEntity;
@@ -179,9 +180,11 @@ final class ComputerGameTestsNeoForge {
         player.snapTo(Vec3.atCenterOf(chair.north()), 0, 0);
         DialingComputers.sit(player, chair);
         helper.assertTrue(player.getVehicle() instanceof SeatEntity, "The player wasn't seated");
-        DialingComputers.action(player, new ComputerPayloads.Action(main, ComputerPayloads.Action.Kind.MODE,
+        DialingComputers.action(player, new ComputerPayloads.Action(DialerRef.of(main),
+                ComputerPayloads.Action.Kind.MODE,
                 (fast ? ComputerDialMode.FAST : ComputerDialMode.SLOW).getSerializedName()));
-        DialingComputers.action(player, new ComputerPayloads.Action(main, ComputerPayloads.Action.Kind.DIAL,
+        DialingComputers.action(player, new ComputerPayloads.Action(DialerRef.of(main),
+                ComputerPayloads.Action.Kind.DIAL,
                 SGGameTestsNeoForge.addressOf(b, a).toString()));
         helper.assertTrue(a.state() == GateState.DIALING, "The gate didn't start dialing: " + a.state());
         final StargateBaseBlockEntity base = (StargateBaseBlockEntity) level.getBlockEntity(a.position().pos());
@@ -239,7 +242,8 @@ final class ComputerGameTestsNeoForge {
         final ServerPlayer player = helper.makeMockServerPlayerInLevel();
         player.snapTo(Vec3.atCenterOf(main.north(2)), 180, 0);
         DialingComputers.use(player, main);
-        DialingComputers.action(player, new ComputerPayloads.Action(main, ComputerPayloads.Action.Kind.DIAL,
+        DialingComputers.action(player, new ComputerPayloads.Action(DialerRef.of(main),
+                ComputerPayloads.Action.Kind.DIAL,
                 SGGameTestsNeoForge.addressOf(b, a).toString()));
         final StargateBaseBlockEntity base = (StargateBaseBlockEntity) level.getBlockEntity(a.position().pos());
         helper.runAfterDelay(3, () -> {
@@ -361,7 +365,8 @@ final class ComputerGameTestsNeoForge {
         final DialingComputerBlockEntity computer = (DialingComputerBlockEntity) level.getBlockEntity(main);
         final ServerPlayer player = helper.makeMockServerPlayerInLevel();
         player.snapTo(Vec3.atBottomCenterOf(main.north(2)), 180, 0);
-        final ComputerPayloads.Action toggle = new ComputerPayloads.Action(main, ComputerPayloads.Action.Kind.ALARM,
+        final ComputerPayloads.Action toggle = new ComputerPayloads.Action(DialerRef.of(main),
+                ComputerPayloads.Action.Kind.ALARM,
                 "");
         helper.runAfterDelay(1, () -> {
             helper.assertTrue(computer.gate().isPresent(), "The computer didn't link to the gate");

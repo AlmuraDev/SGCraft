@@ -34,6 +34,7 @@ import com.almuradev.sgcraft.mod.client.gate.GateAddressScreen;
 import com.almuradev.sgcraft.mod.client.gate.GateBaseScreen;
 import com.almuradev.sgcraft.mod.client.gate.GateLoopSounds;
 import com.almuradev.sgcraft.mod.client.generator.GeneratorHum;
+import com.almuradev.sgcraft.mod.client.jumper.JumperControls;
 import com.almuradev.sgcraft.mod.client.malp.MalpConfigScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleUsers;
@@ -52,6 +53,7 @@ import com.almuradev.sgcraft.mod.client.tool.TabletScreen;
 import com.almuradev.sgcraft.mod.client.view.RemoteViewClient;
 import com.almuradev.sgcraft.mod.computer.ComputerPayloads;
 import com.almuradev.sgcraft.mod.dhd.DhdHooks;
+import com.almuradev.sgcraft.mod.entity.JumperHooks;
 import com.almuradev.sgcraft.mod.gate.GateBaseInfo;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
@@ -84,6 +86,7 @@ public final class SGClient {
         SGClientConfig.load();
         DhdHooks.setOpenScreen(pos -> Minecraft.getInstance().gui.setScreen(new DhdScreen(pos)));
         ClientTicks.set(GateLoopSounds::tick, ComputerAlarms::tick, GeneratorHum::tick);
+        JumperHooks.set(JumperControls::input, JumperControls::viewerInside);
         SGNetwork.onClient(GateBaseInfo.TYPE, SGClient::gateBase);
         SGNetwork.onClient(ToolPayloads.PddState.TYPE, state ->
                 SGClient.show(PddScreen.class, state, state.open(), PddScreen::new, PddScreen::update));

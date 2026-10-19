@@ -40,6 +40,7 @@ import com.almuradev.sgcraft.mod.block.MalpConsoleBlock;
 import com.almuradev.sgcraft.mod.block.OfficeChairBlock;
 import com.almuradev.sgcraft.mod.block.entity.DialingComputerBlockEntity;
 import com.almuradev.sgcraft.mod.dhd.DhdActions;
+import com.almuradev.sgcraft.mod.entity.PuddleJumperEntity;
 import com.almuradev.sgcraft.mod.entity.SeatEntity;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.ConsoleUse;
@@ -264,7 +265,7 @@ public final class DialingComputers {
         }
         DialingComputers.SESSIONS.put(player.getUUID(), new Session(GlobalPos.of(player.level().dimension(),
                 computer), standing));
-        SGNetwork.send(player, new ComputerPayloads.Screen(computer, true));
+        SGNetwork.send(player, new ComputerPayloads.Screen(DialerRef.of(computer), true));
     }
 
     /**
@@ -369,7 +370,7 @@ public final class DialingComputers {
         if (session == null) {
             return;
         }
-        SGNetwork.send(player, new ComputerPayloads.Screen(session.computer().pos(), false));
+        SGNetwork.send(player, new ComputerPayloads.Screen(DialerRef.of(session.computer().pos()), false));
         if (session.standing()) {
             DialingComputers.broadcastUse(player, Use.NONE);
         }
@@ -428,11 +429,23 @@ public final class DialingComputers {
         SGNetwork.sendNear(player, new ConsoleUse(player.getId(), use));
     }
 
-    /** A button pressed on a computer's screen, by a player working that computer. */
+    /**
+     * A button pressed on a computer's screen, by a player working that computer: one standing in the world, or the
+     * one aboard the puddle jumper they ride, which {@link PuddleJumperEntity#dialerAction} answers.
+     */
     public static void action(final ServerPlayer player, final ComputerPayloads.Action action) {
+        if (action.computer() instanceof DialerRef.Aboard) {
+            if (player.getVehicle() instanceof final PuddleJumperEntity jumper) {
+                jumper.dialerAction(player, action);
+            }
+            return;
+        }
+        if (!(action.computer() instanceof DialerRef.Block(final BlockPos pos))) {
+            return;
+        }
         final Session session = DialingComputers.SESSIONS.get(player.getUUID());
         if (session == null || !session.computer().dimension().equals(player.level().dimension())
-                || !session.computer().pos().equals(action.computer())
+                || !session.computer().pos().equals(pos)
                 || !session.standing() && !(player.getVehicle() instanceof SeatEntity)) {
             return;
         }
@@ -446,13 +459,25 @@ public final class DialingComputers {
         }
         // A session the computer hasn't ended yet, such as after a respawn or teleport, works only near the computer;
         // this also keeps a far computer's chunk from being loaded by the lookup
-        if (!action.computer().closerToCenterThan(player.position(), DialingComputers.USE_RANGE)) {
+        if (!pos.closerToCenterThan(player.position(), DialingComputers.USE_RANGE)) {
             DialingComputers.end(player);
             return;
         }
-        if (!(player.level().getBlockEntity(action.computer()) instanceof final DialingComputerBlockEntity computer)) {
-            return;
+        if (player.level().getBlockEntity(pos) instanceof final DialingComputerBlockEntity computer) {
+            DialingComputers.perform(player, action.computer(), computer, computer, action);
         }
+    }
+
+    /**
+     * Does what a button on a computer's screen does, other than close it: dials, aborts, works the iris, changes how
+     * the computer dials, or turns its alarm off or on. The player has already been found to be working the computer.
+     *
+     * @param ref the computer, as its screen names it, to tell the player things on
+     * @param source what the dial, abort or iris comes from, besides the player: the computer's block entity, or the
+     *     jumper it is aboard
+     */
+    public static void perform(final ServerPlayer player, final DialerRef ref, final DialingTerminal computer,
+            final Object source, final ComputerPayloads.Action action) {
         if (action.kind() == ComputerPayloads.Action.Kind.MODE) {
             Arrays.stream(ComputerDialMode.values()).filter(mode -> mode.getSerializedName().equals(action.address()))
                     .findFirst().ifPresent(computer::setMode);
@@ -462,40 +487,40 @@ public final class DialingComputers {
             computer.setAlarmOff(!computer.alarmOff());
             return;
         }
-        final BlockPos at = computer.getBlockPos();
         final Optional<Stargate> gate = computer.gate();
         if (gate.isEmpty()) {
-            DialingComputers.tell(player, at, "message.sgcraft.dialing_computer.unlinked",
+            DialingComputers.tell(player, ref, "message.sgcraft.dialing_computer.unlinked",
                     "No stargate is in reach of this computer");
             return;
         }
-        final Cause cause = Cause.of(computer, player);
+        final Cause cause = Cause.of(source, player);
         switch (action.kind()) {
             case DIAL -> Address.parse(action.address()).ifPresentOrElse(address -> {
                 final CompletionStage<DialResult> result = gate.get().dial(address,
                         computer.mode().dialMode(gate.get()), cause);
                 // Each dial goes at the top of the computer's history, once it is known whether it connected
                 result.thenAccept(outcome -> {
-                    if (!computer.isRemoved()) {
+                    if (!computer.gone()) {
                         computer.remember(address.toString(), outcome == DialResult.CONNECTED);
                     }
                 });
-                DhdActions.report(result, (key, fallback) -> DialingComputers.tell(player, at, key, fallback));
+                DhdActions.report(result, (key, fallback) -> DialingComputers.tell(player, ref, key, fallback));
             },
-                    () -> DialingComputers.tell(player, at, "message.sgcraft.dialing_computer.bad_address",
+                    () -> DialingComputers.tell(player, ref, "message.sgcraft.dialing_computer.bad_address",
                             "That isn't an address"));
             case ABORT -> {
                 if (gate.get().state() != GateState.IDLE) {
                     gate.get().disconnect(cause);
                 }
             }
-            case IRIS -> DialingComputers.toggleIris(player, at, gate.get(), cause);
+            case IRIS -> DialingComputers.toggleIris(player, ref, gate.get(), cause);
             default -> {
             }
         }
     }
+
     // Shuts an open iris, or opens a shut one
-    private static void toggleIris(final ServerPlayer player, final BlockPos computer, final Stargate gate,
+    private static void toggleIris(final ServerPlayer player, final DialerRef computer, final Stargate gate,
             final Cause cause) {
         final Optional<Iris> iris = gate.iris();
         if (iris.isEmpty()) {
@@ -512,8 +537,11 @@ public final class DialingComputers {
         }
     }
 
-    // Tells the player at a computer something on its screen, where the hotbar's messages would be hidden behind it
-    private static void tell(final ServerPlayer player, final BlockPos computer, final String key,
+    /**
+     * Tells the player at a computer something on its screen, where the hotbar's messages would be hidden behind it,
+     * or over the hotbar if its screen isn't open.
+     */
+    public static void tell(final ServerPlayer player, final DialerRef computer, final String key,
             final String fallback) {
         SGNetwork.send(player, new ComputerPayloads.Notice(computer, key, fallback));
     }

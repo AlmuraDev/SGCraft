@@ -42,20 +42,20 @@ public final class ComputerPayloads {
      * Opens or closes a player's dialing computer screen: opened as they sit down at the computer, and closed as
      * they get up.
      *
-     * @param computer the computer's middle lower part
+     * @param computer the computer
      * @param open whether to open the screen, or close it
      */
-    public record Screen(BlockPos computer, boolean open) implements SGPacket {
+    public record Screen(DialerRef computer, boolean open) implements SGPacket {
 
         public static final Type<Screen> TYPE = new Type<>(SGCraft.id("dialing_computer_screen"));
 
         public Screen(final FriendlyByteBuf buf) {
-            this(buf.readBlockPos(), buf.readBoolean());
+            this(DialerRef.read(buf), buf.readBoolean());
         }
 
         @Override
         public void write(final FriendlyByteBuf buf) {
-            buf.writeBlockPos(this.computer);
+            this.computer.write(buf);
             buf.writeBoolean(this.open);
         }
 
@@ -69,19 +69,19 @@ public final class ComputerPayloads {
      * Something a dialing computer's screen tells the player working it, such as why a dial failed, as a translation
      * key and the text to show without one. A client whose screen isn't open on the computer shows it over the hotbar.
      *
-     * @param computer the computer's middle lower part
+     * @param computer the computer
      */
-    public record Notice(BlockPos computer, String key, String fallback) implements SGPacket {
+    public record Notice(DialerRef computer, String key, String fallback) implements SGPacket {
 
         public static final Type<Notice> TYPE = new Type<>(SGCraft.id("dialing_computer_notice"));
 
         public Notice(final FriendlyByteBuf buf) {
-            this(buf.readBlockPos(), buf.readUtf(), buf.readUtf());
+            this(DialerRef.read(buf), buf.readUtf(), buf.readUtf());
         }
 
         @Override
         public void write(final FriendlyByteBuf buf) {
-            buf.writeBlockPos(this.computer);
+            this.computer.write(buf);
             buf.writeUtf(this.key);
             buf.writeUtf(this.fallback);
         }
@@ -95,16 +95,17 @@ public final class ComputerPayloads {
     /**
      * A button on a dialing computer's screen.
      *
-     * @param computer the computer's middle lower part
+     * @param computer the computer
      * @param kind what the button does
      * @param address the address to dial, for {@link Kind#DIAL}, or the mode to dial in, for {@link Kind#MODE}
      */
-    public record Action(BlockPos computer, Kind kind, String address) implements SGPacket {
+    public record Action(DialerRef computer, Kind kind, String address) implements SGPacket {
 
         /**
          * What the button does: dials the address, the way the computer's {@link ComputerDialMode} says; sets that
          * mode; shuts the gate down; opens or shuts the iris; turns the alarm off, or on again; or closes the
-         * screen, which gets the player up from the chair or away from the computer.
+         * screen, which gets the player up from the chair or away from the computer. Closing a jumper's computer's
+         * screen leaves the player in their seat.
          */
         public enum Kind {
             DIAL, MODE, ABORT, IRIS, ALARM, CLOSE
@@ -113,12 +114,12 @@ public final class ComputerPayloads {
         public static final Type<Action> TYPE = new Type<>(SGCraft.id("dialing_computer_action"));
 
         public Action(final FriendlyByteBuf buf) {
-            this(buf.readBlockPos(), buf.readEnum(Kind.class), buf.readUtf(32));
+            this(DialerRef.read(buf), buf.readEnum(Kind.class), buf.readUtf(32));
         }
 
         @Override
         public void write(final FriendlyByteBuf buf) {
-            buf.writeBlockPos(this.computer);
+            this.computer.write(buf);
             buf.writeEnum(this.kind);
             buf.writeUtf(this.address, 32);
         }

@@ -38,6 +38,8 @@ public final class SGEntityTypes {
     public static EntityType<IrisPlateEntity> IRIS_PLATE;
     public static EntityType<MalpEntity> MALP;
     public static EntityType<SeatEntity> SEAT;
+    public static EntityType<PuddleJumperEntity> PUDDLE_JUMPER;
+    public static EntityType<DroneEntity> DRONE;
 
     private SGEntityTypes() {
     }
@@ -59,5 +61,20 @@ public final class SGEntityTypes {
         SGEntityTypes.SEAT = EntityType.Builder.<SeatEntity>of(SeatEntity::new, MobCategory.MISC)
                 .noLootTable().noSummon().fireImmune().sized(0F, 0F).clientTrackingRange(10).build(seat);
         sink.register(seat, SGEntityTypes.SEAT);
+        // The puddle jumper: its hitbox is its hull's width and height, which fit a gate's opening; its nose and
+        // tail reach further. Clients hear of it every tick, so its passengers' view of it glides
+        final ResourceKey<EntityType<?>> jumper = ResourceKey.create(Registries.ENTITY_TYPE,
+                SGCraft.id("puddle_jumper"));
+        SGEntityTypes.PUDDLE_JUMPER = EntityType.Builder.<PuddleJumperEntity>of(PuddleJumperEntity::new,
+                        MobCategory.MISC)
+                .noLootTable().fireImmune().sized(PuddleJumperEntity.WIDTH, PuddleJumperEntity.HEIGHT)
+                .clientTrackingRange(10).updateInterval(1).build(jumper);
+        sink.register(jumper, SGEntityTypes.PUDDLE_JUMPER);
+        // A jumper's drone, small and fast; clients hear of it every tick, and far off, as it flies far
+        final ResourceKey<EntityType<?>> drone = ResourceKey.create(Registries.ENTITY_TYPE, SGCraft.id("drone"));
+        SGEntityTypes.DRONE = EntityType.Builder.<DroneEntity>of(DroneEntity::new, MobCategory.MISC)
+                .noLootTable().noSave().fireImmune().sized(0.4F, 0.4F).clientTrackingRange(10).updateInterval(1)
+                .build(drone);
+        sink.register(drone, SGEntityTypes.DRONE);
     }
 }

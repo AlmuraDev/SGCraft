@@ -25,18 +25,21 @@
 
 package com.almuradev.sgcraft.mod.mixin;
 
+import com.almuradev.sgcraft.mod.entity.JumperShelter;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import com.almuradev.sgcraft.mod.rings.RingHolds;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 // Keeps a player a ring transport holds from damage, and takes a player who takes damage off their MALP console, if
-// the server's settings say damage does
+// the server's settings say damage does; and keeps fire off players inside a puddle jumper
 @Mixin(ServerPlayer.class)
 abstract class ServerPlayerMixin {
 
@@ -45,6 +48,24 @@ abstract class ServerPlayerMixin {
             final CallbackInfoReturnable<Boolean> callback) {
         if (RingHolds.shields((ServerPlayer) (Object) this, source)) {
             callback.setReturnValue(false);
+        }
+    }
+
+    // Fire and lava don't reach anyone inside a puddle jumper, seated or standing, and any fire on them goes out
+    @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
+    private void sgcraft$shelteredFromFire(final ServerLevel level, final DamageSource source, final float damage,
+            final CallbackInfoReturnable<Boolean> callback) {
+        if (source.is(DamageTypeTags.IS_FIRE) && JumperShelter.sheltered((ServerPlayer) (Object) this)) {
+            ((ServerPlayer) (Object) this).clearFire();
+            callback.setReturnValue(false);
+        }
+    }
+
+    @Inject(method = "tick", at = @At("TAIL"))
+    private void sgcraft$putOutSheltered(final CallbackInfo callback) {
+        final ServerPlayer player = (ServerPlayer) (Object) this;
+        if (player.getRemainingFireTicks() > 0 && JumperShelter.sheltered(player)) {
+            player.clearFire();
         }
     }
 

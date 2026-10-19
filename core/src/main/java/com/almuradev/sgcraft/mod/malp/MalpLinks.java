@@ -34,6 +34,7 @@ import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.block.entity.MalpConsoleBlockEntity;
 import com.almuradev.sgcraft.mod.computer.DialingComputers;
 import com.almuradev.sgcraft.mod.entity.MalpEntity;
+import com.almuradev.sgcraft.mod.entity.PuddleJumperEntity;
 import com.almuradev.sgcraft.mod.item.BatteryItem;
 import com.almuradev.sgcraft.mod.item.MalpTabletItem;
 import com.almuradev.sgcraft.mod.item.SGItems;
@@ -217,11 +218,13 @@ public final class MalpLinks {
         private MalpSignal signal = MalpSignal.NONE;
     }
 
-    /** Registers the ticket types: the MALP's, and the city shield's. */
+    /** Registers the ticket types: the MALP's, the city shield's, and the puddle jumper's for a gate's far end. */
     public static void registerTickets(final RegistrySink<TicketType> sink) {
         sink.register(ResourceKey.create(Registries.TICKET_TYPE, SGCraft.id("malp")), MalpLinks.TICKET);
         sink.register(ResourceKey.create(Registries.TICKET_TYPE, SGCraft.id("city_shield")),
                 CityShieldBlockEntity.TICKET);
+        sink.register(ResourceKey.create(Registries.TICKET_TYPE, SGCraft.id("jumper_far_side")),
+                PuddleJumperEntity.FAR_SIDE);
     }
 
     /**

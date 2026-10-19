@@ -39,6 +39,11 @@ import com.almuradev.sgcraft.mod.client.generator.GeneratorItemRenderer;
 import com.almuradev.sgcraft.mod.client.generator.GeneratorRenderer;
 import com.almuradev.sgcraft.mod.client.generator.GeneratorScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleRenderer;
+import com.almuradev.sgcraft.mod.client.jumper.JumperHud;
+import com.almuradev.sgcraft.mod.client.jumper.JumperKeys;
+import com.almuradev.sgcraft.mod.client.jumper.JumperModel;
+import com.almuradev.sgcraft.mod.client.jumper.DroneRenderer;
+import com.almuradev.sgcraft.mod.client.jumper.JumperRenderer;
 import com.almuradev.sgcraft.mod.client.malp.MalpModel;
 import com.almuradev.sgcraft.mod.client.malp.MalpRenderer;
 import com.almuradev.sgcraft.mod.client.malp.MalpScreen;
@@ -70,9 +75,12 @@ import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterFeatureRenderersEvent;
+import net.neoforged.neoforge.client.event.RegisterGuiLayersEvent;
+import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.event.RegisterMenuScreensEvent;
 import net.neoforged.neoforge.client.event.RegisterPictureInPictureRenderersEvent;
 import net.neoforged.neoforge.client.event.RegisterSpecialModelRendererEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
 import net.neoforged.neoforge.common.NeoForge;
 
 /**
@@ -98,12 +106,44 @@ public final class SGCraftClientNeoForge {
         event.registerEntityRenderer(SGEntityTypes.IRIS_PLATE, NoopRenderer::new);
         event.registerEntityRenderer(SGEntityTypes.SEAT, NoopRenderer::new);
         event.registerEntityRenderer(SGEntityTypes.MALP, MalpRenderer::new);
+        event.registerEntityRenderer(SGEntityTypes.PUDDLE_JUMPER, JumperRenderer::new);
+        event.registerEntityRenderer(SGEntityTypes.DRONE, DroneRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void registerHud(final RegisterGuiLayersEvent event) {
+        event.registerAbove(VanillaGuiLayers.BOSS_OVERLAY, JumperHud.ID,
+                JumperHud::extract);
+        // Aboard a jumper, the hotbar is drawn as its panels are
+        event.wrapLayer(VanillaGuiLayers.HOTBAR, hotbar -> (graphics, deltaTracker) -> {
+            if (!JumperHud.extractHotbar(graphics, deltaTracker)) {
+                hotbar.render(graphics, deltaTracker);
+            }
+        });
+    }
+
+    @SubscribeEvent
+    public static void registerKeys(final RegisterKeyMappingsEvent event) {
+        event.registerCategory(JumperKeys.CATEGORY);
+        event.register(JumperKeys.DESCEND);
+        event.register(JumperKeys.HEADLIGHTS);
+        event.register(JumperKeys.POWER);
+        event.register(JumperKeys.PODS);
+        event.register(JumperKeys.DOOR);
+        event.register(JumperKeys.COMPUTER);
+        event.register(JumperKeys.ARM);
+        event.register(JumperKeys.TARGET);
+        event.register(JumperKeys.FIRE);
+        event.register(JumperKeys.FRIENDLY_FIRE);
     }
 
     @SubscribeEvent
     public static void registerLayers(final EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(MalpModel.LAYER, MalpModel::createLayer);
         event.registerLayerDefinition(MalpModel.GLOW_LAYER, MalpModel::createGlowLayer);
+        event.registerLayerDefinition(JumperModel.LAYER, JumperModel::createLayer);
+        event.registerLayerDefinition(JumperModel.GLASS_LAYER, JumperModel::createGlassLayer);
+        event.registerLayerDefinition(JumperModel.GLOW_LAYER, JumperModel::createGlowLayer);
     }
 
     @SubscribeEvent

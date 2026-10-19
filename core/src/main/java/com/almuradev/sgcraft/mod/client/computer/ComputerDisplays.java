@@ -26,18 +26,16 @@
 package com.almuradev.sgcraft.mod.client.computer;
 
 import com.almuradev.sgcraft.mod.SGCraft;
-import com.almuradev.sgcraft.mod.block.entity.DialingComputerBlockEntity;
+import com.almuradev.sgcraft.mod.computer.DialingTerminal;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.texture.DynamicTexture;
-import net.minecraft.core.BlockPos;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -51,7 +49,7 @@ public final class ComputerDisplays {
     private static final long FRAME_NANOS = 1_000_000_000L / ComputerDisplays.FRAMES_PER_SECOND;
     private static final long FORGET_NANOS = 5_000_000_000L;
 
-    private static final Map<BlockPos, Display> DISPLAYS = new HashMap<>();
+    private static final Map<String, Display> DISPLAYS = new HashMap<>();
     private static WeakReference<@Nullable ClientLevel> session = new WeakReference<>(null);
 
     private ComputerDisplays() {
@@ -61,7 +59,7 @@ public final class ComputerDisplays {
      * @return the texture showing a computer's screen as it is now, painted again if a frame has passed since it last
      *     was
      */
-    public static Identifier texture(final DialingComputerBlockEntity computer, final float partialTick) {
+    public static Identifier texture(final DialingTerminal computer, final float partialTick) {
         final Minecraft minecraft = Minecraft.getInstance();
         final ClientLevel level = minecraft.level;
         if (ComputerDisplays.session.get() != level) {
@@ -70,8 +68,7 @@ public final class ComputerDisplays {
         }
         final long now = System.nanoTime();
         ComputerDisplays.forgetOld(now);
-        final BlockPos pos = computer.getBlockPos().immutable();
-        final Display display = ComputerDisplays.DISPLAYS.computeIfAbsent(pos, Display::new);
+        final Display display = ComputerDisplays.DISPLAYS.computeIfAbsent(computer.pictureName(), Display::new);
         display.asked = now;
         if (level != null && now - display.painted >= ComputerDisplays.FRAME_NANOS) {
             display.painted = now;
@@ -116,10 +113,10 @@ public final class ComputerDisplays {
         long asked;
         boolean registered;
 
-        Display(final BlockPos pos) {
-            this.id = SGCraft.id("dynamic/dialing_computer_" + Long.toHexString(pos.asLong()).toLowerCase(Locale.ROOT));
-            this.texture = new DynamicTexture(() -> "SGCraft dialing computer " + pos.toShortString(),
-                    ComputerDisplay.WIDTH, ComputerDisplay.HEIGHT, true);
+        Display(final String name) {
+            this.id = SGCraft.id("dynamic/dialing_computer_" + name);
+            this.texture = new DynamicTexture(() -> "SGCraft dialing computer " + name, ComputerDisplay.WIDTH,
+                    ComputerDisplay.HEIGHT, true);
         }
 
         void free() {

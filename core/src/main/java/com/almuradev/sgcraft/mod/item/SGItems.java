@@ -100,6 +100,7 @@ public final class SGItems {
     public static Item GDO;
     public static Item CONFIGURATOR;
     public static Item MALP;
+    public static Item PUDDLE_JUMPER;
     public static BlockItem MALP_CONSOLE;
     public static BlockItem DIALING_COMPUTER;
     public static BlockItem OFFICE_CHAIR;
@@ -194,6 +195,9 @@ public final class SGItems {
         SGItems.BATTERY = SGItems.register(sink, "battery", BatteryItem::new, properties -> properties.stacksTo(1));
         SGItems.BATTERY_CHARGER = SGItems.registerBlock(sink, SGBlocks.BATTERY_CHARGER);
         SGItems.ENERGY_CONVERTER = SGItems.registerBlock(sink, SGBlocks.ENERGY_CONVERTER);
+        // The Ancients' small ship, which dials a gate and flies through it with everyone aboard
+        SGItems.PUDDLE_JUMPER = SGItems.register(sink, "puddle_jumper", PuddleJumperItem::new,
+                properties -> properties.stacksTo(1));
     }
 
     /** Registers the recipe that tops up a battery with naquadah. */

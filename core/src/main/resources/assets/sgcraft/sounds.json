@@ -198,5 +198,26 @@
       "sgcraft:computer_key_big_1",
       "sgcraft:computer_key_big_2"
     ]
+  },
+  "jumper_hum": {
+    "sounds": [
+      {
+        "name": "sgcraft:jumper_hum",
+        "stream": false
+      }
+    ],
+    "subtitle": "subtitles.sgcraft.jumper_hum"
+  },
+  "jumper_power_on": {
+    "sounds": [
+      "sgcraft:jumper_power_on"
+    ],
+    "subtitle": "subtitles.sgcraft.jumper_power_on"
+  },
+  "jumper_power_off": {
+    "sounds": [
+      "sgcraft:jumper_power_off"
+    ],
+    "subtitle": "subtitles.sgcraft.jumper_power_off"
   }
 }

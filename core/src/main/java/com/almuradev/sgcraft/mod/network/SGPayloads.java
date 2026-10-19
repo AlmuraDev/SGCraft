@@ -31,6 +31,7 @@ import com.almuradev.sgcraft.mod.computer.DialingComputers;
 import com.almuradev.sgcraft.mod.dhd.DhdActions;
 import com.almuradev.sgcraft.mod.dhd.DhdDial;
 import com.almuradev.sgcraft.mod.dhd.DhdPress;
+import com.almuradev.sgcraft.mod.entity.JumperPayloads;
 import com.almuradev.sgcraft.mod.gate.GateBaseInfo;
 import com.almuradev.sgcraft.mod.malp.MalpConfigurator;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
@@ -107,6 +108,13 @@ final class SGPayloads {
         SGNetwork.clientbound(ComputerPayloads.ConfigState.TYPE, ComputerPayloads.ConfigState::new);
         SGNetwork.serverbound(ComputerPayloads.ConfigApply.TYPE, ComputerPayloads.ConfigApply::new,
                 ComputerConfigurator::apply);
+        // The puddle jumper's pilot: the drive pods, and the dashboard's buttons by their keys
+        SGNetwork.serverbound(JumperPayloads.Pods.TYPE, JumperPayloads.Pods::new, JumperPayloads.Pods::handle);
+        SGNetwork.serverbound(JumperPayloads.Press.TYPE, JumperPayloads.Press::new, JumperPayloads.Press::handle);
+        SGNetwork.serverbound(JumperPayloads.Computer.TYPE, JumperPayloads.Computer::new,
+                JumperPayloads.Computer::handle);
+        SGNetwork.serverbound(JumperPayloads.Fire.TYPE, JumperPayloads.Fire::new, JumperPayloads.Fire::handle);
+        SGNetwork.serverbound(JumperPayloads.Target.TYPE, JumperPayloads.Target::new, JumperPayloads.Target::handle);
         // The explorer dialer: its list out, its buttons in
         SGNetwork.clientbound(ExplorerPayloads.State.TYPE, ExplorerPayloads.State::new);
         SGNetwork.serverbound(ExplorerPayloads.Action.TYPE, ExplorerPayloads.Action::new, ExplorerDialer::action);

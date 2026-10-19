@@ -26,15 +26,19 @@
 package com.almuradev.sgcraft.mod.mixin.client;
 
 import com.almuradev.sgcraft.mod.client.malp.MalpConsolePose;
+import com.almuradev.sgcraft.mod.entity.PuddleJumperEntity;
+import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.entity.player.AvatarRenderer;
 import net.minecraft.client.renderer.entity.state.AvatarRenderState;
 import net.minecraft.world.entity.Avatar;
+import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-// Poses a player at a MALP console, or looking at a MALP tablet, once the renderer has read their own state
+// Poses a player at a MALP console, or looking at a MALP tablet, once the renderer has read their own state; and
+// empties the hands of a rider in a puddle jumper's seat
 @Mixin(AvatarRenderer.class)
 abstract class AvatarRendererMixin {
 
@@ -43,5 +47,20 @@ abstract class AvatarRendererMixin {
     private void sgcraft$consolePose(final Avatar entity, final AvatarRenderState state, final float partialTicks,
             final CallbackInfo callback) {
         MalpConsolePose.extract(state);
+    }
+
+    // A rider in a jumper's seat holds nothing that shows, their hands at the controls or in their lap
+    @Inject(method = "extractRenderState(Lnet/minecraft/world/entity/Avatar;"
+            + "Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;F)V", at = @At("TAIL"))
+    private void sgcraft$riderHandsEmpty(final Avatar entity, final AvatarRenderState state, final float partialTicks,
+            final CallbackInfo callback) {
+        if (entity.getVehicle() instanceof PuddleJumperEntity) {
+            state.rightHandItemState.clear();
+            state.leftHandItemState.clear();
+            state.rightHandItemStack = ItemStack.EMPTY;
+            state.leftHandItemStack = ItemStack.EMPTY;
+            state.rightArmPose = HumanoidModel.ArmPose.EMPTY;
+            state.leftArmPose = HumanoidModel.ArmPose.EMPTY;
+        }
     }
 }

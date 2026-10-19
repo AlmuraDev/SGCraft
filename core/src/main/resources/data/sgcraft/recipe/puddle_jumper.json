@@ -1,0 +1,19 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "g": "minecraft:glass",
+    "N": "sgcraft:naquadah_block",
+    "D": "sgcraft:dialing_computer",
+    "c": "sgcraft:controller_crystal",
+    "k": "sgcraft:core_crystal"
+  },
+  "pattern": [
+    "ggg",
+    "NDN",
+    "ckc"
+  ],
+  "result": {
+    "id": "sgcraft:puddle_jumper"
+  }
+}
