@@ -31,6 +31,7 @@ import com.almuradev.sgcraft.mod.addressbook.DefaultAddresses;
 import com.almuradev.sgcraft.mod.addressbook.SGAddressBooks;
 import com.almuradev.sgcraft.mod.gate.SGStargates;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
+import com.almuradev.sgcraft.mod.tool.ToolActions;
 import com.almuradev.sgcraft.mod.view.RemoteViews;
 import com.almuradev.sgcraft.mod.zat.Zat;
 import net.minecraft.ChatFormatting;
@@ -119,6 +120,7 @@ public final class SGServer {
             RemoteViews.tick(server);
             MalpLinks.tick(server);
             Zat.tick(server);
+            ToolActions.tickGdo(server);
         }
     }
 

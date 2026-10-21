@@ -78,6 +78,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -146,7 +147,7 @@ public final class ToolActions {
     }
 
     // The gate at a position the player's screen names, if it is still there and the player is still near it
-    private static Optional<Stargate> near(final ServerPlayer player, final net.minecraft.core.BlockPos pos) {
+    private static Optional<Stargate> near(final ServerPlayer player, final BlockPos pos) {
         if (!pos.closerToCenterThan(player.position(), ToolActions.range() + 6 + ToolActions.SLACK)) {
             return Optional.empty();
         }
@@ -290,16 +291,19 @@ public final class ToolActions {
         ToolActions.sendPdd(player, false, message);
     }
 
-    // A book's entries, each with what the gate its address reaches from a world is doing, and whether that is the
-    // gate dialing, matched by place so an address in any of its forms counts
+    // A book's entries, each with what the gate its address reaches from a world is doing and the world it is in, as
+    // 2.2.0's PDD showed, and whether that is the gate dialing, matched by place so an address in any of its forms
+    // counts
     private static List<BookEntry> entries(final AddressBook book, final ResourceKey<Level> from,
             final Optional<GlobalPos> dialer) {
         final List<BookEntry> entries = new ArrayList<>();
         book.forEach(entry -> {
             final Optional<Stargate> target = SGCraftApi.get().stargates().byAddress(entry.address(), from);
             final boolean own = dialer.isPresent() && target.map(Stargate::position).equals(dialer);
+            final String world = target.filter(Stargate::exists)
+                    .map(gate -> gate.position().dimension().identifier().toString()).orElse("");
             entries.add(new BookEntry(entry.name().getString(), entry.address().toString(),
-                    ToolActions.status(target), own));
+                    ToolActions.status(target), own, world));
         });
         return entries;
     }
@@ -548,6 +552,43 @@ public final class ToolActions {
 
     // The GDO
 
+    // How long after a GDO's screen last asked for its state the server stops sending it changes, in ticks; the screen
+    // asks twice a second while it is open
+    private static final int GDO_WATCH_TICKS = 40;
+    // The players with a GDO's screen open: the gate it works, what it was last sent, and when it last asked
+    private static final Map<UUID, GdoViewer> GDO_VIEWERS = new HashMap<>();
+
+    private record GdoViewer(BlockPos gate, GdoState sent, int asked) {
+    }
+
+    /**
+     * Sends each open GDO screen its gate's state as soon as it changes, as 2.2.0's did, so its buttons follow an iris
+     * or a wormhole the moment it moves, not on the screen's next ask.
+     */
+    public static void tickGdo(final MinecraftServer server) {
+        if (ToolActions.GDO_VIEWERS.isEmpty()) {
+            return;
+        }
+        final int now = server.getTickCount();
+        ToolActions.GDO_VIEWERS.entrySet().removeIf(entry -> {
+            final ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
+            final GdoViewer viewer = entry.getValue();
+            if (player == null || now - viewer.asked() > ToolActions.GDO_WATCH_TICKS) {
+                return true;
+            }
+            final Optional<Stargate> gate = ToolActions.near(player, viewer.gate());
+            if (gate.isEmpty()) {
+                return true;
+            }
+            final GdoState state = ToolActions.gdoState(player, gate.get(), false, "");
+            if (!state.equals(viewer.sent())) {
+                SGNetwork.send(player, state);
+                entry.setValue(new GdoViewer(viewer.gate(), state, viewer.asked()));
+            }
+            return false;
+        });
+    }
+
     /** A player used a GDO: its screen opens on the gate near them. */
     public static void openGdo(final ServerPlayer player) {
         final Optional<Stargate> gate = GateTargeting.find(player, ToolActions.range());
@@ -560,10 +601,18 @@ public final class ToolActions {
 
     private static void sendGdo(final ServerPlayer player, final Stargate gate, final boolean open,
             final String message) {
+        final GdoState state = ToolActions.gdoState(player, gate, open, message);
+        SGNetwork.send(player, state);
+        ToolActions.GDO_VIEWERS.put(player.getUUID(), new GdoViewer(gate.position().pos(),
+                ToolActions.gdoState(player, gate, false, ""), player.level().getServer().getTickCount()));
+    }
+
+    private static GdoState gdoState(final ServerPlayer player, final Stargate gate, final boolean open,
+            final String message) {
         final Optional<Stargate> remote = ToolActions.remote(gate);
         final boolean canDisconnect = gate.state() != GateState.IDLE && gate.state() != GateState.CLOSING;
-        SGNetwork.send(player, new GdoState(open, ToolActions.info(player, gate),
-                remote.map(other -> ToolActions.info(player, other)), canDisconnect, message));
+        return new GdoState(open, ToolActions.info(player, gate), remote.map(other -> ToolActions.info(player, other)),
+                canDisconnect, message);
     }
 
     // The gate at the other end of the wormhole, once it is open
@@ -758,7 +807,7 @@ public final class ToolActions {
     // The gate a configurator screen names: one near the player holding a configurator, or one on the list of the
     // tablet they hold
     private static Optional<Stargate> configured(final ServerPlayer player, final String world,
-            final net.minecraft.core.BlockPos pos) {
+            final BlockPos pos) {
         final Identifier id = Identifier.tryParse(world);
         if (ToolActions.holding(player, SGItems.CONFIGURATOR)
                 && (id == null || id.equals(player.level().dimension().identifier()))) {

@@ -132,7 +132,7 @@ Bigger cells reach farther from the center with the same symbols but leave more 
 | `owners_break_gates` | `true` | A gate's owner may break it whatever its `breakable` property says |
 | `generated_gates_breakable` | `false` | Players may break generated gates that have no `breakable` value of their own |
 | `wormholes_jump` | `true` | When the gate an open wormhole reaches breaks, the wormhole jumps to another gate in the same address cell. See [Wormhole jumps](dialing.md#wormhole-jumps) |
-| `log_events` | `false` | Gates forming and breaking, and wormholes opening, closing and going astray, are written to the server log |
+| `log_events` | `false` | Gates forming and breaking, wormholes opening, closing and going astray, and dials that fail and why, are written to the server log |
 | `defaults` | `{}` | Values gates have for a property when they have none of their own. See [Gate defaults](#gate-defaults) |
 
 #### Gate defaults

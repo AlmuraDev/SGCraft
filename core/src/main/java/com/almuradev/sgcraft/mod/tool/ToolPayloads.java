@@ -72,14 +72,15 @@ public final class ToolPayloads {
      * {@link #NO_GATE} or a gate state's name in lower case.
      *
      * @param own whether the address reaches the gate the screen dials from, which can't dial itself
+     * @param world the world of the gate its address reaches, by identifier, or empty if no gate answers to it
      */
-    public record BookEntry(String name, String address, String status, boolean own) {
+    public record BookEntry(String name, String address, String status, boolean own, String world) {
 
         /** {@link #status()} for an address no gate answers to. */
         public static final String NO_GATE = "no_gate";
 
         public BookEntry(final FriendlyByteBuf buf) {
-            this(buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readBoolean());
+            this(buf.readUtf(), buf.readUtf(), buf.readUtf(), buf.readBoolean(), buf.readUtf());
         }
 
         public void write(final FriendlyByteBuf buf) {
@@ -87,6 +88,7 @@ public final class ToolPayloads {
             buf.writeUtf(this.address);
             buf.writeUtf(this.status);
             buf.writeBoolean(this.own);
+            buf.writeUtf(this.world);
         }
     }
 

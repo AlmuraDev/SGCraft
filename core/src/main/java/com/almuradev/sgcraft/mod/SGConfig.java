@@ -340,8 +340,8 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
      *     unless set, as in the original
      * @param chunkLoadingRange how many chunks around a gate's own stay loaded while it is busy, as the original's
      *     {@code chunkLoadingRange}; 1 unless set
-     * @param logStargateEvents whether gates forming and breaking, and wormholes opening, closing and going astray,
-     *     are written to the server log; off unless set, as in the original
+     * @param logStargateEvents whether gates forming and breaking, wormholes opening, closing and going astray, and
+     *     dials that fail and why, are written to the server log; off unless set, as in the original
      * @param tokraWorlds whether Tok'ra stand at the gates generated in each world, by the world's identifier, as
      *     the original's {@code tokra.yml}; a world set off has none, and a world left out has them wherever its
      *     structures' settings say

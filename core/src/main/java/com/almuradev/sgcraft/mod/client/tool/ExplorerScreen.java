@@ -258,7 +258,7 @@ public final class ExplorerScreen extends Screen {
     }
 
     // A world's name as players read it: the vanilla worlds by name, others by their identifier's path
-    private static Component worldName(final String world) {
+    static Component worldName(final String world) {
         return switch (world) {
             case "minecraft:overworld" -> Component.translatableWithFallback("screen.sgcraft.world.overworld",
                     "Overworld");

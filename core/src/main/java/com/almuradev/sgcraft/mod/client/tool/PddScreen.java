@@ -48,7 +48,7 @@ import java.util.Optional;
 
 /**
  * The PDD, the personal dialing device: the addresses kept on the PDD itself, dialed from the gate near its holder,
- * each with what the gate it reaches is doing, or that it is gone. Choosing an entry fills the boxes below the list,
+ * each with what the gate it reaches is doing and the world it is in, or that it is gone. Choosing an entry fills the boxes below the list,
  * which add, rename and remove entries; the gate's own address can be added with a click.
  */
 public final class PddScreen extends Screen {
@@ -275,9 +275,14 @@ public final class PddScreen extends Screen {
             public void extractContent(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY,
                     final boolean hovered, final float a) {
                 final PddScreen screen = PddScreen.this;
-                // The gate near the player, which it can't dial, is grayed
+                // The gate near the player, which it can't dial, is grayed; the world its gate is in follows the name
                 graphics.text(screen.font, this.entry.name(), this.getContentX() + 2, this.getContentY() + 1,
                         this.entry.own() ? 0xFF808080 : 0xFFFFFFFF);
+                if (!this.entry.world().isEmpty()) {
+                    graphics.text(screen.font, ExplorerScreen.worldName(this.entry.world()),
+                            this.getContentX() + 8 + screen.font.width(this.entry.name()), this.getContentY() + 1,
+                            0xFF909090);
+                }
                 graphics.text(screen.font, this.entry.address(), this.getContentX() + 2, this.getContentY() + 11,
                         0xFF8FB8FF);
                 // What the gate it reaches is doing, or that it is gone

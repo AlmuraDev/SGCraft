@@ -45,7 +45,7 @@ The screen has two sides:
 
 For a gate with a [shield](../iris.md#the-shield), the side shows **Shield Active**, **Raising Shield...**, **Lowering Shield...** or **Shield Inactive**, and the buttons read **Activate Shield** and **Deactivate Shield**.
 
-The screen updates twice a second.
+The screen changes as soon as either iris or the wormhole does.
 
 | Button | What it does |
 | --- | --- |

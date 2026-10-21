@@ -378,8 +378,9 @@ public final class SGConnection implements Connection {
         }
     }
 
-    // A dial that ends before the wormhole opens
+    // A dial that ends before the wormhole opens, and the server log says why, as 2.2.0's did
     private void fail(final DialResult result) {
+        this.dialer.stargates().log("FAILED {} TO {}: " + result, this.dialer, this.target);
         this.result.complete(result);
         this.dialer.play(SGSounds.fail(this.style));
         this.target.play(SGSounds.fail(DialStyle.of(this.target.typeKey())));
@@ -388,6 +389,7 @@ public final class SGConnection implements Connection {
 
     /** One of the gates was broken: the other goes back to idle at once. */
     void gone() {
+        this.dialer.stargates().log("STOPPED {} TO {}: a gate was broken", this.dialer, this.target);
         this.result.complete(DialResult.GATE_GONE);
         this.finish();
     }
