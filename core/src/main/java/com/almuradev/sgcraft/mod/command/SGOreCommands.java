@@ -30,6 +30,7 @@ import com.almuradev.sgcraft.mod.worldgen.NaquadahOreSettings;
 import com.almuradev.sgcraft.mod.worldgen.OreChunks;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -39,25 +40,21 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.commands.arguments.IdentifierArgument;
 import net.minecraft.commands.arguments.coordinates.ColumnPosArgument;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * {@code /sgcraft ore}: how naquadah ore generates. On its own it lists the settings;
  * {@code enable_naquadah_ore <true|false>}, {@code add_ores_to_existing_worlds <true|false>} and each count's name
- * with a number set one, and {@code dimension_ids <add|remove> <world>} changes the worlds it generates in. Changes
+ * with a number set one, and {@code worlds <add|remove> <pattern>} changes the worlds it generates in. Changes
  * apply to chunks generated or loaded from then on and are written to the settings file.
  *
  * <p>{@code chunk [<x z>]} tells whether the chunk the caller is in, or the one holding a position, has had its
@@ -68,6 +65,8 @@ final class SGOreCommands {
 
     private static final SimpleCommandExceptionType NOT_LOADED = new SimpleCommandExceptionType(
             SGCommands.text("ore.not_loaded", "That chunk isn't loaded"));
+    private static final SimpleCommandExceptionType BAD_PATTERN = new SimpleCommandExceptionType(
+            SGCommands.text("ore.bad_pattern", "Give a world's id, *, namespace:* or one of these after !"));
 
     private SGOreCommands() {
     }
@@ -95,21 +94,19 @@ final class SGOreCommands {
                             .executes(context -> SGOreCommands.set(context.getSource(), count.with(
                                     NaquadahOre.settings(), IntegerArgumentType.getInteger(context, "value"))))));
         }
-        ore.then(Commands.literal("dimension_ids")
+        ore.then(Commands.literal("worlds")
                 .then(Commands.literal("add")
-                        .then(Commands.argument("world", IdentifierArgument.id())
-                                .suggests((context, builder) -> SharedSuggestionProvider.suggestResource(
-                                        context.getSource().getServer().levelKeys().stream()
-                                                .map(ResourceKey::identifier), builder))
-                                .executes(context -> SGOreCommands.set(context.getSource(), NaquadahOre.settings()
-                                        .withDimension(SGOreCommands.world(context), true)))))
+                        .then(Commands.argument("pattern", StringArgumentType.greedyString())
+                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(Stream.concat(
+                                        Stream.of("*"), context.getSource().getServer().levelKeys().stream()
+                                                .map(world -> world.identifier().toString())
+                                                .flatMap(id -> Stream.of(id, "!" + id))), builder))
+                                .executes(context -> SGOreCommands.world(context, true))))
                 .then(Commands.literal("remove")
-                        .then(Commands.argument("world", IdentifierArgument.id())
-                                .suggests((context, builder) -> SharedSuggestionProvider.suggestResource(
-                                        NaquadahOre.settings().dimensionIds().stream()
-                                                .map(ResourceKey::identifier), builder))
-                                .executes(context -> SGOreCommands.set(context.getSource(), NaquadahOre.settings()
-                                        .withDimension(SGOreCommands.world(context), false))))));
+                        .then(Commands.argument("pattern", StringArgumentType.greedyString())
+                                .suggests((context, builder) -> SharedSuggestionProvider.suggest(
+                                        NaquadahOre.settings().worlds(), builder))
+                                .executes(context -> SGOreCommands.world(context, false)))));
         final ChunkFinder here = context -> ChunkPos.containing(BlockPos.containing(
                 context.getSource().getPosition()));
         final ChunkFinder at = context -> ColumnPosArgument.getColumnPos(context, "pos").toChunkPos();
@@ -135,8 +132,13 @@ final class SGOreCommands {
                         .executes(context -> SGOreCommands.unmark(context.getSource(), finder.find(context))));
     }
 
-    private static ResourceKey<Level> world(final CommandContext<CommandSourceStack> context) {
-        return ResourceKey.create(Registries.DIMENSION, IdentifierArgument.getId(context, "world"));
+    private static int world(final CommandContext<CommandSourceStack> context, final boolean listed)
+            throws CommandSyntaxException {
+        final String pattern = StringArgumentType.getString(context, "pattern").strip();
+        if (!NaquadahOreSettings.isPattern(pattern)) {
+            throw SGOreCommands.BAD_PATTERN.create();
+        }
+        return SGOreCommands.set(context.getSource(), NaquadahOre.settings().withWorld(pattern, listed));
     }
 
     private static int show(final CommandSourceStack source) {
@@ -146,7 +148,7 @@ final class SGOreCommands {
         for (final NaquadahOreSettings.Count count : NaquadahOreSettings.Count.values()) {
             SGOreCommands.line(source, count.id(), String.valueOf(count.get(settings)));
         }
-        SGOreCommands.line(source, "dimension_ids", SGOreCommands.worlds(settings));
+        SGOreCommands.line(source, "worlds", SGOreCommands.worlds(settings));
         SGOreCommands.line(source, "add_ores_to_existing_worlds",
                 String.valueOf(settings.addOresToExistingWorlds()));
         final int pending = NaquadahOre.pending();
@@ -163,8 +165,7 @@ final class SGOreCommands {
     }
 
     private static String worlds(final NaquadahOreSettings settings) {
-        return settings.dimensionIds().isEmpty() ? "[]" : settings.dimensionIds().stream()
-                .map(world -> world.identifier().toString()).collect(Collectors.joining(", "));
+        return settings.worlds().isEmpty() ? "[]" : String.join(", ", settings.worlds());
     }
 
     private static int set(final CommandSourceStack source, final NaquadahOreSettings settings) {

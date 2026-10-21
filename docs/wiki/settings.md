@@ -182,8 +182,8 @@ The `worldgen` section sets naquadah ore, the gates the world builds and the Tok
 | `max_nodes_under_lava` | `16` | Most columns of a chunk searched for lava, each giving a cluster where lava rests on a solid block |
 | `gen_isolated_odds` | `1` | One chunk in this many gets nodes away from lava; `0` gives none |
 | `max_isolated_nodes` | `4` | Most such nodes a chunk gets |
-| `dimension_ids` | `["minecraft:overworld"]` | The worlds naquadah ore generates in |
-| `add_ores_to_existing_worlds` | `false` | Chunks made without naquadah ore, such as before SGCraft was added, get it when they load |
+| `worlds` | `["*", "!minecraft:the_nether", "!minecraft:the_end"]` | The worlds naquadah ore generates in. See [Choosing worlds](worldgen.md#choosing-worlds) |
+| `add_ores_to_existing_worlds` | `true` | Chunks made without naquadah ore, such as before SGCraft was added, get it when they load |
 
 #### Structure gates
 
@@ -356,8 +356,8 @@ Every server setting at its default. You never need to write all of this. Settin
       "max_nodes_under_lava": 16,
       "gen_isolated_odds": 1,
       "max_isolated_nodes": 4,
-      "dimension_ids": ["minecraft:overworld"],
-      "add_ores_to_existing_worlds": false
+      "worlds": ["*", "!minecraft:the_nether", "!minecraft:the_end"],
+      "add_ores_to_existing_worlds": true
     },
     "structure_gates": {
       "minecraft:desert_pyramid": {

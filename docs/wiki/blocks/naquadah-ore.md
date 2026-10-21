@@ -53,7 +53,7 @@ Naquadah fuels DHDs and battery chargers, charges batteries in the crafting grid
 
 ## Old chunks
 
-Chunks made before SGCraft was added have no naquadah ore. With `add_ores_to_existing_worlds` on (default `false`), each such chunk gets its ore when it loads, up to 32 chunks a tick. The world marks every chunk that has had its ore, so no chunk gets ore twice. See [World generation](../worldgen.md#adding-ore-to-old-chunks).
+Chunks made before SGCraft was added have no naquadah ore. With `add_ores_to_existing_worlds` on (the default), each such chunk gets its ore when it loads, up to 32 chunks a tick. The world marks every chunk that has had its ore, so no chunk gets ore twice. See [World generation](../worldgen.md#adding-ore-to-old-chunks).
 
 ## Settings
 
@@ -66,8 +66,8 @@ The `worldgen.naquadah_ore` object in `config/sgcraft-server.json`:
 | `max_nodes_under_lava` | `16` | The most columns of a chunk searched for lava |
 | `gen_isolated_odds` | `1` | One chunk in this many gets isolated nodes. `0` for none |
 | `max_isolated_nodes` | `4` | The most isolated nodes a chunk gets |
-| `dimension_ids` | `["minecraft:overworld"]` | The worlds naquadah ore generates in |
-| `add_ores_to_existing_worlds` | `false` | Whether chunks made without ore get it when they load |
+| `worlds` | `["*", "!minecraft:the_nether", "!minecraft:the_end"]` | The worlds naquadah ore generates in. See [Choosing worlds](../worldgen.md#choosing-worlds) |
+| `add_ores_to_existing_worlds` | `true` | Whether chunks made without ore get it when they load |
 
 A data pack can change the ore block and the blocks it replaces through the `sgcraft:naquadah_ore` feature.
 
@@ -77,7 +77,7 @@ Operators can use these. Changes apply to chunks generated or loaded from then o
 
 - `/sgcraft ore` lists the settings and how many old chunks wait for ore.
 - `/sgcraft ore <setting> <value>` changes one setting.
-- `/sgcraft ore dimension_ids <add|remove> <world>` changes the worlds ore generates in.
+- `/sgcraft ore worlds <add|remove> <pattern>` changes the worlds ore generates in.
 - `/sgcraft ore chunk [<x z>]` tells whether a chunk has had its ore. Add `generate` to give that loaded chunk ore now, or `unmark` to have it get ore again the next time it loads while `add_ores_to_existing_worlds` is on.
 
 See [Commands](../commands.md#worldgen-and-ore).

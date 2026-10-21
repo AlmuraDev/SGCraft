@@ -28,8 +28,9 @@
 package com.almuradev.sgcraft.mod.worldgen;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.util.ExtraCodecs;
 import net.minecraft.world.level.Level;
@@ -46,19 +47,26 @@ import java.util.function.ToIntFunction;
  * @param enableNaquadahOre whether naquadah ore generates at all
  * @param genUnderLavaOdds one chunk in this many gets clusters under lava; 0 gives none
  * @param maxNodesUnderLava the most columns of a chunk searched for lava, each giving a cluster wherever lava lies on
- *     a solid block
+ *     stone
  * @param genIsolatedOdds one chunk in this many gets nodes away from lava; 0 gives none
  * @param maxIsolatedNodes the most nodes such a chunk gets
- * @param dimensionIds the worlds naquadah ore generates in
+ * @param worlds the worlds naquadah ore generates in, as patterns: a world's id, {@code *} for every world,
+ *     {@code namespace:*} for every world of a namespace, or any of these after {@code !} for worlds left out, which
+ *     win over the rest
  * @param addOresToExistingWorlds whether chunks made without naquadah ore, such as before SGCraft was added, get it
  *     when they load
  */
 public record NaquadahOreSettings(boolean enableNaquadahOre, int genUnderLavaOdds, int maxNodesUnderLava,
-        int genIsolatedOdds, int maxIsolatedNodes, List<ResourceKey<Level>> dimensionIds,
+        int genIsolatedOdds, int maxIsolatedNodes, List<String> worlds,
         boolean addOresToExistingWorlds) {
 
+    // Every world but the Nether and the End, as in 2.2.0
     public static final NaquadahOreSettings DEFAULTS = new NaquadahOreSettings(true, 1, 16, 1, 4,
-            List.of(Level.OVERWORLD), false);
+            List.of("*", "!minecraft:the_nether", "!minecraft:the_end"), true);
+
+    private static final Codec<String> PATTERN_CODEC = Codec.STRING.validate(pattern -> NaquadahOreSettings
+            .isPattern(pattern) ? DataResult.success(pattern)
+            : DataResult.error(() -> "Not a world, *, namespace:* or one of these after !: " + pattern));
 
     public static final Codec<NaquadahOreSettings> CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Codec.BOOL.optionalFieldOf("enable_naquadah_ore", NaquadahOreSettings.DEFAULTS.enableNaquadahOre)
@@ -71,39 +79,80 @@ public record NaquadahOreSettings(boolean enableNaquadahOre, int genUnderLavaOdd
                     NaquadahOreSettings.DEFAULTS.genIsolatedOdds).forGetter(NaquadahOreSettings::genIsolatedOdds),
             ExtraCodecs.NON_NEGATIVE_INT.optionalFieldOf("max_isolated_nodes",
                     NaquadahOreSettings.DEFAULTS.maxIsolatedNodes).forGetter(NaquadahOreSettings::maxIsolatedNodes),
-            ResourceKey.codec(Registries.DIMENSION).listOf().optionalFieldOf("dimension_ids",
-                    NaquadahOreSettings.DEFAULTS.dimensionIds).forGetter(NaquadahOreSettings::dimensionIds),
+            NaquadahOreSettings.PATTERN_CODEC.listOf().optionalFieldOf("worlds",
+                    NaquadahOreSettings.DEFAULTS.worlds).forGetter(NaquadahOreSettings::worlds),
             Codec.BOOL.optionalFieldOf("add_ores_to_existing_worlds",
                     NaquadahOreSettings.DEFAULTS.addOresToExistingWorlds)
                     .forGetter(NaquadahOreSettings::addOresToExistingWorlds)
     ).apply(instance, NaquadahOreSettings::new));
 
     public NaquadahOreSettings {
-        dimensionIds = List.copyOf(dimensionIds);
+        worlds = List.copyOf(worlds);
     }
 
-    /** @return whether naquadah ore generates in a world */
+    /** @return whether naquadah ore generates in a world: one a pattern takes in, and none leaves out */
     public boolean generatesIn(final ResourceKey<Level> world) {
-        return this.enableNaquadahOre && this.dimensionIds.contains(world);
+        if (!this.enableNaquadahOre) {
+            return false;
+        }
+        final Identifier id = world.identifier();
+        boolean taken = false;
+        for (final String pattern : this.worlds) {
+            if (pattern.startsWith("!")) {
+                if (NaquadahOreSettings.matches(pattern.substring(1), id)) {
+                    return false;
+                }
+            } else if (NaquadahOreSettings.matches(pattern, id)) {
+                taken = true;
+            }
+        }
+        return taken;
+    }
+
+    /** @return whether text is a pattern {@link #worlds} takes */
+    public static boolean isPattern(final String pattern) {
+        final String kept = pattern.startsWith("!") ? pattern.substring(1) : pattern;
+        if (kept.equals("*")) {
+            return true;
+        }
+        if (kept.endsWith(":*")) {
+            return Identifier.isValidNamespace(kept.substring(0, kept.length() - 2));
+        }
+        return Identifier.tryParse(kept) != null && kept.contains(":");
+    }
+
+    private static boolean matches(final String pattern, final Identifier world) {
+        if (pattern.equals("*")) {
+            return true;
+        }
+        if (pattern.endsWith(":*")) {
+            return world.getNamespace().equals(pattern.substring(0, pattern.length() - 2));
+        }
+        return world.toString().equals(pattern);
     }
 
     public NaquadahOreSettings withEnableNaquadahOre(final boolean enable) {
         return new NaquadahOreSettings(enable, this.genUnderLavaOdds, this.maxNodesUnderLava, this.genIsolatedOdds,
-                this.maxIsolatedNodes, this.dimensionIds, this.addOresToExistingWorlds);
+                this.maxIsolatedNodes, this.worlds, this.addOresToExistingWorlds);
     }
 
     public NaquadahOreSettings withAddOresToExistingWorlds(final boolean add) {
         return new NaquadahOreSettings(this.enableNaquadahOre, this.genUnderLavaOdds, this.maxNodesUnderLava,
-                this.genIsolatedOdds, this.maxIsolatedNodes, this.dimensionIds, add);
+                this.genIsolatedOdds, this.maxIsolatedNodes, this.worlds, add);
     }
 
-    /** @return these settings with a world added to or taken from the worlds naquadah ore generates in */
-    public NaquadahOreSettings withDimension(final ResourceKey<Level> world, final boolean listed) {
-        final List<ResourceKey<Level>> worlds = new ArrayList<>(this.dimensionIds);
-        worlds.remove(world);
+    /** @return these settings with a pattern added to or taken from {@link #worlds} */
+    public NaquadahOreSettings withWorld(final String pattern, final boolean listed) {
+        final List<String> worlds = new ArrayList<>(this.worlds);
+        worlds.remove(pattern);
         if (listed) {
-            worlds.add(world);
+            worlds.add(pattern);
         }
+        return this.withWorlds(worlds);
+    }
+
+    /** @return these settings with these patterns in place of {@link #worlds} */
+    public NaquadahOreSettings withWorlds(final List<String> worlds) {
         return new NaquadahOreSettings(this.enableNaquadahOre, this.genUnderLavaOdds, this.maxNodesUnderLava,
                 this.genIsolatedOdds, this.maxIsolatedNodes, worlds, this.addOresToExistingWorlds);
     }
@@ -113,18 +162,18 @@ public record NaquadahOreSettings(boolean enableNaquadahOre, int genUnderLavaOdd
         GEN_UNDER_LAVA_ODDS("gen_under_lava_odds", NaquadahOreSettings::genUnderLavaOdds,
                 (settings, value) -> new NaquadahOreSettings(settings.enableNaquadahOre, value,
                         settings.maxNodesUnderLava, settings.genIsolatedOdds, settings.maxIsolatedNodes,
-                        settings.dimensionIds, settings.addOresToExistingWorlds)),
+                        settings.worlds, settings.addOresToExistingWorlds)),
         MAX_NODES_UNDER_LAVA("max_nodes_under_lava", NaquadahOreSettings::maxNodesUnderLava,
                 (settings, value) -> new NaquadahOreSettings(settings.enableNaquadahOre, settings.genUnderLavaOdds,
-                        value, settings.genIsolatedOdds, settings.maxIsolatedNodes, settings.dimensionIds,
+                        value, settings.genIsolatedOdds, settings.maxIsolatedNodes, settings.worlds,
                         settings.addOresToExistingWorlds)),
         GEN_ISOLATED_ODDS("gen_isolated_odds", NaquadahOreSettings::genIsolatedOdds,
                 (settings, value) -> new NaquadahOreSettings(settings.enableNaquadahOre, settings.genUnderLavaOdds,
-                        settings.maxNodesUnderLava, value, settings.maxIsolatedNodes, settings.dimensionIds,
+                        settings.maxNodesUnderLava, value, settings.maxIsolatedNodes, settings.worlds,
                         settings.addOresToExistingWorlds)),
         MAX_ISOLATED_NODES("max_isolated_nodes", NaquadahOreSettings::maxIsolatedNodes,
                 (settings, value) -> new NaquadahOreSettings(settings.enableNaquadahOre, settings.genUnderLavaOdds,
-                        settings.maxNodesUnderLava, settings.genIsolatedOdds, value, settings.dimensionIds,
+                        settings.maxNodesUnderLava, settings.genIsolatedOdds, value, settings.worlds,
                         settings.addOresToExistingWorlds));
 
         private final String id;

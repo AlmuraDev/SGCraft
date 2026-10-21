@@ -277,6 +277,7 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("canceled_disconnect_keeps_wormhole", SGGameTestsNeoForge::stormRerouteCanceled);
         SGGameTestsNeoForge.TESTS.put("gate_energy_settings_override_server", SGGameTestsNeoForge::gateEnergySettings);
         SGGameTestsNeoForge.TESTS.put("naquadah_ore_under_lava", SGGameTestsNeoForge::oreUnderLava);
+        SGGameTestsNeoForge.TESTS.put("naquadah_ore_world_patterns", SGGameTestsNeoForge::oreWorldPatterns);
         SGGameTestsNeoForge.TESTS.put("naquadah_ore_isolated_nodes", SGGameTestsNeoForge::oreIsolatedNodes);
         SGGameTestsNeoForge.TESTS.put("naquadah_ore_added_to_old_chunks_once",
                 SGGameTestsNeoForge::oreAddedToOldChunks);
@@ -2136,6 +2137,30 @@ public final class SGGameTestsNeoForge {
         });
     }
 
+    // By default ore generates in every world but the Nether and the End; a pattern left out after ! wins over one
+    // that takes a world in, and text that is no pattern is refused
+    private static void oreWorldPatterns(final GameTestHelper helper, final BlockPos origin) {
+        final NaquadahOreSettings defaults = NaquadahOreSettings.DEFAULTS;
+        final ResourceKey<Level> custom = ResourceKey.create(Registries.DIMENSION,
+                Identifier.fromNamespaceAndPath("example", "moon"));
+        helper.assertTrue(defaults.generatesIn(Level.OVERWORLD), "No ore in the Overworld by default");
+        helper.assertTrue(defaults.generatesIn(custom), "No ore in a data pack's world by default");
+        helper.assertFalse(defaults.generatesIn(Level.NETHER), "Ore in the Nether by default");
+        helper.assertFalse(defaults.generatesIn(Level.END), "Ore in the End by default");
+        helper.assertTrue(defaults.addOresToExistingWorlds(), "Old chunks don't get ore by default");
+        final NaquadahOreSettings example = defaults.withWorlds(List.of("example:*", "!example:moon"));
+        helper.assertFalse(example.generatesIn(custom), "A world left out still got ore");
+        helper.assertTrue(example.withWorld("!example:moon", false).generatesIn(custom),
+                "A namespace's pattern didn't take its world in");
+        helper.assertFalse(example.generatesIn(Level.OVERWORLD), "A world no pattern takes in got ore");
+        helper.assertFalse(defaults.withEnableNaquadahOre(false).generatesIn(Level.OVERWORLD),
+                "Ore generated while switched off");
+        for (final String bad : List.of("", "!", "moon", "Example:moon", "example:*:*", "**")) {
+            helper.assertFalse(NaquadahOreSettings.isPattern(bad), "\"" + bad + "\" was taken as a pattern");
+        }
+        helper.succeed();
+    }
+
     // The feature, as SGCraft's data defines it, puts ore under lava lying on the floor of the test's chunk, in the
     // flat world's only layer below sea level, and nothing in a world it isn't set to generate in
     private static void oreUnderLava(final GameTestHelper helper, final BlockPos origin) {
@@ -2150,11 +2175,11 @@ public final class SGGameTestsNeoForge {
             final BlockPos corner = chunk.getBlockAt(0, level.getMinY(), 0);
             final NaquadahOreSettings lavaOnly =
                     NaquadahOreSettings.Count.GEN_ISOLATED_ODDS.with(NaquadahOreSettings.DEFAULTS, 0);
-            NaquadahOre.use(lavaOnly.withDimension(level.dimension(), false));
+            NaquadahOre.use(lavaOnly.withWorlds(List.of("*", "!" + level.dimension().identifier())));
             helper.assertFalse(feature.place(level, level.getChunkSource().getGenerator(), RandomSource.create(1),
                     corner), "The feature generated in a world it isn't set to");
             helper.assertTrue(SGGameTestsNeoForge.oreIn(level, chunk) == 0, "Ore generated in a world it isn't set to");
-            NaquadahOre.use(lavaOnly.withDimension(level.dimension(), true));
+            NaquadahOre.use(lavaOnly.withWorlds(List.of(level.dimension().identifier().toString())));
             feature.place(level, level.getChunkSource().getGenerator(), RandomSource.create(1), corner);
             final int floor = SGGameTestsNeoForge.oreIn(level, chunk, level.getMinY() + 1);
             helper.assertTrue(floor > 0, "No ore generated under the lava");
@@ -2212,7 +2237,8 @@ public final class SGGameTestsNeoForge {
         final Runnable restore = SGGameTestsNeoForge.lavaFloor(level, pos);
         try {
             NaquadahOre.use(NaquadahOreSettings.Count.GEN_ISOLATED_ODDS.with(NaquadahOreSettings.DEFAULTS, 0)
-                    .withDimension(level.dimension(), true).withAddOresToExistingWorlds(true));
+                    .withWorlds(List.of(level.dimension().identifier().getNamespace() + ":*"))
+                    .withAddOresToExistingWorlds(true));
             marks.unmark(pos);
             NaquadahOre.onChunkLoad(level, chunk, true);
             helper.assertTrue(marks.marked(pos), "A chunk just generated wasn't marked");

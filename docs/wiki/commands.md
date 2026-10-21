@@ -131,8 +131,8 @@ Property IDs are listed in [Settings](settings.md#gate-properties). For example,
 | `/sgcraft ore enable_naquadah_ore <bool>` | Op | Turn naquadah ore on or off |
 | `/sgcraft ore add_ores_to_existing_worlds <bool>` | Op | Give ore to chunks made without it as they load |
 | `/sgcraft ore <count> <number>` | Op | Set `gen_under_lava_odds`, `max_nodes_under_lava`, `gen_isolated_odds` or `max_isolated_nodes` |
-| `/sgcraft ore dimension_ids add <world>` | Op | Add a world ore generates in |
-| `/sgcraft ore dimension_ids remove <world>` | Op | Remove a world ore generates in |
+| `/sgcraft ore worlds add <pattern>` | Op | Add a world pattern, such as `example:moon`, `example:*` or `!example:moon` |
+| `/sgcraft ore worlds remove <pattern>` | Op | Remove a world pattern |
 | `/sgcraft ore chunk [<x z>]` | Op | Whether your chunk, or the chunk holding a position, has had its ore |
 | `/sgcraft ore chunk [<x z>] generate` | Op | Give that loaded chunk ore now |
 | `/sgcraft ore chunk [<x z>] unmark` | Op | Have that chunk get ore again the next time it loads, while `add_ores_to_existing_worlds` is on |

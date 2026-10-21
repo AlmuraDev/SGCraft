@@ -601,7 +601,7 @@ public final class SettingsCatalog {
         add.bool("worldgen.naquadah_ore.enable_naquadah_ore",
                 SettingsCatalog.text("worldgen.naquadah_ore.enable_naquadah_ore", "Naquadah ore"),
                 SettingsCatalog.text("worldgen.naquadah_ore.enable_naquadah_ore.tip", "Whether naquadah ore "
-                        + "generates at all. /sgcraft ore dimension_ids sets the worlds it generates in"),
+                        + "generates at all. /sgcraft ore worlds sets the worlds it generates in"),
                 config -> config.naquadahOre().enableNaquadahOre());
         add.bool("worldgen.naquadah_ore.add_ores_to_existing_worlds",
                 SettingsCatalog.text("worldgen.naquadah_ore.add_ores_to_existing_worlds", "Add to existing chunks"),
