@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "key": {
+    "N": "sgcraft:naquadah_ingot",
+    "C": "sgcraft:core_crystal",
+    "R": "minecraft:redstone_block",
+    "P": "minecraft:purple_dye"
+  },
+  "pattern": [
+    " NC",
+    "NRN",
+    "PN "
+  ],
+  "result": {
+    "id": "sgcraft:zat"
+  }
+}

@@ -41,6 +41,8 @@ import com.almuradev.sgcraft.mod.client.malp.MalpConsoleRenderer;
 import com.almuradev.sgcraft.mod.client.malp.MalpModel;
 import com.almuradev.sgcraft.mod.client.malp.MalpRenderer;
 import com.almuradev.sgcraft.mod.client.malp.MalpScreen;
+import com.almuradev.sgcraft.mod.client.obelisk.ObeliskItemRenderer;
+import com.almuradev.sgcraft.mod.client.obelisk.ObeliskRenderer;
 import com.almuradev.sgcraft.mod.client.power.BatteryChargerScreen;
 import com.almuradev.sgcraft.mod.client.power.PowerUnitScreen;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldRenderer;
@@ -83,6 +85,7 @@ public final class SGCraftClientFabric implements ClientModInitializer {
         FeatureRendererRegistry.register(GateFeatureRenderer.TYPE, GateFeatureRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.DHD, DhdRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.NAQUADAH_GENERATOR, GeneratorRenderer::new);
+        BlockEntityRendererRegistry.register(SGBlockEntityTypes.ASGARD_OBELISK, ObeliskRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.MALP_CONSOLE, MalpConsoleRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.DIALING_COMPUTER, DialingComputerRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.CITY_SHIELD, CityShieldRenderer::new);
@@ -95,6 +98,7 @@ public final class SGCraftClientFabric implements ClientModInitializer {
         // Into vanilla's own list, which the access widener opens, as Fabric API has no way to register one
         SpecialModelRenderers.ID_MAPPER.put(DhdItemRenderer.TYPE, DhdItemRenderer.Unbaked.CODEC);
         SpecialModelRenderers.ID_MAPPER.put(GeneratorItemRenderer.TYPE, GeneratorItemRenderer.Unbaked.CODEC);
+        SpecialModelRenderers.ID_MAPPER.put(ObeliskItemRenderer.TYPE, ObeliskItemRenderer.Unbaked.CODEC);
         SGClient.init();
         MenuScreens.register(DhdFuelMenu.TYPE, DhdFuelScreen::new);
         MenuScreens.register(GateBaseMenu.TYPE, GateBaseScreen::new);

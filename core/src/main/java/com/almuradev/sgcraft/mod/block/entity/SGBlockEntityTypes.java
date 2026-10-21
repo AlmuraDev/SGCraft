@@ -28,6 +28,7 @@ package com.almuradev.sgcraft.mod.block.entity;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.block.SGBlocks;
 import com.almuradev.sgcraft.mod.generator.NaquadahGeneratorBlockEntity;
+import com.almuradev.sgcraft.mod.obelisk.AsgardObeliskBlockEntity;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
 import com.almuradev.sgcraft.mod.shield.CityShieldBlockEntity;
 import com.almuradev.sgcraft.mod.zpm.ZpmDeviceBlockEntity;
@@ -48,6 +49,7 @@ public final class SGBlockEntityTypes {
     public static BlockEntityType<GateSpawnerBlockEntity> GATE_SPAWNER;
     public static BlockEntityType<PowerUnitBlockEntity> POWER_UNIT;
     public static BlockEntityType<NaquadahGeneratorBlockEntity> NAQUADAH_GENERATOR;
+    public static BlockEntityType<AsgardObeliskBlockEntity> ASGARD_OBELISK;
     public static BlockEntityType<BatteryChargerBlockEntity> BATTERY_CHARGER;
     public static BlockEntityType<EnergyConverterBlockEntity> ENERGY_CONVERTER;
     public static BlockEntityType<MalpConsoleBlockEntity> MALP_CONSOLE;
@@ -77,6 +79,10 @@ public final class SGBlockEntityTypes {
                 Set.of(SGBlocks.NAQUADAH_GENERATOR_MK1, SGBlocks.NAQUADAH_GENERATOR_MK2));
         sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("naquadah_generator")),
                 SGBlockEntityTypes.NAQUADAH_GENERATOR);
+        SGBlockEntityTypes.ASGARD_OBELISK = new BlockEntityType<>(AsgardObeliskBlockEntity::new,
+                Set.of(SGBlocks.ASGARD_OBELISK, SGBlocks.ASGARD_OBELISK_KNOTWORK));
+        sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("asgard_obelisk")),
+                SGBlockEntityTypes.ASGARD_OBELISK);
         SGBlockEntityTypes.BATTERY_CHARGER = new BlockEntityType<>(BatteryChargerBlockEntity::new,
                 Set.of(SGBlocks.BATTERY_CHARGER));
         sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("battery_charger")),

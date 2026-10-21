@@ -154,6 +154,16 @@
       "sgcraft:naquadah_generator_hum"
     ]
   },
+  "asgard_beam": {
+    "sounds": [
+      "sgcraft:obelisk_beam"
+    ]
+  },
+  "zat_fire": {
+    "sounds": [
+      "sgcraft:zat_fire"
+    ]
+  },
   "malfunction": {
     "sounds": [
       "sgcraft:malfunction"

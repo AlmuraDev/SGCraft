@@ -117,6 +117,14 @@ AlmuraDev added it there. From it come its models (`models/generator/naquadah_ge
 `naquadah_generator_off.obj`, the 1.12 mod's Mark I models), its textures (`textures/block/naquadah_generator_*.png`)
 and its hum (`sounds/naquadah_generator_hum.ogg`).
 
+## Asgard obelisks and the Zat
+
+The Asgard obelisks and the Zat follow the 1.12 mod's version 2.2.0, as AlmuraDev added them there. From it come the
+obelisks' models (`models/obelisk/asgard_obelisk.obj` and `asgard_obelisk_knotwork.obj`, the 1.12 mod's item
+models), their textures (`textures/block/asgard_obelisk_*.png`, the 1.12 mod's `asgard_obelisk_*` and
+`asgard_celtic_*`), the beam's sound (`sounds/obelisk_beam.ogg`, the 1.12 mod's `obelisk_sound.ogg`), and the Zat's
+texture (`textures/item/zat.png`) and sound (`sounds/zat_fire.ogg`).
+
 ## ZPMs
 
 The ZPM, the ZPM console, the ZPM interface cart and the ZPM hub come from the 1.12 mod. The ZPM's texture

@@ -35,6 +35,8 @@ import com.almuradev.sgcraft.mod.gate.GateBaseInfo;
 import com.almuradev.sgcraft.mod.malp.MalpConfigurator;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads;
+import com.almuradev.sgcraft.mod.obelisk.ObeliskActions;
+import com.almuradev.sgcraft.mod.obelisk.ObeliskPayloads;
 import com.almuradev.sgcraft.mod.settings.SettingsActions;
 import com.almuradev.sgcraft.mod.settings.SettingsPayloads;
 import com.almuradev.sgcraft.mod.shield.CityShieldActions;
@@ -107,6 +109,9 @@ final class SGPayloads {
         SGNetwork.clientbound(ExplorerPayloads.State.TYPE, ExplorerPayloads.State::new);
         SGNetwork.serverbound(ExplorerPayloads.Action.TYPE, ExplorerPayloads.Action::new, ExplorerDialer::action);
         // The shield console: its state out, its buttons in
+        SGNetwork.clientbound(ObeliskPayloads.Beam.TYPE, ObeliskPayloads.Beam::new);
+        SGNetwork.clientbound(ObeliskPayloads.State.TYPE, ObeliskPayloads.State::new);
+        SGNetwork.serverbound(ObeliskPayloads.Apply.TYPE, ObeliskPayloads.Apply::new, ObeliskActions::apply);
         SGNetwork.clientbound(ShieldPayloads.ConsoleState.TYPE, ShieldPayloads.ConsoleState::new);
         SGNetwork.serverbound(ShieldPayloads.ConsoleAction.TYPE, ShieldPayloads.ConsoleAction::new,
                 ShieldConsoles::action);

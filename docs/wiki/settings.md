@@ -42,7 +42,7 @@ A short `sgcraft-server.json` that changes a few settings and leaves the rest at
 
 ## Server settings
 
-`config/sgcraft-server.json` keeps its settings in eleven sections: `energy`, `addresses`, `gates`, `tools`, `worldgen`, `remote_view`, `malp`, `shields`, `zpm`, `computers` and `generators`. A section left out takes all its defaults. In a section, a setting left out takes its default. This page names a setting by its path, such as `energy.multipliers.inter_world`. [The whole file](#the-whole-file) shows every setting at its default.
+`config/sgcraft-server.json` keeps its settings in twelve sections: `energy`, `addresses`, `gates`, `tools`, `worldgen`, `remote_view`, `malp`, `shields`, `zpm`, `computers`, `generators` and `zat`. A section left out takes all its defaults. In a section, a setting left out takes its default. This page names a setting by its path, such as `energy.multipliers.inter_world`. [The whole file](#the-whole-file) shows every setting at its default.
 
 ### Energy
 
@@ -303,6 +303,18 @@ A ZPM holds GE, which gates and city shields draw on as on any other source. The
 | `mark_1` | `{"energy_per_tick": 4, "capacity": 20000, "efficiency": 1.0}` | The Mark I: GE it makes a tick, GE it holds, and the share of its fuel's worth it gets |
 | `mark_2` | `{"energy_per_tick": 24, "capacity": 60000, "efficiency": 0.5}` | The Mark II's |
 
+### The Zat
+
+`zat` sets the [Zat](items/zat.md), as 2.2.0's `zat` section.
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `range` | `30` | How far a shot reaches, in blocks (1 to 256) |
+| `cooldown_ticks` | `20` | Ticks before it fires again |
+| `stun_ticks` | `200` | How long a shot stuns for, and so how long a second shot kills in, in ticks |
+| `stun_damage` | `4` | The harm a stunning shot does (0 to 1000) |
+| `second_shot_kills` | `true` | Whether a second shot while the target is stunned kills it |
+
 ### Dialing computers
 
 `computers` sets the [dialing computer](blocks/dialing-computer.md), and the power of dialing computers and [MALP consoles](blocks/malp-console.md#power).
@@ -482,6 +494,13 @@ Every server setting at its default. You never need to write all of this. Settin
       "capacity": 60000,
       "efficiency": 0.5
     }
+  },
+  "zat": {
+    "range": 30,
+    "cooldown_ticks": 20,
+    "stun_ticks": 200,
+    "stun_damage": 4,
+    "second_shot_kills": true
   }
 }
 ```

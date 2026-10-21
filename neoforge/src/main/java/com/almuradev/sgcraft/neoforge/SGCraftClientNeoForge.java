@@ -42,6 +42,8 @@ import com.almuradev.sgcraft.mod.client.malp.MalpConsoleRenderer;
 import com.almuradev.sgcraft.mod.client.malp.MalpModel;
 import com.almuradev.sgcraft.mod.client.malp.MalpRenderer;
 import com.almuradev.sgcraft.mod.client.malp.MalpScreen;
+import com.almuradev.sgcraft.mod.client.obelisk.ObeliskItemRenderer;
+import com.almuradev.sgcraft.mod.client.obelisk.ObeliskRenderer;
 import com.almuradev.sgcraft.mod.client.power.BatteryChargerScreen;
 import com.almuradev.sgcraft.mod.client.power.PowerUnitScreen;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldRenderer;
@@ -85,6 +87,7 @@ public final class SGCraftClientNeoForge {
         event.registerBlockEntityRenderer(SGBlockEntityTypes.STARGATE_BASE, StargateBaseRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.DHD, DhdRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.NAQUADAH_GENERATOR, GeneratorRenderer::new);
+        event.registerBlockEntityRenderer(SGBlockEntityTypes.ASGARD_OBELISK, ObeliskRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.MALP_CONSOLE, MalpConsoleRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.DIALING_COMPUTER, DialingComputerRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.CITY_SHIELD, CityShieldRenderer::new);
@@ -125,6 +128,7 @@ public final class SGCraftClientNeoForge {
     public static void registerItemRenderers(final RegisterSpecialModelRendererEvent event) {
         event.register(DhdItemRenderer.TYPE, DhdItemRenderer.Unbaked.CODEC);
         event.register(GeneratorItemRenderer.TYPE, GeneratorItemRenderer.Unbaked.CODEC);
+        event.register(ObeliskItemRenderer.TYPE, ObeliskItemRenderer.Unbaked.CODEC);
     }
 
     @SubscribeEvent

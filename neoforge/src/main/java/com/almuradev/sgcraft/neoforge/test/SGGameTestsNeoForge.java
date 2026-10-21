@@ -293,6 +293,7 @@ public final class SGGameTestsNeoForge {
         OriGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
         ZpmGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
         GeneratorGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
+        ObeliskGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
         ComputerGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
     }
 

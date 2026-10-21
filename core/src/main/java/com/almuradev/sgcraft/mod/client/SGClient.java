@@ -34,6 +34,8 @@ import com.almuradev.sgcraft.mod.client.malp.MalpConfigScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleUsers;
 import com.almuradev.sgcraft.mod.client.malp.MalpMonitorDisplays;
+import com.almuradev.sgcraft.mod.client.obelisk.BeamEffects;
+import com.almuradev.sgcraft.mod.client.obelisk.ObeliskScreen;
 import com.almuradev.sgcraft.mod.client.settings.SettingsScreen;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldScreen;
 import com.almuradev.sgcraft.mod.client.shield.ShieldConsoleScreen;
@@ -48,6 +50,7 @@ import com.almuradev.sgcraft.mod.dhd.DhdHooks;
 import com.almuradev.sgcraft.mod.gate.GateBaseInfo;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
+import com.almuradev.sgcraft.mod.obelisk.ObeliskPayloads;
 import com.almuradev.sgcraft.mod.settings.SettingsPayloads;
 import com.almuradev.sgcraft.mod.shield.ShieldPayloads;
 import com.almuradev.sgcraft.mod.tool.ExplorerPayloads;
@@ -101,6 +104,9 @@ public final class SGClient {
         SGNetwork.onClient(ComputerPayloads.Notice.TYPE, SGClient::computerNotice);
         SGNetwork.onClient(ComputerPayloads.ConfigState.TYPE, state -> SGClient.show(ComputerConfigScreen.class,
                 state, state.open(), ComputerConfigScreen::new, ComputerConfigScreen::update));
+        SGNetwork.onClient(ObeliskPayloads.Beam.TYPE, BeamEffects::handle);
+        SGNetwork.onClient(ObeliskPayloads.State.TYPE, state -> SGClient.show(ObeliskScreen.class, state,
+                state.open(), ObeliskScreen::new, ObeliskScreen::update));
         SGNetwork.onClient(ShieldPayloads.ConsoleState.TYPE, state -> SGClient.show(ShieldConsoleScreen.class, state,
                 state.open(), ShieldConsoleScreen::new, ShieldConsoleScreen::update));
         SGNetwork.onClient(SettingsPayloads.State.TYPE, state -> SGClient.show(SettingsScreen.class, state,

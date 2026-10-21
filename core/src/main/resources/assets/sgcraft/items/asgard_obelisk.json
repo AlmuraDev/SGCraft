@@ -1,0 +1,9 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "sgcraft:item/asgard_obelisk",
+    "model": {
+      "type": "sgcraft:asgard_obelisk"
+    }
+  }
+}

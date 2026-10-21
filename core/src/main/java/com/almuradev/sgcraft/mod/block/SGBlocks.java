@@ -30,6 +30,8 @@ import com.almuradev.sgcraft.api.gate.GateTypes;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.generator.GeneratorMark;
 import com.almuradev.sgcraft.mod.generator.NaquadahGeneratorBlock;
+import com.almuradev.sgcraft.mod.obelisk.AsgardObeliskBlock;
+import com.almuradev.sgcraft.mod.obelisk.ObeliskKind;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
 import com.almuradev.sgcraft.mod.shield.CityShieldBlock;
 import com.almuradev.sgcraft.mod.shield.ShieldConsoleBlock;
@@ -72,6 +74,8 @@ public final class SGBlocks {
     public static Block NAQUADAH_BLOCK;
     public static PowerUnitBlock POWER_UNIT;
     public static NaquadahGeneratorBlock NAQUADAH_GENERATOR_MK1;
+    public static AsgardObeliskBlock ASGARD_OBELISK;
+    public static AsgardObeliskBlock ASGARD_OBELISK_KNOTWORK;
     public static NaquadahGeneratorBlock NAQUADAH_GENERATOR_MK2;
     public static MalpConsoleBlock MALP_CONSOLE;
     public static DialingComputerBlock DIALING_COMPUTER;
@@ -141,6 +145,14 @@ public final class SGBlocks {
         // The original's power unit, as hard as its machines
         SGBlocks.POWER_UNIT = SGBlocks.register(sink, "power_unit",
                 properties -> new PowerUnitBlock(properties.strength(1.5F, 10.0F)));
+        // Stone, as 2.2.0's
+        SGBlocks.ASGARD_OBELISK = SGBlocks.register(sink, "asgard_obelisk",
+                properties -> new AsgardObeliskBlock(properties.strength(3.0F, 15.0F).sound(SoundType.STONE)
+                        .mapColor(MapColor.STONE).noOcclusion().pushReaction(PushReaction.IMMOVEABLE), ObeliskKind.HAMMER));
+        SGBlocks.ASGARD_OBELISK_KNOTWORK = SGBlocks.register(sink, "asgard_obelisk_knotwork",
+                properties -> new AsgardObeliskBlock(properties.strength(3.0F, 15.0F).sound(SoundType.STONE)
+                        .mapColor(MapColor.SAND).noOcclusion().pushReaction(PushReaction.IMMOVEABLE),
+                        ObeliskKind.KNOTWORK));
         // Iron, as 2.2.0's
         SGBlocks.NAQUADAH_GENERATOR_MK1 = SGBlocks.register(sink, "naquadah_generator_mk1",
                 properties -> new NaquadahGeneratorBlock(properties.strength(4.0F, 20.0F).noOcclusion(),
