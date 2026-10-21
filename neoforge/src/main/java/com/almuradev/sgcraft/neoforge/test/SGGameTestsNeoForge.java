@@ -273,6 +273,7 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("configure_needs_owner_or_right", SGAccessGameTestsNeoForge::configureRights);
         SGGameTestsNeoForge.TESTS.put("breaking_follows_owner_and_settings", SGAccessGameTestsNeoForge::breaking);
         SGGameTestsNeoForge.TESTS.put("client_lists_are_capped", SGAccessGameTestsNeoForge::entryLimits);
+        SGGameTestsNeoForge.TESTS.put("invulnerable_gate_holds", SGAccessGameTestsNeoForge::invulnerable);
         SGGameTestsNeoForge.TESTS.put("storm_sends_wormhole_astray", SGGameTestsNeoForge::stormReroutes);
         SGGameTestsNeoForge.TESTS.put("canceled_disconnect_keeps_wormhole", SGGameTestsNeoForge::stormRerouteCanceled);
         SGGameTestsNeoForge.TESTS.put("gate_energy_settings_override_server", SGGameTestsNeoForge::gateEnergySettings);

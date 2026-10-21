@@ -126,6 +126,8 @@ public final class ConfiguratorScreen extends Screen {
             Map.entry("address_visible", "Whether players can see the gate's address on the gate"),
             Map.entry("breakable", "Whether any player can break the gate's blocks, not only its owner and "
                     + "operators. Only the owner or an operator can change it"),
+            Map.entry("invulnerable", "Whether only a player in creative mode can break the gate. Explosions, "
+                    + "withers and the ender dragon can't. Only an operator or a creative player can change it"),
             Map.entry("generated", "Whether world generation built the gate or a player did. Add-ons can tell them "
                     + "apart by this"),
             Map.entry("chevrons_lock_on_dial", "Whether a DHD or PDD locks every chevron at once. Off, the ring "
@@ -367,6 +369,10 @@ public final class ConfiguratorScreen extends Screen {
         at = this.slot(left, top, i++);
         // Who may break the gate is for those who manage it
         this.toggle(at, "breakable", "Breakable", false).active = this.state.manage();
+        at = this.slot(left, top, i++);
+        // Only operators and creative players, who also manage the gate, make it invulnerable here
+        this.toggle(at, "invulnerable", "Invulnerable", false).active = this.state.manage()
+                && this.state.fitFreely();
         at = this.slot(left, top, i++);
         this.toggle(at, "chevrons_lock_on_dial", "Chevrons lock at once", false);
         at = this.slot(left, top, i++);

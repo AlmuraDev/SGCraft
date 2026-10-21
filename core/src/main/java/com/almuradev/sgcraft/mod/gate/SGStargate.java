@@ -106,7 +106,8 @@ public final class SGStargate implements Stargate {
     private static final String IRIS_INCLUDED = "iris_included";
     // The properties that decide who may do what with the gate, which only those who manage it change
     private static final Set<GateProperty<?>> MANAGED = Set.of(GateProperties.DEFAULT_RIGHTS,
-            GateProperties.PLAYER_RIGHTS, GateProperties.BREAKABLE, GateProperties.GENERATED);
+            GateProperties.PLAYER_RIGHTS, GateProperties.BREAKABLE, GateProperties.INVULNERABLE,
+            GateProperties.GENERATED);
 
     private final SGStargates stargates;
     private final GlobalPos position;

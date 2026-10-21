@@ -6,6 +6,7 @@
     "mixins": [
         "ChunkMapAccessor",
         "ChunkMapMixin",
+        "EnderDragonMixin",
         "LocalMobCapCalculatorMixin",
         "MobMixin",
         "NaturalSpawnerMixin",
@@ -17,7 +18,8 @@
         "StructureMixin",
         "StructureStartMixin",
         "StructurePiecesBuilderAccessor",
-        "StructureTemplatePoolAccessor"
+        "StructureTemplatePoolAccessor",
+        "WitherBossMixin"
     ],
     "client": [
         "client.AvatarRendererMixin",

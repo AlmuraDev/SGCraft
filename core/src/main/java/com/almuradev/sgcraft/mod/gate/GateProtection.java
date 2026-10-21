@@ -30,6 +30,8 @@ import com.almuradev.sgcraft.api.gate.GateProperties;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.access.SGGateAccess;
+import com.almuradev.sgcraft.mod.block.RingBlock;
+import com.almuradev.sgcraft.mod.block.StargateBaseBlock;
 import com.almuradev.sgcraft.mod.event.SGEventBus;
 import com.almuradev.sgcraft.mod.event.SGEvents;
 import net.minecraft.ChatFormatting;
@@ -38,17 +40,21 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 
 import java.util.Optional;
 
 /**
  * Whether a player may break a block of a formed gate. Each loader asks before a player breaks a block, through its
- * own cancelable event, so the block stays whole on the client too. Only players are stopped this way: explosions
- * and commands still break gates, as {@link com.almuradev.sgcraft.api.event.gate.BreakGateEvent.Pre} warns.
+ * own cancelable event, so the block stays whole on the client too. Explosions and commands still break gates, as
+ * {@link com.almuradev.sgcraft.api.event.gate.BreakGateEvent.Pre} warns, unless the gate is invulnerable.
  *
  * <p>An operator may break any gate; its owner may break it while the server lets owners break their gates; and
  * anyone may break a gate whose {@link GateProperties#BREAKABLE} is on, which for a generated gate with no value of
- * its own is the server's setting for generated gates.</p>
+ * its own is the server's setting for generated gates. A gate whose {@link GateProperties#INVULNERABLE} is on breaks
+ * only for a player in creative mode who may otherwise break it, and not at all to explosions, withers or the ender
+ * dragon.</p>
  */
 public final class GateProtection {
 
@@ -65,6 +71,12 @@ public final class GateProtection {
         if (gate.isEmpty()) {
             return true;
         }
+        if (gate.get().get(GateProperties.INVULNERABLE).orElse(false) && !player.isCreative()) {
+            player.sendOverlayMessage(Component.translatableWithFallback("message.sgcraft.invulnerable",
+                    "This gate is invulnerable. Only a player in creative mode can break it")
+                    .withStyle(ChatFormatting.RED));
+            return false;
+        }
         final boolean owner = gate.get().owner().filter(player.getUUID()::equals).isPresent();
         if (!SGGateAccess.isOperator(player) && !(owner && server.get().config().ownersBreakGates())
                 && !gate.get().get(GateProperties.BREAKABLE).orElse(false)) {
@@ -73,5 +85,18 @@ public final class GateProtection {
             return false;
         }
         return SGEventBus.get().allows(new SGEvents.BreakPre(Cause.of(player), gate.get()));
+    }
+
+    /**
+     * @return whether the block at {@code pos} is a base or ring block of an invulnerable gate, which explosions and
+     *     mobs leave whole
+     */
+    public static boolean invulnerable(final Level level, final BlockPos pos) {
+        final Block block = level.getBlockState(pos).getBlock();
+        if (!(block instanceof StargateBaseBlock) && !(block instanceof RingBlock)) {
+            return false;
+        }
+        return SGServer.current().flatMap(server -> server.stargates().at(GlobalPos.of(level.dimension(), pos)))
+                .flatMap(gate -> gate.get(GateProperties.INVULNERABLE)).orElse(false);
     }
 }

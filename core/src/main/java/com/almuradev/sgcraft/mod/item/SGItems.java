@@ -41,6 +41,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.block.Block;
 
@@ -78,6 +79,7 @@ public final class SGItems {
     public static Item SHIELD_UPGRADE;
     public static Item ZPM;
     public static Item CHEVRON_UPGRADE;
+    public static Item INVULNERABILITY_UPGRADE;
     public static Item PEGASUS_UPGRADE;
     public static Item UNIVERSE_UPGRADE;
     public static Item TOLLAN_PHASE_SHIFT_DEVICE;
@@ -138,6 +140,9 @@ public final class SGItems {
         SGItems.ZPM_HUB = SGItems.registerBlock(sink, SGBlocks.ZPM_HUB);
         SGItems.CHEVRON_UPGRADE = SGItems.register(sink, "chevron_upgrade", ChevronUpgradeItem::new,
                 properties -> properties);
+        // Only in the creative tab, with no recipe, as in 2.2.0
+        SGItems.INVULNERABILITY_UPGRADE = SGItems.register(sink, "invulnerability_upgrade",
+                InvulnerabilityUpgradeItem::new, properties -> properties.rarity(Rarity.EPIC));
         SGItems.PEGASUS_UPGRADE = SGItems.register(sink, "pegasus_upgrade",
                 properties -> new GateTypeUpgradeItem(properties, GateTypes.PEGASUS), properties -> properties);
         SGItems.UNIVERSE_UPGRADE = SGItems.register(sink, "universe_upgrade",

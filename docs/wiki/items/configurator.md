@@ -66,6 +66,7 @@ Operators and players in creative mode set them freely. Taking off an iris or sh
 | Open seconds | `sgcraft:open_ticks` | 300 (6000 ticks) | How long a wormhole stays open before it shuts on its own. 0 for no limit |
 | Address shown | `sgcraft:address_visible` | on | Whether players see the gate's address on the gate and in tools |
 | Breakable | `sgcraft:breakable` | off | Whether any player can break the gate. Only the owner or an operator changes it |
+| Invulnerable | `sgcraft:invulnerable` | off | Whether only a player in creative mode can break the gate. Explosions, withers and the ender dragon can't. Only an operator or a creative player who manages the gate changes it. See {{item:sgcraft:invulnerability_upgrade}} |
 | Chevrons lock at once | `sgcraft:chevrons_lock_on_dial` | off | Whether a DHD, PDD or tablet locks every chevron at once, with no ring turning |
 | See-through horizon | `sgcraft:horizon_transparent` | on | Whether a little of what is behind the open wormhole shows through |
 | Ring speed | `sgcraft:ring_speed` | 2 (Pegasus about 7.14) | How fast the gate dials, in degrees a tick, from 0.1 to 360 |

@@ -97,7 +97,8 @@ prices.
 
 The gate shield, the shield console, the city shield generator, the Ori supergate and the explorer dialer follow the
 1.12 mod's version 2.2.0, as AlmuraDev added them there. From it come the shield upgrade's texture
-(`textures/item/shield_upgrade.png`, the 1.12 mod's `sgShieldUpgrade.png`), the shield console's and the city shield
+(`textures/item/shield_upgrade.png`, the 1.12 mod's `sgShieldUpgrade.png`), the invulnerability upgrade's texture
+(`textures/item/invulnerability_upgrade.png`), the shield console's and the city shield
 generator's textures (`textures/block/shield_console_*.png` and `city_shield_generator_*.png`), the explorer dialer's
 texture (`textures/item/edd.png`), the Ori supergate's metal (`textures/gate/ori/ring.png`, the 1.12 mod's
 `tileentity/ori/stargate.png`) and its spawner's texture (`textures/block/ori_supergate_spawner.png`), and the sounds

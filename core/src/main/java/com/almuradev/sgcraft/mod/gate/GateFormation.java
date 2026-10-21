@@ -198,6 +198,15 @@ public final class GateFormation {
         return found.stream().findFirst();
     }
 
+    /** Takes away every ring block of a gate in this frame, dropping nothing, as a player in creative mode breaks it. */
+    public static void removeRing(final ServerLevel level, final GateFrame frame) {
+        GateFormation.forEachRingBlock(frame, ringPos -> {
+            if (level.getBlockState(ringPos).getBlock() instanceof RingBlock) {
+                level.setBlock(ringPos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+            }
+        });
+    }
+
     /** Un-merges every ring block of a gate in this frame, such as after it broke. */
     public static void releaseRing(final ServerLevel level, final GateFrame frame) {
         GateFormation.forEachRingBlock(frame, ringPos -> {

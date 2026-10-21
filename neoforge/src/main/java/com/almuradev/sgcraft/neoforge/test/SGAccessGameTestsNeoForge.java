@@ -42,7 +42,9 @@ import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.addressbook.ItemAddressBook;
 import com.almuradev.sgcraft.mod.addressbook.ListAddressBook;
 import com.almuradev.sgcraft.mod.block.GateSpawnerBlock;
+import com.almuradev.sgcraft.mod.block.RingBlock;
 import com.almuradev.sgcraft.mod.block.SGBlocks;
+import com.almuradev.sgcraft.mod.block.StargateBaseBlock;
 import com.almuradev.sgcraft.mod.gate.GateFormation;
 import com.almuradev.sgcraft.mod.gate.GateFrame;
 import com.almuradev.sgcraft.mod.gate.GateProtection;
@@ -71,6 +73,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
@@ -290,6 +293,48 @@ final class SGAccessGameTestsNeoForge {
             level.getServer().getPlayerList().deop(operator.nameAndId());
         }
         helper.succeed();
+    }
+
+    // Only the owner or an operator makes a gate invulnerable; then only a player in creative mode breaks it, and an
+    // explosion leaves it whole. A player in creative mode breaking its base takes the whole ring away
+    static void invulnerable(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final Stargate gate = SGGameTestsNeoForge.place(helper, origin, 9);
+        final BlockPos base = gate.position().pos();
+        final ServerPlayer owner = helper.makeMockServerPlayerInLevel();
+        final ServerPlayer other = helper.makeMockServerPlayerInLevel();
+        gate.setOwner(Optional.of(owner.getUUID()), SGGameTestsNeoForge.server(helper));
+        SGAccessGameTestsNeoForge.expect(helper, gate.set(GateProperties.INVULNERABLE, true, Cause.of(other)),
+                ActionResult.DENIED, "Another player made the gate invulnerable");
+        SGAccessGameTestsNeoForge.expect(helper, gate.set(GateProperties.INVULNERABLE, true, Cause.of(owner)),
+                ActionResult.DONE, "The owner making the gate invulnerable");
+        // The game test's player in the world is always in creative mode, so the owner in survival is another, who
+        // borrows its connection to hear why not
+        final ServerPlayer survival = (ServerPlayer) helper.makeMockServerPlayer(GameType.SURVIVAL);
+        survival.connection = owner.connection;
+        gate.setOwner(Optional.of(survival.getUUID()), SGGameTestsNeoForge.server(helper));
+        helper.assertTrue(!GateProtection.mayBreak(survival, level, base), "An invulnerable gate broke in survival");
+        gate.setOwner(Optional.of(owner.getUUID()), SGGameTestsNeoForge.server(helper));
+        helper.assertTrue(GateProtection.mayBreak(owner, level, base), "Its owner in creative mode can't break it");
+        final int ring = SGAccessGameTestsNeoForge.ringBlocks(level, base);
+        helper.assertTrue(ring > 0, "The gate has no ring blocks");
+        level.explode(null, base.getX() + 0.5, base.getY() + 1.5, base.getZ() + 0.5, 4.0F,
+                Level.ExplosionInteraction.TNT);
+        helper.assertTrue(level.getBlockState(base).getBlock() instanceof StargateBaseBlock,
+                "An explosion broke an invulnerable gate's base");
+        helper.assertTrue(SGAccessGameTestsNeoForge.ringBlocks(level, base) == ring,
+                "An explosion broke an invulnerable gate's ring");
+        owner.gameMode.destroyBlock(base);
+        helper.assertTrue(level.getBlockState(base).isAir(), "The base wasn't broken");
+        helper.assertTrue(SGAccessGameTestsNeoForge.ringBlocks(level, base) == 0,
+                "Breaking the base in creative mode left ring blocks");
+        helper.succeed();
+    }
+
+    // How many ring blocks stand around a gate's base
+    private static int ringBlocks(final ServerLevel level, final BlockPos base) {
+        return (int) BlockPos.betweenClosedStream(base.offset(-4, 0, -4), base.offset(4, 6, 4))
+                .filter(pos -> level.getBlockState(pos).getBlock() instanceof RingBlock).count();
     }
 
     // Makes a player an operator; the test server's own operators have no permissions, so this one is a game master

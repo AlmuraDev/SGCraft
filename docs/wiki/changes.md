@@ -121,6 +121,7 @@ See [The DHD](dhd.md).
 | Admins | SpongeForge permission nodes, such as `sgcraft.admin`, `sgcraft.gui.configurator`, `sgcraft.gui.pdd`, `sgcraft.gui.gdo` and one for each configurator setting, when SpongeForge was installed | Operators (permission level 2) have every right. There are no permission nodes |
 | Other gates | A Gate Address Access List with default incoming and outgoing switches | `allow_incoming`, `allow_outgoing` and address rules for single addresses |
 | Breaking gates | Two gate settings: whether players may break player gates, and generated gates | Operators may, owners may while `gates.owners_break_gates` is on, and anyone may when the gate's `breakable` property is on |
+| Invulnerable gates | A creative-only upgrade and a configurator box; only creative players broke the gate | The same, with the gate property `invulnerable`, which only the owner or an operator changes. Withers and the ender dragon can't break it either |
 
 See [Access](access.md).
 

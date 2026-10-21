@@ -268,6 +268,18 @@ public final class StargateBaseBlock extends HorizontalDirectionalBlock implemen
         }
     }
 
+    // A player in creative mode breaking a formed gate's base takes its whole ring away with it, as in 2.2.0
+    @Override
+    public BlockState playerWillDestroy(final Level level, final BlockPos pos, final BlockState state,
+            final Player player) {
+        if (level instanceof final ServerLevel serverLevel && player.isCreative()
+                && state.getValue(StargateBaseBlock.FORMED)) {
+            SGServer.current().flatMap(server -> server.stargates().gate(GlobalPos.of(level.dimension(), pos)))
+                    .ifPresent(gate -> GateFormation.removeRing(serverLevel, gate.frame()));
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
     @Override
     protected void affectNeighborsAfterRemoval(final BlockState state, final ServerLevel level, final BlockPos pos,
             final boolean movedByPiston) {

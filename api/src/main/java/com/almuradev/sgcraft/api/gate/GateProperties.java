@@ -296,6 +296,13 @@ public final class GateProperties {
     public static final GateProperty<Boolean> BREAKABLE =
             GateProperties.register("breakable", Codec.BOOL, false);
 
+    /**
+     * Whether only a player in creative mode may break the gate, whatever {@link #BREAKABLE} says. Implementations
+     * must keep explosions and mobs from breaking an invulnerable gate's blocks.
+     */
+    public static final GateProperty<Boolean> INVULNERABLE =
+            GateProperties.register("invulnerable", Codec.BOOL, false);
+
     /** Whether the gate was placed by world generation rather than built by a player. */
     public static final GateProperty<Boolean> GENERATED =
             GateProperties.register("generated", Codec.BOOL, false);

@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.mixin;
 
+import com.almuradev.sgcraft.mod.gate.GateProtection;
 import com.almuradev.sgcraft.mod.shield.CityShields;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -44,7 +45,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Keeps an explosion outside a raised city shield off the blocks and the things inside it.
+ * Keeps an explosion outside a raised city shield off the blocks and the things inside it, and off the blocks of an
+ * invulnerable gate.
  */
 @Mixin(ServerExplosion.class)
 public abstract class ServerExplosionMixin {
@@ -59,11 +61,10 @@ public abstract class ServerExplosionMixin {
 
     @Inject(method = "calculateExplodedPositions", at = @At("RETURN"), cancellable = true)
     private void sgcraft$spareShielded(final CallbackInfoReturnable<List<BlockPos>> cir) {
-        if (!CityShields.any()) {
-            return;
-        }
+        final boolean shields = CityShields.any();
         final List<BlockPos> blocks = new ArrayList<>(cir.getReturnValue());
-        if (blocks.removeIf(pos -> CityShields.protects(this.level, this.center, Vec3.atCenterOf(pos)))) {
+        if (blocks.removeIf(pos -> shields && CityShields.protects(this.level, this.center, Vec3.atCenterOf(pos))
+                || GateProtection.invulnerable(this.level, pos))) {
             cir.setReturnValue(blocks);
         }
     }

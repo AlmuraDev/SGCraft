@@ -806,7 +806,7 @@ public final class ToolActions {
                 problems.add("There is no property " + change.id());
                 continue;
             }
-            if (property == GateProperties.IRIS && !free) {
+            if ((property == GateProperties.IRIS || property == GateProperties.INVULNERABLE) && !free) {
                 upgradesOnly = true;
                 continue;
             }
@@ -814,7 +814,7 @@ public final class ToolActions {
         }
         if (upgradesOnly) {
             problems.add("Use a gate upgrade, a chevron upgrade, an iris upgrade or a shield upgrade to change the "
-                    + "gate's type, chevrons or iris");
+                    + "gate's type, chevrons or iris. Only operators and creative players change Invulnerable");
         }
         final String name = apply.addPlayer().strip();
         if (!name.isEmpty()) {

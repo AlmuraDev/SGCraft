@@ -59,6 +59,7 @@ These settings decide who may do what, so the configure right isn't enough to ch
 - the default rights (`sgcraft:default_rights`)
 - the listed players (`sgcraft:player_rights`)
 - whether anyone may break the gate (`sgcraft:breakable`)
+- whether the gate is invulnerable (`sgcraft:invulnerable`)
 - whether the world built it (`sgcraft:generated`)
 - the owner
 
@@ -99,7 +100,11 @@ A player may break a block of a formed gate when one of these holds:
 - They own the gate and `gates.owners_break_gates` is on (it is by default).
 - The gate's **Breakable** setting (`sgcraft:breakable`) is on. It is off by default. A generated gate with no value of its own uses `gates.generated_gates_breakable`, off by default.
 
-Anyone else is told "This gate can't be broken". Explosions and commands still break gates. Breaking a gate while its wormhole is open sets off a breach explosion: see [Building gates](building-gates.md#breach-explosion).
+Anyone else is told "This gate can't be broken". Explosions and commands still break gates.
+
+An invulnerable gate (`sgcraft:invulnerable`) breaks only for a player in creative mode who may otherwise break it. Explosions, withers and the ender dragon leave its blocks whole, though commands still change them. See {{item:sgcraft:invulnerability_upgrade}}.
+
+A player in creative mode who breaks a formed gate's base takes its whole ring away with it, dropping nothing. Breaking a gate while its wormhole is open sets off a breach explosion: see [Building gates](building-gates.md#breach-explosion).
 
 ## The configurator's Access page
 
