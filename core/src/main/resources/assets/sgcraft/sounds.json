@@ -149,6 +149,11 @@
       "sgcraft:ori/dial"
     ]
   },
+  "naquadah_generator_hum": {
+    "sounds": [
+      "sgcraft:naquadah_generator_hum"
+    ]
+  },
   "malfunction": {
     "sounds": [
       "sgcraft:malfunction"

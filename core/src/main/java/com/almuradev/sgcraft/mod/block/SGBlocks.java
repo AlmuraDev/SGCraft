@@ -28,6 +28,8 @@ package com.almuradev.sgcraft.mod.block;
 import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.api.gate.GateTypes;
 import com.almuradev.sgcraft.mod.SGCraft;
+import com.almuradev.sgcraft.mod.generator.GeneratorMark;
+import com.almuradev.sgcraft.mod.generator.NaquadahGeneratorBlock;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
 import com.almuradev.sgcraft.mod.shield.CityShieldBlock;
 import com.almuradev.sgcraft.mod.shield.ShieldConsoleBlock;
@@ -69,6 +71,8 @@ public final class SGBlocks {
     public static Block NAQUADAH_ORE;
     public static Block NAQUADAH_BLOCK;
     public static PowerUnitBlock POWER_UNIT;
+    public static NaquadahGeneratorBlock NAQUADAH_GENERATOR_MK1;
+    public static NaquadahGeneratorBlock NAQUADAH_GENERATOR_MK2;
     public static MalpConsoleBlock MALP_CONSOLE;
     public static DialingComputerBlock DIALING_COMPUTER;
     public static OfficeChairBlock OFFICE_CHAIR;
@@ -137,6 +141,13 @@ public final class SGBlocks {
         // The original's power unit, as hard as its machines
         SGBlocks.POWER_UNIT = SGBlocks.register(sink, "power_unit",
                 properties -> new PowerUnitBlock(properties.strength(1.5F, 10.0F)));
+        // Iron, as 2.2.0's
+        SGBlocks.NAQUADAH_GENERATOR_MK1 = SGBlocks.register(sink, "naquadah_generator_mk1",
+                properties -> new NaquadahGeneratorBlock(properties.strength(4.0F, 20.0F).noOcclusion(),
+                        GeneratorMark.ONE));
+        SGBlocks.NAQUADAH_GENERATOR_MK2 = SGBlocks.register(sink, "naquadah_generator_mk2",
+                properties -> new NaquadahGeneratorBlock(properties.strength(4.0F, 20.0F).noOcclusion(),
+                        GeneratorMark.TWO));
         // The MALP's console, six parts of a desk that don't fill their blocks, and the charger for its batteries
         SGBlocks.MALP_CONSOLE = SGBlocks.register(sink, "malp_console",
                 properties -> new MalpConsoleBlock(properties.noOcclusion().pushReaction(PushReaction.IMMOVEABLE)));

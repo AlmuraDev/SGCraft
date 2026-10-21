@@ -1,0 +1,18 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "N": "sgcraft:naquadah_ingot",
+    "D": "minecraft:diamond",
+    "M": "sgcraft:naquadah_generator_mk1",
+    "B": "sgcraft:naquadah_block"
+  },
+  "pattern": [
+    "NDN",
+    "NMN",
+    "NBN"
+  ],
+  "result": {
+    "id": "sgcraft:naquadah_generator_mk2"
+  }
+}

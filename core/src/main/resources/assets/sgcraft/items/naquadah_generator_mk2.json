@@ -1,0 +1,10 @@
+{
+  "model": {
+    "type": "minecraft:special",
+    "base": "sgcraft:item/naquadah_generator",
+    "model": {
+      "type": "sgcraft:naquadah_generator",
+      "mark_two": true
+    }
+  }
+}

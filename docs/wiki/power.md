@@ -14,9 +14,10 @@ A gate has these energy sources:
 
 - Naquadah in the [DHDs](dhd.md) linked to the gate. A DHD links to a gate whose base is less than the gate's DHD reach away in a straight line (`dhd_range`, 6 blocks), and its fuel counts when it also stands no more than 2 blocks above or below the base. One naquadah gives 96000 gate energy (`energy.per_naquadah`). The DHD burns a piece only when the gate needs more, last slot first, and keeps what is left of that piece for the next payment. Turn **DHD fuel powers it** off (`dhd_fuel`) to stop a gate taking DHD fuel.
 - Every [power unit](#the-power-unit) within 4 blocks of the gate's base along each axis, in loaded chunks.
+- Every switched-on [Naquadah Generator](blocks/naquadah-generator.md) within 4 blocks of the gate's base along each axis, in loaded chunks.
 - Every [ZPM](#zpms) in a ZPM console, interface cart or hub within 6 blocks of the gate's base along each axis, in loaded chunks, and for a supergate the ZPMs in its base's own slots.
 
-The gate draws on its sources one after another. It takes DHD fuel first, then power units, then ZPMs, and within each kind the source nearest its base first. It moves on to the next source only when the one before runs short. Among the ZPMs, a supergate's own base slots come first, then the consoles, carts and hubs, nearest first. Its own reserve, which holds 1000 energy at most by default (`energy_capacity`, shown as **Reserve** in the configurator), pays only what the sources can't.
+The gate draws on its sources one after another. It takes DHD fuel first, then power units, then Naquadah Generators, then ZPMs, and within each kind the source nearest its base first. It moves on to the next source only when the one before runs short. Among the ZPMs, a supergate's own base slots come first, then the consoles, carts and hubs, nearest first. Its own reserve, which holds 1000 energy at most by default (`energy_capacity`, shown as **Reserve** in the configurator), pays only what the sources can't.
 
 Each time the gate pays from its sources, it also draws enough to fill its reserve, which keeps a dial or a wormhole going for a while after the fuel runs out. With the default costs, every dial costs more than 1000, so a gate with only its reserve can't start one.
 

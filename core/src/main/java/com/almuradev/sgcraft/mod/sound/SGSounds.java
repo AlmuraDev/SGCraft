@@ -72,6 +72,8 @@ public final class SGSounds {
     public static final SoundEvent CITY_SHIELD_DOWN = SGSounds.create("city_shield_down");
     // An Ori supergate dialing, from its first symbol until just after its wormhole forms
     public static final SoundEvent ORI_DIAL = SGSounds.create("ori_dial");
+    // A Naquadah Generator humming while it runs
+    public static final SoundEvent GENERATOR_HUM = SGSounds.fixed("naquadah_generator_hum");
     // A storm sending a wormhole astray
     public static final SoundEvent MALFUNCTION = SGSounds.create("malfunction");
     // A dialing computer's alarm, looping while a wormhole comes in
@@ -88,7 +90,8 @@ public final class SGSounds {
             SGSounds.CLOSE, SGSounds.TELEPORT, SGSounds.MILKY_WAY_DHD_PRESS, SGSounds.MILKY_WAY_DHD_DIAL,
             SGSounds.PEGASUS_DHD_PRESS, SGSounds.PEGASUS_DHD_DIAL, SGSounds.IRIS_OPEN, SGSounds.IRIS_CLOSE,
             SGSounds.IRIS_HIT, SGSounds.SHIELD_UP, SGSounds.SHIELD_DOWN, SGSounds.CITY_SHIELD_UP,
-            SGSounds.CITY_SHIELD_DOWN, SGSounds.ORI_DIAL, SGSounds.MALFUNCTION, SGSounds.COMPUTER_ALARM,
+            SGSounds.CITY_SHIELD_DOWN, SGSounds.ORI_DIAL, SGSounds.GENERATOR_HUM, SGSounds.MALFUNCTION,
+            SGSounds.COMPUTER_ALARM,
             SGSounds.COMPUTER_KEY, SGSounds.COMPUTER_KEY_BIG,
     };
 

@@ -42,6 +42,8 @@ import com.almuradev.sgcraft.mod.block.entity.PowerUnitBlockEntity;
 import com.almuradev.sgcraft.mod.dhd.DhdFuelMenu;
 import com.almuradev.sgcraft.mod.dhd.DhdFuelProvider;
 import com.almuradev.sgcraft.mod.gate.GateBaseMenu;
+import com.almuradev.sgcraft.mod.generator.GeneratorPowerProvider;
+import com.almuradev.sgcraft.mod.generator.NaquadahGeneratorMenu;
 import com.almuradev.sgcraft.mod.item.SGItems;
 import com.almuradev.sgcraft.mod.malp.MalpMenu;
 import com.almuradev.sgcraft.mod.power.BatteryChargerMenu;
@@ -84,12 +86,17 @@ public final class SGBuiltIns {
         sink.register(IrisTypes.SHIELD, () -> Component.translatable("iris_type.sgcraft.shield"));
     }
 
-    /** SGCraft's own energy sources: the naquadah in a gate's DHDs, power units, and ZPMs. */
+    /**
+     * SGCraft's own energy sources, in the order gates draw on them: the naquadah in a gate's DHDs, power units,
+     * Naquadah Generators and ZPMs.
+     */
     public static void registerEnergySources(final RegistrySink<EnergySourceProvider> sink) {
         sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_SOURCE_PROVIDER, SGCraft.id("dhd_fuel")),
                 new DhdFuelProvider());
         sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_SOURCE_PROVIDER, SGCraft.id("power_unit")),
                 new PowerUnitProvider());
+        sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_SOURCE_PROVIDER, SGCraft.id("naquadah_generator")),
+                new GeneratorPowerProvider());
         sink.register(ResourceKey.create(SGCraftRegistries.ENERGY_SOURCE_PROVIDER, SGCraft.id("zpm")),
                 new ZpmSources());
     }
@@ -126,6 +133,9 @@ public final class SGBuiltIns {
         sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("gate_base")), GateBaseMenu.TYPE);
         PowerUnitMenu.TYPE = Platform.get().menuType(PowerUnitMenu::new);
         sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("power_unit")), PowerUnitMenu.TYPE);
+        NaquadahGeneratorMenu.TYPE = Platform.get().menuType(NaquadahGeneratorMenu::new);
+        sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("naquadah_generator")),
+                NaquadahGeneratorMenu.TYPE);
         BatteryChargerMenu.TYPE = Platform.get().menuType(BatteryChargerMenu::new);
         sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("battery_charger")), BatteryChargerMenu.TYPE);
         MalpMenu.TYPE = Platform.get().menuType(MalpMenu::new);

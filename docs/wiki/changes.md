@@ -34,6 +34,7 @@ On Fabric, SGCraft carries Team Reborn Energy inside its jar, so its power unit 
 
 SGCraft 2.2.0 added these, and 3.0 has them in the base mod, with the same recipes except where noted:
 
+- **The Naquadah Generator.** A Mark I and a Mark II that burn naquadah or naquadah alloy ingots to power the gates near them, with the 2.2.0 model, screen, hum and settings. An energy converter turns their energy into FE, where 2.2.0's gave FE itself. See [Naquadah Generator](blocks/naquadah-generator.md).
 - **The gate shield.** A {{item:sgcraft:shield_upgrade}} fits an energy shield in place of the metal iris. It rises and falls in half a second, stops travelers as a shut iris does, and uses 1 gate energy a tick while it is up. The GDO, the gate control tablet, redstone and commands work it as they work an iris. See [The shield](iris.md#the-shield).
 - **The shield console.** A {{item:sgcraft:shield_console}} raises and lowers the shield of the nearest shielded gate within 40 blocks. See [Shield Console](blocks/shield-console.md).
 - **The Ori supergate.** A gate type built only as a supergate, which connects only to other Ori supergates. Its ring of segments links one after another as it dials, over about 22 seconds, timed to its dialing sound. It takes no iris, shield or upgrades. Get one with the {{item:sgcraft:ori_supergate_spawner}}, a command or the configurator. See [Ori supergates](building-gates.md#ori-supergates).

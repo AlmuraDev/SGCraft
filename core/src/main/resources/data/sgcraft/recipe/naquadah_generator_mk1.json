@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "I": "minecraft:iron_ingot",
+    "N": "sgcraft:naquadah_ingot",
+    "C": "sgcraft:core_crystal"
+  },
+  "pattern": [
+    "INI",
+    "NCN",
+    "INI"
+  ],
+  "result": {
+    "id": "sgcraft:naquadah_generator_mk1"
+  }
+}

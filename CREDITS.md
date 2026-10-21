@@ -110,6 +110,13 @@ city shield rising and falling (`sounds/city_shield_up.ogg` and `city_shield_dow
 the shields and of the Ori supergate's ring, and the city shield's energy use follow the 1.12 mod's. The city shield
 runs on ZPMs and power units here, where the 1.12 mod's ran on ZPMs alone.
 
+## The Naquadah Generator
+
+The Naquadah Generator, its two marks, its fuel, its output and its settings follow the 1.12 mod's version 2.2.0, as
+AlmuraDev added it there. From it come its models (`models/generator/naquadah_generator_on.obj` and
+`naquadah_generator_off.obj`, the 1.12 mod's Mark I models), its textures (`textures/block/naquadah_generator_*.png`)
+and its hum (`sounds/naquadah_generator_hum.ogg`).
+
 ## ZPMs
 
 The ZPM, the ZPM console, the ZPM interface cart and the ZPM hub come from the 1.12 mod. The ZPM's texture

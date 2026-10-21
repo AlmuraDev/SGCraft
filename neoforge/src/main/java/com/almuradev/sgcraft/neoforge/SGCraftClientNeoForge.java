@@ -35,6 +35,9 @@ import com.almuradev.sgcraft.mod.client.dhd.DhdRenderer;
 import com.almuradev.sgcraft.mod.client.gate.GateBaseScreen;
 import com.almuradev.sgcraft.mod.client.gate.GateFeatureRenderer;
 import com.almuradev.sgcraft.mod.client.gate.StargateBaseRenderer;
+import com.almuradev.sgcraft.mod.client.generator.GeneratorItemRenderer;
+import com.almuradev.sgcraft.mod.client.generator.GeneratorRenderer;
+import com.almuradev.sgcraft.mod.client.generator.GeneratorScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleRenderer;
 import com.almuradev.sgcraft.mod.client.malp.MalpModel;
 import com.almuradev.sgcraft.mod.client.malp.MalpRenderer;
@@ -49,6 +52,7 @@ import com.almuradev.sgcraft.mod.client.zpm.ZpmScreen;
 import com.almuradev.sgcraft.mod.dhd.DhdFuelMenu;
 import com.almuradev.sgcraft.mod.entity.SGEntityTypes;
 import com.almuradev.sgcraft.mod.gate.GateBaseMenu;
+import com.almuradev.sgcraft.mod.generator.NaquadahGeneratorMenu;
 import com.almuradev.sgcraft.mod.malp.MalpMenu;
 import com.almuradev.sgcraft.mod.power.BatteryChargerMenu;
 import com.almuradev.sgcraft.mod.power.PowerUnitMenu;
@@ -80,6 +84,7 @@ public final class SGCraftClientNeoForge {
     public static void registerRenderers(final EntityRenderersEvent.RegisterRenderers event) {
         event.registerBlockEntityRenderer(SGBlockEntityTypes.STARGATE_BASE, StargateBaseRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.DHD, DhdRenderer::new);
+        event.registerBlockEntityRenderer(SGBlockEntityTypes.NAQUADAH_GENERATOR, GeneratorRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.MALP_CONSOLE, MalpConsoleRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.DIALING_COMPUTER, DialingComputerRenderer::new);
         event.registerBlockEntityRenderer(SGBlockEntityTypes.CITY_SHIELD, CityShieldRenderer::new);
@@ -108,6 +113,7 @@ public final class SGCraftClientNeoForge {
         event.register(DhdFuelMenu.TYPE, DhdFuelScreen::new);
         event.register(GateBaseMenu.TYPE, GateBaseScreen::new);
         event.register(PowerUnitMenu.TYPE, PowerUnitScreen::new);
+        event.register(NaquadahGeneratorMenu.TYPE, GeneratorScreen::new);
         event.register(BatteryChargerMenu.TYPE, BatteryChargerScreen::new);
         event.register(MalpMenu.TYPE, MalpScreen::new);
         event.register(ZpmMenu.SINGLE, ZpmScreen::new);
@@ -118,6 +124,7 @@ public final class SGCraftClientNeoForge {
     @SubscribeEvent
     public static void registerItemRenderers(final RegisterSpecialModelRendererEvent event) {
         event.register(DhdItemRenderer.TYPE, DhdItemRenderer.Unbaked.CODEC);
+        event.register(GeneratorItemRenderer.TYPE, GeneratorItemRenderer.Unbaked.CODEC);
     }
 
     @SubscribeEvent

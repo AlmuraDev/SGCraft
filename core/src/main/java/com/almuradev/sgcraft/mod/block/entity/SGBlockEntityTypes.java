@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.mod.block.entity;
 
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.block.SGBlocks;
+import com.almuradev.sgcraft.mod.generator.NaquadahGeneratorBlockEntity;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
 import com.almuradev.sgcraft.mod.shield.CityShieldBlockEntity;
 import com.almuradev.sgcraft.mod.zpm.ZpmDeviceBlockEntity;
@@ -46,6 +47,7 @@ public final class SGBlockEntityTypes {
     public static BlockEntityType<DhdBlockEntity> DHD;
     public static BlockEntityType<GateSpawnerBlockEntity> GATE_SPAWNER;
     public static BlockEntityType<PowerUnitBlockEntity> POWER_UNIT;
+    public static BlockEntityType<NaquadahGeneratorBlockEntity> NAQUADAH_GENERATOR;
     public static BlockEntityType<BatteryChargerBlockEntity> BATTERY_CHARGER;
     public static BlockEntityType<EnergyConverterBlockEntity> ENERGY_CONVERTER;
     public static BlockEntityType<MalpConsoleBlockEntity> MALP_CONSOLE;
@@ -71,6 +73,10 @@ public final class SGBlockEntityTypes {
         SGBlockEntityTypes.POWER_UNIT = new BlockEntityType<>(PowerUnitBlockEntity::new, Set.of(SGBlocks.POWER_UNIT));
         sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("power_unit")),
                 SGBlockEntityTypes.POWER_UNIT);
+        SGBlockEntityTypes.NAQUADAH_GENERATOR = new BlockEntityType<>(NaquadahGeneratorBlockEntity::new,
+                Set.of(SGBlocks.NAQUADAH_GENERATOR_MK1, SGBlocks.NAQUADAH_GENERATOR_MK2));
+        sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("naquadah_generator")),
+                SGBlockEntityTypes.NAQUADAH_GENERATOR);
         SGBlockEntityTypes.BATTERY_CHARGER = new BlockEntityType<>(BatteryChargerBlockEntity::new,
                 Set.of(SGBlocks.BATTERY_CHARGER));
         sink.register(ResourceKey.create(Registries.BLOCK_ENTITY_TYPE, SGCraft.id("battery_charger")),

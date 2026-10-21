@@ -34,6 +34,9 @@ import com.almuradev.sgcraft.mod.client.dhd.DhdRenderer;
 import com.almuradev.sgcraft.mod.client.gate.GateBaseScreen;
 import com.almuradev.sgcraft.mod.client.gate.GateFeatureRenderer;
 import com.almuradev.sgcraft.mod.client.gate.StargateBaseRenderer;
+import com.almuradev.sgcraft.mod.client.generator.GeneratorItemRenderer;
+import com.almuradev.sgcraft.mod.client.generator.GeneratorRenderer;
+import com.almuradev.sgcraft.mod.client.generator.GeneratorScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleRenderer;
 import com.almuradev.sgcraft.mod.client.malp.MalpModel;
 import com.almuradev.sgcraft.mod.client.malp.MalpRenderer;
@@ -48,6 +51,7 @@ import com.almuradev.sgcraft.mod.client.zpm.ZpmScreen;
 import com.almuradev.sgcraft.mod.dhd.DhdFuelMenu;
 import com.almuradev.sgcraft.mod.entity.SGEntityTypes;
 import com.almuradev.sgcraft.mod.gate.GateBaseMenu;
+import com.almuradev.sgcraft.mod.generator.NaquadahGeneratorMenu;
 import com.almuradev.sgcraft.mod.malp.MalpMenu;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
 import com.almuradev.sgcraft.mod.power.BatteryChargerMenu;
@@ -78,6 +82,7 @@ public final class SGCraftClientFabric implements ClientModInitializer {
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.STARGATE_BASE, StargateBaseRenderer::new);
         FeatureRendererRegistry.register(GateFeatureRenderer.TYPE, GateFeatureRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.DHD, DhdRenderer::new);
+        BlockEntityRendererRegistry.register(SGBlockEntityTypes.NAQUADAH_GENERATOR, GeneratorRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.MALP_CONSOLE, MalpConsoleRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.DIALING_COMPUTER, DialingComputerRenderer::new);
         BlockEntityRendererRegistry.register(SGBlockEntityTypes.CITY_SHIELD, CityShieldRenderer::new);
@@ -89,10 +94,12 @@ public final class SGCraftClientFabric implements ClientModInitializer {
         EntityRendererRegistry.register(SGEntityTypes.MALP, MalpRenderer::new);
         // Into vanilla's own list, which the access widener opens, as Fabric API has no way to register one
         SpecialModelRenderers.ID_MAPPER.put(DhdItemRenderer.TYPE, DhdItemRenderer.Unbaked.CODEC);
+        SpecialModelRenderers.ID_MAPPER.put(GeneratorItemRenderer.TYPE, GeneratorItemRenderer.Unbaked.CODEC);
         SGClient.init();
         MenuScreens.register(DhdFuelMenu.TYPE, DhdFuelScreen::new);
         MenuScreens.register(GateBaseMenu.TYPE, GateBaseScreen::new);
         MenuScreens.register(PowerUnitMenu.TYPE, PowerUnitScreen::new);
+        MenuScreens.register(NaquadahGeneratorMenu.TYPE, GeneratorScreen::new);
         MenuScreens.register(BatteryChargerMenu.TYPE, BatteryChargerScreen::new);
         MenuScreens.register(MalpMenu.TYPE, MalpScreen::new);
         MenuScreens.register(ZpmMenu.SINGLE, ZpmScreen::new);

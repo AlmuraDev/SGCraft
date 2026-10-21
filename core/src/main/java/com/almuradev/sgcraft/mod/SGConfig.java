@@ -30,6 +30,7 @@ import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.address.AddressSettings;
 import com.almuradev.sgcraft.mod.computer.ComputerSettings;
 import com.almuradev.sgcraft.mod.energy.DialCosts;
+import com.almuradev.sgcraft.mod.generator.GeneratorSettings;
 import com.almuradev.sgcraft.mod.malp.MalpSettings;
 import com.almuradev.sgcraft.mod.shield.ShieldSettings;
 import com.almuradev.sgcraft.mod.view.RemoteViewConfig;
@@ -64,7 +65,7 @@ import java.util.function.Consumer;
  *
  * <p>The file keeps its settings in sections: {@code energy} (naquadah, power units, the energy bridges' rates, dial
  * costs and their {@code multipliers}), {@code addresses}, {@code gates}, {@code tools}, {@code worldgen},
- * {@code remote_view}, {@code malp}, {@code shields}, {@code zpm} and {@code computers}. The records here keep the
+ * {@code remote_view}, {@code malp}, {@code shields}, {@code zpm}, {@code computers} and {@code generators}. The records here keep the
  * shape the rest of the mod reads them in.</p>
  *
  * @param energyPerNaquadah how much energy one naquadah gives
@@ -141,8 +142,11 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
             ZpmSettings.CODEC.optionalFieldOf("zpm", SGConfig.DEFAULTS.options.zpm())
                     .forGetter(config -> config.options.zpm()),
             ComputerSettings.CODEC.optionalFieldOf("computers", SGConfig.DEFAULTS.options.computers())
-                    .forGetter(config -> config.options.computers())
-    ).apply(instance, (energy, addresses, gates, tools, worldgen, remoteView, malp, shields, zpm, computers) ->
+                    .forGetter(config -> config.options.computers()),
+            GeneratorSettings.CODEC.optionalFieldOf("generators", SGConfig.DEFAULTS.options.generators())
+                    .forGetter(config -> config.options.generators())
+    ).apply(instance, (energy, addresses, gates, tools, worldgen, remoteView, malp, shields, zpm, computers,
+            generators) ->
             new SGConfig(
             energy.energyPerNaquadah(), energy.dialCosts(), energy.multipliers().distanceFactor(),
             energy.multipliers().interWorld(), energy.freeInCreative(), energy.rates().fePerGeIn(),
@@ -154,7 +158,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
             new Options(gates.kawooshBreaksUnbreakable(), gates.chunkLoadingRange(), gates.logEvents(),
                     worldgen.tokraWorlds(), gates.defaults(), gates.ownersBreakGates(),
                     gates.generatedGatesBreakable(), shields, zpm, energy.multipliers().otherGroup(),
-                    gates.wormholesJump(), computers, gates.eventHorizonLight()))));
+                    gates.wormholesJump(), computers, gates.eventHorizonLight(), generators))));
 
     // The file's energy section: what naquadah and power units hold, the energy bridges' rates, and what dials cost
     private record EnergySection(double energyPerNaquadah, long powerUnitCapacity, BridgeRates rates,
@@ -353,15 +357,17 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
      * @param eventHorizonLight how bright an open wormhole's horizon lights the world round it, from 0 for no light to
      *     {@link #MAX_LIGHT}, as 2.2.0's {@code eventHorizonLightLevel}; 12 unless set. Behind a shut iris the back of
      *     the gate is lit this bright instead.
+     * @param generators the settings for Naquadah Generators, kept under {@code generators}
      */
     public record Options(boolean kawooshBreaksUnbreakable, int chunkLoadingRange, boolean logStargateEvents,
             Map<Identifier, Boolean> tokraWorlds, Map<Identifier, JsonElement> gateDefaults, boolean ownersBreakGates,
             boolean generatedGatesBreakable, ShieldSettings shields, ZpmSettings zpm,
-            double otherGroupMultiplier, boolean wormholesJump, ComputerSettings computers, int eventHorizonLight) {
+            double otherGroupMultiplier, boolean wormholesJump, ComputerSettings computers, int eventHorizonLight,
+            GeneratorSettings generators) {
 
         public static final Options DEFAULTS = new Options(false, 1, false,
                 Map.of(Level.OVERWORLD.identifier(), true), Map.of(), true, false, ShieldSettings.DEFAULTS,
-                ZpmSettings.DEFAULTS, 10.0, true, ComputerSettings.DEFAULTS, 12);
+                ZpmSettings.DEFAULTS, 10.0, true, ComputerSettings.DEFAULTS, 12, GeneratorSettings.DEFAULTS);
 
         public Options {
             gateDefaults = Map.copyOf(gateDefaults);
@@ -370,68 +376,68 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         Options withKawooshBreaksUnbreakable(final boolean breaks) {
             return new Options(breaks, this.chunkLoadingRange, this.logStargateEvents, this.tokraWorlds,
                     this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight, this.generators);
         }
 
         Options withChunkLoadingRange(final int range) {
             return new Options(this.kawooshBreaksUnbreakable, range, this.logStargateEvents, this.tokraWorlds,
                     this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight, this.generators);
         }
 
         Options withLogStargateEvents(final boolean log) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, log, this.tokraWorlds,
                     this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight, this.generators);
         }
 
         Options withGateDefaults(final Map<Identifier, JsonElement> defaults) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, defaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight, this.generators);
         }
 
         Options withBreaking(final boolean owners, final boolean generated) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, owners, generated, this.shields, this.zpm,
-                    this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
+                    this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight, this.generators);
         }
 
         Options withZpm(final ZpmSettings zpm) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
                     this.shields, zpm, this.otherGroupMultiplier,
-                    this.wormholesJump, this.computers, this.eventHorizonLight);
+                    this.wormholesJump, this.computers, this.eventHorizonLight, this.generators);
         }
 
         Options withOtherGroupMultiplier(final double multiplier) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
-                    this.shields, this.zpm, multiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
+                    this.shields, this.zpm, multiplier, this.wormholesJump, this.computers, this.eventHorizonLight, this.generators);
         }
 
         Options withWormholesJump(final boolean jump) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
-                    this.shields, this.zpm, this.otherGroupMultiplier, jump, this.computers, this.eventHorizonLight);
+                    this.shields, this.zpm, this.otherGroupMultiplier, jump, this.computers, this.eventHorizonLight, this.generators);
         }
 
         Options withComputers(final ComputerSettings computers) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
-                    this.shields, this.zpm, this.otherGroupMultiplier, this.wormholesJump, computers, this.eventHorizonLight);
+                    this.shields, this.zpm, this.otherGroupMultiplier, this.wormholesJump, computers, this.eventHorizonLight, this.generators);
         }
 
         Options withEventHorizonLight(final int light) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
-                    this.shields, this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, light);
+                    this.shields, this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, light, this.generators);
         }
 
         Options withShields(final ShieldSettings shields) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight, this.generators);
         }
     }
 

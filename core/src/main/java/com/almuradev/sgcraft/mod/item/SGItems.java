@@ -70,6 +70,8 @@ public final class SGItems {
     public static BlockItem NAQUADAH_ORE;
     public static BlockItem NAQUADAH_BLOCK;
     public static BlockItem POWER_UNIT;
+    public static BlockItem NAQUADAH_GENERATOR_MK1;
+    public static BlockItem NAQUADAH_GENERATOR_MK2;
     public static Item NAQUADAH;
     public static Item NAQUADAH_INGOT;
     public static Item CORE_CRYSTAL;
@@ -119,6 +121,8 @@ public final class SGItems {
         SGItems.DHD_PEGASUS = SGItems.registerBlock(sink, SGBlocks.DHD_PEGASUS);
         SGItems.NAQUADAH_ORE = SGItems.registerBlock(sink, SGBlocks.NAQUADAH_ORE);
         SGItems.POWER_UNIT = SGItems.registerBlock(sink, SGBlocks.POWER_UNIT);
+        SGItems.NAQUADAH_GENERATOR_MK1 = SGItems.registerBlock(sink, SGBlocks.NAQUADAH_GENERATOR_MK1);
+        SGItems.NAQUADAH_GENERATOR_MK2 = SGItems.registerBlock(sink, SGBlocks.NAQUADAH_GENERATOR_MK2);
         SGItems.NAQUADAH_BLOCK = SGItems.registerBlock(sink, SGBlocks.NAQUADAH_BLOCK);
         SGItems.NAQUADAH = SGItems.register(sink, "naquadah", Item::new, properties -> properties);
         SGItems.NAQUADAH_INGOT = SGItems.register(sink, "naquadah_ingot", Item::new, properties -> properties);

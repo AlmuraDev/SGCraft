@@ -42,7 +42,7 @@ A short `sgcraft-server.json` that changes a few settings and leaves the rest at
 
 ## Server settings
 
-`config/sgcraft-server.json` keeps its settings in ten sections: `energy`, `addresses`, `gates`, `tools`, `worldgen`, `remote_view`, `malp`, `shields`, `zpm` and `computers`. A section left out takes all its defaults. In a section, a setting left out takes its default. This page names a setting by its path, such as `energy.multipliers.inter_world`. [The whole file](#the-whole-file) shows every setting at its default.
+`config/sgcraft-server.json` keeps its settings in eleven sections: `energy`, `addresses`, `gates`, `tools`, `worldgen`, `remote_view`, `malp`, `shields`, `zpm`, `computers` and `generators`. A section left out takes all its defaults. In a section, a setting left out takes its default. This page names a setting by its path, such as `energy.multipliers.inter_world`. [The whole file](#the-whole-file) shows every setting at its default.
 
 ### Energy
 
@@ -292,6 +292,17 @@ A ZPM holds GE, which gates and city shields draw on as on any other source. The
 | `chest_chance` | `15` | The chance, in percent, that a generated gate has a chest beside it holding a ZPM (0 to 100) |
 | `tainted_chance` | `10` | The chance, in percent, that a ZPM in such a chest is tainted (0 to 100) |
 
+### Naquadah Generators
+
+`generators` sets the [Naquadah Generator](blocks/naquadah-generator.md)'s fuel and its two marks, as 2.2.0's `naquadah-generator` section.
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `naquadah_energy` | `96000` | GE a piece of naquadah is worth, before the mark's share |
+| `ingot_energy` | `384000` | GE a naquadah alloy ingot is worth |
+| `mark_1` | `{"energy_per_tick": 4, "capacity": 20000, "efficiency": 1.0}` | The Mark I: GE it makes a tick, GE it holds, and the share of its fuel's worth it gets |
+| `mark_2` | `{"energy_per_tick": 24, "capacity": 60000, "efficiency": 0.5}` | The Mark II's |
+
 ### Dialing computers
 
 `computers` sets the [dialing computer](blocks/dialing-computer.md), and the power of dialing computers and [MALP consoles](blocks/malp-console.md#power).
@@ -457,6 +468,20 @@ Every server setting at its default. You never need to write all of this. Settin
     "energy_per_tick": 0.05,
     "power_reach": 6,
     "history_size": 10
+  },
+  "generators": {
+    "naquadah_energy": 96000,
+    "ingot_energy": 384000,
+    "mark_1": {
+      "energy_per_tick": 4,
+      "capacity": 20000,
+      "efficiency": 1.0
+    },
+    "mark_2": {
+      "energy_per_tick": 24,
+      "capacity": 60000,
+      "efficiency": 0.5
+    }
   }
 }
 ```
