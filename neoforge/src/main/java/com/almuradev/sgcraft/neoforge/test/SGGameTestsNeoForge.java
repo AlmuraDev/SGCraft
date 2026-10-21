@@ -97,6 +97,7 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.SectionPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.FunctionGameTestInstance;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -126,6 +127,7 @@ import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.WrittenBookContent;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.GameType;
@@ -157,6 +159,7 @@ import net.neoforged.neoforge.registries.RegisterEvent;
 import net.neoforged.neoforge.transfer.energy.EnergyHandler;
 import net.neoforged.neoforge.transfer.transaction.Transaction;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -246,6 +249,7 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("tablet_dials_its_gates", SGGameTestsNeoForge::tabletDials);
         SGGameTestsNeoForge.TESTS.put("tools_tell_a_gate_is_gone", SGGameTestsNeoForge::gateGone);
         SGGameTestsNeoForge.TESTS.put("chests_hold_sgcraft_loot", SGGameTestsNeoForge::chestLoot);
+        SGGameTestsNeoForge.TESTS.put("chests_hold_gate_address_books", SGGameTestsNeoForge::addressBookLoot);
         SGGameTestsNeoForge.TESTS.put("broken_base_drops_upgrades", SGGameTestsNeoForge::baseDropsUpgrades);
         SGGameTestsNeoForge.TESTS.put("new_pdds_take_default_addresses", SGGameTestsNeoForge::defaultAddresses);
         SGGameTestsNeoForge.TESTS.put("breaking_an_open_gate_explodes", SGGameTestsNeoForge::breach);
@@ -587,6 +591,38 @@ public final class SGGameTestsNeoForge {
                     || stack.is(SGItems.CONTROLLER_CRYSTAL)).count();
         }
         helper.assertTrue(crystals > 0, "A hundred stronghold libraries held no crystals");
+        helper.succeed();
+    }
+
+    // A desert pyramid's chest can hold a tattered book with the address of a gate world generation built
+    private static void addressBookLoot(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final Stargate gate = SGGameTestsNeoForge.place(helper, origin.offset(SGGameTestsNeoForge.A), 9);
+        gate.set(GateProperties.GENERATED, true, SGGameTestsNeoForge.server(helper));
+        final List<String> generated = new ArrayList<>();
+        for (final Stargate each : SGCraftApi.get().stargates().in(level.dimension())) {
+            if (each.get(GateProperties.GENERATED).orElse(false)) {
+                SGCraftApi.get().addressing().addressOf(each.position(), level.dimension())
+                        .ifPresent(address -> generated.add(address.toString()));
+            }
+        }
+        final LootTable pyramid = level.getServer().reloadableRegistries().getLootTable(ResourceKey.create(
+                Registries.LOOT_TABLE, SGCraft.id("chests/desert_pyramid")));
+        final LootParams params = new LootParams.Builder(level)
+                .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(helper.absolutePos(origin)))
+                .create(LootContextParamSets.CHEST);
+        int books = 0;
+        for (int roll = 0; roll < 100; roll++) {
+            for (final ItemStack stack : pyramid.getRandomItems(params)) {
+                final WrittenBookContent content = stack.get(DataComponents.WRITTEN_BOOK_CONTENT);
+                helper.assertTrue(stack.is(Items.WRITTEN_BOOK) && content != null, "The table gave " + stack);
+                final String page = content.pages().getFirst().raw().getString();
+                helper.assertTrue(generated.stream().anyMatch(page::contains), "The book's page reads " + page);
+                helper.assertTrue(content.generation() == 3, "The book isn't tattered");
+                books++;
+            }
+        }
+        helper.assertTrue(books > 0, "A hundred desert pyramids held no address books");
         helper.succeed();
     }
 

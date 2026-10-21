@@ -140,6 +140,9 @@ SGCraft's loot rolls alongside the vanilla loot in these chests:
 | | 50% | 1 | Ender pearls (6 to 24) |
 | Stronghold library | 75% | 1 to 2 | Stargate Core Crystal, Stargate Controller Crystal |
 | Village weaponsmith and toolsmith | 50% | 1 to 2 | Naquadah Alloy Ingot (1 to 8), Stargate Core Crystal, Stargate Controller Crystal |
+| Mineshaft, desert pyramid and jungle temple | 25% | 1 | A gate address book |
+
+A gate address book is a tattered written book titled "Stargate Address". Its page holds the address of one gate that world generation built, picked at random, as dialed from the world the chest is in. A gate with **Address shown** off, or one no address reaches from that world, isn't picked. With no such gate, the chest gets no book. The book is made when the chest is first opened, so it can name gates generated after the chest was.
 
 In the dungeon, naquadah, pearls and core crystals each come up twice as often as controller crystals. In the stronghold library, controller crystals come up twice as often as core crystals. In the smiths' chests, ingots come up twice as often as each crystal.
 

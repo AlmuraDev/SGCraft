@@ -1,0 +1,8 @@
+{
+  "type": "neoforge:add_table",
+  "condition": {
+    "type": "neoforge:loot_table_id",
+    "loot_table_id": "minecraft:chests/abandoned_mineshaft"
+  },
+  "table": "sgcraft:chests/abandoned_mineshaft"
+}

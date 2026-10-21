@@ -1,0 +1,8 @@
+{
+  "type": "neoforge:add_table",
+  "condition": {
+    "type": "neoforge:loot_table_id",
+    "loot_table_id": "minecraft:chests/jungle_temple"
+  },
+  "table": "sgcraft:chests/jungle_temple"
+}

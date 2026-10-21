@@ -50,6 +50,7 @@ import com.almuradev.sgcraft.mod.registry.SGRegistries;
 import com.almuradev.sgcraft.mod.sound.SGSounds;
 import com.almuradev.sgcraft.mod.villager.SGVillagers;
 import com.almuradev.sgcraft.mod.worldgen.ChestLoot;
+import com.almuradev.sgcraft.mod.worldgen.GateAddressBookFunction;
 import com.almuradev.sgcraft.mod.worldgen.NaquadahOre;
 import com.almuradev.sgcraft.mod.worldgen.StructureGates;
 import net.fabricmc.api.ModInitializer;
@@ -120,6 +121,8 @@ public final class SGCraftFabric implements ModInitializer {
         SGSounds.register((key, sound) -> Registry.register(BuiltInRegistries.SOUND_EVENT, key, sound));
         StructureGates.register((key, type) -> Registry.register(BuiltInRegistries.STRUCTURE_PIECE, key, type));
         NaquadahOre.register((key, type) -> Registry.register(BuiltInRegistries.FEATURE_TYPE, key, type));
+        GateAddressBookFunction.register((key, type) -> Registry.register(BuiltInRegistries.LOOT_FUNCTION_TYPE, key,
+                type));
         SGDataComponents.register((key, type) -> Registry.register(BuiltInRegistries.DATA_COMPONENT_TYPE, key, type));
         SGItems.register((key, item) -> Registry.register(BuiltInRegistries.ITEM, key, item));
         SGBlockEntityTypes.register((key, type) -> Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, type));

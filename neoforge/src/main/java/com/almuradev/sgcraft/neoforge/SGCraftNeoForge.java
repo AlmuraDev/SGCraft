@@ -42,6 +42,7 @@ import com.almuradev.sgcraft.mod.network.SGNetwork;
 import com.almuradev.sgcraft.mod.registry.SGRegistries;
 import com.almuradev.sgcraft.mod.sound.SGSounds;
 import com.almuradev.sgcraft.mod.villager.SGVillagers;
+import com.almuradev.sgcraft.mod.worldgen.GateAddressBookFunction;
 import com.almuradev.sgcraft.mod.worldgen.NaquadahOre;
 import com.almuradev.sgcraft.mod.worldgen.StructureGates;
 import com.almuradev.sgcraft.neoforge.test.RemoteViewGameTestsNeoForge;
@@ -167,6 +168,7 @@ public final class SGCraftNeoForge {
         event.register(Registries.SOUND_EVENT, helper -> SGSounds.register(helper::register));
         event.register(Registries.STRUCTURE_PIECE, helper -> StructureGates.register(helper::register));
         event.register(Registries.FEATURE_TYPE, helper -> NaquadahOre.register(helper::register));
+        event.register(Registries.LOOT_FUNCTION_TYPE, helper -> GateAddressBookFunction.register(helper::register));
         event.register(SGCraftRegistries.ADDRESS_REACH, helper -> SGBuiltIns.registerReaches(helper::register));
         event.register(SGCraftRegistries.GATE_PROPERTY, helper -> SGBuiltIns.registerProperties(helper::register));
         event.register(SGCraftRegistries.IRIS_TYPE, helper -> SGBuiltIns.registerIrisTypes(helper::register));

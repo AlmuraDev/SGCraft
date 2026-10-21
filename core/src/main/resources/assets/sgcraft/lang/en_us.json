@@ -34,6 +34,7 @@
   "message.sgcraft.dial_failed.canceled": "Dialing failed: something stopped the dial",
   "message.sgcraft.dial_failed.interrupted": "Dialing failed: the dial was interrupted",
   "message.sgcraft.dial_failed.gate_gone": "Dialing failed: a gate was broken while dialing",
+  "book.sgcraft.gate_address.page": "The symbols of a distant Stargate are scrawled across this page:",
   "command.sgcraft.nothing_selected": "You have no gate selected. Look at one and use /sgcraft select",
   "command.sgcraft.no_gate_there": "There is no gate there",
   "command.sgcraft.not_an_address": "That isn't an address. Use letters, digits and @, such as AB12-CDE",

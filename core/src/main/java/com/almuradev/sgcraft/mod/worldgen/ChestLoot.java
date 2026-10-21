@@ -39,19 +39,25 @@ import java.util.Map;
 
 /**
  * SGCraft's loot in vanilla's chests, as in 1.12: naquadah, crystals and ender pearls in dungeons, stronghold
- * libraries, village smiths and the bonus chest. Each SGCraft table under {@code sgcraft:chests} rolls alongside the
- * vanilla chest it is listed against, so a datapack empties or changes SGCraft's share by replacing its table.
+ * libraries, village smiths and the bonus chest, and as in 2.2.0 a book holding a generated gate's address in
+ * mineshafts, desert pyramids and jungle temples (see {@link GateAddressBookFunction}). Each SGCraft table under
+ * {@code sgcraft:chests} rolls alongside the vanilla chest it is listed against, so a datapack empties or changes
+ * SGCraft's share by replacing its table.
  * NeoForge reads the same pairs from its loot modifiers.
  */
 public final class ChestLoot {
 
-    private static final Map<ResourceKey<LootTable>, ResourceKey<LootTable>> ADDITIONS = Map.of(
-            ChestLoot.vanilla("chests/simple_dungeon"), ChestLoot.sgcraft("simple_dungeon"),
-            ChestLoot.vanilla("chests/spawn_bonus_chest"), ChestLoot.sgcraft("spawn_bonus_chest"),
-            ChestLoot.vanilla("chests/stronghold_library"), ChestLoot.sgcraft("stronghold_library"),
+    private static final Map<ResourceKey<LootTable>, ResourceKey<LootTable>> ADDITIONS = Map.ofEntries(
+            Map.entry(ChestLoot.vanilla("chests/simple_dungeon"), ChestLoot.sgcraft("simple_dungeon")),
+            Map.entry(ChestLoot.vanilla("chests/spawn_bonus_chest"), ChestLoot.sgcraft("spawn_bonus_chest")),
+            Map.entry(ChestLoot.vanilla("chests/stronghold_library"), ChestLoot.sgcraft("stronghold_library")),
             // 1.12's village blacksmith is now the weaponsmith and the toolsmith
-            ChestLoot.vanilla("chests/village/village_weaponsmith"), ChestLoot.sgcraft("village_blacksmith"),
-            ChestLoot.vanilla("chests/village/village_toolsmith"), ChestLoot.sgcraft("village_blacksmith"));
+            Map.entry(ChestLoot.vanilla("chests/village/village_weaponsmith"),
+                    ChestLoot.sgcraft("village_blacksmith")),
+            Map.entry(ChestLoot.vanilla("chests/village/village_toolsmith"), ChestLoot.sgcraft("village_blacksmith")),
+            Map.entry(ChestLoot.vanilla("chests/abandoned_mineshaft"), ChestLoot.sgcraft("abandoned_mineshaft")),
+            Map.entry(ChestLoot.vanilla("chests/desert_pyramid"), ChestLoot.sgcraft("desert_pyramid")),
+            Map.entry(ChestLoot.vanilla("chests/jungle_temple"), ChestLoot.sgcraft("jungle_temple")));
 
     private ChestLoot() {
     }
