@@ -62,7 +62,7 @@ These settings decide who may do what, so the configure right isn't enough to ch
 - whether the world built it (`sgcraft:generated`)
 - the owner
 
-A player with only the configure right sees these grayed out in the configurator, with the note "Only the owner or an operator changes rights".
+A player with only the configure right sees these grayed out in the configurator, and doesn't see the listed players, with the note "Only the owner or an operator sees who is listed".
 
 ## Address rules
 
@@ -105,7 +105,7 @@ Anyone else is told "This gate can't be broken". Explosions and commands still b
 
 Open a gate's [configurator](tools.md#stargate-configurator) and choose the **Access** tab.
 
-- At the top: "Owner: <name>", or "Owner: none, so operators manage it". A player who doesn't manage the gate also sees "Only the owner or an operator changes rights".
+- At the top: "Owner: <name>", or "Owner: none, so operators manage it". A player who doesn't manage the gate sees "Only the owner or an operator sees who is listed" in place of the listed players.
 - **Incoming allowed** and **Outgoing allowed**.
 - **All: use**, **All: iris** and **All: configure**: the default rights. Only the owner or an operator can change them.
 - The listed players, five at a time, each with **use**, **iris** and **configure** switches and an **x** button that takes them off the list. **<** and **>** turn the pages.

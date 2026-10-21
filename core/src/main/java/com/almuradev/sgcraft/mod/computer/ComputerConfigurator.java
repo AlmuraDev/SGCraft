@@ -92,8 +92,9 @@ public final class ComputerConfigurator {
     // The computer a player's settings screen is for, if it is still within their reach and they may change its
     // settings; otherwise they are told why not
     private static @Nullable PoweredComputer target(final ServerPlayer player, final BlockPos computer) {
-        if (!(player.level().getBlockEntity(computer) instanceof final PoweredComputer powered)
-                || !player.isWithinBlockInteractionRange(computer, ComputerConfigurator.SLACK)) {
+        // Reach first: looking up a far position would load or generate its chunk
+        if (!player.isWithinBlockInteractionRange(computer, ComputerConfigurator.SLACK)
+                || !(player.level().getBlockEntity(computer) instanceof final PoweredComputer powered)) {
             player.sendOverlayMessage(Component.translatableWithFallback("message.sgcraft.computer.not_near",
                     "That computer isn't near you").withStyle(ChatFormatting.RED));
             return null;

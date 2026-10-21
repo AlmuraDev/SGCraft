@@ -57,7 +57,14 @@ public final class GateProperties {
             GateRight.CODEC.listOf().xmap(Set::copyOf, List::copyOf);
 
     private static final Codec<Double> ENERGY_CODEC = Codec.DOUBLE.validate(value -> value >= 0
-            ? DataResult.success(value) : DataResult.error(() -> "Must not be negative: " + value));
+            && Double.isFinite(value) ? DataResult.success(value)
+            : DataResult.error(() -> "Must be a finite number, not negative: " + value));
+
+    /**
+     * The most entries {@link #ADDRESS_RULES} and {@link #PLAYER_RIGHTS} may hold. Implementations must refuse a
+     * value with more.
+     */
+    public static final int MAX_ENTRIES = 256;
 
     /** How many ticks the wormhole stays open before it closes on its own, or 0 for no limit. */
     public static final GateProperty<Integer> OPEN_TICKS =
@@ -259,7 +266,8 @@ public final class GateProperties {
 
     /** Rules for particular addresses, which override {@link #ALLOW_INCOMING} and {@link #ALLOW_OUTGOING}. */
     public static final GateProperty<Map<Address, AddressRule>> ADDRESS_RULES =
-            GateProperties.register("address_rules", Codec.unboundedMap(Address.CODEC, AddressRule.CODEC), Map.of());
+            GateProperties.register("address_rules",
+                    GateProperties.capped(Codec.unboundedMap(Address.CODEC, AddressRule.CODEC)), Map.of());
 
     /**
      * The rights of players {@link #PLAYER_RIGHTS} doesn't list, other than the gate's
@@ -273,7 +281,8 @@ public final class GateProperties {
     /** The rights of particular players, by UUID, in place of {@link #DEFAULT_RIGHTS}. */
     public static final GateProperty<Map<UUID, Set<GateRight>>> PLAYER_RIGHTS =
             GateProperties.register("player_rights",
-                    Codec.unboundedMap(UUIDUtil.STRING_CODEC, GateProperties.RIGHTS_CODEC), Map.of());
+                    GateProperties.capped(Codec.unboundedMap(UUIDUtil.STRING_CODEC, GateProperties.RIGHTS_CODEC)),
+                    Map.of());
 
     /** Whether players can see the gate's address on the gate. */
     public static final GateProperty<Boolean> ADDRESS_VISIBLE =
@@ -302,6 +311,12 @@ public final class GateProperties {
     private static Codec<Double> between(final double min, final double max) {
         return Codec.DOUBLE.validate(value -> value >= min && value <= max ? DataResult.success(value)
                 : DataResult.error(() -> "Must be from " + min + " to " + max + ": " + value));
+    }
+
+    private static <K, V> Codec<Map<K, V>> capped(final Codec<Map<K, V>> codec) {
+        return codec.validate(map -> map.size() <= GateProperties.MAX_ENTRIES ? DataResult.success(map)
+                : DataResult.error(() -> "Must have at most " + GateProperties.MAX_ENTRIES + " entries: "
+                        + map.size()));
     }
 
     private static DataResult<Long> nonNegative(final Long value) {

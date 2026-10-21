@@ -55,6 +55,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.FishingHook;
+import net.minecraft.world.entity.projectile.throwableitemprojectile.ThrownEnderpearl;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
@@ -303,8 +304,17 @@ final class GateTravel {
         }
     }
 
-    // Every player in the stack must be allowed to use both gates
+    // Every player in the stack must be allowed to use both gates, as must the thrower of an ender pearl, which
+    // would carry them through; a pearl refused is lost, so it can't land in the gate and bring them there either
     private boolean allowed(final Entity entity, final SGStargate other) {
+        if (entity instanceof final ThrownEnderpearl pearl && pearl.getOwner() instanceof final ServerPlayer thrower
+                && (!this.gate.access().allows(thrower.getUUID(), GateRight.USE)
+                        || !other.access().allows(thrower.getUUID(), GateRight.USE))) {
+            thrower.sendSystemMessage(Component.translatableWithFallback("message.sgcraft.access_denied",
+                    "You aren't allowed to travel through this gate").withStyle(ChatFormatting.RED));
+            pearl.discard();
+            return false;
+        }
         for (final Entity rider : entity.getPassengersAndSelf().toList()) {
             if (rider instanceof ServerPlayer player && (!this.gate.access().allows(player.getUUID(), GateRight.USE)
                     || !other.access().allows(player.getUUID(), GateRight.USE))) {

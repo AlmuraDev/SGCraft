@@ -86,6 +86,8 @@ public final class DialingComputers {
     private static final double FRONT = 0.95;
     // How far from that spot a standing player may wander before the screen closes, in blocks
     private static final double WANDER = 2.5;
+    // How near a computer its user must be for a button to count, standing or seated, in blocks
+    private static final double USE_RANGE = 8;
 
     /**
      * The computer a player works, and whether they stand at it rather than sit.
@@ -413,6 +415,12 @@ public final class DialingComputers {
             } else {
                 player.stopRiding();
             }
+            return;
+        }
+        // A session the computer hasn't ended yet, such as after a respawn or teleport, works only near the computer;
+        // this also keeps a far computer's chunk from being loaded by the lookup
+        if (!action.computer().closerToCenterThan(player.position(), DialingComputers.USE_RANGE)) {
+            DialingComputers.end(player);
             return;
         }
         if (!(player.level().getBlockEntity(action.computer()) instanceof final DialingComputerBlockEntity computer)) {

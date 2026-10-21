@@ -52,8 +52,9 @@ public final class CityShieldActions {
 
     /** Something was done on a generator's screen. */
     public static void action(final ServerPlayer player, final ShieldPayloads.CityAction action) {
-        if (!(player.level().getBlockEntity(action.generator()) instanceof final CityShieldBlockEntity shield)
-                || !action.generator().closerToCenterThan(player.position(), CityShieldActions.USE_RANGE)) {
+        // Reach first: looking up a far position would load or generate its chunk
+        if (!action.generator().closerToCenterThan(player.position(), CityShieldActions.USE_RANGE)
+                || !(player.level().getBlockEntity(action.generator()) instanceof final CityShieldBlockEntity shield)) {
             return;
         }
         String message = "";

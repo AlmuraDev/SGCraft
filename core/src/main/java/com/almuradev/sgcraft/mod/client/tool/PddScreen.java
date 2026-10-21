@@ -136,7 +136,10 @@ public final class PddScreen extends Screen {
         final Optional<GateInfo> gate = this.state.gate();
         final boolean idle = gate.map(g -> g.state().equals("idle")).orElse(false);
         if (this.dial != null && this.address != null) {
-            this.dial.active = idle && Address.parse(this.address.getValue()).isPresent();
+            // A gate can't dial itself, so the entry for the gate near the player doesn't dial
+            final String typed = this.address.getValue();
+            this.dial.active = idle && Address.parse(typed).isPresent() && this.state.entries().stream()
+                    .noneMatch(entry -> entry.own() && entry.address().equals(typed));
         }
         if (this.disconnect != null) {
             this.disconnect.active = gate.isPresent() && !idle;
@@ -272,8 +275,9 @@ public final class PddScreen extends Screen {
             public void extractContent(final GuiGraphicsExtractor graphics, final int mouseX, final int mouseY,
                     final boolean hovered, final float a) {
                 final PddScreen screen = PddScreen.this;
+                // The gate near the player, which it can't dial, is grayed
                 graphics.text(screen.font, this.entry.name(), this.getContentX() + 2, this.getContentY() + 1,
-                        0xFFFFFFFF);
+                        this.entry.own() ? 0xFF808080 : 0xFFFFFFFF);
                 graphics.text(screen.font, this.entry.address(), this.getContentX() + 2, this.getContentY() + 11,
                         0xFF8FB8FF);
                 // What the gate it reaches is doing, or that it is gone

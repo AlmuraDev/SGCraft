@@ -47,10 +47,13 @@ import net.minecraft.world.level.Level;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * The explorer dialer, as in SGCraft 2.2.0: it lists every gate world generation built, in every world, with whether
@@ -58,6 +61,12 @@ import java.util.Set;
  * lists, for themselves. Using it at a generated gate counts as a visit, as going through one does.
  */
 public final class ExplorerDialer {
+
+    // The fewest ticks after an answered action before a refresh, or a button, is answered again
+    private static final int REFRESH_TICKS = 20;
+    private static final int BUTTON_TICKS = 5;
+    // When each player's screen last had an action answered, in server ticks
+    private static final Map<UUID, Integer> LAST_ACTION = new HashMap<>();
 
     private ExplorerDialer() {
     }
@@ -71,6 +80,15 @@ public final class ExplorerDialer {
 
     /** Something was done on the explorer dialer's screen. */
     public static void action(final ServerPlayer player, final ExplorerPayloads.Action action) {
+        // Each answer lists every generated gate, so a screen's refreshes are answered at most once a second, as in
+        // 1.12, and its buttons a few times a second
+        final int now = player.level().getServer().getTickCount();
+        final Integer last = ExplorerDialer.LAST_ACTION.put(player.getUUID(), now);
+        if (last != null && now - last < (action.kind() == ExplorerPayloads.Action.Kind.REFRESH
+                ? ExplorerDialer.REFRESH_TICKS : ExplorerDialer.BUTTON_TICKS)) {
+            ExplorerDialer.LAST_ACTION.put(player.getUUID(), last);
+            return;
+        }
         if (!ExplorerDialer.holding(player)) {
             ExplorerDialer.send(player, false, "You aren't holding an explorer dialer");
             return;

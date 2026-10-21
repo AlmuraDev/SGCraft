@@ -344,6 +344,9 @@ public final class CityShieldBlockEntity extends BlockEntity {
             return;
         }
         this.active = false;
+        // Where things were before it fell means nothing once it rises again, and would pull back anyone who has
+        // walked in since
+        this.lastSeen = new HashMap<>();
         this.releaseChunks();
         this.play(SGSounds.SHIELD_DOWN);
         CityShields.lowered(this);

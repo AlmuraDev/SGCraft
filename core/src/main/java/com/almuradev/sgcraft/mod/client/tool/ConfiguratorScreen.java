@@ -827,7 +827,7 @@ public final class ConfiguratorScreen extends Screen {
                             "Owner: none, so operators manage it")), left, ConfiguratorScreen.TOP + 2, 0xFFFFFFFF);
             if (!this.state.manage()) {
                 final Component note = Component.translatableWithFallback("screen.sgcraft.configurator.manage_note",
-                        "Only the owner or an operator changes rights");
+                        "Only the owner or an operator sees who is listed");
                 graphics.text(this.font, note, left + 310 - this.font.width(note), ConfiguratorScreen.TOP + 2,
                         0xFFA0A0A0);
             }

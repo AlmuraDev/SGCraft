@@ -272,6 +272,7 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("builder_owns_gate", SGAccessGameTestsNeoForge::builderOwns);
         SGGameTestsNeoForge.TESTS.put("configure_needs_owner_or_right", SGAccessGameTestsNeoForge::configureRights);
         SGGameTestsNeoForge.TESTS.put("breaking_follows_owner_and_settings", SGAccessGameTestsNeoForge::breaking);
+        SGGameTestsNeoForge.TESTS.put("client_lists_are_capped", SGAccessGameTestsNeoForge::entryLimits);
         SGGameTestsNeoForge.TESTS.put("storm_sends_wormhole_astray", SGGameTestsNeoForge::stormReroutes);
         SGGameTestsNeoForge.TESTS.put("canceled_disconnect_keeps_wormhole", SGGameTestsNeoForge::stormRerouteCanceled);
         SGGameTestsNeoForge.TESTS.put("gate_energy_settings_override_server", SGGameTestsNeoForge::gateEnergySettings);
@@ -867,6 +868,8 @@ public final class SGGameTestsNeoForge {
         // Only the owner, or a player they let, changes a gate's settings. The mock player is in creative mode, so
         // changes the type, chevrons and iris too, without upgrade items
         gate.setOwner(Optional.of(player.getUUID()), SGGameTestsNeoForge.server(helper));
+        // The screen's changes count only while its player holds a configurator
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(SGItems.CONFIGURATOR));
         ToolActions.configurator(player, new ToolPayloads.ConfiguratorApply(
                 gate.position().dimension().identifier().toString(),
                 gate.position().pos(), "sgcraft:pegasus",
@@ -1850,6 +1853,8 @@ public final class SGGameTestsNeoForge {
         final BlockPos base = gate.position().pos();
         final ServerPlayer player = SGGameTestsNeoForge.playerAt(helper, gate);
         gate.setOwner(Optional.of(player.getUUID()), SGGameTestsNeoForge.server(helper));
+        // The screen's changes count only while its player holds a configurator
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(SGItems.CONFIGURATOR));
         ToolActions.configurator(player, new ToolPayloads.ConfiguratorApply(
                 gate.position().dimension().identifier().toString(), base, "", 0, List.of(), "", false,
                 "face_down"));

@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.network;
 
+import io.netty.handler.codec.DecoderException;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
@@ -51,9 +52,16 @@ public interface SGPacket extends CustomPacketPayload {
         }
     }
 
-    /** Reads a list {@link #writeList} wrote. */
+    /**
+     * Reads a list {@link #writeList} wrote. Every element takes at least one byte, so a size larger than what is
+     * left in the buffer is refused before anything is allocated for it.
+     */
     static <T> List<T> readList(final FriendlyByteBuf buf, final Function<FriendlyByteBuf, T> reader) {
         final int size = buf.readVarInt();
+        if (size < 0 || size > buf.readableBytes()) {
+            throw new DecoderException("List of " + size + " elements is longer than the " + buf.readableBytes()
+                    + " bytes left in the packet");
+        }
         final List<T> list = new ArrayList<>(size);
         for (int index = 0; index < size; index++) {
             list.add(reader.apply(buf));

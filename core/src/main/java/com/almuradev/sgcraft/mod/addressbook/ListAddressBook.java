@@ -47,6 +47,9 @@ import java.util.stream.Stream;
  */
 public abstract class ListAddressBook implements AddressBook {
 
+    /** The most entries a book holds, which keeps the item carrying it small enough to send, as in 1.12. */
+    public static final int MAX_ENTRIES = 200;
+
     /** One entry, as saved. */
     public static final Codec<AddressBookEntry> ENTRY_CODEC = RecordCodecBuilder.create(instance -> instance.group(
             Address.CODEC.fieldOf("address").forGetter(AddressBookEntry::address),
@@ -95,6 +98,9 @@ public abstract class ListAddressBook implements AddressBook {
             return ActionResult.NO_CHANGE;
         }
         final List<AddressBookEntry> entries = new ArrayList<>(this.entries());
+        if (entries.size() >= ListAddressBook.MAX_ENTRIES) {
+            return ActionResult.NOT_POSSIBLE;
+        }
         entries.add(new AddressBookEntry(address, name));
         this.save(entries);
         return ActionResult.DONE;

@@ -111,11 +111,11 @@ The cost defaults are the server's. **Use server's costs** clears the gate's own
 
 ## Access page
 
-- At the top: "Owner: <name>", or "Owner: none, so operators manage it". A player who doesn't manage the gate also sees "Only the owner or an operator changes rights".
+- At the top: "Owner: <name>", or "Owner: none, so operators manage it". A player who doesn't manage the gate sees "Only the owner or an operator sees who is listed" in place of the listed players.
 - **Incoming allowed** and **Outgoing allowed**.
 - **All: use**, **All: iris** and **All: configure**: the default rights. Only the owner or an operator changes them.
 - The listed players, five at a time, each with **use**, **iris** and **configure** switches and an **x** button that takes them off the list. **<** and **>** turn the pages.
-- **Player name** and **List player**: lists a player with the gate's current default rights. **List player** saves at once, with any other changes you made. The player must have been seen on the server.
+- **Player name** and **List player**: lists a player with the gate's current default rights. **List player** saves at once, with any other changes you made. The player must have been seen on the server. A gate lists up to 256 players and 256 address rules.
 - The address rules, each with an **In** and an **Out** switch and an **x** button. Type an address in **Address** and press **Add rule** to add a rule that allows both ways.
 
 See [The configurator's Access page](../access.md#the-configurators-access-page).
@@ -142,7 +142,7 @@ See [The MALP's configurator](../malp.md#the-configurator).
 
 ## Rights
 
-Opening and saving need the `configure` right on the gate. The right doesn't cover the default rights, the listed players, **Breakable** or the owner: only the owner, an operator or something that isn't a player changes those. See [Managed settings](../access.md#managed-settings).
+Opening and saving need the `configure` right on the gate. Saving also needs the configurator in your hand, or the tablet for a gate on its list. The right doesn't cover the default rights, the listed players, **Breakable** or the owner: only the owner, an operator or something that isn't a player changes those. See [Managed settings](../access.md#managed-settings).
 
 The configurator keeps no data on the item.
 

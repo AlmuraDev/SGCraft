@@ -62,9 +62,7 @@ public final class ExplorerData {
 
     /** Marks a gate as visited by a player, if world generation built it. */
     public static void visit(final ServerPlayer player, final GlobalPos gate) {
-        final boolean generated = SGServer.current().flatMap(server -> server.stargates().gate(gate))
-                .flatMap(found -> found.get(GateProperties.GENERATED)).orElse(false);
-        if (!generated) {
+        if (!ExplorerData.generated(gate)) {
             return;
         }
         final Store store = ExplorerData.store(player.level().getServer());
@@ -83,11 +81,17 @@ public final class ExplorerData {
         return Optional.ofNullable(ExplorerData.store(server).of(player).names.get(gate));
     }
 
-    /** Names a gate for a player, cut to {@link #MAX_NAME_LENGTH}; a blank name takes the name off. */
+    /**
+     * Names a gate for a player, cut to {@link #MAX_NAME_LENGTH}; a blank name takes the name off. Only a gate world
+     * generation built takes a name, so a player can't fill the store with names for places that hold no gate.
+     */
     public static void rename(final MinecraftServer server, final UUID player, final GlobalPos gate,
             final String name) {
         final Store store = ExplorerData.store(server);
         final String kept = name.strip();
+        if (!kept.isEmpty() && !ExplorerData.generated(gate)) {
+            return;
+        }
         if (kept.isEmpty()) {
             store.of(player).names.remove(gate);
         } else {
@@ -102,6 +106,12 @@ public final class ExplorerData {
         if (store.players.remove(player) != null) {
             store.setDirty();
         }
+    }
+
+    // Whether world generation built the gate at a place
+    private static boolean generated(final GlobalPos gate) {
+        return SGServer.current().flatMap(server -> server.stargates().gate(gate))
+                .flatMap(found -> found.get(GateProperties.GENERATED)).orElse(false);
     }
 
     private static Store store(final MinecraftServer server) {

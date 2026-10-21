@@ -93,6 +93,8 @@ public final class StargateBaseBlockEntity extends BlockEntity {
     private static final int DEFAULT_CHEVRONS = 7;
     // How often a formed base checks the server knows of its gate and shows what the gate is doing
     private static final int CHECK_TICKS = 20;
+    // How far past a block's own reach a player may be and still work the base's slots, in blocks, as vanilla allows
+    private static final float REACH_SLACK = 4.0F;
 
     /** How many blocks of camouflage a base holds: one for each block of the gate's bottom row, left to right. */
     public static final int CAMOUFLAGE_SLOTS = 5;
@@ -116,7 +118,7 @@ public final class StargateBaseBlockEntity extends BlockEntity {
 
         @Override
         public boolean stillValid(final Player player) {
-            return Container.stillValidBlockEntity(StargateBaseBlockEntity.this, player);
+            return StargateBaseBlockEntity.this.inReach(player);
         }
 
         @Override
@@ -423,7 +425,7 @@ public final class StargateBaseBlockEntity extends BlockEntity {
 
         @Override
         public boolean stillValid(final Player player) {
-            return Container.stillValidBlockEntity(StargateBaseBlockEntity.this, player);
+            return StargateBaseBlockEntity.this.inReach(player);
         }
 
         @Override
@@ -576,6 +578,13 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         if (this.level != null) {
             this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
         }
+    }
+
+    // Whether a player is still near enough to work the base's slots: a screen opened from any ring block stays open,
+    // and a ring block can be as far from the base as twice the gate's radius
+    private boolean inReach(final Player player) {
+        return Container.stillValidBlockEntity(this, player,
+                StargateBaseBlockEntity.REACH_SLACK + 2 * this.shape.radius());
     }
 
     @Override

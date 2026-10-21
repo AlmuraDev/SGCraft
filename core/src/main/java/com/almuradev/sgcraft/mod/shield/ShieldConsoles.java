@@ -62,8 +62,9 @@ public final class ShieldConsoles {
 
     /** Something was done on a console's screen. */
     public static void action(final ServerPlayer player, final ShieldPayloads.ConsoleAction action) {
-        if (!(player.level().getBlockState(action.console()).getBlock() instanceof ShieldConsoleBlock)
-                || !action.console().closerToCenterThan(player.position(), ShieldConsoles.USE_RANGE)) {
+        // Reach first: looking up a far position would load or generate its chunk
+        if (!action.console().closerToCenterThan(player.position(), ShieldConsoles.USE_RANGE)
+                || !(player.level().getBlockState(action.console()).getBlock() instanceof ShieldConsoleBlock)) {
             return;
         }
         String message = "";

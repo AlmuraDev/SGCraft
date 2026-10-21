@@ -46,6 +46,7 @@ import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.access.SGGateAccess;
 import com.almuradev.sgcraft.mod.addressbook.DefaultAddresses;
 import com.almuradev.sgcraft.mod.addressbook.ItemAddressBook;
+import com.almuradev.sgcraft.mod.addressbook.ListAddressBook;
 import com.almuradev.sgcraft.mod.block.entity.PowerUnitBlockEntity;
 import com.almuradev.sgcraft.mod.energy.DialCosts;
 import com.almuradev.sgcraft.mod.gate.DialStyle;
@@ -83,9 +84,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.Prediction;
+import net.minecraft.util.Util;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -100,6 +103,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * What the server does for the handheld tools: the PDD, which dials from a player's address book; the GDO, which
@@ -111,6 +116,8 @@ public final class ToolActions {
     // How much further than the tool's range a player may wander with its screen open
     private static final int SLACK = 4;
     private static final int MAX_NAME = 48;
+    // Players with a name lookup under way for the configurator, so each has one at a time
+    private static final Set<UUID> LOOKING_UP = ConcurrentHashMap.newKeySet();
 
     private ToolActions() {
     }
@@ -159,10 +166,16 @@ public final class ToolActions {
         };
     }
 
-    // A change to a book's entry, which a locked entry refuses
+    // A change to a book's entry, which a locked entry refuses, as a full book refuses a new one
     private static String explain(final AddressBook book, final Address address, final ActionResult result) {
-        return result == ActionResult.DENIED && book instanceof final ItemAddressBook item && item.isLocked(address)
-                ? "That address came with the server's defaults and is locked" : ToolActions.explain(result);
+        if (result == ActionResult.DENIED && book instanceof final ItemAddressBook item && item.isLocked(address)) {
+            return "That address came with the server's defaults and is locked";
+        }
+        if (result == ActionResult.NOT_POSSIBLE && book.find(address).isEmpty()
+                && book.size() >= ListAddressBook.MAX_ENTRIES) {
+            return "The book is full, at " + ListAddressBook.MAX_ENTRIES + " addresses";
+        }
+        return ToolActions.explain(result);
     }
 
     static String explain(final DialResult result) {
@@ -254,8 +267,8 @@ public final class ToolActions {
                     // Kept in the form that names its world, so it dials from any world
                     final Address kept = SGServer.require().addressing().lasting(address.get(),
                             player.level().dimension());
-                    message = ToolActions.explain(book.add(kept, Component.literal(ToolActions.name(name, kept)),
-                            ToolActions.cause(player)));
+                    message = ToolActions.explain(book, kept, book.add(kept,
+                            Component.literal(ToolActions.name(name, kept)), ToolActions.cause(player)));
                     if (message.equals("Nothing changed")) {
                         message = "This PDD already has that address";
                     }
@@ -368,6 +381,10 @@ public final class ToolActions {
         final boolean shield = gate.flatMap(Stargate::iris).map(i -> SGIris.isShield(i.type())).orElse(false);
         return new TabletGateInfo(listed.name(), listed.position().dimension().identifier().toString(),
                 listed.position().pos(), address, type, ToolActions.status(gate), iris, shield);
+    }
+
+    private static boolean holding(final ServerPlayer player, final Item item) {
+        return player.getMainHandItem().is(item) || player.getOffhandItem().is(item);
     }
 
     // The tablet the player holds, main hand first
@@ -501,8 +518,8 @@ public final class ToolActions {
                     // Kept in the form that names its world, so it dials from any world
                     final Address kept = SGServer.require().addressing().lasting(address.get(),
                             player.level().dimension());
-                    message = ToolActions.explain(book.add(kept, Component.literal(ToolActions.name(name, kept)),
-                            ToolActions.cause(player)));
+                    message = ToolActions.explain(book, kept, book.add(kept,
+                            Component.literal(ToolActions.name(name, kept)), ToolActions.cause(player)));
                     if (message.equals("Nothing changed")) {
                         message = "This tablet already has that address";
                     }
@@ -618,10 +635,12 @@ public final class ToolActions {
             final String message) {
         final Registry<GateProperty<?>> properties = player.level().getServer().registryAccess()
                 .lookupOrThrow(SGCraftRegistries.GATE_PROPERTY);
+        // Who is listed, and with what rights, is only for the owner and operators to see
+        final boolean manage = gate.access().mayManage(ToolActions.cause(player));
         final List<Property> values = new ArrayList<>();
         for (final GateProperty<?> property : properties) {
             final Identifier id = properties.getKey(property);
-            if (id != null) {
+            if (id != null && (manage || property != GateProperties.PLAYER_RIGHTS)) {
                 values.add(ToolActions.property(gate, id, property));
             }
         }
@@ -643,8 +662,10 @@ public final class ToolActions {
                     irisNames.add(ToolActions.json(iris.value().name()));
                 });
         final List<Named> players = new ArrayList<>();
-        for (final UUID uuid : gate.get(GateProperties.PLAYER_RIGHTS).orElse(Map.of()).keySet()) {
-            players.add(new Named(uuid.toString(), ToolActions.name(player, uuid)));
+        if (manage) {
+            for (final UUID uuid : gate.get(GateProperties.PLAYER_RIGHTS).orElse(Map.of()).keySet()) {
+                players.add(new Named(uuid.toString(), ToolActions.name(player, uuid)));
+            }
         }
         final Optional<Named> owner = gate.owner().map(uuid -> new Named(uuid.toString(),
                 ToolActions.name(player, uuid)));
@@ -653,7 +674,7 @@ public final class ToolActions {
                 values, players, message,
                 1 / SGCraftApi.get().energy().rate(PowerUnitBlockEntity.FORGE_ENERGY),
                 GateOrientation.of(gate.orientation()).getSerializedName(), owner,
-                gate.access().mayManage(ToolActions.cause(player)), ToolActions.fitsFreely(player)));
+                manage, ToolActions.fitsFreely(player)));
     }
 
     // Operators and players in creative mode change a gate's type, chevrons and iris with the configurator; anyone
@@ -714,11 +735,13 @@ public final class ToolActions {
         return Optional.empty();
     }
 
-    // The gate a configurator screen names: one near the player, or one on the list of the tablet they hold
+    // The gate a configurator screen names: one near the player holding a configurator, or one on the list of the
+    // tablet they hold
     private static Optional<Stargate> configured(final ServerPlayer player, final String world,
             final net.minecraft.core.BlockPos pos) {
         final Identifier id = Identifier.tryParse(world);
-        if (id == null || id.equals(player.level().dimension().identifier())) {
+        if (ToolActions.holding(player, SGItems.CONFIGURATOR)
+                && (id == null || id.equals(player.level().dimension().identifier()))) {
             final Optional<Stargate> near = ToolActions.near(player, pos);
             if (near.isPresent() || id == null) {
                 return near;
@@ -793,11 +816,43 @@ public final class ToolActions {
             problems.add("Use a gate upgrade, a chevron upgrade, an iris upgrade or a shield upgrade to change the "
                     + "gate's type, chevrons or iris");
         }
-        if (!apply.addPlayer().isBlank()) {
-            ToolActions.addPlayer(player, gate, apply.addPlayer().strip(), cause, problems);
+        final String name = apply.addPlayer().strip();
+        if (!name.isEmpty()) {
+            final ServerPlayer online = player.level().getServer().getPlayerList().getPlayerByName(name);
+            if (online != null) {
+                ToolActions.addPlayer(gate, online.nameAndId(), cause, problems);
+            } else if (ToolActions.LOOKING_UP.add(player.getUUID())) {
+                // A player who isn't on may need asking Mojang, which mustn't hold up the server; the screen hears
+                // the outcome when the answer comes
+                ToolActions.lookUp(player, gate, name, cause, problems);
+                return;
+            } else {
+                problems.add("Still looking up the last player added");
+            }
         }
-        ToolActions.sendConfigurator(player, gate, false, problems.isEmpty() ? "Changes saved"
-                : String.join("; ", problems));
+        ToolActions.sendConfigurator(player, gate, false, ToolActions.outcome(problems));
+    }
+
+    private static String outcome(final List<String> problems) {
+        return problems.isEmpty() ? "Changes saved" : String.join("; ", problems);
+    }
+
+    // Looks up a player's name away from the server thread, then adds them to the gate's list on it
+    private static void lookUp(final ServerPlayer player, final Stargate gate, final String name, final Cause cause,
+            final List<String> problems) {
+        final MinecraftServer server = player.level().getServer();
+        CompletableFuture.supplyAsync(() -> server.services().nameToIdCache().get(name), Util.nonCriticalIoPool())
+                .whenCompleteAsync((found, error) -> {
+                    ToolActions.LOOKING_UP.remove(player.getUUID());
+                    if (error != null || found.isEmpty()) {
+                        problems.add("No player called " + name + " has been seen");
+                    } else if (gate.exists() && gate.access().allows(cause, GateRight.CONFIGURE)) {
+                        ToolActions.addPlayer(gate, found.get(), cause, problems);
+                    }
+                    if (!player.isRemoved() && gate.exists()) {
+                        ToolActions.sendConfigurator(player, gate, false, ToolActions.outcome(problems));
+                    }
+                }, server);
     }
 
     // A gate lying flat turns face up or face down, as in the original; one standing stays as it was built
@@ -863,18 +918,17 @@ public final class ToolActions {
         }
     }
 
-    private static void addPlayer(final ServerPlayer player, final Stargate gate, final String name, final Cause cause,
+    private static void addPlayer(final Stargate gate, final NameAndId found, final Cause cause,
             final List<String> problems) {
-        final Optional<NameAndId> found = player.level().getServer().services().nameToIdCache().get(name);
-        if (found.isEmpty()) {
-            problems.add("No player called " + name + " has been seen");
-            return;
-        }
         final Map<UUID, Set<GateRight>> rights = new HashMap<>(gate.get(GateProperties.PLAYER_RIGHTS).orElse(Map.of()));
-        if (rights.containsKey(found.get().id())) {
+        if (rights.containsKey(found.id())) {
             return;
         }
-        rights.put(found.get().id(), gate.get(GateProperties.DEFAULT_RIGHTS).orElse(Set.of()));
+        if (rights.size() >= GateProperties.MAX_ENTRIES) {
+            problems.add("A gate lists at most " + GateProperties.MAX_ENTRIES + " players");
+            return;
+        }
+        rights.put(found.id(), gate.get(GateProperties.DEFAULT_RIGHTS).orElse(Set.of()));
         ToolActions.problem(problems, "player_rights", gate.set(GateProperties.PLAYER_RIGHTS, Map.copyOf(rights),
                 cause));
     }

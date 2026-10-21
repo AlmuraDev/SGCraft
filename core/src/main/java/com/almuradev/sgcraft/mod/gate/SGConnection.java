@@ -598,8 +598,8 @@ public final class SGConnection implements Connection {
 
     /**
      * Sends the open wormhole to another gate, chosen at random as in the original: one world generation built,
-     * other than either end, that is idle, that the dialing gate can reach and may dial, and that takes calls from
-     * it.
+     * other than either end, that is idle, whose type connects with the dialing gate's, that the dialing gate can
+     * reach and may dial, and that takes calls from it.
      *
      * @return whether the wormhole went to another gate; not if there is none to go to
      */
@@ -611,6 +611,9 @@ public final class SGConnection implements Connection {
                     .filter(gate -> !gate.equals(this.dialer) && !gate.equals(this.target))
                     .filter(gate -> gate.state() == GateState.IDLE)
                     .filter(gate -> gate.get(GateProperties.GENERATED).orElse(false))
+                    // An Ori supergate's wormhole only ever reaches another Ori supergate
+                    .filter(gate -> this.dialer.type().value().connectsTo(gate.typeKey())
+                            && gate.type().value().connectsTo(this.dialer.typeKey()))
                     .filter(gate -> stargates.addressing().addressOf(gate.position(),
                             this.dialer.position().dimension()).isPresent())
                     .filter(gate -> this.dialer.access().allowsOutgoing(gate)

@@ -10,7 +10,7 @@ Type: Item
 Stackable: No
 Range: Any gate on its list, in any world. Adding a gate: 6 blocks (`tools.range`)
 Right needed: `use` to add, dial or disconnect, `iris` for the iris, `configure` to configure
-Holds: A list of gates and its own address book
+Holds: A list of gates and its own address book, up to 200 addresses
 ```
 
 ## Obtaining

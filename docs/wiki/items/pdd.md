@@ -10,7 +10,7 @@ Type: Item
 Stackable: No
 Range: The gate near you, 6 blocks (`tools.range`)
 Right needed: `use` on the gate, to dial or disconnect
-Holds: Its own address book
+Holds: Its own address book, up to 200 addresses
 ```
 
 ## Obtaining

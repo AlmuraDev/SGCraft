@@ -29,6 +29,8 @@ import com.almuradev.sgcraft.api.ActionResult;
 import com.almuradev.sgcraft.api.Cause;
 import com.almuradev.sgcraft.api.SGCraftApi;
 import com.almuradev.sgcraft.api.access.GateRight;
+import com.almuradev.sgcraft.api.address.Address;
+import com.almuradev.sgcraft.api.addressbook.AddressBook;
 import com.almuradev.sgcraft.api.event.EventBus;
 import com.almuradev.sgcraft.api.event.gate.ChangeGateOwnerEvent;
 import com.almuradev.sgcraft.api.gate.GateProperties;
@@ -37,6 +39,8 @@ import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.addressbook.ItemAddressBook;
+import com.almuradev.sgcraft.mod.addressbook.ListAddressBook;
 import com.almuradev.sgcraft.mod.block.GateSpawnerBlock;
 import com.almuradev.sgcraft.mod.block.SGBlocks;
 import com.almuradev.sgcraft.mod.gate.GateFormation;
@@ -45,13 +49,18 @@ import com.almuradev.sgcraft.mod.gate.GateProtection;
 import com.almuradev.sgcraft.mod.gate.GateShape;
 import com.almuradev.sgcraft.mod.gate.SGStargates;
 import com.almuradev.sgcraft.mod.item.SGItems;
+import com.almuradev.sgcraft.mod.network.SGPacket;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
+import com.mojang.serialization.JsonOps;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.DecoderException;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -69,10 +78,12 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 /**
  * Game tests of gate owners and rights, who may break a gate, and the server's values for gates. They run with
@@ -290,6 +301,41 @@ final class SGAccessGameTestsNeoForge {
     private static Stargate at(final GameTestHelper helper, final BlockPos pos) {
         return SGCraftApi.get().stargates().at(GlobalPos.of(helper.getLevel().dimension(), pos))
                 .orElseThrow(() -> helper.assertionException(Component.literal("No gate formed at " + pos)));
+    }
+
+    // Lists a client can grow are capped: a gate's player and address lists, an address book, a list in a packet;
+    // and an energy setting can't be infinite
+    static void entryLimits(final GameTestHelper helper, final BlockPos origin) {
+        final Map<UUID, Set<GateRight>> players = new HashMap<>();
+        for (int i = 0; i <= GateProperties.MAX_ENTRIES; i++) {
+            players.put(new UUID(0, i), Set.of(GateRight.USE));
+        }
+        helper.assertTrue(GateProperties.PLAYER_RIGHTS.codec().encodeStart(JsonOps.INSTANCE, players).isError(),
+                "A gate took " + players.size() + " players");
+        players.remove(new UUID(0, 0));
+        helper.assertTrue(GateProperties.PLAYER_RIGHTS.codec().encodeStart(JsonOps.INSTANCE, players).isSuccess(),
+                "A gate refused " + players.size() + " players");
+        helper.assertTrue(GateProperties.ENERGY_PER_NAQUADAH.codec()
+                .encodeStart(JsonOps.INSTANCE, Double.POSITIVE_INFINITY).isError(), "Energy took infinity");
+        final AddressBook book = ItemAddressBook.of(new ItemStack(SGItems.PDD));
+        final String letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        for (int i = 0; i < ListAddressBook.MAX_ENTRIES; i++) {
+            final Address address = Address.parse("A" + letters.charAt(i / 26) + letters.charAt(i % 26)).orElseThrow();
+            SGAccessGameTestsNeoForge.expect(helper, book.add(address, Component.literal("Gate"), Cause.of(helper.getLevel())),
+                    ActionResult.DONE, "Adding address " + i);
+        }
+        SGAccessGameTestsNeoForge.expect(helper, book.add(Address.parse("BAA").orElseThrow(),
+                Component.literal("Gate"), Cause.of(helper.getLevel())), ActionResult.NOT_POSSIBLE, "A full book took another");
+        final FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        buf.writeVarInt(1_000_000_000);
+        buf.writeByte(0);
+        try {
+            SGPacket.readList(buf, FriendlyByteBuf::readByte);
+            helper.fail("A packet's list claimed a billion elements and was read");
+        } catch (final DecoderException expected) {
+            // Refused before anything was allocated for it
+        }
+        helper.succeed();
     }
 
     private static void expect(final GameTestHelper helper, final ActionResult result, final ActionResult expected,

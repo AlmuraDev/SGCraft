@@ -340,7 +340,7 @@
   "command.sgcraft.gate_defaults.set": "Gates without their own %s now have %s",
   "screen.sgcraft.configurator.owner": "Owner: %s",
   "screen.sgcraft.configurator.no_owner": "Owner: none, so operators manage it",
-  "screen.sgcraft.configurator.manage_note": "Only the owner or an operator changes rights",
+  "screen.sgcraft.configurator.manage_note": "Only the owner or an operator sees who is listed",
   "screen.sgcraft.configurator.gate": "Gate",
   "screen.sgcraft.configurator.energy": "Energy",
   "screen.sgcraft.configurator.travel": "Travel",
