@@ -29,6 +29,7 @@ import com.almuradev.sgcraft.mod.gate.GateBaseActions;
 import com.almuradev.sgcraft.mod.gate.GateFormation;
 import com.almuradev.sgcraft.mod.gate.GateLight;
 import com.almuradev.sgcraft.mod.item.GateItem;
+import com.almuradev.sgcraft.mod.zpm.ZpmLinks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -156,7 +157,8 @@ public final class RingBlock extends Block implements SimpleWaterloggedBlock {
         if (!state.getValue(RingBlock.MERGED)) {
             return InteractionResult.PASS;
         }
-        if (player instanceof ServerPlayer serverPlayer) {
+        // A player linking a ZPM device to a gate finishes here, rather than opening the base
+        if (player instanceof ServerPlayer serverPlayer && !ZpmLinks.complete(serverPlayer, pos)) {
             GateBaseActions.open(serverPlayer, pos);
         }
         return InteractionResult.SUCCESS;

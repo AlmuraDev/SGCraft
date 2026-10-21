@@ -72,6 +72,8 @@ import com.almuradev.sgcraft.mod.tool.ToolPayloads.Property;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads.TabletAction;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads.TabletGateInfo;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads.TabletState;
+import com.almuradev.sgcraft.mod.zpm.ZpmDeviceBlockEntity;
+import com.almuradev.sgcraft.mod.zpm.ZpmLinks;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
@@ -85,6 +87,7 @@ import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.util.Prediction;
@@ -674,7 +677,24 @@ public final class ToolActions {
                 values, players, message,
                 1 / SGCraftApi.get().energy().rate(PowerUnitBlockEntity.FORGE_ENERGY),
                 GateOrientation.of(gate.orientation()).getSerializedName(), owner,
-                manage, ToolActions.fitsFreely(player)));
+                manage, ToolActions.fitsFreely(player), ToolActions.zpmLinks(player, gate)));
+    }
+
+    // The ZPM devices linked to a gate, each as where it is and how many ZPMs it holds, or that it isn't loaded
+    private static List<String> zpmLinks(final ServerPlayer player, final Stargate gate) {
+        final List<String> links = new ArrayList<>();
+        final ServerLevel level = player.level().getServer().getLevel(gate.position().dimension());
+        for (final GlobalPos device : ZpmLinks.devicesOf(player.level().getServer(), gate.position())) {
+            final String at = device.pos().toShortString();
+            if (level == null || !level.isLoaded(device.pos())) {
+                links.add(at + ": not loaded");
+            } else if (level.getBlockEntity(device.pos()) instanceof final ZpmDeviceBlockEntity found) {
+                links.add(at + ": " + found.loaded() + (found.loaded() == 1 ? " ZPM" : " ZPMs"));
+            } else {
+                links.add(at + ": no longer there");
+            }
+        }
+        return links;
     }
 
     // Operators and players in creative mode change a gate's type, chevrons and iris with the configurator; anyone

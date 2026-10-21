@@ -47,6 +47,15 @@ A gate whose base is within 6 blocks of the console along each axis (`zpm.search
 
 See [Power](../power.md#zpms).
 
+## Linking to a gate
+
+A device linked to a gate powers it from anywhere in the same world, however far, as in SGCraft 2.2.0. It still has to be loaded.
+
+1. Sneak and use the device with an empty hand. The message says to use a gate next.
+2. Within a minute, use any block of a formed gate's ring or base with an empty hand. You need the `configure` right on that gate.
+
+A device links to one gate at a time. Sneak-use it again before you use a gate to cancel, or to unlink it if it was linked. Breaking the device unlinks it. A gate of any size can have devices linked to it. Its [configurator](../items/configurator.md) shows **Linked ZPMs** on its Energy page, with each device's place and how many ZPMs it holds in the tip.
+
 ## FE
 
 The console gives no FE itself, and it takes no FE in. To power other mods' machines from its ZPM, place an [Energy Converter](energy-converter.md) against it, input first. The converter takes up to 62.5 GE a tick from the ZPM and gives 80 FE for each GE.

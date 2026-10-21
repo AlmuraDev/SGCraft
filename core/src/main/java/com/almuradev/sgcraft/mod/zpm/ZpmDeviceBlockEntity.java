@@ -28,6 +28,7 @@ package com.almuradev.sgcraft.mod.zpm;
 import com.almuradev.sgcraft.mod.energy.GeStore;
 import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -205,6 +206,9 @@ public final class ZpmDeviceBlockEntity extends BlockEntity implements GeStore {
     public void preRemoveSideEffects(final BlockPos pos, final BlockState state) {
         if (this.level != null) {
             Containers.dropContents(this.level, pos, this.zpms);
+            if (this.level.getServer() != null) {
+                ZpmLinks.unlink(this.level.getServer(), GlobalPos.of(this.level.dimension(), pos));
+            }
         }
     }
 

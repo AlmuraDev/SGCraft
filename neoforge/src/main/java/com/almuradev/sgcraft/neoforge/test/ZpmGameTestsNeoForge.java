@@ -47,6 +47,8 @@ import com.almuradev.sgcraft.mod.gate.SGStargates;
 import com.almuradev.sgcraft.mod.shield.CityShieldBlockEntity;
 import com.almuradev.sgcraft.mod.zpm.ZpmDeviceBlockEntity;
 import com.almuradev.sgcraft.mod.zpm.ZpmItem;
+import com.almuradev.sgcraft.mod.zpm.ZpmLinks;
+import com.almuradev.sgcraft.mod.zpm.ZpmSources;
 import com.almuradev.sgcraft.mod.zpm.Zpms;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
@@ -57,13 +59,16 @@ import net.minecraft.core.GlobalPos;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DirectionalBlock;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
@@ -82,6 +87,7 @@ final class ZpmGameTestsNeoForge {
         tests.put("supergate_takes_any_power", ZpmGameTestsNeoForge::supergateTakesAnyPower);
         tests.put("gate_draws_nearest_first", ZpmGameTestsNeoForge::drawsNearestFirst);
         tests.put("zpm_console_powers_gate", ZpmGameTestsNeoForge::consolePowersGate);
+        tests.put("zpm_linked_console_powers_gate", ZpmGameTestsNeoForge::linkedConsolePowersGate);
         tests.put("energy_converter_gives_fe", ZpmGameTestsNeoForge::converterGivesFe);
         tests.put("zpm_console_gives_no_fe", ZpmGameTestsNeoForge::consoleGivesNoFe);
         tests.put("zpm_hub_goes_further", ZpmGameTestsNeoForge::hubGoesFurther);
@@ -122,6 +128,26 @@ final class ZpmGameTestsNeoForge {
             device.zpms().setItem(slot, ZpmItem.full(false));
         }
         return device;
+    }
+
+    // A ZPM console far beyond the search range powers a gate once linked to it, by sneak-using it and then using the
+    // gate, and is unlinked when broken
+    private static void linkedConsolePowersGate(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final Stargate gate = SGGameTestsNeoForge.place(helper, origin, 9);
+        final BlockPos far = origin.offset(0, 0, 40);
+        final ZpmDeviceBlockEntity console = ZpmGameTestsNeoForge.device(helper, far, SGBlocks.ZPM_CONSOLE);
+        helper.assertTrue(!ZpmSources.devices(gate).contains(console), "A console 40 blocks away powers the gate");
+        final ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        gate.setOwner(Optional.of(player.getUUID()), SGGameTestsNeoForge.server(helper));
+        ZpmLinks.sneakUse(player, far);
+        helper.assertTrue(ZpmLinks.complete(player, gate.position().pos()), "Using the gate didn't finish the link");
+        helper.assertTrue(ZpmSources.devices(gate).contains(console), "The linked console doesn't power the gate");
+        helper.assertTrue(!ZpmLinks.complete(player, gate.position().pos()), "A finished link finished again");
+        level.setBlock(far, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
+        helper.assertTrue(ZpmLinks.devicesOf(level.getServer(), gate.position()).isEmpty(),
+                "The broken console stayed linked");
+        helper.succeed();
     }
 
     // A supergate with no stored energy dials on the ZPMs in its base, and draws on them

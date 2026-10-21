@@ -580,6 +580,9 @@
   "screen.sgcraft.shield.no_gate": "No gate with a shield within %s blocks",
   "screen.sgcraft.shield.no_access": "You don't have access to this gate's shield",
   "screen.sgcraft.configurator.iris.none": "None",
+  "screen.sgcraft.configurator.zpm_links": "Linked ZPMs: %s",
+  "screen.sgcraft.configurator.zpm_links.none": "No ZPM device is linked to this gate. Sneak-use a ZPM console, cart or hub, then use the gate, to link one",
+  "screen.sgcraft.configurator.zpm_links.tip": "ZPM devices the gate draws on from anywhere in its world. Sneak-use one twice to unlink it:",
   "item.sgcraft.edd": "Explorer Dialer Device",
   "screen.sgcraft.explorer.name": "Name",
   "screen.sgcraft.explorer.count": "Generated Addresses: (%s)",
@@ -962,5 +965,13 @@
   "setting.sgcraft.computers.history_size.tip": "How many of the addresses last dialed from a dialing computer its screen lists, to dial again. 0 keeps none",
   "screen.sgcraft.dialing_computer.iris.none": "This gate has no iris",
   "screen.sgcraft.dialing_computer.iris.tip": "Shuts the gate's iris, or raises its shield, when it is open, and opens it when it is shut. It shows red while open, since anything can come through",
-  "message.sgcraft.addresses.bad_secret_layout": "The secret layout is true or false"
+  "message.sgcraft.addresses.bad_secret_layout": "The secret layout is true or false",
+  "message.sgcraft.zpm_link.start": "Now use any block of a gate to link this ZPM device to it, or sneak-use this device again to cancel",
+  "message.sgcraft.zpm_link.start_linked": "Linked to the gate at %s. Use a block of another gate to link it there, or sneak-use this device again to unlink it",
+  "message.sgcraft.zpm_link.canceled": "Linking canceled",
+  "message.sgcraft.zpm_link.unlinked": "This ZPM device is no longer linked to a gate",
+  "message.sgcraft.zpm_link.other_world": "A ZPM device links only to a gate in its own world",
+  "message.sgcraft.zpm_link.denied": "You aren't allowed to configure this gate",
+  "message.sgcraft.zpm_link.device_gone": "The ZPM device is no longer there",
+  "message.sgcraft.zpm_link.linked": "Linked. The gate draws on this ZPM device from anywhere in this world while it's loaded"
 }

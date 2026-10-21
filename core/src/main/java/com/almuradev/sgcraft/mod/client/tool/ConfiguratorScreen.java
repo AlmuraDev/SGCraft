@@ -443,6 +443,21 @@ public final class ConfiguratorScreen extends Screen {
                     }
                     this.rebuildWidgets();
                 }).bounds(at[0], at[1], 150, 20).build()), "server_costs");
+        // The ZPM devices linked to the gate, listed in its tip; they are linked and unlinked at the devices
+        final int[] zpms = this.slot(left, top, i + 1);
+        final List<String> links = this.state.zpmLinks();
+        final Button linked = this.addRenderableWidget(Button.builder(Component.translatableWithFallback(
+                "screen.sgcraft.configurator.zpm_links", "Linked ZPMs: %s", links.size()), b -> { })
+                .bounds(zpms[0], zpms[1], 150, 20).build());
+        linked.active = false;
+        final Component tip = links.isEmpty()
+                ? Component.translatableWithFallback("screen.sgcraft.configurator.zpm_links.none",
+                        "No ZPM device is linked to this gate. Sneak-use a ZPM console, cart or hub, then use the "
+                                + "gate, to link one")
+                : Component.translatableWithFallback("screen.sgcraft.configurator.zpm_links.tip",
+                        "ZPM devices the gate draws on from anywhere in its world. Sneak-use one twice to unlink it:")
+                        .copy().append("\n" + String.join("\n", links));
+        linked.setTooltip(Tooltip.create(tip));
     }
 
     private void travelPage(final int left, final int top) {

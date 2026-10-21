@@ -32,6 +32,7 @@ import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.mod.gate.GateShape;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.ArrayList;
@@ -41,7 +42,8 @@ import java.util.Optional;
 
 /**
  * The ZPMs a gate draws on: those in its base's own ZPM slots if it has them, then those in the ZPM consoles,
- * interface carts and hubs within the server's search range of its base, the nearest first. A ZPM is only a great
+ * interface carts and hubs within the server's search range of its base and those linked to it (see
+ * {@link ZpmLinks}) that are loaded, the nearest first. A ZPM is only a great
  * deal of energy, so any gate may draw on one, and a supergate needs no more of them than any other energy.
  */
 public final class ZpmSources implements EnergySourceProvider {
@@ -83,8 +85,8 @@ public final class ZpmSources implements EnergySourceProvider {
     }
 
     /**
-     * @return the ZPM devices within the server's search range of a gate's base that hold charged ZPMs, the nearest
-     *     first
+     * @return the ZPM devices within the server's search range of a gate's base, or linked to it and loaded, that
+     *     hold charged ZPMs, the nearest first
      */
     public static List<ZpmDeviceBlockEntity> devices(final Stargate gate) {
         final Optional<ServerLevel> level = ZpmSources.level(gate);
@@ -98,6 +100,13 @@ public final class ZpmSources implements EnergySourceProvider {
                 base.offset(reach, reach, reach))) {
             if (level.get().isLoaded(pos) && level.get().getBlockEntity(pos)
                     instanceof final ZpmDeviceBlockEntity device && device.loaded() > 0) {
+                devices.add(device);
+            }
+        }
+        for (final GlobalPos linked : ZpmLinks.devicesOf(level.get().getServer(), gate.position())) {
+            if (linked.dimension().equals(level.get().dimension()) && level.get().isLoaded(linked.pos())
+                    && level.get().getBlockEntity(linked.pos()) instanceof final ZpmDeviceBlockEntity device
+                    && device.loaded() > 0 && !devices.contains(device)) {
                 devices.add(device);
             }
         }

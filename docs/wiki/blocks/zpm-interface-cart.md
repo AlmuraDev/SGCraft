@@ -49,6 +49,15 @@ A full ZPM of 26,843,546 GE gives about 2.1 billion FE through a converter.
 
 A gate whose base is within 6 blocks of the cart along each axis draws on its ZPM, as it does on a [ZPM Console](zpm-console.md#powering-gates)'s. A supergate draws on it after the ZPMs in its own base, and a city shield generator within 6 blocks draws on it too. See [Power](../power.md#zpms).
 
+## Linking to a gate
+
+A device linked to a gate powers it from anywhere in the same world, however far, as in SGCraft 2.2.0. It still has to be loaded.
+
+1. Sneak and use the device with an empty hand. The message says to use a gate next.
+2. Within a minute, use any block of a formed gate's ring or base with an empty hand. You need the `configure` right on that gate.
+
+A device links to one gate at a time. Sneak-use it again before you use a gate to cancel, or to unlink it if it was linked. Breaking the device unlinks it. A gate of any size can have devices linked to it. Its [configurator](../items/configurator.md) shows **Linked ZPMs** on its Energy page, with each device's place and how many ZPMs it holds in the tip.
+
 ## Tainted ZPMs
 
 A tainted ZPM in the cart explodes when the cart is drawn on, by a gate, a city shield or an energy converter: power 250, with fire, by default (`zpm.tainted_explosion`, 0 turns it off). See [Zero Point Module](../items/zpm.md#tainted-zpms).

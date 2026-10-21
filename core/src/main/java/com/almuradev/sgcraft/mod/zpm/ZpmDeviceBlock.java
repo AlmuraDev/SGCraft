@@ -84,7 +84,12 @@ public abstract class ZpmDeviceBlock extends HorizontalDirectionalBlock implemen
             final Player player, final BlockHitResult hit) {
         if (player instanceof final ServerPlayer serverPlayer
                 && level.getBlockEntity(pos) instanceof final ZpmDeviceBlockEntity device) {
-            device.open(serverPlayer);
+            // Sneaking with an empty hand links it to a gate instead, as in 2.2.0
+            if (serverPlayer.isSecondaryUseActive()) {
+                ZpmLinks.sneakUse(serverPlayer, pos);
+            } else {
+                device.open(serverPlayer);
+            }
         }
         return InteractionResult.SUCCESS;
     }

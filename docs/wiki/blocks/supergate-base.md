@@ -94,7 +94,7 @@ A supergate needs no [ZPMs](../items/zpm.md). It draws on DHD fuel, power units 
 
 The base has 3 ZPM slots, which take only ZPMs, one to a slot. The ZPMs in them are more energy for the supergate to draw on, and it takes from them before any other ZPM. Open the base's screen with the right to configure the gate to reach them. A flat supergate's base opens too, for its ZPM slots, though it shows no camouflage slots.
 
-After its own slots, the supergate draws on the ZPMs in each {{item:sgcraft:zpm_console}}, {{item:sgcraft:zpm_interface_cart}} and {{item:sgcraft:zpm_hub}} within 6 blocks of the base along each axis (`zpm.search_range`), nearest first. It takes their gate energy (GE) as it takes any other. A hub that holds more than one ZPM makes them go further.
+After its own slots, the supergate draws on the ZPMs in each {{item:sgcraft:zpm_console}}, {{item:sgcraft:zpm_interface_cart}} and {{item:sgcraft:zpm_hub}} within 6 blocks of the base along each axis (`zpm.search_range`) or [linked to it](zpm-console.md#linking-to-a-gate), nearest first. It takes their gate energy (GE) as it takes any other. A hub that holds more than one ZPM makes them go further.
 
 Below the screen:
 
