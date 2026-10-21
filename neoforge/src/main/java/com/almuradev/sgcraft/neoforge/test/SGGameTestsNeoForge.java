@@ -2166,14 +2166,18 @@ public final class SGGameTestsNeoForge {
         helper.succeed();
     }
 
-    // Away from lava, nodes of up to two blocks each way start 16 to 31 blocks above the bottom given
+    // Away from lava, nodes of up to two blocks each way start 16 to 31 blocks above the bottom given, and turn only
+    // natural stone to ore, never a barrel or stone bricks among it
     private static void oreIsolatedNodes(final GameTestHelper helper, final BlockPos origin) {
         final ServerLevel level = helper.getLevel();
         final ChunkPos chunk = ChunkPos.containing(origin);
         final int bottom = origin.getY() - 20;
         final List<BlockPos> box = BlockPos.betweenClosedStream(chunk.getBlockAt(0, bottom + 16, 0),
                 chunk.getBlockAt(15, bottom + 32, 15)).map(BlockPos::immutable).toList();
-        box.forEach(pos -> level.setBlock(pos, Blocks.STONE.defaultBlockState(), Block.UPDATE_CLIENTS));
+        final List<BlockPos> built = box.stream().filter(pos -> pos.getX() % 3 == 0).toList();
+        box.forEach(pos -> level.setBlock(pos, !built.contains(pos) ? Blocks.STONE.defaultBlockState()
+                : pos.getZ() % 2 == 0 ? Blocks.BARREL.defaultBlockState() : Blocks.STONE_BRICKS.defaultBlockState(),
+                Block.UPDATE_CLIENTS));
         try {
             final NaquadahOreFeature feature = (NaquadahOreFeature) level.registryAccess()
                     .lookupOrThrow(Registries.FEATURE).getValue(NaquadahOre.FEATURE);
@@ -2185,6 +2189,8 @@ public final class SGGameTestsNeoForge {
             final int most = isolatedOnly.maxIsolatedNodes() * 8;
             helper.assertTrue(placed > 0 && placed <= most, placed + " blocks were turned to ore, not 1 to " + most);
             helper.assertTrue(ore == placed, ore + " blocks of the stone are ore, not the " + placed + " placed");
+            helper.assertTrue(built.stream().noneMatch(pos -> level.getBlockState(pos).is(SGBlocks.NAQUADAH_ORE)),
+                    "Ore replaced a barrel or stone bricks");
             helper.assertTrue(feature.generate(level, chunk, RandomSource.create(2),
                     NaquadahOreSettings.Count.GEN_ISOLATED_ODDS.with(isolatedOnly, 0), bottom, bottom + 100) == 0,
                     "Nodes generated with no odds of them");

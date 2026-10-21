@@ -17,10 +17,10 @@ Dictionary: [Naquadah Ore](blocks/naquadah-ore.md)
 
 Naquadah ore generates in the Overworld by default, in two ways. With the default settings, every chunk tries both.
 
-- Under lava, the chunk picks from 1 to 16 random columns (`max_nodes_under_lava`) and searches each from the bottom of the world up to sea level. Wherever lava rests on a solid block, that block starts a cluster of ore up to 3 blocks across and 1 block high.
+- Under lava, the chunk picks from 1 to 16 random columns (`max_nodes_under_lava`) and searches each from the bottom of the world up to sea level. Wherever lava rests on stone, that block starts a cluster of ore up to 3 blocks across and 1 block high.
 - As isolated nodes, the chunk gets from 1 to 4 nodes (`max_isolated_nodes`), each up to 2 by 2 by 2 blocks. A node starts 16 to 31 blocks above the bottom of the world, which is y -48 to -33 in the Overworld.
 
-Ore replaces solid blocks that world generation may replace, so it never replaces bedrock. A cluster or node stops at the edge of its chunk.
+Ore replaces only natural stone: the blocks in the `sgcraft:naquadah_ore_replaceables` block tag, which holds `#minecraft:base_stone_overworld` (stone, granite, diorite, andesite, tuff and deepslate). It never replaces bedrock, chests, furnaces or anything else a player built from other blocks. A data pack can add blocks to the tag for worlds made of other stone. A cluster or node stops at the edge of its chunk.
 
 ### Mining
 

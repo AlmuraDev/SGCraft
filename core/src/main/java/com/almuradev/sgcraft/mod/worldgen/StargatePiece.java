@@ -76,8 +76,8 @@ public final class StargatePiece extends TemplateStructurePiece {
     private final int chevrons;
     private final boolean tokra;
     // Built into a structure that settles onto the ground once it is built, the piece goes where the structure's
-    // first piece settles, its top or its bottom moved by the offset; the first piece is only known until the
-    // structure is saved, and the piece builds nothing if it is lost before the structure settles
+    // first piece settles, its top or its bottom moved by the offset; a structure loaded from its save finds the
+    // first piece again with reanchor
     private boolean following;
     private boolean top;
     private int yOffset;
@@ -124,6 +124,22 @@ public final class StargatePiece extends TemplateStructurePiece {
             this.anchor = anchor;
         }
         return this;
+    }
+
+    /**
+     * Has each gate piece of a structure loaded from its save follow the structure's first piece again, as it did
+     * before the save, so one whose chunk wasn't built yet still settles with the structure.
+     */
+    public static void reanchor(final List<StructurePiece> pieces) {
+        if (pieces.isEmpty()) {
+            return;
+        }
+        final StructurePiece first = pieces.getFirst();
+        for (final StructurePiece piece : pieces) {
+            if (piece instanceof final StargatePiece gate && gate.following && gate.anchor == null) {
+                gate.anchor = first;
+            }
+        }
     }
 
     // Turned about the template's center, so turning it keeps it where it was put

@@ -15,6 +15,7 @@
         "ServerExplosionMixin",
         "ServerPlayerMixin",
         "StructureMixin",
+        "StructureStartMixin",
         "StructurePiecesBuilderAccessor",
         "StructureTemplatePoolAccessor"
     ],
