@@ -42,6 +42,10 @@ import org.jspecify.annotations.Nullable;
  */
 public final class MilkyWayGateRenderer implements GateTypeRenderer {
 
+    // The bore of the ring, and the mesh it is worked out for
+    private GateBore borePart = GateBore.STANDARD;
+    private @Nullable MilkyWayGateMesh boreMesh;
+
     // How bright an unlit chevron light is, as a fraction of full color
     private static final float UNLIT_LIGHT = 0.3F;
     // How long the top chevron takes to come down, stays down and takes to rise as a symbol locks, in ticks; and
@@ -132,6 +136,20 @@ public final class MilkyWayGateRenderer implements GateTypeRenderer {
     @Override
     public int glowColor() {
         return MilkyWayGateRenderer.GLOW;
+    }
+
+    // The bore of its fixed ring, which the iris goes into as it opens; worked out once for each mesh
+    @Override
+    public GateBore bore() {
+        final MilkyWayGateMesh mesh = MilkyWayGateMesh.get();
+        if (mesh == null) {
+            return GateBore.STANDARD;
+        }
+        if (this.boreMesh != mesh) {
+            this.borePart = GateBore.of(mesh.part(MilkyWayGateModel.BODY));
+            this.boreMesh = mesh;
+        }
+        return this.borePart;
     }
 
     // The box round the top chevron's lights, out to the front of its metal, which its glow is laid round; worked out

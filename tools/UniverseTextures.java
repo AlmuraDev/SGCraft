@@ -261,12 +261,22 @@ public class UniverseTextures {
 
     // ---- Iris --------------------------------------------------------------------------
 
+    // Each blade is drawn across the whole of it, and the blades are swirled, so it is plain
+    // gunmetal with fine grain and no blotches or brushing that the swirl would stretch into
+    // scribbles; its darker rim marks out the blades' edges, as on the other gates' irises
     static void iris() throws Exception {
         BufferedImage img = new BufferedImage(192, 96, BufferedImage.TYPE_INT_ARGB);
         Random r = new Random(5);
-        for (int y = 0; y < img.getHeight(); y++) {
-            for (int x = 0; x < img.getWidth(); x++) {
-                img.setRGB(x, y, metal(r, 0.28, 0.14, x, y, 51));
+        int w = img.getWidth(), h = img.getHeight();
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                double n = noise(x * 0.3, y * 0.3, 51);
+                double v = 0.30 + 0.03 * (n - 0.5) + (r.nextDouble() - 0.5) * 0.02;
+                int edge = Math.min(Math.min(x, w - 1 - x), Math.min(y, h - 1 - y));
+                if (edge < 3) {
+                    v *= 0.55 + 0.15 * edge;
+                }
+                img.setRGB(x, y, rgb(v * 0.96, v * 1.0, v * 1.07));
             }
         }
         ImageIO.write(img, "png", new File(ROOT + "tileentity/universe/iris.png"));

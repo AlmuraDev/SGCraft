@@ -182,10 +182,11 @@ public final class StargateBaseRenderer
                     collector);
         }
         if (state.shield) {
-            ShieldRenderer.submit(IrisRenderer.rim(state.gateType), state.irisAperture, state.time, poseStack,
+            ShieldRenderer.submit(renderer.bore().radius(), state.irisAperture, state.time, poseStack,
                     collector);
         } else {
-            IrisRenderer.submit(state.gateType, state.irisAperture, poseStack, collector, state.lightCoords);
+            IrisRenderer.submit(state.gateType, renderer.bore(), state.irisAperture, poseStack, collector,
+                    state.lightCoords);
         }
         poseStack.popPose();
     }

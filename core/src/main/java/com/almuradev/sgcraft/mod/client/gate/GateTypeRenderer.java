@@ -45,4 +45,9 @@ public interface GateTypeRenderer {
      *     open horizon is this color
      */
     int glowColor();
+
+    /** @return the inside of this type's ring, where its iris and its shield stop */
+    default GateBore bore() {
+        return GateBore.STANDARD;
+    }
 }

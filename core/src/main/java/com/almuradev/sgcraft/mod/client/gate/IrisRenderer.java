@@ -36,6 +36,8 @@ import net.minecraft.client.renderer.rendertype.RenderTypes;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -44,9 +46,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * their pivots to close, with a low tower of overlapping blade tips rising at the middle as they meet. Drawn in the
  * gate's frame, centered on the ring, with its front towards +z.
  *
- * <p>The geometry is a port of gcewing's SGBaseTERenderer, its constants and formulas unchanged, but for one thing:
- * the blades stop at the edge of the ring's opening, which the original let them pass, so their ends showed against
- * the ring as a row of notches. Opening, they slide back into the ring there.</p>
+ * <p>The geometry is a port of gcewing's SGBaseTERenderer, its constants and formulas unchanged, but for where it
+ * sits: as in 2.2.0, it lies just behind the front edge of the ring's bore, and is cut off at the bore, so the blades
+ * go into the ring as they open instead of showing in front of it. Each piece is cut along a straight line where it
+ * crosses the bore, which reaches a little into the ring either side.</p>
  */
 public final class IrisRenderer {
 
@@ -54,14 +57,6 @@ public final class IrisRenderer {
             GateTypes.MILKY_WAY, SGCraft.id("textures/gate/milkyway/iris.png"),
             GateTypes.PEGASUS, SGCraft.id("textures/gate/pegasus/iris.png"),
             GateTypes.UNIVERSE, SGCraft.id("textures/gate/universe/iris.png"));
-
-    // The edge of the ring's opening for each type of gate, which the blades stop at; a type not here lets them run on
-    // under its ring
-    private static final Map<ResourceKey<GateType>, Double> RIMS = Map.of(GateTypes.MILKY_WAY, 2.0,
-            GateTypes.PEGASUS, 2.0);
-
-    // Where a shield stops for a type of gate with no rim here: a little inside its ring
-    private static final double SHIELD_RIM = 2.0;
 
     private static final int BLADES = 20;
     // A standard gate's ring's inner radius, which the blades are sized for
@@ -78,7 +73,7 @@ public final class IrisRenderer {
     private static final double OPEN_WIDTH = 0.03;
     private static final int STEPS = 8;
     private static final double SWIRL = 40;
-    private static final double Z0 = 0.1;
+    // How far forward of the blade's point the end at its pivot is tilted, which keeps overlapping blades in order
     private static final double Z1 = 0.01;
     // The tower at the middle: its radius, height, how wide its base is against its top, its twist, the extra height
     // at the center, the step between overlapping tips, their curve, and how finely it is cut
@@ -100,46 +95,43 @@ public final class IrisRenderer {
     /**
      * Draws the iris.
      *
+     * @param bore the inside of the gate's ring, which the iris lies just behind the front of and is cut off at
      * @param aperture how far open it is, from 0 shut to 1 open; a fully open iris isn't drawn
      */
-    public static void submit(final ResourceKey<GateType> type, final float aperture, final PoseStack poseStack,
-            final SubmitNodeCollector collector, final int light) {
+    public static void submit(final ResourceKey<GateType> type, final GateBore bore, final float aperture,
+            final PoseStack poseStack, final SubmitNodeCollector collector, final int light) {
         if (aperture >= 1) {
             return;
         }
-        final float[] triangles = IrisRenderer.build(aperture,
-                IrisRenderer.RIMS.getOrDefault(type, Double.MAX_VALUE));
+        final float[] triangles = IrisRenderer.build(aperture, bore);
         final Identifier texture = IrisRenderer.TEXTURES.getOrDefault(type,
                 IrisRenderer.TEXTURES.get(GateTypes.MILKY_WAY));
         collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(texture),
                 (pose, buffer) -> GateGeometry.emit(pose, buffer, triangles, -1, light));
     }
 
-    /** @return the edge of the opening of a type of gate's ring, where an iris or a shield across it stops */
-    public static double rim(final ResourceKey<GateType> type) {
-        return IrisRenderer.RIMS.getOrDefault(type, IrisRenderer.SHIELD_RIM);
-    }
+    // Cached for the shut iris, which is drawn most, by the bore it lies in
+    private static final Map<GateBore, float[]> CLOSED = new ConcurrentHashMap<>();
 
-    // Cached for the shut iris, which is drawn most, by the rim it stops at
-    private static final Map<Double, float[]> CLOSED = new ConcurrentHashMap<>();
-
-    static float[] build(final double aperture, final double rim) {
+    static float[] build(final double aperture, final GateBore bore) {
         if (aperture <= 0) {
-            return IrisRenderer.CLOSED.computeIfAbsent(rim, r -> IrisRenderer.make(0, r));
+            return IrisRenderer.CLOSED.computeIfAbsent(bore, b -> IrisRenderer.make(0, b));
         }
-        return IrisRenderer.make(aperture, rim);
+        return IrisRenderer.make(aperture, bore);
     }
 
-    private static float[] make(final double aperture, final double rim) {
+    private static float[] make(final double aperture, final GateBore bore) {
         final GateGeometry.Builder builder = new GateGeometry.Builder();
-        IrisRenderer.blades(builder, aperture, rim);
-        IrisRenderer.tower(builder, aperture);
+        // The blades' points lie just behind the bore's front edge, so their tilted ends reach it
+        final double z0 = bore.front() - IrisRenderer.Z1;
+        IrisRenderer.blades(builder, aperture, z0, bore.radius());
+        IrisRenderer.tower(builder, aperture, z0, bore.radius());
         return builder.build();
     }
 
-    private static void blades(final GateGeometry.Builder builder, final double a, final double rim) {
+    private static void blades(final GateGeometry.Builder builder, final double a, final double z0,
+            final double rim) {
         final double h = IrisRenderer.PIVOT_WIDTH - (IrisRenderer.PIVOT_WIDTH - IrisRenderer.OPEN_WIDTH) * a * a;
-        final double z0 = IrisRenderer.Z0;
         final double z1 = IrisRenderer.Z1;
         final double[] tip = {-IrisRenderer.LENGTH, 0, z0, 0, 0};
         final double[] edge = {-IrisRenderer.LENGTH + IrisRenderer.TRAILING, h, z0,
@@ -167,20 +159,20 @@ public final class IrisRenderer {
         final int n = IrisRenderer.STEPS;
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n - i; j++) {
-                IrisRenderer.corner(builder, tri, i, j, sw, t, rim);
-                IrisRenderer.corner(builder, tri, i + 1, j, sw, t, rim);
-                IrisRenderer.corner(builder, tri, i, j + 1, sw, t, rim);
+                IrisRenderer.polygon(builder, new double[][] {IrisRenderer.corner(tri, i, j, sw, t),
+                        IrisRenderer.corner(tri, i + 1, j, sw, t), IrisRenderer.corner(tri, i, j + 1, sw, t)}, rim);
                 if (j < n - 1 - i) {
-                    IrisRenderer.corner(builder, tri, i + 1, j, sw, t, rim);
-                    IrisRenderer.corner(builder, tri, i + 1, j + 1, sw, t, rim);
-                    IrisRenderer.corner(builder, tri, i, j + 1, sw, t, rim);
+                    IrisRenderer.polygon(builder, new double[][] {IrisRenderer.corner(tri, i + 1, j, sw, t),
+                            IrisRenderer.corner(tri, i + 1, j + 1, sw, t), IrisRenderer.corner(tri, i, j + 1, sw, t)},
+                            rim);
                 }
             }
         }
     }
 
-    private static void corner(final GateGeometry.Builder builder, final double[][] tri, final int i, final int j,
-            final double sw, final double t, final double rim) {
+    // A corner of a blade's piece in the gate, as {x, y, z, u, v, nx, ny, nz}
+    private static double[] corner(final double[][] tri, final int i, final int j, final double sw,
+            final double t) {
         final double b = (double) i / IrisRenderer.STEPS;
         final double c = (double) j / IrisRenderer.STEPS;
         final double a = 1 - b - c;
@@ -195,17 +187,65 @@ public final class IrisRenderer {
         final double gy = x * Math.sin(t) + y * Math.cos(t);
         final double d = Math.hypot(gx, gy);
         final double angle = Math.atan2(gy, gx) + IrisRenderer.swirl(d);
-        // Whatever lies past the rim is drawn on it, so the blades end in a circle there
-        final double r = Math.min(d * IrisRenderer.SCALE, rim);
-        builder.corner(r * Math.cos(angle), r * Math.sin(angle), p[2], p[3], p[4], 0, 0, 1);
+        final double r = d * IrisRenderer.SCALE;
+        return new double[] {r * Math.cos(angle), r * Math.sin(angle), p[2], p[3], p[4], 0, 0, 1};
+    }
+
+    /**
+     * Adds a small, flat, convex piece of the iris, its corners as {x, y, z, u, v, nx, ny, nz} in order round it, as
+     * triangles, without whatever is further than {@code rim} from the center. It is cut along a straight line where
+     * it crosses that circle, square to the way out from the center through the piece, as in 2.2.0.
+     */
+    private static void polygon(final GateGeometry.Builder builder, final double[][] corners, final double rim) {
+        double[][] p = corners;
+        double cx = 0;
+        double cy = 0;
+        boolean inside = true;
+        for (final double[] q : p) {
+            cx += q[0];
+            cy += q[1];
+            inside &= q[0] * q[0] + q[1] * q[1] <= rim * rim;
+        }
+        final double length = Math.hypot(cx, cy);
+        if (!inside && length > 0) {
+            // Corners beyond the line are left out, and edges crossing it end where they cross it
+            final double dx = cx / length;
+            final double dy = cy / length;
+            final List<double[]> kept = new ArrayList<>();
+            for (int k = 0; k < p.length; k++) {
+                final double[] q1 = p[k];
+                final double[] q2 = p[(k + 1) % p.length];
+                final double f1 = q1[0] * dx + q1[1] * dy - rim;
+                final double f2 = q2[0] * dx + q2[1] * dy - rim;
+                if (f1 <= 0) {
+                    kept.add(q1);
+                }
+                if (f1 < 0 && f2 > 0 || f1 > 0 && f2 < 0) {
+                    final double along = f1 / (f1 - f2);
+                    final double[] c = new double[q1.length];
+                    for (int m = 0; m < c.length; m++) {
+                        c[m] = q1[m] + (q2[m] - q1[m]) * along;
+                    }
+                    kept.add(c);
+                }
+            }
+            p = kept.toArray(new double[0][]);
+        }
+        for (int k = 1; k + 1 < p.length; k++) {
+            for (final double[] q : new double[][] {p[0], p[k], p[k + 1]}) {
+                builder.corner(q[0], q[1], q[2], q[3], q[4], q[5], q[6], q[7]);
+            }
+        }
     }
 
     private static double swirl(final double d) {
         return Math.toRadians(IrisRenderer.SWIRL * Math.max(0, 1 - d / 2.0));
     }
 
-    // The tower of overlapping blade tips at the middle, rising as the iris shuts
-    private static void tower(final GateGeometry.Builder builder, final double a) {
+    // The tower of overlapping blade tips at the middle, rising as the iris shuts from the blades' points z0 forward,
+    // cut off at the rim like the blades
+    private static void tower(final GateGeometry.Builder builder, final double a, final double z0,
+            final double rim) {
         final double rise = 1 - a;
         if (rise <= 0) {
             return;
@@ -219,21 +259,21 @@ public final class IrisRenderer {
                     final double s1 = (double) j / IrisRenderer.TOWER_ACROSS;
                     final double s2 = (double) (j + 1) / IrisRenderer.TOWER_ACROSS;
                     IrisRenderer.quad(builder, new double[][] {
-                            IrisRenderer.hub(b, r1, s1, 0, a, rise), IrisRenderer.hub(b, r2, s1, 0, a, rise),
-                            IrisRenderer.hub(b, r2, s2, 0, a, rise), IrisRenderer.hub(b, r1, s2, 0, a, rise)},
-                            new double[] {0, 0, 1});
+                            IrisRenderer.hub(b, r1, s1, 0, a, rise, z0), IrisRenderer.hub(b, r2, s1, 0, a, rise, z0),
+                            IrisRenderer.hub(b, r2, s2, 0, a, rise, z0), IrisRenderer.hub(b, r1, s2, 0, a, rise, z0)},
+                            new double[] {0, 0, 1}, rim);
                 }
                 for (int edge = 0; edge <= 1; edge++) {
                     final double side = edge == 0 ? 1 : -1;
                     for (int k = 0; k < IrisRenderer.TOWER_DOWN; k++) {
                         final double d1 = (double) k / IrisRenderer.TOWER_DOWN;
                         final double d2 = (double) (k + 1) / IrisRenderer.TOWER_DOWN;
-                        final double[] q1 = IrisRenderer.hub(b, r1, edge, d1, a, rise);
-                        final double[] q2 = IrisRenderer.hub(b, r2, edge, d1, a, rise);
+                        final double[] q1 = IrisRenderer.hub(b, r1, edge, d1, a, rise, z0);
+                        final double[] q2 = IrisRenderer.hub(b, r2, edge, d1, a, rise, z0);
                         final double ang = Math.atan2(q1[1] + q2[1], q1[0] + q2[0]);
                         IrisRenderer.quad(builder, new double[][] {q1, q2,
-                                IrisRenderer.hub(b, r2, edge, d2, a, rise), IrisRenderer.hub(b, r1, edge, d2, a, rise)},
-                                new double[] {side * Math.sin(ang), -side * Math.cos(ang), 0});
+                                IrisRenderer.hub(b, r2, edge, d2, a, rise, z0), IrisRenderer.hub(b, r1, edge, d2, a, rise, z0)},
+                                new double[] {side * Math.sin(ang), -side * Math.cos(ang), 0}, rim);
                     }
                 }
             }
@@ -241,7 +281,7 @@ public final class IrisRenderer {
     }
 
     private static double[] hub(final int b, final double rho, final double across, final double down,
-            final double a, final double rise) {
+            final double a, final double rise, final double z0) {
         final double spacing = 360.0 / IrisRenderer.BLADES;
         final double widest = spacing * IrisRenderer.TOWER_OVERLAP;
         final double t = rho / IrisRenderer.TOWER_RADIUS;
@@ -249,7 +289,7 @@ public final class IrisRenderer {
         final double phi = across * widest * (1 - t * t);
         final double step = IrisRenderer.TOWER_STEP * (IrisRenderer.TOWER_BASE + (1 - IrisRenderer.TOWER_BASE) * f);
         final double top = IrisRenderer.TOWER_HEIGHT + IrisRenderer.TOWER_PEAK * f + step * (1 - phi / widest);
-        final double z = IrisRenderer.Z0 + IrisRenderer.SCALE * (0.005 + rise * top * (1 - down));
+        final double z = z0 + IrisRenderer.SCALE * (0.005 + rise * top * (1 - down));
         final double up = 1 - down;
         final double r = rho * (IrisRenderer.TOWER_BASE + (1 - IrisRenderer.TOWER_BASE) * up * up);
         final double sw = Math.toRadians(a * IrisRenderer.SWING);
@@ -261,20 +301,24 @@ public final class IrisRenderer {
                 t, across + down};
     }
 
-    // A quad as two triangles, turned so its face points the given way
-    private static void quad(final GateGeometry.Builder builder, final double[][] q, final double[] facing) {
+    // A quad, turned so its face points the given way, cut off at the rim
+    private static void quad(final GateGeometry.Builder builder, final double[][] q, final double[] facing,
+            final double rim) {
         final double[] d1 = {q[2][0] - q[0][0], q[2][1] - q[0][1], q[2][2] - q[0][2]};
         final double[] d2 = {q[3][0] - q[1][0], q[3][1] - q[1][1], q[3][2] - q[1][2]};
         final double nx = d1[1] * d2[2] - d1[2] * d2[1];
         final double ny = d1[2] * d2[0] - d1[0] * d2[2];
         final double nz = d1[0] * d2[1] - d1[1] * d2[0];
         final boolean flip = nx * facing[0] + ny * facing[1] + nz * facing[2] < 0;
-        final int[] order = flip ? new int[] {0, 3, 2, 0, 2, 1} : new int[] {0, 1, 2, 0, 2, 3};
+        final int[] order = flip ? new int[] {0, 3, 2, 1} : new int[] {0, 1, 2, 3};
         final double length = Math.max(1e-9, Math.sqrt(nx * nx + ny * ny + nz * nz));
         final double sign = flip ? -1 : 1;
-        for (final int k : order) {
-            builder.corner(q[k][0], q[k][1], q[k][2], q[k][3], q[k][4], sign * nx / length, sign * ny / length,
-                    sign * nz / length);
+        final double[][] corners = new double[4][];
+        for (int k = 0; k < 4; k++) {
+            final double[] c = q[order[k]];
+            corners[k] = new double[] {c[0], c[1], c[2], c[3], c[4], sign * nx / length, sign * ny / length,
+                    sign * nz / length};
         }
+        IrisRenderer.polygon(builder, corners, rim);
     }
 }

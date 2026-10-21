@@ -39,6 +39,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.util.ARGB;
 import net.minecraft.util.LightCoordsUtil;
 
+import org.jspecify.annotations.Nullable;
+
 import java.util.List;
 
 /**
@@ -46,6 +48,10 @@ import java.util.List;
  * chevrons with their bronze studs and their lights unlit.
  */
 public final class UniverseGateRenderer implements GateTypeRenderer {
+
+    // The bore of the ring, and the mesh it is worked out for
+    private GateBore borePart = GateBore.STANDARD;
+    private @Nullable UniverseGateMesh boreMesh;
 
     private static final Identifier[] RING = {
             UniverseGateRenderer.texture("ring"),
@@ -167,6 +173,20 @@ public final class UniverseGateRenderer implements GateTypeRenderer {
     @Override
     public int glowColor() {
         return UniverseGateRenderer.GLOW;
+    }
+
+    // The bore of its ring's body, which the iris goes into as it opens; worked out once for each mesh
+    @Override
+    public GateBore bore() {
+        final UniverseGateMesh mesh = UniverseGateMesh.get();
+        if (mesh == null) {
+            return GateBore.STANDARD;
+        }
+        if (this.boreMesh != mesh) {
+            this.borePart = GateBore.of(mesh.ring(UniverseGateMesh.BODY));
+            this.boreMesh = mesh;
+        }
+        return this.borePart;
     }
 
     // How far the ring has turned. Its turn is worked out at the standard spacing; with its chevrons drawn together,

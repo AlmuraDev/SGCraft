@@ -50,6 +50,10 @@ import java.util.Map;
  */
 public final class PegasusGateRenderer implements GateTypeRenderer {
 
+    // The bore of the ring, and the mesh it is worked out for
+    private GateBore borePart = GateBore.STANDARD;
+    private @Nullable PegasusGateMesh boreMesh;
+
     private static final Identifier[] RING = {
             PegasusGateRenderer.texture("front"),
             PegasusGateRenderer.texture("back"),
@@ -172,6 +176,20 @@ public final class PegasusGateRenderer implements GateTypeRenderer {
     @Override
     public int glowColor() {
         return PegasusGateRenderer.GLOW;
+    }
+
+    // The bore of its ring's front, which the iris goes into as it opens; worked out once for each mesh
+    @Override
+    public GateBore bore() {
+        final PegasusGateMesh mesh = PegasusGateMesh.get();
+        if (mesh == null) {
+            return GateBore.STANDARD;
+        }
+        if (this.boreMesh != mesh) {
+            this.borePart = GateBore.of(mesh.ring(PegasusGateMesh.FRONT));
+            this.boreMesh = mesh;
+        }
+        return this.borePart;
     }
 
     // The box round the top chevron's lights, out to the front of its metal, which its glow is laid round; worked out
