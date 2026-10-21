@@ -32,6 +32,8 @@ import com.almuradev.sgcraft.mod.generator.GeneratorMark;
 import com.almuradev.sgcraft.mod.generator.NaquadahGeneratorBlock;
 import com.almuradev.sgcraft.mod.obelisk.AsgardObeliskBlock;
 import com.almuradev.sgcraft.mod.obelisk.ObeliskKind;
+import com.almuradev.sgcraft.mod.rings.RingPanelBlock;
+import com.almuradev.sgcraft.mod.rings.RingPlatformBlock;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
 import com.almuradev.sgcraft.mod.shield.CityShieldBlock;
 import com.almuradev.sgcraft.mod.shield.ShieldConsoleBlock;
@@ -76,6 +78,9 @@ public final class SGBlocks {
     public static NaquadahGeneratorBlock NAQUADAH_GENERATOR_MK1;
     public static AsgardObeliskBlock ASGARD_OBELISK;
     public static AsgardObeliskBlock ASGARD_OBELISK_KNOTWORK;
+    public static RingPlatformBlock RING_PLATFORM;
+    public static RingPlatformBlock RING_PLATFORM_CEILING;
+    public static RingPanelBlock RING_PANEL;
     public static NaquadahGeneratorBlock NAQUADAH_GENERATOR_MK2;
     public static MalpConsoleBlock MALP_CONSOLE;
     public static DialingComputerBlock DIALING_COMPUTER;
@@ -153,6 +158,16 @@ public final class SGBlocks {
                 properties -> new AsgardObeliskBlock(properties.strength(3.0F, 15.0F).sound(SoundType.STONE)
                         .mapColor(MapColor.SAND).noOcclusion().pushReaction(PushReaction.IMMOVEABLE),
                         ObeliskKind.KNOTWORK));
+        // Goa'uld transport rings: metal platforms, for a floor and for a ceiling, and the panel that starts them
+        SGBlocks.RING_PLATFORM = SGBlocks.register(sink, "ring_platform",
+                properties -> new RingPlatformBlock(properties.strength(5.0F, 20.0F).sound(SoundType.METAL)
+                        .mapColor(MapColor.METAL).pushReaction(PushReaction.IMMOVEABLE), false));
+        SGBlocks.RING_PLATFORM_CEILING = SGBlocks.register(sink, "ring_platform_ceiling",
+                properties -> new RingPlatformBlock(properties.strength(5.0F, 20.0F).sound(SoundType.METAL)
+                        .mapColor(MapColor.METAL).pushReaction(PushReaction.IMMOVEABLE), true));
+        SGBlocks.RING_PANEL = SGBlocks.register(sink, "ring_panel",
+                properties -> new RingPanelBlock(properties.strength(2.0F).sound(SoundType.METAL)
+                        .mapColor(MapColor.GOLD).noOcclusion().noCollision()));
         // Iron, as 2.2.0's
         SGBlocks.NAQUADAH_GENERATOR_MK1 = SGBlocks.register(sink, "naquadah_generator_mk1",
                 properties -> new NaquadahGeneratorBlock(properties.strength(4.0F, 20.0F).noOcclusion(),

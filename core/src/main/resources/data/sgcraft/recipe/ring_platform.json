@@ -1,0 +1,17 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "I": "minecraft:iron_block",
+    "N": "sgcraft:naquadah_ingot",
+    "E": "minecraft:ender_pearl"
+  },
+  "pattern": [
+    "INI",
+    "NEN",
+    "INI"
+  ],
+  "result": {
+    "id": "sgcraft:ring_platform"
+  }
+}

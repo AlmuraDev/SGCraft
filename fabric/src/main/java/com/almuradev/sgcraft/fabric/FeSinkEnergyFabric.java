@@ -25,29 +25,29 @@
 
 package com.almuradev.sgcraft.fabric;
 
-import com.almuradev.sgcraft.mod.block.entity.PowerUnitBlockEntity;
+import com.almuradev.sgcraft.mod.energy.FeSink;
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
 import team.reborn.energy.api.EnergyStorage;
 
 /**
- * A power unit as Team Reborn Energy's cables see it: it takes FE in, and gives none out, as the original's did. A
- * transaction undone puts its charge back.
+ * A power unit or a ring platform as Team Reborn Energy's cables see it: it takes FE in, and gives none out, as the
+ * original's did. A transaction undone puts its charge back.
  */
-final class PowerUnitEnergyFabric extends SnapshotParticipant<Double> implements EnergyStorage {
+final class FeSinkEnergyFabric extends SnapshotParticipant<Double> implements EnergyStorage {
 
-    private final PowerUnitBlockEntity unit;
+    private final FeSink sink;
 
-    PowerUnitEnergyFabric(final PowerUnitBlockEntity unit) {
-        this.unit = unit;
+    FeSinkEnergyFabric(final FeSink sink) {
+        this.sink = sink;
     }
 
     @Override
     public long insert(final long amount, final TransactionContext transaction) {
-        final long taken = this.unit.insertFe(amount, true);
+        final long taken = this.sink.insertFe(amount, true);
         if (taken > 0) {
             this.updateSnapshots(transaction);
-            this.unit.insertFe(taken, false);
+            this.sink.insertFe(taken, false);
         }
         return taken;
     }
@@ -64,21 +64,21 @@ final class PowerUnitEnergyFabric extends SnapshotParticipant<Double> implements
 
     @Override
     public long getAmount() {
-        return this.unit.feStored();
+        return this.sink.feAmount();
     }
 
     @Override
     public long getCapacity() {
-        return PowerUnitBlockEntity.feCapacity();
+        return this.sink.feLimit();
     }
 
     @Override
     protected Double createSnapshot() {
-        return this.unit.stored();
+        return this.sink.stored();
     }
 
     @Override
     protected void readSnapshot(final Double snapshot) {
-        this.unit.setStored(snapshot);
+        this.sink.setStored(snapshot);
     }
 }

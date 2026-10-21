@@ -38,6 +38,7 @@ import org.jspecify.annotations.Nullable;
 /**
  * What the player being beamed by an Asgard obelisk hears and sees, as in 2.2.0: the beam's sound, played to them alone
  * and from nowhere, so it carries on through the beam; and their screen fading to white as the beam comes, then back.
+ * Transport rings whiten the screens of those inside them the same way, without the beam's sound.
  */
 public final class BeamEffects {
 
@@ -67,6 +68,9 @@ public final class BeamEffects {
         }
         BeamEffects.start = System.currentTimeMillis();
         BeamEffects.beamAt = beam.ticks() * 50L;
+        if (!beam.sound()) {
+            return;
+        }
         BeamEffects.sound = new SimpleSoundInstance(SGSounds.OBELISK_BEAM.location(), SoundSource.BLOCKS, 1.0F, 1.0F,
                 RandomSource.create(), false, 0, SoundInstance.Attenuation.NONE, 0, 0, 0, true);
         minecraft.getSoundManager().play(BeamEffects.sound);

@@ -147,7 +147,10 @@ public final class SGCraftNeoForge {
     // Power units take FE from cables
     private static void registerCapabilities(final RegisterCapabilitiesEvent event) {
         event.registerBlockEntity(Capabilities.Energy.BLOCK, SGBlockEntityTypes.POWER_UNIT,
-                (unit, side) -> unit.handler(PowerUnitEnergyNeoForge::new));
+                (unit, side) -> unit.handler(FeSinkEnergyNeoForge::new));
+        // Ring platforms take FE from cables too
+        event.registerBlockEntity(Capabilities.Energy.BLOCK, SGBlockEntityTypes.RING_PLATFORM,
+                (platform, side) -> platform.handler(FeSinkEnergyNeoForge::new));
         // Battery chargers take FE from cables too, and batteries are energy items any charger fills
         event.registerBlockEntity(Capabilities.Energy.BLOCK, SGBlockEntityTypes.BATTERY_CHARGER,
                 (charger, side) -> charger.handler(BatteryChargerEnergyNeoForge::new));

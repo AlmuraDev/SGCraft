@@ -23,6 +23,9 @@
     "sgcraft:zpm_interface_cart",
     "sgcraft:zpm_hub",
     "sgcraft:dialing_computer",
-    "sgcraft:office_chair"
+    "sgcraft:office_chair",
+    "sgcraft:ring_platform",
+    "sgcraft:ring_platform_ceiling",
+    "sgcraft:ring_panel"
   ]
 }

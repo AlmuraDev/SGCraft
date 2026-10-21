@@ -25,12 +25,10 @@
 
 package com.almuradev.sgcraft.mod.obelisk;
 
-import com.almuradev.sgcraft.mod.access.SGGateAccess;
 import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.UUIDUtil;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -48,9 +46,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,14 +54,10 @@ import java.util.UUID;
  * The bottom half of an Asgard obelisk: the obelisk it is linked to, who owns it and who may use and configure it, and
  * the players it is about to beam away. Clients hear only when its gem should shine.
  */
-public final class AsgardObeliskBlockEntity extends BlockEntity {
+public final class AsgardObeliskBlockEntity extends BlockEntity implements ConfigurableTransport {
 
     private @Nullable GlobalPos link;
-    private @Nullable UUID owner;
-    private String ownerName = "";
-    // Whether anyone may use it, save those listed as not allowed; otherwise only its owner and those listed
-    private boolean everyone = true;
-    private final Map<UUID, ObeliskAccess> access = new LinkedHashMap<>();
+    private final TransportAccess access = new TransportAccess();
     // When it last started beaming someone, in game time, for its gem to shine
     private long beamStart = Long.MIN_VALUE / 2;
     // The players about to be beamed, and where each stood when they touched the gem
@@ -95,6 +87,7 @@ public final class AsgardObeliskBlockEntity extends BlockEntity {
     }
 
     /** @return the obelisk it is linked to, if any */
+    @Override
     public Optional<GlobalPos> link() {
         return Optional.ofNullable(this.link);
     }
@@ -106,60 +99,53 @@ public final class AsgardObeliskBlockEntity extends BlockEntity {
 
     /** @return its owner, if it has one */
     public Optional<UUID> owner() {
-        return Optional.ofNullable(this.owner);
+        return this.access.owner();
     }
 
     /** @return its owner's name when they placed it */
     public String ownerName() {
-        return this.ownerName;
+        return this.access.ownerName();
     }
 
     public void setOwner(final UUID owner, final String name) {
-        this.owner = owner;
-        this.ownerName = name;
+        this.access.setOwner(owner, name);
         this.setChanged();
     }
 
     /** @return whether anyone may use it, save those listed as not allowed */
     public boolean everyone() {
-        return this.everyone;
+        return this.access.everyone();
     }
 
     /** @return the players on its list */
     public List<ObeliskAccess> access() {
-        return List.copyOf(this.access.values());
+        return this.access.entries();
     }
 
-    void setAccess(final boolean everyone, final List<ObeliskAccess> access) {
-        this.everyone = everyone;
-        this.access.clear();
-        access.forEach(entry -> this.access.put(entry.player(), entry));
+    @Override
+    public TransportAccess transportAccess() {
+        return this.access;
+    }
+
+    @Override
+    public void setAccess(final boolean everyone, final List<ObeliskAccess> access) {
+        this.access.set(everyone, access);
         this.setChanged();
     }
 
     /** @return whether a player may beam with it: its owner, an operator, or anyone the list or the default lets */
     public boolean mayUse(final Player player) {
-        if (this.isOwner(player) || SGGateAccess.isOperator(player)) {
-            return true;
-        }
-        final ObeliskAccess entry = this.access.get(player.getUUID());
-        return this.everyone ? entry == null || entry.use() : entry != null && entry.use();
+        return this.access.mayUse(player);
     }
 
-    /**
-     * @return whether a player may link it and change who may use it: its owner, an operator, or one listed as its
-     *     admin. One with no owner only operators may, or anyone could take it over
-     */
-    public boolean mayConfigure(final Player player) {
-        if (this.isOwner(player) || SGGateAccess.isOperator(player)) {
-            return true;
-        }
-        final ObeliskAccess entry = this.access.get(player.getUUID());
-        return entry != null && entry.admin();
+    @Override
+    public void refuseConfigure(final ServerPlayer player) {
+        Obelisks.tell(player, "no_configure", "You aren't allowed to configure this obelisk", true);
     }
 
-    private boolean isOwner(final Player player) {
-        return this.owner != null && this.owner.equals(player.getUUID());
+    @Override
+    public void unlinkBoth() {
+        Obelisks.unlinkPartner(this);
     }
 
     // ---- Beaming ----
@@ -247,12 +233,7 @@ public final class AsgardObeliskBlockEntity extends BlockEntity {
         super.loadAdditional(input);
         this.beamStart = input.getLongOr("beam_start", Long.MIN_VALUE / 2);
         this.link = input.read("link", GlobalPos.CODEC).orElse(null);
-        this.owner = input.read("owner", UUIDUtil.CODEC).orElse(null);
-        this.ownerName = input.getStringOr("owner_name", "");
-        this.everyone = input.getBooleanOr("everyone", true);
-        this.access.clear();
-        input.read("access", ObeliskAccess.CODEC.listOf()).orElse(List.of())
-                .forEach(entry -> this.access.put(entry.player(), entry));
+        this.access.load(input);
     }
 
     @Override
@@ -261,11 +242,6 @@ public final class AsgardObeliskBlockEntity extends BlockEntity {
         if (this.link != null) {
             output.store("link", GlobalPos.CODEC, this.link);
         }
-        if (this.owner != null) {
-            output.store("owner", UUIDUtil.CODEC, this.owner);
-        }
-        output.putString("owner_name", this.ownerName);
-        output.putBoolean("everyone", this.everyone);
-        output.store("access", ObeliskAccess.CODEC.listOf(), List.copyOf(this.access.values()));
+        this.access.save(output);
     }
 }

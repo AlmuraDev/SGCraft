@@ -32,6 +32,7 @@ import com.almuradev.sgcraft.mod.block.SGBlocks;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
 import com.almuradev.sgcraft.mod.tool.ExplorerDialer;
 import com.almuradev.sgcraft.mod.tool.ToolActions;
+import com.almuradev.sgcraft.mod.rings.RingRemoteItem;
 import com.almuradev.sgcraft.mod.zat.ZatItem;
 import com.almuradev.sgcraft.mod.zpm.ZpmItem;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -74,6 +75,9 @@ public final class SGItems {
     public static BlockItem NAQUADAH_GENERATOR_MK1;
     public static BlockItem ASGARD_OBELISK;
     public static BlockItem ASGARD_OBELISK_KNOTWORK;
+    public static BlockItem RING_PLATFORM;
+    public static BlockItem RING_PLATFORM_CEILING;
+    public static BlockItem RING_PANEL;
     public static BlockItem NAQUADAH_GENERATOR_MK2;
     public static Item NAQUADAH;
     public static Item NAQUADAH_INGOT;
@@ -86,6 +90,7 @@ public final class SGItems {
     public static Item CHEVRON_UPGRADE;
     public static Item INVULNERABILITY_UPGRADE;
     public static Item ZAT;
+    public static Item RING_REMOTE;
     public static Item PEGASUS_UPGRADE;
     public static Item UNIVERSE_UPGRADE;
     public static Item TOLLAN_PHASE_SHIFT_DEVICE;
@@ -129,6 +134,9 @@ public final class SGItems {
         SGItems.NAQUADAH_GENERATOR_MK2 = SGItems.registerBlock(sink, SGBlocks.NAQUADAH_GENERATOR_MK2);
         SGItems.ASGARD_OBELISK = SGItems.registerBlock(sink, SGBlocks.ASGARD_OBELISK);
         SGItems.ASGARD_OBELISK_KNOTWORK = SGItems.registerBlock(sink, SGBlocks.ASGARD_OBELISK_KNOTWORK);
+        SGItems.RING_PLATFORM = SGItems.registerBlock(sink, SGBlocks.RING_PLATFORM);
+        SGItems.RING_PLATFORM_CEILING = SGItems.registerBlock(sink, SGBlocks.RING_PLATFORM_CEILING);
+        SGItems.RING_PANEL = SGItems.registerBlock(sink, SGBlocks.RING_PANEL);
         SGItems.NAQUADAH_BLOCK = SGItems.registerBlock(sink, SGBlocks.NAQUADAH_BLOCK);
         SGItems.NAQUADAH = SGItems.register(sink, "naquadah", Item::new, properties -> properties);
         SGItems.NAQUADAH_INGOT = SGItems.register(sink, "naquadah_ingot", Item::new, properties -> properties);
@@ -154,6 +162,8 @@ public final class SGItems {
         SGItems.INVULNERABILITY_UPGRADE = SGItems.register(sink, "invulnerability_upgrade",
                 InvulnerabilityUpgradeItem::new, properties -> properties.rarity(Rarity.EPIC));
         SGItems.ZAT = SGItems.register(sink, "zat", ZatItem::new, properties -> properties.stacksTo(1));
+        SGItems.RING_REMOTE = SGItems.register(sink, "ring_remote", RingRemoteItem::new,
+                properties -> properties.stacksTo(1));
         SGItems.PEGASUS_UPGRADE = SGItems.register(sink, "pegasus_upgrade",
                 properties -> new GateTypeUpgradeItem(properties, GateTypes.PEGASUS), properties -> properties);
         SGItems.UNIVERSE_UPGRADE = SGItems.register(sink, "universe_upgrade",

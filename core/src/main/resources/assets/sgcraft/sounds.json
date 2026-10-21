@@ -159,6 +159,11 @@
       "sgcraft:obelisk_beam"
     ]
   },
+  "ring_transport": {
+    "sounds": [
+      "sgcraft:ring_transport"
+    ]
+  },
   "zat_fire": {
     "sounds": [
       "sgcraft:zat_fire"

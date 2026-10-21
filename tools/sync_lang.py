@@ -21,6 +21,9 @@ PREFIXED = [
     (re.compile(r'SettingsCatalog\.text\(\s*"([^"]+)"\s*,\s*' + TEXT, re.S), 'setting.sgcraft.'),
     (re.compile(r'AddressPlan\.problem\(\s*(?:true|false)\s*,\s*"([^"]+)"\s*,\s*' + TEXT, re.S),
      'message.sgcraft.addresses.'),
+    # The obelisks' and the rings' messages, told to a player
+    (re.compile(r'Obelisks\.tell\(\s*\w+\s*,\s*"([^"]+)"\s*,\s*' + TEXT, re.S), 'message.sgcraft.obelisk.'),
+    (re.compile(r'Rings\.tell\(\s*\w+\s*,\s*"([^"]+)"\s*,\s*' + TEXT, re.S), 'message.sgcraft.rings.'),
 ]
 PART = re.compile(r'"((?:[^"\\]|\\.)*)"')
 

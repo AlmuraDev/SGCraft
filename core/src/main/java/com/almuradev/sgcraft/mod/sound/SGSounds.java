@@ -76,6 +76,8 @@ public final class SGSounds {
     public static final SoundEvent ZAT_FIRE = SGSounds.fixed("zat_fire");
     // An Asgard obelisk's beam
     public static final SoundEvent OBELISK_BEAM = SGSounds.fixed("asgard_beam");
+    // Goa'uld transport rings rising, transporting and going back
+    public static final SoundEvent RING_TRANSPORT = SGSounds.create("ring_transport");
     // A Naquadah Generator humming while it runs
     public static final SoundEvent GENERATOR_HUM = SGSounds.fixed("naquadah_generator_hum");
     // A storm sending a wormhole astray
@@ -95,6 +97,7 @@ public final class SGSounds {
             SGSounds.PEGASUS_DHD_PRESS, SGSounds.PEGASUS_DHD_DIAL, SGSounds.IRIS_OPEN, SGSounds.IRIS_CLOSE,
             SGSounds.IRIS_HIT, SGSounds.SHIELD_UP, SGSounds.SHIELD_DOWN, SGSounds.CITY_SHIELD_UP,
             SGSounds.CITY_SHIELD_DOWN, SGSounds.ORI_DIAL, SGSounds.GENERATOR_HUM, SGSounds.OBELISK_BEAM, SGSounds.ZAT_FIRE,
+            SGSounds.RING_TRANSPORT,
             SGSounds.MALFUNCTION,
             SGSounds.COMPUTER_ALARM,
             SGSounds.COMPUTER_KEY, SGSounds.COMPUTER_KEY_BIG,

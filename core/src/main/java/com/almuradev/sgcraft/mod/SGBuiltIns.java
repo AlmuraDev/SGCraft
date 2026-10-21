@@ -50,6 +50,7 @@ import com.almuradev.sgcraft.mod.power.BatteryChargerMenu;
 import com.almuradev.sgcraft.mod.power.PowerUnitMenu;
 import com.almuradev.sgcraft.mod.power.PowerUnitProvider;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
+import com.almuradev.sgcraft.mod.rings.RingPlatformMenu;
 import com.almuradev.sgcraft.mod.shield.CityShieldMenu;
 import com.almuradev.sgcraft.mod.zpm.ZpmMenu;
 import com.almuradev.sgcraft.mod.zpm.ZpmSources;
@@ -136,6 +137,8 @@ public final class SGBuiltIns {
         NaquadahGeneratorMenu.TYPE = Platform.get().menuType(NaquadahGeneratorMenu::new);
         sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("naquadah_generator")),
                 NaquadahGeneratorMenu.TYPE);
+        RingPlatformMenu.TYPE = Platform.get().menuType(RingPlatformMenu::new);
+        sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("ring_platform")), RingPlatformMenu.TYPE);
         BatteryChargerMenu.TYPE = Platform.get().menuType(BatteryChargerMenu::new);
         sink.register(ResourceKey.create(Registries.MENU, SGCraft.id("battery_charger")), BatteryChargerMenu.TYPE);
         MalpMenu.TYPE = Platform.get().menuType(MalpMenu::new);

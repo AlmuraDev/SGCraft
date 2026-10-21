@@ -1,0 +1,78 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "sgcraft:block/ring_panel",
+    "face": "sgcraft:block/ring_panel",
+    "edge": "sgcraft:block/ring_platform_side"
+  },
+  "elements": [
+    {
+      "from": [
+        3,
+        2,
+        15
+      ],
+      "to": [
+        13,
+        14,
+        16
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            3,
+            2,
+            13,
+            14
+          ],
+          "texture": "#face"
+        },
+        "south": {
+          "uv": [
+            3,
+            2,
+            13,
+            14
+          ],
+          "texture": "#edge"
+        },
+        "east": {
+          "uv": [
+            15,
+            2,
+            16,
+            14
+          ],
+          "texture": "#edge"
+        },
+        "west": {
+          "uv": [
+            0,
+            2,
+            1,
+            14
+          ],
+          "texture": "#edge"
+        },
+        "up": {
+          "uv": [
+            3,
+            15,
+            13,
+            16
+          ],
+          "texture": "#edge"
+        },
+        "down": {
+          "uv": [
+            3,
+            0,
+            13,
+            1
+          ],
+          "texture": "#edge"
+        }
+      }
+    }
+  ]
+}

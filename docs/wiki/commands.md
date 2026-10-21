@@ -182,6 +182,20 @@ Every command here needs level 2.
 
 A position with no generator says "There is no city shield generator there". `raise` without the energy says "There isn't enough energy around the generator to raise a shield that size". A gate's shield is worked with the [iris commands](#iris). See [City Shield Generator](blocks/city-shield-generator.md) and [Settings](settings.md#shields).
 
+## Transport rings
+
+Every command here needs level 2. A position is a [ring platform](blocks/transport-rings.md)'s, in your world.
+
+| Command | What it does |
+| --- | --- |
+| `/sgcraft rings <pos>` | The platform there: what it is linked to, its GE, its naquadah and how many transports it has left |
+| `/sgcraft rings <pos> link <other>` | Link two platforms, each to the other, unlinking their old partners, whatever the distance limit |
+| `/sgcraft rings <pos> unlink` | Unlink a platform, and its partner from it |
+| `/sgcraft rings <pos> start` | Start its rings and its partner's, paid for as a panel would |
+| `/sgcraft rings <pos> energy <ge>` | Set the GE a platform holds, kept within its capacity |
+
+A position with no platform says "There is no ring platform there". `start` without the energy says "That ring platform doesn't have the energy, with its naquadah, to send". See [Settings](settings.md#transport-rings).
+
 ## ZPMs
 
 Every command here needs level 2.

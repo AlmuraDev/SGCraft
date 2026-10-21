@@ -32,10 +32,11 @@ import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
- * An Asgard obelisk's screen, opened with the configurator: where it is linked to, its owner, and who may use and
- * configure it. Only those who may configure it change anything.
+ * The screen of an Asgard obelisk or a ring platform, opened with the configurator: where it is linked to, its owner,
+ * who may use and configure it, and a ring platform's power. Only those who may configure it change anything.
  */
 public final class ObeliskActions {
 
@@ -47,31 +48,31 @@ public final class ObeliskActions {
     private ObeliskActions() {
     }
 
-    /** A player used a configurator on an obelisk: its screen opens, if they may configure it. */
-    static void open(final ServerPlayer player, final AsgardObeliskBlockEntity obelisk) {
-        if (!obelisk.mayConfigure(player)) {
-            Obelisks.tell(player, "no_configure", "You aren't allowed to configure this obelisk", true);
+    /** A player used a configurator on an obelisk or a ring platform: its screen opens, if they may configure it. */
+    public static void open(final ServerPlayer player, final ConfigurableTransport transport) {
+        if (!transport.mayConfigure(player)) {
+            transport.refuseConfigure(player);
             return;
         }
-        ObeliskActions.send(player, obelisk, true, "");
+        ObeliskActions.send(player, transport, true, "");
     }
 
     /** Changes made on an obelisk's screen. */
     public static void apply(final ServerPlayer player, final ObeliskPayloads.Apply apply) {
         // Reach first: looking up a far position would load or generate its chunk
         if (!apply.obelisk().closerToCenterThan(player.position(), ObeliskActions.USE_RANGE)
-                || !(player.level().getBlockEntity(apply.obelisk()) instanceof final AsgardObeliskBlockEntity obelisk)
+                || !(player.level().getBlockEntity(apply.obelisk()) instanceof final ConfigurableTransport obelisk)
                 || !player.getMainHandItem().is(SGItems.CONFIGURATOR) && !player.getOffhandItem().is(
                         SGItems.CONFIGURATOR)) {
             return;
         }
         if (!obelisk.mayConfigure(player)) {
-            Obelisks.tell(player, "no_configure", "You aren't allowed to configure this obelisk", true);
+            obelisk.refuseConfigure(player);
             return;
         }
         String message = "Changes saved";
         if (apply.unlink()) {
-            Obelisks.unlinkPartner(obelisk);
+            obelisk.unlinkBoth();
         }
         final List<ObeliskAccess> entries = new ArrayList<>();
         for (final ObeliskPayloads.Entry entry : apply.entries()) {
@@ -86,7 +87,7 @@ public final class ObeliskActions {
             if (added == null) {
                 message = "No player called " + name + " is online";
             } else if (entries.size() >= ObeliskActions.MAX_ENTRIES) {
-                message = "An obelisk lists at most " + ObeliskActions.MAX_ENTRIES + " players";
+                message = "At most " + ObeliskActions.MAX_ENTRIES + " players can be listed";
             } else if (entries.stream().noneMatch(entry -> entry.player().equals(added.getUUID()))) {
                 entries.add(new ObeliskAccess(added.getUUID(), added.getName().getString(), true, false));
             }
@@ -95,13 +96,16 @@ public final class ObeliskActions {
         ObeliskActions.send(player, obelisk, false, message);
     }
 
-    private static void send(final ServerPlayer player, final AsgardObeliskBlockEntity obelisk, final boolean open,
+    private static void send(final ServerPlayer player, final ConfigurableTransport transport, final boolean open,
             final String message) {
-        final String link = obelisk.link().map(ObeliskActions::describe).orElse("");
-        final List<ObeliskPayloads.Entry> entries = obelisk.access().stream().map(entry -> new ObeliskPayloads.Entry(
+        final String link = transport.link().map(ObeliskActions::describe).orElse("");
+        final TransportAccess access = transport.transportAccess();
+        final List<ObeliskPayloads.Entry> entries = access.entries().stream().map(entry -> new ObeliskPayloads.Entry(
                 entry.player(), entry.name(), entry.use(), entry.admin())).toList();
-        SGNetwork.send(player, new ObeliskPayloads.State(open, obelisk.getBlockPos(), link, obelisk.ownerName(),
-                obelisk.everyone(), entries, message));
+        final ObeliskPayloads.Power power = transport.powered() ? new ObeliskPayloads.Power(transport.energy(),
+                transport.energyCapacity(), transport.naquadah(), transport.usesLeft()) : null;
+        SGNetwork.send(player, new ObeliskPayloads.State(open, transport.getBlockPos(), link, access.ownerName(),
+                access.everyone(), entries, message, Optional.ofNullable(power)));
     }
 
     private static String describe(final GlobalPos place) {

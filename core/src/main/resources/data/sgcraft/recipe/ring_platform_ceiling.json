@@ -1,0 +1,10 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "redstone",
+  "ingredients": [
+    "sgcraft:ring_platform"
+  ],
+  "result": {
+    "id": "sgcraft:ring_platform_ceiling"
+  }
+}

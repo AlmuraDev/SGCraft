@@ -125,6 +125,14 @@ models), their textures (`textures/block/asgard_obelisk_*.png`, the 1.12 mod's `
 `asgard_celtic_*`), the beam's sound (`sounds/obelisk_beam.ogg`, the 1.12 mod's `obelisk_sound.ogg`), and the Zat's
 texture (`textures/item/zat.png`) and sound (`sounds/zat_fire.ogg`).
 
+## Transport rings
+
+The Goa'uld transport rings follow the 1.12 mod's version 2.2.0, as AlmuraDev added them there, and so does the way
+their rings rise, glow and go back. From it come their textures (`textures/block/ring_panel.png`,
+`ring_platform_side.png`, `ring_platform_top.png`, `ring_side.png` and `ring_top.png`, and
+`textures/item/ring_remote.png`), the panel's model (`models/block/ring_panel.json`) and their sound
+(`sounds/ring_transport.ogg`).
+
 ## ZPMs
 
 The ZPM, the ZPM console, the ZPM interface cart and the ZPM hub come from the 1.12 mod. The ZPM's texture

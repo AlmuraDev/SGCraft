@@ -42,7 +42,7 @@ A short `sgcraft-server.json` that changes a few settings and leaves the rest at
 
 ## Server settings
 
-`config/sgcraft-server.json` keeps its settings in twelve sections: `energy`, `addresses`, `gates`, `tools`, `worldgen`, `remote_view`, `malp`, `shields`, `zpm`, `computers`, `generators` and `zat`. A section left out takes all its defaults. In a section, a setting left out takes its default. This page names a setting by its path, such as `energy.multipliers.inter_world`. [The whole file](#the-whole-file) shows every setting at its default.
+`config/sgcraft-server.json` keeps its settings in thirteen sections: `energy`, `addresses`, `gates`, `tools`, `worldgen`, `remote_view`, `malp`, `shields`, `zpm`, `computers`, `generators`, `zat` and `rings`. A section left out takes all its defaults. In a section, a setting left out takes its default. This page names a setting by its path, such as `energy.multipliers.inter_world`. [The whole file](#the-whole-file) shows every setting at its default.
 
 ### Energy
 
@@ -315,6 +315,17 @@ A ZPM holds GE, which gates and city shields draw on as on any other source. The
 | `stun_damage` | `4` | The harm a stunning shot does (0 to 1000) |
 | `second_shot_kills` | `true` | Whether a second shot while the target is stunned kills it |
 
+### Transport rings
+
+`rings` sets the [transport rings](blocks/transport-rings.md), as 2.2.0's `rings` section, in GE where 2.2.0 used FE. A piece of naquadah burned in a platform gives `energy.per_naquadah`.
+
+| Field | Default | Meaning |
+| --- | --- | --- |
+| `energy_per_use` | `1000` | GE every transport costs the platform that starts it |
+| `energy_per_block` | `1` | GE it costs on top of that for each block between the two platforms |
+| `capacity` | `50000` | The most GE a platform holds from cables |
+| `max_distance` | `2000` | How far apart two linked platforms may be, in blocks; 0 for no limit |
+
 ### Dialing computers
 
 `computers` sets the [dialing computer](blocks/dialing-computer.md), and the power of dialing computers and [MALP consoles](blocks/malp-console.md#power).
@@ -501,6 +512,12 @@ Every server setting at its default. You never need to write all of this. Settin
     "stun_ticks": 200,
     "stun_damage": 4,
     "second_shot_kills": true
+  },
+  "rings": {
+    "energy_per_use": 1000,
+    "energy_per_block": 1,
+    "capacity": 50000,
+    "max_distance": 2000
   }
 }
 ```

@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "redstone",
+  "key": {
+    "G": "minecraft:gold_ingot",
+    "R": "minecraft:redstone",
+    "N": "sgcraft:naquadah_ingot"
+  },
+  "pattern": [
+    "GRG",
+    "GNG"
+  ],
+  "result": {
+    "id": "sgcraft:ring_panel"
+  }
+}

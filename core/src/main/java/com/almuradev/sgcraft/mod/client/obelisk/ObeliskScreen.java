@@ -34,19 +34,23 @@ import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
- * An Asgard obelisk's screen, opened with the configurator, as 2.2.0's: the obelisk it is linked to, with a button
- * to unlink it, its owner, whether everyone may use it, and the players on its list, each allowed or not and each
- * able to configure it or not. Players are added by name while they are online.
+ * The screen of an Asgard obelisk or a ring platform, opened with the configurator, as 2.2.0's: what it is linked to,
+ * with a button to unlink it, its owner, a ring platform's power, whether everyone may use it, and the players on its
+ * list, each allowed or not and each able to configure it or not. Players are added by name while they are online.
  */
 public final class ObeliskScreen extends Screen {
 
     private static final int WIDTH = 300;
     private static final int ROWS = 5;
     private static final int ROW = 22;
+    // How much lower everything under the owner sits when there is a line of power to show
+    private static final int POWER_LINE = 12;
 
     private ObeliskPayloads.State state;
     private boolean everyone;
@@ -55,7 +59,9 @@ public final class ObeliskScreen extends Screen {
     private EditBox name;
 
     public ObeliskScreen(final ObeliskPayloads.State state) {
-        super(Component.translatableWithFallback("screen.sgcraft.obelisk", "Asgard Obelisk"));
+        super(state.power().isPresent()
+                ? Component.translatableWithFallback("screen.sgcraft.rings", "Transport Rings")
+                : Component.translatableWithFallback("screen.sgcraft.obelisk", "Asgard Obelisk"));
         this.update(state);
     }
 
@@ -76,7 +82,7 @@ public final class ObeliskScreen extends Screen {
         this.addRenderableWidget(Button.builder(Component.translatableWithFallback("screen.sgcraft.obelisk.unlink",
                 "Unlink"), b -> this.send(true, "")).bounds(left + ObeliskScreen.WIDTH - 70, y, 70, 20).build())
                 .active = !this.state.link().isEmpty();
-        y += 26;
+        y += 26 + this.powerLine();
         this.addRenderableWidget(Button.builder(this.everyoneLabel(), b -> {
             this.everyone = !this.everyone;
             b.setMessage(this.everyoneLabel());
@@ -125,6 +131,10 @@ public final class ObeliskScreen extends Screen {
                 b -> this.onClose()).bounds(left + 154, bottom, 146, 20).build());
     }
 
+    private int powerLine() {
+        return this.state.power().isPresent() ? ObeliskScreen.POWER_LINE : 0;
+    }
+
     private Component everyoneLabel() {
         return this.everyone
                 ? Component.translatableWithFallback("screen.sgcraft.obelisk.everyone",
@@ -158,7 +168,14 @@ public final class ObeliskScreen extends Screen {
                 ? Component.translatableWithFallback("screen.sgcraft.obelisk.no_owner", "Owner: none")
                 : Component.translatableWithFallback("screen.sgcraft.obelisk.owner", "Owner: %s", this.state.owner()),
                 left, y + 11, 0xFFAAAAAA);
-        y += 52;
+        this.state.power().ifPresent(power -> {
+            final NumberFormat numbers = NumberFormat.getIntegerInstance(Locale.ROOT);
+            graphics.text(this.font, Component.translatableWithFallback("screen.sgcraft.rings.power",
+                    "Energy: %s/%s GE, naquadah: %s, transports left: %s", numbers.format(power.energy()),
+                    numbers.format(power.capacity()), power.naquadah(), numbers.format(power.uses())), left,
+                    this.height / 2 - 90 + 21, 0xFFAAAAAA);
+        });
+        y += 52 + this.powerLine();
         final int rows = Math.min(ObeliskScreen.ROWS, Math.max(0, this.entries.size() - this.scroll));
         for (int row = 0; row < rows; row++) {
             graphics.text(this.font, this.entries.get(this.scroll + row).name(), left, y + row * ObeliskScreen.ROW + 6,

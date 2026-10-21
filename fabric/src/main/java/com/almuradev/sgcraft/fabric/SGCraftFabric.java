@@ -128,8 +128,11 @@ public final class SGCraftFabric implements ModInitializer {
         SGBlockEntityTypes.register((key, type) -> Registry.register(BuiltInRegistries.BLOCK_ENTITY_TYPE, key, type));
         SGEntityTypes.register((key, type) -> Registry.register(BuiltInRegistries.ENTITY_TYPE, key, type));
         // Power units take FE from Team Reborn Energy's cables
-        EnergyStorage.SIDED.registerForBlockEntity((unit, side) -> unit.handler(PowerUnitEnergyFabric::new),
+        EnergyStorage.SIDED.registerForBlockEntity((unit, side) -> unit.handler(FeSinkEnergyFabric::new),
                 SGBlockEntityTypes.POWER_UNIT);
+        // Ring platforms take FE from cables too
+        EnergyStorage.SIDED.registerForBlockEntity((platform, side) -> platform.handler(FeSinkEnergyFabric::new),
+                SGBlockEntityTypes.RING_PLATFORM);
         // Battery chargers take FE from cables too, and batteries are energy items any charger fills
         EnergyStorage.SIDED.registerForBlockEntity((charger, side) -> charger.handler(BatteryChargerEnergyFabric::new),
                 SGBlockEntityTypes.BATTERY_CHARGER);

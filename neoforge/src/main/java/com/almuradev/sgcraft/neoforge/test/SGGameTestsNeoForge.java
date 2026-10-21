@@ -294,6 +294,7 @@ public final class SGGameTestsNeoForge {
         ZpmGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
         GeneratorGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
         ObeliskGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
+        RingGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
         ComputerGameTestsNeoForge.register(SGGameTestsNeoForge.TESTS);
     }
 

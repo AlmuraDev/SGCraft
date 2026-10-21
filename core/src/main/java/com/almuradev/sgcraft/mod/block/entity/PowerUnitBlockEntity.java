@@ -29,6 +29,7 @@ import com.almuradev.sgcraft.api.energy.EnergyBridge;
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.energy.FeRate;
+import com.almuradev.sgcraft.mod.energy.FeSink;
 import com.almuradev.sgcraft.mod.energy.GeStore;
 import com.almuradev.sgcraft.mod.item.BatteryItem;
 import com.almuradev.sgcraft.mod.item.SGDataComponents;
@@ -62,7 +63,7 @@ import java.util.function.Function;
  * {@link #FORGE_ENERGY} bridge's rate; gates draw its GE through
  * {@link com.almuradev.sgcraft.mod.power.PowerUnitProvider}. It keeps its charge when broken, and drops its battery.
  */
-public final class PowerUnitBlockEntity extends BlockEntity implements GeStore {
+public final class PowerUnitBlockEntity extends BlockEntity implements GeStore, FeSink {
 
     /**
      * The bridge between FE and gate energy, whose rate is how much gate energy one FE buys coming in: one over the
@@ -97,6 +98,7 @@ public final class PowerUnitBlockEntity extends BlockEntity implements GeStore {
     }
 
     /** @return the gate energy the unit holds */
+    @Override
     public double stored() {
         return this.energy;
     }
@@ -110,6 +112,7 @@ public final class PowerUnitBlockEntity extends BlockEntity implements GeStore {
      * Sets the gate energy the unit holds, kept between none and its capacity; for loaders putting back a charge when
      * a transaction is undone, and for commands.
      */
+    @Override
     public void setStored(final double energy) {
         final double kept = Math.max(0, Math.min(energy, PowerUnitBlockEntity.capacity()));
         if (kept != this.energy) {
@@ -133,12 +136,23 @@ public final class PowerUnitBlockEntity extends BlockEntity implements GeStore {
      *
      * @return how much FE it took, or would take
      */
+    @Override
     public long insertFe(final long fe, final boolean simulate) {
         final long taken = Math.max(0, Math.min(fe, FeRate.toFeIn(PowerUnitBlockEntity.capacity() - this.energy)));
         if (!simulate && taken > 0) {
             this.setStored(this.energy + FeRate.toGeIn(taken));
         }
         return taken;
+    }
+
+    @Override
+    public long feAmount() {
+        return this.feStored();
+    }
+
+    @Override
+    public long feLimit() {
+        return PowerUnitBlockEntity.feCapacity();
     }
 
     /** @return how much gate energy the unit could give now, in whole units */

@@ -172,6 +172,7 @@ public final class SGCommands {
                 .then(SGGateCommands.book())
                 .then(SGWorldgenCommands.worldgen())
                 .then(SGPowerCommands.power())
+                .then(SGRingCommands.rings())
                 .then(SGViewCommands.view())
                 .then(SGCostCommands.costs())
                 .then(SGSettingsCommands.settings())

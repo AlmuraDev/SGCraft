@@ -31,6 +31,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 /** What Asgard obelisks send between the server and clients. */
@@ -40,23 +41,26 @@ public final class ObeliskPayloads {
     }
 
     /**
-     * A beam starting for the player who gets it, or called off: the beam's sound, and their screen going white.
+     * A beam starting for the player who gets it, or called off: the beam's sound, and their screen going white. Ring
+     * platforms send it too, without the sound, as their rings carry their own.
      *
      * @param start whether it starts, rather than being called off
      * @param ticks how long until the beam comes, in ticks
+     * @param sound whether the player hears the obelisk's beam
      */
-    public record Beam(boolean start, int ticks) implements SGPacket {
+    public record Beam(boolean start, int ticks, boolean sound) implements SGPacket {
 
         public static final Type<Beam> TYPE = new Type<>(SGCraft.id("obelisk_beam"));
 
         public Beam(final FriendlyByteBuf buf) {
-            this(buf.readBoolean(), buf.readVarInt());
+            this(buf.readBoolean(), buf.readVarInt(), buf.readBoolean());
         }
 
         @Override
         public void write(final FriendlyByteBuf buf) {
             buf.writeBoolean(this.start);
             buf.writeVarInt(this.ticks);
+            buf.writeBoolean(this.sound);
         }
 
         @Override
@@ -88,7 +92,29 @@ public final class ObeliskPayloads {
     }
 
     /**
-     * An obelisk's settings, for its screen.
+     * A ring platform's power, as its screen shows it.
+     *
+     * @param energy the gate energy it holds
+     * @param capacity the most it holds
+     * @param naquadah how many pieces of naquadah it holds to burn
+     * @param uses how many times it could send to its partner on all that
+     */
+    public record Power(long energy, long capacity, int naquadah, long uses) {
+
+        Power(final FriendlyByteBuf buf) {
+            this(buf.readVarLong(), buf.readVarLong(), buf.readVarInt(), buf.readVarLong());
+        }
+
+        void write(final FriendlyByteBuf buf) {
+            buf.writeVarLong(this.energy);
+            buf.writeVarLong(this.capacity);
+            buf.writeVarInt(this.naquadah);
+            buf.writeVarLong(this.uses);
+        }
+    }
+
+    /**
+     * An obelisk's or a ring platform's settings, for its screen.
      *
      * @param open whether to open the screen, rather than only update it
      * @param obelisk where its bottom half is
@@ -97,15 +123,17 @@ public final class ObeliskPayloads {
      * @param everyone whether anyone may use it, save those listed as not allowed
      * @param entries the players on its list
      * @param message something to tell the player, or empty
+     * @param power a ring platform's power, or empty for an obelisk
      */
     public record State(boolean open, BlockPos obelisk, String link, String owner, boolean everyone,
-            List<Entry> entries, String message) implements SGPacket {
+            List<Entry> entries, String message, Optional<Power> power) implements SGPacket {
 
         public static final Type<State> TYPE = new Type<>(SGCraft.id("obelisk_state"));
 
         public State(final FriendlyByteBuf buf) {
             this(buf.readBoolean(), buf.readBlockPos(), buf.readUtf(), buf.readUtf(), buf.readBoolean(),
-                    SGPacket.readList(buf, Entry::new), buf.readUtf());
+                    SGPacket.readList(buf, Entry::new), buf.readUtf(),
+                    buf.readBoolean() ? Optional.of(new Power(buf)) : Optional.empty());
         }
 
         @Override
@@ -117,6 +145,8 @@ public final class ObeliskPayloads {
             buf.writeBoolean(this.everyone);
             SGPacket.writeList(buf, this.entries, (out, entry) -> entry.write(out));
             buf.writeUtf(this.message);
+            buf.writeBoolean(this.power.isPresent());
+            this.power.ifPresent(power -> power.write(buf));
         }
 
         @Override

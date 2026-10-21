@@ -168,14 +168,14 @@ public final class Obelisks {
         from.startBeam(player);
         // The player hears the beam on their own, carried with them, as their screen goes white; others hear it from
         // the obelisk
-        SGNetwork.send(player, new ObeliskPayloads.Beam(true, Obelisks.BEAM_TICKS));
+        SGNetwork.send(player, new ObeliskPayloads.Beam(true, Obelisks.BEAM_TICKS, true));
         player.level().playSound(player, at.getX() + 0.5, at.getY() + 1.5, at.getZ() + 0.5, SGSounds.OBELISK_BEAM,
                 SoundSource.BLOCKS, 1.0F, 1.0F);
     }
 
     // The player moved off their spot
     static void cancel(final ServerPlayer player) {
-        SGNetwork.send(player, new ObeliskPayloads.Beam(false, 0));
+        SGNetwork.send(player, new ObeliskPayloads.Beam(false, 0, false));
         Obelisks.tell(player, "beam_canceled", "You moved, so the beam was called off", true);
     }
 
@@ -205,7 +205,7 @@ public final class Obelisks {
         level.sendParticles(ParticleTypes.FIREWORK, at.x, at.y + 1, at.z, 25, 0.25, 0.8, 0.25, 0.02);
     }
 
-    static void tell(final ServerPlayer player, final String key, final String fallback, final boolean bad) {
+    public static void tell(final ServerPlayer player, final String key, final String fallback, final boolean bad) {
         final Component text = Component.translatableWithFallback("message.sgcraft.obelisk." + key, fallback);
         player.sendOverlayMessage(bad ? text.copy().withStyle(ChatFormatting.RED) : text);
     }

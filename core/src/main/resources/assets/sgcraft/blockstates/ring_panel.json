@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "sgcraft:block/ring_panel"
+    },
+    "facing=east": {
+      "model": "sgcraft:block/ring_panel",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "sgcraft:block/ring_panel",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "sgcraft:block/ring_panel",
+      "y": 270
+    }
+  }
+}
