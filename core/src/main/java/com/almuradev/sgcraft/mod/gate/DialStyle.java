@@ -122,7 +122,7 @@ public enum DialStyle {
     public Move move(final float angle, final Symbol symbol, final int index, final int[] positions,
             final double speed) {
         if (this == DialStyle.ORI) {
-            return new Move(angle, angle, OriGate.symbolTicks(positions.length));
+            return new Move(angle, angle, OriGate.symbolTicks(positions.length, index, OriGate.SYNC_TICKS));
         }
         if (this == DialStyle.PEGASUS) {
             final int from = index == 0 ? ChevronOrder.TOP : positions[index - 1];

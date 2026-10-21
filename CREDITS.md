@@ -101,8 +101,11 @@ The gate shield, the shield console, the city shield generator, the Ori supergat
 generator's textures (`textures/block/shield_console_*.png` and `city_shield_generator_*.png`), the explorer dialer's
 texture (`textures/item/edd.png`), the Ori supergate's metal (`textures/gate/ori/ring.png`, the 1.12 mod's
 `tileentity/ori/stargate.png`) and its spawner's texture (`textures/block/ori_supergate_spawner.png`), and the sounds
-of the shield rising and falling (`sounds/shield_activation.ogg` and `shield_deactivation.ogg`) and of the Ori
-supergate's ring linking (`sounds/ori/link1.ogg` to `link4.ogg`). The recipes, the timings, the shapes and colors of
+of the shield rising and falling (`sounds/shield_activation_atlantis.ogg` and `shield_deactivation.ogg`), of the
+city shield rising and falling (`sounds/city_shield_up.ogg` and `city_shield_down.ogg`, the 1.12 mod's
+`city_shield_on.ogg` and `city_shield_off.ogg`), of the Ori supergate dialing (`sounds/ori/dial.ogg`, the 1.12 mod's
+`supergate.ogg`) and of a Pegasus DHD's symbol pressed (`sounds/pegasus/dhd_button.ogg`, the 1.12 mod's
+`sga_dhd_button.ogg`). The recipes, the timings, the shapes and colors of
 the shields and of the Ori supergate's ring, and the city shield's energy use follow the 1.12 mod's. The city shield
 runs on ZPMs and power units here, where the 1.12 mod's ran on ZPMs alone.
 

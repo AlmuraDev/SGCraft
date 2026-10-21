@@ -101,6 +101,11 @@
   },
   "pegasus.dhd_press": {
     "sounds": [
+      "sgcraft:pegasus/dhd_button"
+    ]
+  },
+  "pegasus.dhd_dial": {
+    "sounds": [
       "sgcraft:pegasus/dhd_usual1"
     ]
   },
@@ -121,7 +126,7 @@
   },
   "shield_up": {
     "sounds": [
-      "sgcraft:shield_activation"
+      "sgcraft:shield_activation_atlantis"
     ]
   },
   "shield_down": {
@@ -129,12 +134,19 @@
       "sgcraft:shield_deactivation"
     ]
   },
-  "ori_link": {
+  "city_shield_up": {
     "sounds": [
-      "sgcraft:ori/link1",
-      "sgcraft:ori/link2",
-      "sgcraft:ori/link3",
-      "sgcraft:ori/link4"
+      "sgcraft:city_shield_up"
+    ]
+  },
+  "city_shield_down": {
+    "sounds": [
+      "sgcraft:city_shield_down"
+    ]
+  },
+  "ori_dial": {
+    "sounds": [
+      "sgcraft:ori/dial"
     ]
   },
   "malfunction": {

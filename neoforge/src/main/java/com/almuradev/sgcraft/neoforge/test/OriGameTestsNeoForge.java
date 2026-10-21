@@ -37,6 +37,7 @@ import com.almuradev.sgcraft.api.gate.IrisTypes;
 import com.almuradev.sgcraft.api.gate.PlacementMode;
 import com.almuradev.sgcraft.api.gate.PlacementResult;
 import com.almuradev.sgcraft.api.gate.Stargate;
+import com.almuradev.sgcraft.mod.gate.OriGate;
 import com.almuradev.sgcraft.mod.tool.ExplorerData;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.FrontAndTop;
@@ -62,6 +63,7 @@ final class OriGameTestsNeoForge {
     static void register(final Map<String, BiConsumer<GameTestHelper, BlockPos>> tests) {
         tests.put("ori_only_ori", OriGameTestsNeoForge::onlyOri);
         tests.put("ori_dials_ori", OriGameTestsNeoForge::dialsOri);
+        tests.put("ori_dial_reaches_whoosh_on_time", OriGameTestsNeoForge::dialTiming);
         tests.put("ori_takes_no_upgrades", OriGameTestsNeoForge::noUpgrades);
         tests.put("explorer_counts_visits", OriGameTestsNeoForge::explorerVisits);
     }
@@ -96,6 +98,22 @@ final class OriGameTestsNeoForge {
             helper.assertTrue(out.get() == DialResult.INCOMPATIBLE, "The Ori gate's dial ended " + out.get());
             helper.assertTrue(in.get() == DialResult.INCOMPATIBLE, "The Milky Way gate's dial ended " + in.get());
         });
+    }
+
+    // However long the address, and in one world or two, the symbols, the pauses and the waits take the dial from its
+    // first symbol to the whoosh in the time its dialing sound swells at; each phase lasts a tick more than it's given
+    private static void dialTiming(final GameTestHelper helper, final BlockPos origin) {
+        for (final int sync : new int[] {OriGate.SYNC_TICKS, 30}) {
+            for (int symbols = 6; symbols <= 9; symbols++) {
+                int ticks = (symbols - 1) * (OriGate.INTER_DIALING_TICKS + 1) + sync + 1 + OriGate.WHOOSH_TICKS;
+                for (int index = 0; index < symbols; index++) {
+                    ticks += OriGate.symbolTicks(symbols, index, sync) + 1;
+                }
+                helper.assertTrue(ticks == OriGate.DIAL_TICKS, symbols + " symbols waiting " + sync
+                        + " ticks reach the whoosh in " + ticks + " ticks, not " + OriGate.DIAL_TICKS);
+            }
+        }
+        helper.succeed();
     }
 
     // Two Ori supergates connect, their rings linking symbol by symbol, though asked to dial at once

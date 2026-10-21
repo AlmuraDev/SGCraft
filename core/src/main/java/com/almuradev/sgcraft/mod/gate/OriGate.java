@@ -43,16 +43,22 @@ import net.minecraft.resources.ResourceKey;
  */
 public final class OriGate implements GateType {
 
-    /** How long a whole dial takes, at most, before the wormhole forms, in ticks. */
-    public static final int DIAL_TICKS = 400;
+    /**
+     * How long a dial takes from its first symbol to the whoosh of its wormhole forming, in ticks: its dialing sound
+     * plays from the first symbol and swells there, as in 2.2.0.
+     */
+    public static final int DIAL_TICKS = 444;
     /** How long the gate rests between one symbol linking and the next starting, in ticks. */
     public static final int INTER_DIALING_TICKS = 6;
     /** How long the wormhole takes to form once the ring has linked, before its horizon fills: in ticks. */
     public static final int ESTABLISH_TICKS = 5;
     /** How long the horizon takes to fill from the ring inward, before the kawoosh, in ticks. */
     public static final int FILL_TICKS = 30;
-    // The time each symbol's links leave for the rest of the dial, and the least a symbol takes, in ticks
-    private static final int LOCK_TICKS = 25;
+    /** How long into the wormhole forming its whoosh starts, in ticks. */
+    public static final int WHOOSH_TICKS = OriGate.ESTABLISH_TICKS + 5;
+    /** How long the gates wait on each other once every chevron has locked, in the same world, in ticks. */
+    public static final int SYNC_TICKS = 10;
+    // The least a symbol takes, in ticks
     private static final int MIN_SYMBOL_TICKS = 10;
     // How long a segment is round the ring, and the fewest a ring has
     private static final double SEGMENT_PITCH = 1.65;
@@ -94,11 +100,21 @@ public final class OriGate implements GateType {
         return type.identifier().equals(GateTypes.ORI.identifier());
     }
 
-    /** @return how long each symbol of an address of this many symbols takes to link, in ticks */
-    public static int symbolTicks(final int symbols) {
+    /**
+     * @param symbols how many symbols the address has
+     * @param index the symbol's place in the address, from 0
+     * @param syncTicks how long the gates wait on each other once every chevron has locked
+     * @return how long a symbol takes to link, in ticks, so the dial from its first symbol to the whoosh takes
+     *     {@link #DIAL_TICKS} whatever the address; the first takes what doesn't divide evenly. Each phase lasts a
+     *     tick more than the ticks it is given.
+     */
+    public static int symbolTicks(final int symbols, final int index, final int syncTicks) {
         final int length = Math.max(1, symbols);
-        return Math.max(OriGate.MIN_SYMBOL_TICKS,
-                (OriGate.DIAL_TICKS - OriGate.LOCK_TICKS - (length - 1) * OriGate.INTER_DIALING_TICKS) / length);
+        final int budget = OriGate.DIAL_TICKS - (length - 1) * (OriGate.INTER_DIALING_TICKS + 1) - (syncTicks + 1)
+                - OriGate.WHOOSH_TICKS;
+        final int each = budget / length;
+        final int spare = index == 0 ? budget - each * length : 0;
+        return Math.max(OriGate.MIN_SYMBOL_TICKS, each - 1 + spare);
     }
 
     /** @return how many segments the ring of a supergate of this shape has */

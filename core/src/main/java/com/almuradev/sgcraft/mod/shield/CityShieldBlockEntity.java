@@ -332,7 +332,7 @@ public final class CityShieldBlockEntity extends BlockEntity {
         }
         this.active = true;
         this.holdChunks();
-        this.play(SGSounds.SHIELD_UP);
+        this.play(SGSounds.CITY_SHIELD_UP);
         CityShields.raised(this);
         this.changed();
         return true;
@@ -348,7 +348,7 @@ public final class CityShieldBlockEntity extends BlockEntity {
         // walked in since
         this.lastSeen = new HashMap<>();
         this.releaseChunks();
-        this.play(SGSounds.SHIELD_DOWN);
+        this.play(SGSounds.CITY_SHIELD_DOWN);
         CityShields.lowered(this);
         this.changed();
     }

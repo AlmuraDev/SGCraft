@@ -74,7 +74,7 @@ public final class SGConnection implements Connection {
 
     // How long the gates wait on each other once every chevron has locked, how long the kawoosh lasts, and how long
     // the wormhole takes to shut down
-    private static final int SYNC_AWAIT_TICKS = 10;
+    private static final int SYNC_AWAIT_TICKS = OriGate.SYNC_TICKS;
     // How long two Ori supergates in different worlds wait on each other, as the original's
     private static final int ORI_SYNC_AWAIT_TICKS = 30;
     private static final int TRANSIENT_TICKS = 20;
@@ -127,8 +127,6 @@ public final class SGConnection implements Connection {
     private long lockTick;
     private long fillStart;
     private long fillEnd;
-    // How many of an Ori supergate's segments have linked, which sound as each one does
-    private int linked;
 
     SGConnection(final SGStargate dialer, final SGStargate target, final Address address,
             final Optional<Address> homeAddress, final int openTicks, final Cause cause, final Costs costs) {
@@ -220,26 +218,20 @@ public final class SGConnection implements Connection {
         }
     }
 
-    // An Ori supergate's segments sound as each one links, higher and louder as the ring fills
-    private void link() {
-        if (this.style != DialStyle.ORI) {
-            return;
-        }
-        final int segments = OriGate.segments(this.dialer.shape());
-        final int now = (int) Math.floor(OriGate.reach(this.dialer.view(), this.now(), segments));
-        if (now > this.linked) {
-            final float full = (float) now / segments;
-            this.dialer.play(SGSounds.ORI_LINK, 0.35F + 0.65F * full, 0.75F + 0.5F * full);
-            if (OriGate.is(this.target.typeKey())) {
-                this.target.play(SGSounds.ORI_LINK, 0.35F + 0.65F * full, 0.75F + 0.5F * full);
-            }
-        }
-        this.linked = now;
-    }
-
     private void startSymbol() {
         final Symbol next = this.address.get(this.symbol);
         this.move = this.style.move(this.ringAngle, next, this.symbol, this.positions, this.speed);
+        if (this.style == DialStyle.ORI) {
+            // Timed for the wait at the end of this dial, so its sound swells at the whoosh
+            this.move = new DialStyle.Move(this.move.from(), this.move.to(),
+                    OriGate.symbolTicks(this.address.size(), this.symbol, this.syncTicks()));
+            if (this.symbol == 0) {
+                this.dialer.play(SGSounds.ORI_DIAL);
+                if (OriGate.is(this.target.typeKey())) {
+                    this.target.play(SGSounds.ORI_DIAL);
+                }
+            }
+        }
         this.ringAngle = this.move.to();
         this.enter(DialPhase.DIALING, this.move.ticks());
     }
@@ -300,7 +292,6 @@ public final class SGConnection implements Connection {
             this.dialerTravel.kawoosh();
             this.targetTravel.kawoosh();
         }
-        this.link();
         if (this.phase == DialPhase.ESTABLISHING && this.elapsed == this.openSoundTicks()) {
             this.dialer.play(SGSounds.open(this.style));
             this.target.play(SGSounds.open(this.style));
@@ -361,7 +352,7 @@ public final class SGConnection implements Connection {
     private int openSoundTicks() {
         return switch (this.style) {
             case PEGASUS -> 0;
-            case ORI -> OriGate.ESTABLISH_TICKS + SGConnection.MILKY_WAY_OPEN_SOUND_TICKS;
+            case ORI -> OriGate.WHOOSH_TICKS;
             default -> SGConnection.MILKY_WAY_OPEN_SOUND_TICKS;
         };
     }

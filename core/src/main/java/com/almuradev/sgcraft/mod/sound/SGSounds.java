@@ -60,14 +60,18 @@ public final class SGSounds {
     public static final SoundEvent MILKY_WAY_DHD_PRESS = SGSounds.fixed("milkyway.dhd_press");
     public static final SoundEvent MILKY_WAY_DHD_DIAL = SGSounds.fixed("milkyway.dhd_dial");
     public static final SoundEvent PEGASUS_DHD_PRESS = SGSounds.fixed("pegasus.dhd_press");
+    public static final SoundEvent PEGASUS_DHD_DIAL = SGSounds.fixed("pegasus.dhd_dial");
     public static final SoundEvent IRIS_OPEN = SGSounds.create("iris_open");
     public static final SoundEvent IRIS_CLOSE = SGSounds.create("iris_close");
     public static final SoundEvent IRIS_HIT = SGSounds.create("iris_hit");
-    // A shield rising and falling, in place of the iris's sounds; the city shield's too
+    // A gate's shield rising and falling, in place of the iris's sounds
     public static final SoundEvent SHIELD_UP = SGSounds.create("shield_up");
     public static final SoundEvent SHIELD_DOWN = SGSounds.create("shield_down");
-    // An Ori supergate's segments linking as it dials
-    public static final SoundEvent ORI_LINK = SGSounds.create("ori_link");
+    // A city shield rising and falling
+    public static final SoundEvent CITY_SHIELD_UP = SGSounds.create("city_shield_up");
+    public static final SoundEvent CITY_SHIELD_DOWN = SGSounds.create("city_shield_down");
+    // An Ori supergate dialing, from its first symbol until just after its wormhole forms
+    public static final SoundEvent ORI_DIAL = SGSounds.create("ori_dial");
     // A storm sending a wormhole astray
     public static final SoundEvent MALFUNCTION = SGSounds.create("malfunction");
     // A dialing computer's alarm, looping while a wormhole comes in
@@ -82,8 +86,9 @@ public final class SGSounds {
             SGSounds.MILKY_WAY_OPEN, SGSounds.MILKY_WAY_FAIL, SGSounds.PEGASUS_ROLL, SGSounds.PEGASUS_CHEVRON_OUTGOING,
             SGSounds.PEGASUS_CHEVRON_INCOMING, SGSounds.PEGASUS_OPEN, SGSounds.PEGASUS_FAIL, SGSounds.EVENT_HORIZON,
             SGSounds.CLOSE, SGSounds.TELEPORT, SGSounds.MILKY_WAY_DHD_PRESS, SGSounds.MILKY_WAY_DHD_DIAL,
-            SGSounds.PEGASUS_DHD_PRESS, SGSounds.IRIS_OPEN, SGSounds.IRIS_CLOSE, SGSounds.IRIS_HIT,
-            SGSounds.SHIELD_UP, SGSounds.SHIELD_DOWN, SGSounds.ORI_LINK, SGSounds.MALFUNCTION, SGSounds.COMPUTER_ALARM,
+            SGSounds.PEGASUS_DHD_PRESS, SGSounds.PEGASUS_DHD_DIAL, SGSounds.IRIS_OPEN, SGSounds.IRIS_CLOSE,
+            SGSounds.IRIS_HIT, SGSounds.SHIELD_UP, SGSounds.SHIELD_DOWN, SGSounds.CITY_SHIELD_UP,
+            SGSounds.CITY_SHIELD_DOWN, SGSounds.ORI_DIAL, SGSounds.MALFUNCTION, SGSounds.COMPUTER_ALARM,
             SGSounds.COMPUTER_KEY, SGSounds.COMPUTER_KEY_BIG,
     };
 
@@ -137,7 +142,7 @@ public final class SGSounds {
     /** @return the sound of a DHD's symbol being pressed, or its center */
     public static SoundEvent dhdPress(final DialStyle style, final boolean center) {
         if (style == DialStyle.PEGASUS) {
-            return SGSounds.PEGASUS_DHD_PRESS;
+            return center ? SGSounds.PEGASUS_DHD_DIAL : SGSounds.PEGASUS_DHD_PRESS;
         }
         return center ? SGSounds.MILKY_WAY_DHD_DIAL : SGSounds.MILKY_WAY_DHD_PRESS;
     }
