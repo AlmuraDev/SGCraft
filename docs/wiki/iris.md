@@ -72,7 +72,7 @@ The iris stops travelers once it is half shut.
 - A player killed by the iris loses what they carry, rather than dropping it. The far gate's `preserve_inventory` property (**Iris deaths keep items**, `false` by default) or the `keepInventory` game rule keeps it.
 - A gate whose iris is shut keeps its kawoosh in, so it harms nothing and clears no blocks.
 - A shut iris at either end stops fluid going through. See [Dialing](dialing.md#fluid-through-the-wormhole).
-- The event horizon behind a shut iris gives no light.
+- The event horizon behind a shut iris gives no light in front of the gate. Its back is lit instead, as in SGCraft 2.2.0, by unseen light blocks in the air just behind the opening, at the server's `gates.event_horizon_light`. They go when the iris opens or the wormhole closes, and any left behind take themselves away within a few seconds. Anything can be placed into them.
 
 A MALP's radio signal still passes through a shut iris. See [The MALP](malp.md).
 

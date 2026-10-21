@@ -25,6 +25,8 @@
 
 package com.almuradev.sgcraft.mod.gate;
 
+import com.almuradev.sgcraft.mod.SGConfig;
+import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.block.RingBlock;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -36,7 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The light a gate gives the world round it. Each lit chevron lights the block of the ring it stands on, and an open
- * wormhole's horizon lights the opening, brightening and dimming as waves run out across it from its center.
+ * wormhole's horizon lights the opening, brightening and dimming as waves run out across it from its center, about the
+ * server's {@code gates.event_horizon_light}; behind a shut iris, {@link GateBackLight} lights the gate's back.
  */
 public final class GateLight {
 
@@ -51,9 +54,8 @@ public final class GateLight {
      */
     public static final int LIGHT_UPDATE = Block.UPDATE_CLIENTS | Block.UPDATE_KNOWN_SHAPE;
 
-    // The horizon's light: the level it waves about and how far either way, how long a wave takes to pass, in ticks,
+    // The horizon's light: how far either way of the server's level it waves, how long a wave takes to pass, in ticks,
     // and how far apart the waves are, in a standard gate's blocks
-    private static final double HORIZON_MIDDLE = 12;
     private static final double HORIZON_SWING = 3;
     private static final double WAVE_TICKS = 40;
     private static final double WAVE_LENGTH = 4;
@@ -104,14 +106,33 @@ public final class GateLight {
      * @return the block's light level, from 0 to 15
      */
     public static int horizon(final GateShape shape, final int x, final int y, final long time) {
-        if (shape.isSupergate()) {
-            final int spacing = Math.max(GateLight.SUPERGATE_SPACING, shape.radius() / 3);
-            if (Math.floorMod(x, spacing) != 0 || Math.floorMod(y - shape.radius(), spacing) != 0) {
-                return 0;
-            }
+        final int level = GateLight.level();
+        if (level == 0 || !GateLight.givesLight(shape, x, y)) {
+            return 0;
         }
         final double distance = Math.hypot(x, y - shape.centerY()) / shape.scale();
-        return (int) Math.round(GateLight.HORIZON_MIDDLE + GateLight.HORIZON_SWING * GateLight.wave(time, distance));
+        final long light = Math.round(level + GateLight.HORIZON_SWING * GateLight.wave(time, distance));
+        return (int) Math.max(1, Math.min(SGConfig.MAX_LIGHT, light));
+    }
+
+    /**
+     * @param x across the gate, from its middle
+     * @param y up from the base
+     * @return whether a block of a gate's opening gives light while its horizon is up: every block of a standard
+     *     gate's, and only some of a supergate's, spread across it
+     */
+    public static boolean givesLight(final GateShape shape, final int x, final int y) {
+        if (!shape.isSupergate()) {
+            return true;
+        }
+        final int spacing = Math.max(GateLight.SUPERGATE_SPACING, shape.radius() / 3);
+        return Math.floorMod(x, spacing) == 0 && Math.floorMod(y - shape.radius(), spacing) == 0;
+    }
+
+    // The level open horizons light the world at, as the server sets it
+    private static int level() {
+        return SGServer.current().map(server -> server.config().eventHorizonLight())
+                .orElse(SGConfig.DEFAULTS.eventHorizonLight());
     }
 
     /**

@@ -282,6 +282,16 @@ public final class SGStargates implements Stargates {
      *
      * @return whether the settings file was written
      */
+    /**
+     * Sets how bright open horizons light the world round them, and writes it to the settings file.
+     *
+     * @return whether the file was written
+     */
+    public boolean setEventHorizonLight(final int light) {
+        this.config = this.config.withEventHorizonLight(light);
+        return SGConfig.saveEventHorizonLight(light);
+    }
+
     public boolean setChunkLoadingRange(final int range) {
         this.config = this.config.withChunkLoadingRange(range);
         return SGConfig.saveChunkLoadingRange(range);

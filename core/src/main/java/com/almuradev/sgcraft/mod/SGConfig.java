@@ -104,6 +104,9 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         long powerUnitCapacity, NaquadahOreSettings naquadahOre, RemoteViewConfig remoteView, MalpSettings malp,
         Options options) {
 
+    /** The brightest a gate's horizon can light the world, as the brightest block light. */
+    public static final int MAX_LIGHT = 15;
+
     /** The most chunks around a gate's own that can be kept loaded. */
     public static final int MAX_CHUNK_LOADING_RANGE = 8;
 
@@ -151,7 +154,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
             new Options(gates.kawooshBreaksUnbreakable(), gates.chunkLoadingRange(), gates.logEvents(),
                     worldgen.tokraWorlds(), gates.defaults(), gates.ownersBreakGates(),
                     gates.generatedGatesBreakable(), shields, zpm, energy.multipliers().otherGroup(),
-                    gates.wormholesJump(), computers))));
+                    gates.wormholesJump(), computers, gates.eventHorizonLight()))));
 
     // The file's energy section: what naquadah and power units hold, the energy bridges' rates, and what dials cost
     private record EnergySection(double energyPerNaquadah, long powerUnitCapacity, BridgeRates rates,
@@ -254,7 +257,7 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
     // defaults
     private record GatesSection(int chunkLoadingRange, boolean kawooshBreaksUnbreakable,
             boolean ownersBreakGates, boolean generatedGatesBreakable, boolean wormholesJump, boolean logEvents,
-            Map<Identifier, JsonElement> defaults) {
+            Map<Identifier, JsonElement> defaults, int eventHorizonLight) {
 
         static final Codec<GatesSection> CODEC = RecordCodecBuilder.create(instance -> instance.group(
                 Codec.intRange(0, SGConfig.MAX_CHUNK_LOADING_RANGE)
@@ -271,13 +274,16 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
                 Codec.BOOL.optionalFieldOf("log_events", SGConfig.DEFAULTS.logStargateEvents())
                         .forGetter(GatesSection::logEvents),
                 SGConfig.GATE_DEFAULTS_CODEC.optionalFieldOf("defaults", SGConfig.DEFAULTS.gateDefaults())
-                        .forGetter(GatesSection::defaults)
+                        .forGetter(GatesSection::defaults),
+                Codec.intRange(0, SGConfig.MAX_LIGHT)
+                        .optionalFieldOf("event_horizon_light", SGConfig.DEFAULTS.eventHorizonLight())
+                        .forGetter(GatesSection::eventHorizonLight)
         ).apply(instance, GatesSection::new));
 
         static GatesSection of(final SGConfig config) {
             return new GatesSection(config.chunkLoadingRange(), config.kawooshBreaksUnbreakable(),
                     config.ownersBreakGates(), config.generatedGatesBreakable(), config.wormholesJump(),
-                    config.logStargateEvents(), config.gateDefaults());
+                    config.logStargateEvents(), config.gateDefaults(), config.eventHorizonLight());
         }
     }
 
@@ -344,15 +350,18 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
      * @param wormholesJump whether an open wormhole jumps to another gate in the same address cell when the gate it
      *     reaches is broken, as on the show; on unless set
      * @param computers the settings for dialing computers, kept under {@code computers}
+     * @param eventHorizonLight how bright an open wormhole's horizon lights the world round it, from 0 for no light to
+     *     {@link #MAX_LIGHT}, as 2.2.0's {@code eventHorizonLightLevel}; 12 unless set. Behind a shut iris the back of
+     *     the gate is lit this bright instead.
      */
     public record Options(boolean kawooshBreaksUnbreakable, int chunkLoadingRange, boolean logStargateEvents,
             Map<Identifier, Boolean> tokraWorlds, Map<Identifier, JsonElement> gateDefaults, boolean ownersBreakGates,
             boolean generatedGatesBreakable, ShieldSettings shields, ZpmSettings zpm,
-            double otherGroupMultiplier, boolean wormholesJump, ComputerSettings computers) {
+            double otherGroupMultiplier, boolean wormholesJump, ComputerSettings computers, int eventHorizonLight) {
 
         public static final Options DEFAULTS = new Options(false, 1, false,
                 Map.of(Level.OVERWORLD.identifier(), true), Map.of(), true, false, ShieldSettings.DEFAULTS,
-                ZpmSettings.DEFAULTS, 10.0, true, ComputerSettings.DEFAULTS);
+                ZpmSettings.DEFAULTS, 10.0, true, ComputerSettings.DEFAULTS, 12);
 
         public Options {
             gateDefaults = Map.copyOf(gateDefaults);
@@ -361,62 +370,68 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
         Options withKawooshBreaksUnbreakable(final boolean breaks) {
             return new Options(breaks, this.chunkLoadingRange, this.logStargateEvents, this.tokraWorlds,
                     this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
         }
 
         Options withChunkLoadingRange(final int range) {
             return new Options(this.kawooshBreaksUnbreakable, range, this.logStargateEvents, this.tokraWorlds,
                     this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
         }
 
         Options withLogStargateEvents(final boolean log) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, log, this.tokraWorlds,
                     this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
         }
 
         Options withGateDefaults(final Map<Identifier, JsonElement> defaults) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, defaults, this.ownersBreakGates, this.generatedGatesBreakable, this.shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
         }
 
         Options withBreaking(final boolean owners, final boolean generated) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, owners, generated, this.shields, this.zpm,
-                    this.otherGroupMultiplier, this.wormholesJump, this.computers);
+                    this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
         }
 
         Options withZpm(final ZpmSettings zpm) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
                     this.shields, zpm, this.otherGroupMultiplier,
-                    this.wormholesJump, this.computers);
+                    this.wormholesJump, this.computers, this.eventHorizonLight);
         }
 
         Options withOtherGroupMultiplier(final double multiplier) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
-                    this.shields, this.zpm, multiplier, this.wormholesJump, this.computers);
+                    this.shields, this.zpm, multiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
         }
 
         Options withWormholesJump(final boolean jump) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
-                    this.shields, this.zpm, this.otherGroupMultiplier, jump, this.computers);
+                    this.shields, this.zpm, this.otherGroupMultiplier, jump, this.computers, this.eventHorizonLight);
         }
 
         Options withComputers(final ComputerSettings computers) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
-                    this.shields, this.zpm, this.otherGroupMultiplier, this.wormholesJump, computers);
+                    this.shields, this.zpm, this.otherGroupMultiplier, this.wormholesJump, computers, this.eventHorizonLight);
+        }
+
+        Options withEventHorizonLight(final int light) {
+            return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
+                    this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable,
+                    this.shields, this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, light);
         }
 
         Options withShields(final ShieldSettings shields) {
             return new Options(this.kawooshBreaksUnbreakable, this.chunkLoadingRange, this.logStargateEvents,
                     this.tokraWorlds, this.gateDefaults, this.ownersBreakGates, this.generatedGatesBreakable, shields,
-                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers);
+                    this.zpm, this.otherGroupMultiplier, this.wormholesJump, this.computers, this.eventHorizonLight);
         }
     }
 
@@ -571,6 +586,15 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
     }
 
     /** @return these settings with another chunk loading range */
+    /** @return how bright an open horizon lights the world round it; see {@link Options#eventHorizonLight()} */
+    public int eventHorizonLight() {
+        return this.options.eventHorizonLight();
+    }
+
+    public SGConfig withEventHorizonLight(final int light) {
+        return this.withOptions(this.options.withEventHorizonLight(light));
+    }
+
     public SGConfig withChunkLoadingRange(final int range) {
         return this.withOptions(this.options.withChunkLoadingRange(range));
     }
@@ -687,6 +711,15 @@ public record SGConfig(double energyPerNaquadah, DialCosts dialCosts, double dis
      */
     public static boolean saveKawooshBreaksUnbreakable(final boolean breaks) {
         return SGConfig.save(Codec.BOOL, breaks, "gates", "kawoosh_breaks_unbreakable");
+    }
+
+    /**
+     * Writes how bright open horizons light the world to the settings file, leaving the rest of the file as it is.
+     *
+     * @return whether the file was written
+     */
+    public static boolean saveEventHorizonLight(final int light) {
+        return SGConfig.save(Codec.INT, light, "gates", "event_horizon_light");
     }
 
     /**

@@ -386,6 +386,10 @@ public final class SettingsCatalog {
                 SettingsCatalog.text("gates.chunk_loading_range.tip", "How many chunks around a busy gate's own stay "
                         + "loaded while it dials or holds a wormhole open"), 0, SGConfig.MAX_CHUNK_LOADING_RANGE,
                 SGConfig::chunkLoadingRange);
+        add.whole("gates.event_horizon_light", SettingsCatalog.text("gates.event_horizon_light", "Horizon light"),
+                SettingsCatalog.text("gates.event_horizon_light.tip", "How bright an open wormhole's horizon lights "
+                        + "the world around it, from 0 for none to 15. Behind a shut iris it lights the gate's back "
+                        + "instead"), 0, SGConfig.MAX_LIGHT, SGConfig::eventHorizonLight);
         add.bool("gates.kawoosh_breaks_unbreakable", SettingsCatalog.text("gates.kawoosh_breaks_unbreakable",
                 "Kawoosh breaks unbreakable blocks"), SettingsCatalog.text("gates.kawoosh_breaks_unbreakable.tip",
                 "Whether a kawoosh clears blocks that can't be broken, such as bedrock"),

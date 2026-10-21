@@ -127,6 +127,7 @@ Bigger cells reach farther from the center with the same symbols but leave more 
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `chunk_loading_range` | `1` | Chunks around a busy gate's own that stay loaded, from `0` to `8` |
+| `event_horizon_light` | `12` | How bright an open horizon lights the world around it, from `0` for none to `15`. The light waves up and down by 3 as ripples cross the horizon. Behind a shut iris the gate's back is lit this bright instead |
 | `kawoosh_breaks_unbreakable` | `false` | A kawoosh also clears blocks that can't be broken, such as bedrock |
 | `owners_break_gates` | `true` | A gate's owner may break it whatever its `breakable` property says |
 | `generated_gates_breakable` | `false` | Players may break generated gates that have no `breakable` value of their own |
@@ -344,7 +345,8 @@ Every server setting at its default. You never need to write all of this. Settin
     "generated_gates_breakable": false,
     "wormholes_jump": true,
     "log_events": false,
-    "defaults": {}
+    "defaults": {},
+    "event_horizon_light": 12
   },
   "tools": {
     "range": 6
@@ -574,6 +576,7 @@ These commands change server settings at once and write them to `sgcraft-server.
 | `gates.kawoosh_breaks_unbreakable`, `gates.owners_break_gates`, `gates.generated_gates_breakable`, `gates.wormholes_jump` | `/sgcraft settings` |
 | `gates.defaults` | `/sgcraft gate_defaults` |
 | `gates.chunk_loading_range` | `/sgcraft chunk_loading_range` |
+| `gates.event_horizon_light` | `/sgcraft event_horizon_light` |
 | `gates.log_events` | `/sgcraft log_events` |
 | `worldgen.tokra_worlds` | `/sgcraft worldgen tokra` |
 | `worldgen.naquadah_ore` | `/sgcraft ore` |

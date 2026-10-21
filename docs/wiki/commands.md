@@ -253,6 +253,7 @@ See [MALP](malp.md).
 | `/sgcraft gate_defaults <property> <json>` | Op | Set one, such as `sgcraft:open_ticks 12000` |
 | `/sgcraft gate_defaults <property> reset` | Op | Clear one, so gates have the property's default again |
 | `/sgcraft chunk_loading_range [<0-8>]` | Op | Show or set how many chunks around a busy gate stay loaded |
+| `/sgcraft event_horizon_light [<0-15>]` | Op | Show or set how bright an open horizon lights the world, 0 for none |
 | `/sgcraft log_events [<bool>]` | Op | Show or set whether gate events go to the server log |
 
 These changes apply at once and are saved to `config/sgcraft-server.json`, except the `remote_view` and `worldgen.village_gates` settings, which take effect when the server next starts. `/sgcraft gate_defaults` also takes `sgcraft:chevrons` (7 to 9), and `sgcraft:iris` and `sgcraft:chevrons` reach gates as they first form. See [Settings](settings.md).

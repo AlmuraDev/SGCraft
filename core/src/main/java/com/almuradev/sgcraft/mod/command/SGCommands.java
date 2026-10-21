@@ -178,6 +178,7 @@ public final class SGCommands {
                 .then(SGSettingsCommands.gateDefaults())
                 .then(SGConfigCommands.config())
                 .then(SGOptionCommands.chunkLoadingRange())
+                .then(SGOptionCommands.eventHorizonLight())
                 .then(SGOptionCommands.logEvents())
                 .then(SGOreCommands.ore())
                 .then(SGDefaultAddressCommands.defaultAddresses())

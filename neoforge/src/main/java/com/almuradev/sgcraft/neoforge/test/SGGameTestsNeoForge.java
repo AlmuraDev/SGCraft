@@ -60,6 +60,7 @@ import com.almuradev.sgcraft.mod.address.SGAddressing;
 import com.almuradev.sgcraft.mod.addressbook.DefaultAddresses;
 import com.almuradev.sgcraft.mod.addressbook.ItemAddressBook;
 import com.almuradev.sgcraft.mod.block.EventHorizonBlock;
+import com.almuradev.sgcraft.mod.block.EventHorizonLightBlock;
 import com.almuradev.sgcraft.mod.block.GateSpawnerBlock;
 import com.almuradev.sgcraft.mod.block.RingBlock;
 import com.almuradev.sgcraft.mod.block.SGBlocks;
@@ -279,6 +280,7 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("gate_energy_settings_override_server", SGGameTestsNeoForge::gateEnergySettings);
         SGGameTestsNeoForge.TESTS.put("naquadah_ore_under_lava", SGGameTestsNeoForge::oreUnderLava);
         SGGameTestsNeoForge.TESTS.put("naquadah_ore_world_patterns", SGGameTestsNeoForge::oreWorldPatterns);
+        SGGameTestsNeoForge.TESTS.put("shut_iris_lights_back", SGGameTestsNeoForge::irisLightsBack);
         SGGameTestsNeoForge.TESTS.put("naquadah_ore_isolated_nodes", SGGameTestsNeoForge::oreIsolatedNodes);
         SGGameTestsNeoForge.TESTS.put("naquadah_ore_added_to_old_chunks_once",
                 SGGameTestsNeoForge::oreAddedToOldChunks);
@@ -731,6 +733,41 @@ public final class SGGameTestsNeoForge {
     // A pig crossing gate A's horizon comes out of gate B
     private static void travel(final GameTestHelper helper, final BlockPos origin) {
         SGGameTestsNeoForge.crossing(helper, origin, false, false, true);
+    }
+
+    // While the wormhole is open, a shut iris darkens its gate's horizon and lights the gate's back instead, and the
+    // light behind goes once the iris opens
+    private static void irisLightsBack(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final Stargate a = SGGameTestsNeoForge.place(helper, origin.offset(SGGameTestsNeoForge.A), 9);
+        final Stargate b = SGGameTestsNeoForge.place(helper, origin.offset(SGGameTestsNeoForge.B), 9);
+        a.set(GateProperties.REQUIRES_POWER, false, SGGameTestsNeoForge.server(helper));
+        a.set(GateProperties.OPENING_DAMAGE, false, SGGameTestsNeoForge.server(helper));
+        b.set(GateProperties.IRIS, IrisTypes.METAL, SGGameTestsNeoForge.server(helper));
+        b.iris().orElseThrow().close(SGGameTestsNeoForge.server(helper));
+        a.dial(SGGameTestsNeoForge.addressOf(b, a), DialMode.QUICK, SGGameTestsNeoForge.server(helper));
+        final GateFrame front = new GateFrame(a.position().pos(), Direction.NORTH);
+        final GateFrame back = new GateFrame(b.position().pos(), Direction.NORTH);
+        final int light = SGServer.require().config().eventHorizonLight();
+        helper.runAfterDelay(SGIris.MOVE_TICKS + 60, () -> {
+            helper.assertTrue(a.connection().isPresent(), "The gates didn't connect");
+            final BlockState behind = level.getBlockState(back.block(0, 2, -1));
+            helper.assertTrue(behind.getBlock() instanceof EventHorizonLightBlock
+                    && behind.getValue(EventHorizonLightBlock.LEVEL) == light, "Behind the shut iris is " + behind);
+            helper.assertTrue(level.getBlockState(back.block(0, 2, 0)).getLightEmission() == 0,
+                    "The horizon behind the shut iris gives light");
+            helper.assertTrue(level.getBlockState(front.block(0, 2, 0)).getLightEmission() > 0,
+                    "The open gate's horizon gives no light");
+            helper.assertTrue(!(level.getBlockState(front.block(0, 2, -1)).getBlock()
+                    instanceof EventHorizonLightBlock), "The gate with no iris lit its back");
+            b.iris().orElseThrow().open(SGGameTestsNeoForge.server(helper));
+        });
+        helper.runAfterDelay(SGIris.MOVE_TICKS * 2 + 70, () -> {
+            helper.assertTrue(!(level.getBlockState(back.block(0, 2, -1)).getBlock()
+                    instanceof EventHorizonLightBlock), "The light behind stayed after the iris opened");
+            a.disconnect(SGGameTestsNeoForge.server(helper));
+            helper.succeed();
+        });
     }
 
     // A traveler holding a Tollan phase shift device in its off hand goes through a shut iris

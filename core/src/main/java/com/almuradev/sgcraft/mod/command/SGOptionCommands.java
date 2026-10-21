@@ -36,7 +36,8 @@ import net.minecraft.commands.Commands;
 /**
  * The server settings for every gate that aren't about cost. {@code /sgcraft chunk_loading_range [<chunks>]} shows or
  * sets how many chunks around a busy gate's own stay loaded; {@code /sgcraft log_events [<true|false>]} shows or sets
- * whether gate events go to the server log. Changes are written to the settings file.
+ * whether gate events go to the server log; {@code /sgcraft event_horizon_light [<0-15>]} shows or sets how bright an
+ * open horizon lights the world. Changes are written to the settings file.
  */
 final class SGOptionCommands {
 
@@ -50,6 +51,15 @@ final class SGOptionCommands {
                 .then(Commands.argument("chunks", IntegerArgumentType.integer(0, SGConfig.MAX_CHUNK_LOADING_RANGE))
                         .executes(context -> SGOptionCommands.setRange(context.getSource(),
                                 IntegerArgumentType.getInteger(context, "chunks"))));
+    }
+
+    static ArgumentBuilder<CommandSourceStack, ?> eventHorizonLight() {
+        return Commands.literal("event_horizon_light")
+                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .executes(context -> SGOptionCommands.showLight(context.getSource()))
+                .then(Commands.argument("level", IntegerArgumentType.integer(0, SGConfig.MAX_LIGHT))
+                        .executes(context -> SGOptionCommands.setLight(context.getSource(),
+                                IntegerArgumentType.getInteger(context, "level"))));
     }
 
     static ArgumentBuilder<CommandSourceStack, ?> logEvents() {
@@ -72,6 +82,21 @@ final class SGOptionCommands {
         final boolean saved = SGServer.require().stargates().setChunkLoadingRange(range);
         source.sendSuccess(() -> SGCommands.text("chunk_loading_range.set",
                 "Busy gates now keep %s chunks around their own loaded", range), true);
+        SGOptionCommands.saved(source, saved);
+        return 1;
+    }
+
+    private static int showLight(final CommandSourceStack source) {
+        final int light = SGServer.require().config().eventHorizonLight();
+        source.sendSuccess(() -> SGCommands.text("event_horizon_light.show",
+                "Open horizons light the world around them at level %s", light), false);
+        return 1;
+    }
+
+    private static int setLight(final CommandSourceStack source, final int light) {
+        final boolean saved = SGServer.require().stargates().setEventHorizonLight(light);
+        source.sendSuccess(() -> SGCommands.text("event_horizon_light.set",
+                "Open horizons now light the world around them at level %s", light), true);
         SGOptionCommands.saved(source, saved);
         return 1;
     }

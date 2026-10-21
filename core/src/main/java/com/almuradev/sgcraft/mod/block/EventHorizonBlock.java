@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.block;
 
 import com.almuradev.sgcraft.mod.gate.FluidSpill;
+import com.almuradev.sgcraft.mod.gate.GateBackLight;
 import com.almuradev.sgcraft.mod.gate.GateFrame;
 import com.almuradev.sgcraft.mod.gate.GateLight;
 import com.almuradev.sgcraft.mod.gate.GateShape;
@@ -133,6 +134,8 @@ public final class EventHorizonBlock extends Block implements LiquidBlockContain
                 level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
             }
         });
+        // With no horizon, nothing lights the gate's back either
+        GateBackLight.clear(level, frame);
     }
 
     private static void forEachInOpening(final GateFrame frame, final OpeningAction action) {

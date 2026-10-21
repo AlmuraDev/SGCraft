@@ -61,6 +61,7 @@ public final class SGBlocks {
     public static RingBlock SUPERGATE_CHEVRON;
     public static StargateBaseBlock SUPERGATE_BASE;
     public static EventHorizonBlock EVENT_HORIZON;
+    public static EventHorizonLightBlock EVENT_HORIZON_LIGHT;
     /** The gate spawners, a stargate's then a supergate's of each built in type, in the creative tab's order. */
     public static final List<GateSpawnerBlock> SPAWNERS = new ArrayList<>();
     public static DhdBlock DHD;
@@ -121,6 +122,11 @@ public final class SGBlocks {
         SGBlocks.EVENT_HORIZON = SGBlocks.register(sink, "event_horizon",
                 properties -> new EventHorizonBlock(properties.noCollision().noOcclusion().noLootTable()
                         .strength(-1.0F, 3600000.0F).pushReaction(PushReaction.IMMOVEABLE).mapColor(MapColor.NONE)));
+        // Unseen and in the way of nothing, as air is, with no item
+        SGBlocks.EVENT_HORIZON_LIGHT = SGBlocks.register(sink, "event_horizon_light",
+                properties -> new EventHorizonLightBlock(properties.noCollision().noOcclusion().noLootTable()
+                        .replaceable().strength(-1.0F, 3600000.0F).pushReaction(PushReaction.POPPED)
+                        .mapColor(MapColor.NONE)));
         SGBlocks.DHD_PEGASUS = SGBlocks.register(sink, "dhd_pegasus",
                 properties -> new DhdBlock(properties.noOcclusion(), GateTypes.PEGASUS));
         // Naquadah: ore found deep down, which fuels gates, and a block of its alloy

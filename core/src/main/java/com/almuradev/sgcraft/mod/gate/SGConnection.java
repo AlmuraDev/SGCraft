@@ -445,13 +445,15 @@ public final class SGConnection implements Connection {
         }
     }
 
-    // The horizon's light moves on with its waves; behind a shut iris it gives none, though it shines through a
-    // raised shield
+    // The horizon's light moves on with its waves; behind a shut iris it gives none, and lights the gate's back
+    // instead, though it shines through a raised shield
     private static void shimmer(final SGStargate gate) {
         final ServerLevel level = gate.level();
         if (level != null) {
             EventHorizonBlock.shimmer(level, gate.frame(), gate.now(), gate.irisBlocks()
                     && !gate.irisState().shieldRaised());
+            // Its back is lit instead while the iris covers the horizon
+            GateBackLight.update(level, gate);
         }
     }
 

@@ -1,0 +1,7 @@
+{
+  "variants": {
+    "": {
+      "model": "sgcraft:block/event_horizon_light"
+    }
+  }
+}
