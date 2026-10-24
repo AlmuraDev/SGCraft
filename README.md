@@ -1,8 +1,8 @@
 <p align="center">
   <a href="https://almuradev.github.io/SGCraft-Docs/">
     <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://almuradev.github.io/SGCraft-Docs/logo.svg">
-      <img alt="SGCraft Remake 3.0" src="https://almuradev.github.io/SGCraft-Docs/logo-light.svg" width="520">
+      <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/AlmuraDev/SGCraft-Docs/main/wiki/assets/logo.svg">
+      <img alt="SGCraft Remake 3.0" src="https://raw.githubusercontent.com/AlmuraDev/SGCraft-Docs/main/wiki/assets/logo-light.svg" width="520">
     </picture>
   </a>
 </p>
