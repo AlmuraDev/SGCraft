@@ -32,7 +32,9 @@ import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -114,6 +116,24 @@ public final class SGNetwork {
             return;
         }
         handler.accept(payload);
+    }
+
+    /**
+     * Sends a payload about an entity to the players whose clients have its chunk loaded, and to the entity if it is a
+     * player, rather than to everyone on the server. A player who comes in range later is told by whatever sends to
+     * players who start tracking the entity.
+     */
+    public static void sendNear(final Entity entity, final CustomPacketPayload payload) {
+        if (!(entity.level() instanceof final ServerLevel level)) {
+            return;
+        }
+        final List<ServerPlayer> near = level.getChunkSource().chunkMap.getPlayers(entity.chunkPosition(), false);
+        for (final ServerPlayer player : near) {
+            SGNetwork.send(player, payload);
+        }
+        if (entity instanceof final ServerPlayer self && !near.contains(self)) {
+            SGNetwork.send(self, payload);
+        }
     }
 
     /** Sends a payload to one player, if their client can take it; a client without the mod gets nothing. */

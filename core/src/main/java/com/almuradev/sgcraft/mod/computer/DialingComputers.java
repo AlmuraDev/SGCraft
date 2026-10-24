@@ -422,12 +422,10 @@ public final class DialingComputers {
         }
     }
 
-    // Tells every player how to draw a player, at a computer or as usual
+    // Tells the players near a player how to draw them, at a computer or as usual; those who come near later are told
+    // as they start tracking them
     private static void broadcastUse(final ServerPlayer player, final Use use) {
-        final ConsoleUse packet = new ConsoleUse(player.getId(), use);
-        for (final ServerPlayer other : player.level().getServer().getPlayerList().getPlayers()) {
-            SGNetwork.send(other, packet);
-        }
+        SGNetwork.sendNear(player, new ConsoleUse(player.getId(), use));
     }
 
     /** A button pressed on a computer's screen, by a player working that computer. */
