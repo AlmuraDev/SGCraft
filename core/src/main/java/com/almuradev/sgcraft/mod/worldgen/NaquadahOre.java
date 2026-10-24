@@ -31,7 +31,6 @@ import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.registry.RegistrySink;
 import com.mojang.serialization.MapCodec;
-import it.unimi.dsi.fastutil.longs.LongIterator;
 import it.unimi.dsi.fastutil.longs.LongLinkedOpenHashSet;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -148,10 +147,11 @@ public final class NaquadahOre {
                 worlds.remove();
                 continue;
             }
-            final LongIterator chunks = world.getValue().iterator();
-            while (chunks.hasNext() && budget > 0) {
-                final ChunkPos pos = ChunkPos.unpack(chunks.nextLong());
-                chunks.remove();
+            // One at a time off the front, with no iterator kept across giving ore: that could load a neighboring
+            // chunk, which would join the queue while this goes through it
+            final LongLinkedOpenHashSet chunks = world.getValue();
+            while (!chunks.isEmpty() && budget > 0) {
+                final ChunkPos pos = ChunkPos.unpack(chunks.removeFirstLong());
                 // A chunk that unloaded meanwhile waits until it loads again
                 final LevelChunk chunk = level.getChunkSource().getChunkNow(pos.x(), pos.z());
                 if (chunk != null && !OreChunks.of(level).marked(pos)) {
