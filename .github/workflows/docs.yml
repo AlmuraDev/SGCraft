@@ -1,0 +1,22 @@
+# Tells SGCraft-Docs that the remake branch has a new commit, so it builds the wiki again from that commit and
+# publishes it. Needs the DOCS_DISPATCH_TOKEN secret: a token allowed to write the contents of AlmuraDev/SGCraft-Docs
+name: Docs
+
+on:
+  push:
+    branches: [remake/26.3]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ask SGCraft-Docs to rebuild the wiki
+        env:
+          GH_TOKEN: ${{ secrets.DOCS_DISPATCH_TOKEN }}
+        run: >-
+          gh api repos/AlmuraDev/SGCraft-Docs/dispatches
+          -f event_type=sgcraft-push
+          -f "client_payload[sha]=${{ github.sha }}"
