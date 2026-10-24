@@ -43,7 +43,7 @@ To pick the MALP up, sneak and use it with an empty hand. A name tag renames it.
 
 ## Ownership
 
-The player who first puts a MALP down owns it. A MALP item that already has an owner keeps that owner. The owner and operators change its settings with a {{item:sgcraft:configurator}} and pair tablets with it. A MALP with no owner, such as one summoned with `/summon`, is managed by operators only. See [The configurator](../malp.md#the-configurator).
+The player who first puts a MALP down owns it. A MALP item that already has an owner keeps that owner. The owner and operators change its settings with a {{item:sgcraft:configurator}} and pair tablets with it. Only they can pick it up, rename it with a name tag or open its battery slot; anyone else is told "This MALP isn't yours", and anyone can do these to a MALP with no owner. A MALP with no owner, such as one summoned with `/summon`, is managed by operators only. See [The configurator](../malp.md#the-configurator).
 
 ## Power
 

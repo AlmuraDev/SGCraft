@@ -70,6 +70,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.FrontAndTop;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -135,6 +136,7 @@ final class MalpGameTestsNeoForge {
         tests.put("watched_malp_drains_and_stops", MalpGameTestsNeoForge::watchedDrains);
         tests.put("watched_malp_streams_until_signal_lost", MalpGameTestsNeoForge::streamsUntilSignalLost);
         tests.put("malp_pairs_on_console", MalpGameTestsNeoForge::pairsOnConsole);
+        tests.put("malp_handled_by_owner_only", MalpGameTestsNeoForge::handledByOwner);
         tests.put("malp_signal_direct_within_range", MalpGameTestsNeoForge::directSignal);
         tests.put("malp_signal_relays_through_gates", MalpGameTestsNeoForge::relayedSignal);
         tests.put("malp_keeps_itself_through_gate", MalpGameTestsNeoForge::keepsItself);
@@ -1605,6 +1607,45 @@ final class MalpGameTestsNeoForge {
             malp.discard();
             helper.succeed();
         });
+    }
+
+    // Only its owner, or an operator, packs up a MALP, renames it or opens its battery; anyone handles one no one owns
+    private static void handledByOwner(final GameTestHelper helper, final BlockPos origin) {
+        final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
+        final ServerPlayer owner = helper.makeMockServerPlayerInLevel();
+        final ServerPlayer other = helper.makeMockServerPlayerInLevel();
+        for (final ServerPlayer player : List.of(owner, other)) {
+            player.teleportTo(at.getX() + 0.5, at.getY(), at.getZ() - 1.5);
+        }
+        final MalpEntity malp = MalpGameTestsNeoForge.place(helper, owner, new ItemStack(SGItems.MALP), at.below());
+        other.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        other.setShiftKeyDown(true);
+        malp.interact(other, InteractionHand.MAIN_HAND, malp.position());
+        other.setShiftKeyDown(false);
+        helper.assertTrue(!malp.isRemoved(), "Another player packed up the MALP");
+        malp.interact(other, InteractionHand.MAIN_HAND, malp.position());
+        helper.assertTrue(!(other.containerMenu instanceof MalpMenu), "Another player opened the MALP's battery");
+        final ItemStack tag = new ItemStack(Items.NAME_TAG);
+        tag.set(DataComponents.CUSTOM_NAME, Component.literal("Mine now"));
+        other.setItemInHand(InteractionHand.MAIN_HAND, tag);
+        malp.interact(other, InteractionHand.MAIN_HAND, malp.position());
+        helper.assertTrue(malp.getCustomName() == null && !tag.isEmpty(), "Another player renamed the MALP");
+        owner.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        owner.setShiftKeyDown(true);
+        malp.interact(owner, InteractionHand.MAIN_HAND, malp.position());
+        owner.setShiftKeyDown(false);
+        helper.assertTrue(malp.isRemoved() && owner.getInventory().hasAnyMatching(stack -> stack.is(SGItems.MALP)),
+                "The owner couldn't pack up the MALP");
+        // A MALP no one owns, as one a command made, is anyone's to pack up
+        final MalpEntity ownerless = MalpGameTestsNeoForge.place(helper, owner, new ItemStack(SGItems.MALP),
+                at.below().east(3));
+        ownerless.setOwner(null);
+        other.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
+        other.setShiftKeyDown(true);
+        ownerless.interact(other, InteractionHand.MAIN_HAND, ownerless.position());
+        other.setShiftKeyDown(false);
+        helper.assertTrue(ownerless.isRemoved(), "A MALP no one owns couldn't be packed up");
+        helper.succeed();
     }
 
     // Used while sneaking, a tablet opens its battery slot, which writes the battery back to the tablet; the tablet's

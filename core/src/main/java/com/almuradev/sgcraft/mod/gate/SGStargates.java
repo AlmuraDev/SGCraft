@@ -87,6 +87,9 @@ import java.util.UUID;
  */
 public final class SGStargates implements Stargates {
 
+    /** The most chevrons a gate has in SGCraft: one in each of the ring's places. */
+    public static final int MAX_CHEVRONS = ChevronOrder.POSITIONS;
+
     // The chevrons that reach another world, and another group of worlds
     private static final int EIGHTH_CHEVRON = 8;
     private static final int NINTH_CHEVRON = 9;
@@ -697,6 +700,12 @@ public final class SGStargates implements Stargates {
     private Optional<Identifier> propertyId(final GateProperty<?> property) {
         return Optional.ofNullable(this.server.registryAccess().lookupOrThrow(SGCraftRegistries.GATE_PROPERTY)
                 .getKey(property));
+    }
+
+    /** @return nine, one chevron in each of the ring's places */
+    @Override
+    public int maxChevrons() {
+        return SGStargates.MAX_CHEVRONS;
     }
 
     @Override

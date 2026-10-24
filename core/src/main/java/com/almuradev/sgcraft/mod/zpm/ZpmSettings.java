@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.zpm;
 
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.settings.SharedSettings;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
@@ -58,9 +59,12 @@ public record ZpmSettings(long capacity, int searchRange,
                     .forGetter(ZpmSettings::taintedChance)
     ).apply(instance, ZpmSettings::new));
 
-    /** @return the running server's ZPM settings, or the defaults if no server is running */
+    /**
+     * @return the running server's ZPM settings, or, where no server runs (a dedicated server's client), what the
+     *     server sent ({@link SharedSettings})
+     */
     public static ZpmSettings current() {
-        return SGServer.current().map(server -> server.config().options().zpm()).orElse(ZpmSettings.DEFAULTS);
+        return SGServer.current().map(server -> server.config().options().zpm()).orElseGet(SharedSettings::zpm);
     }
 
     /** @return these settings with one setting changed, by its name in the settings file, if it is one */

@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.mod.malp;
 
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.settings.SharedSettings;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -92,10 +93,13 @@ public record MalpSettings(long batteryCapacity, double powerUnitChargeRate, dou
                 .orElse(SGConfig.DEFAULTS.energyPerNaquadah());
     }
 
-    /** @return the running server's MALP settings, or the defaults if no server is running */
+    /**
+     * @return the running server's MALP settings, or, where no server runs (a dedicated server's client), what the
+     *     server sent ({@link SharedSettings})
+     */
     public static MalpSettings current() {
         return SGServer.current().map(server -> server.config().malp())
-                .orElse(MalpSettings.DEFAULTS);
+                .orElseGet(SharedSettings::malp);
     }
 
     /** @return these settings with damage taking players off their consoles, or not */

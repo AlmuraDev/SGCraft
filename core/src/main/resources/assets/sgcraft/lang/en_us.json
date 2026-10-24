@@ -529,6 +529,7 @@
   "screen.sgcraft.malp_config.unpair": "Unpair",
   "screen.sgcraft.malp_config.unpair.tip": "Unpairs the MALP from its console now, without waiting for Save. Anyone driving it from there loses its feed",
   "message.sgcraft.malp.cannot_configure": "You aren't allowed to configure this MALP",
+  "message.sgcraft.malp.not_yours": "This MALP isn't yours",
   "message.sgcraft.malp.not_near": "That MALP isn't near you",
   "command.sgcraft.malp.no_malp": "There is no MALP called %s",
   "command.sgcraft.malp.not_loaded": "%s isn't loaded. Its chunk is loading now, so run the command again in a moment",

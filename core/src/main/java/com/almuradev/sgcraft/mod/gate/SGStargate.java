@@ -215,7 +215,8 @@ public final class SGStargate implements Stargate {
         if (OriGate.is(this.typeKey())) {
             return ChevronOrder.POSITIONS;
         }
-        return this.record().map(GateRecord::chevrons).orElse(0);
+        // Kept to the ring's nine places, whatever was saved before counts were checked
+        return this.record().map(record -> Math.min(record.chevrons(), this.stargates.maxChevrons())).orElse(0);
     }
 
     @Override
@@ -644,7 +645,8 @@ public final class SGStargate implements Stargate {
     @Override
     public ActionResult setChevrons(final int chevrons, final Cause cause) {
         final Optional<GateRecord> record = this.record();
-        if (record.isEmpty() || chevrons < 1 || this.state() != GateState.IDLE || OriGate.is(this.typeKey())) {
+        if (record.isEmpty() || chevrons < 1 || chevrons > this.stargates.maxChevrons() || this.state() != GateState.IDLE
+                || OriGate.is(this.typeKey())) {
             return ActionResult.NOT_POSSIBLE;
         }
         if (record.get().chevrons() == chevrons) {

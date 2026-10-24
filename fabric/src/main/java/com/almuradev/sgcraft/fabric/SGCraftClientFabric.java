@@ -49,7 +49,6 @@ import com.almuradev.sgcraft.mod.client.power.BatteryChargerScreen;
 import com.almuradev.sgcraft.mod.client.power.PowerUnitScreen;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldRenderer;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldScreen;
-import com.almuradev.sgcraft.mod.client.view.RemoteViewClient;
 import com.almuradev.sgcraft.mod.client.view.RemoteViewPicture;
 import com.almuradev.sgcraft.mod.client.zpm.ZpmScreen;
 import com.almuradev.sgcraft.mod.dhd.DhdFuelMenu;
@@ -115,9 +114,10 @@ public final class SGCraftClientFabric implements ClientModInitializer {
         MenuScreens.register(ZpmMenu.HUB, ZpmScreen::new);
         MenuScreens.register(CityShieldMenu.TYPE, CityShieldScreen::new);
         SGNetwork.clientbound().forEach(SGCraftClientFabric::receive);
-        // Remote views, drawn into screens as pictures in pictures, and dropped when the client leaves the server
+        // Remote views, drawn into screens as pictures in pictures; they, and the settings the server sent, go when
+        // the client leaves the server
         PictureInPictureRendererRegistry.register(context -> new RemoteViewPicture());
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> RemoteViewClient.disconnected());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> SGClient.disconnected());
     }
 
     // Fabric runs these receivers on the client's main thread

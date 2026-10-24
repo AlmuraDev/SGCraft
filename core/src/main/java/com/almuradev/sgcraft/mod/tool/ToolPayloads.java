@@ -40,6 +40,14 @@ import java.util.Optional;
  */
 public final class ToolPayloads {
 
+    /**
+     * The longest address a screen may send, as typed: an address's symbols, with room for dashes and spaces. A packet
+     * with a longer one is refused as it is read.
+     */
+    public static final int MAX_ADDRESS_TEXT = 32;
+    /** The longest name a screen may send for an address; the server cuts names shorter still. */
+    public static final int MAX_NAME_TEXT = 256;
+
     private ToolPayloads() {
     }
 
@@ -174,7 +182,8 @@ public final class ToolPayloads {
         public static final Type<TabletAction> TYPE = new Type<>(SGCraft.id("tablet_action"));
 
         public TabletAction(final FriendlyByteBuf buf) {
-            this(buf.readEnum(Kind.class), buf.readVarInt(), buf.readUtf(), buf.readUtf(), buf.readVarInt());
+            this(buf.readEnum(Kind.class), buf.readVarInt(), buf.readUtf(ToolPayloads.MAX_ADDRESS_TEXT),
+                    buf.readUtf(ToolPayloads.MAX_NAME_TEXT), buf.readVarInt());
         }
 
         @Override
@@ -233,7 +242,8 @@ public final class ToolPayloads {
         public static final Type<PddAction> TYPE = new Type<>(SGCraft.id("pdd_action"));
 
         public PddAction(final FriendlyByteBuf buf) {
-            this(buf.readEnum(Kind.class), buf.readUtf(), buf.readUtf(), buf.readVarInt());
+            this(buf.readEnum(Kind.class), buf.readUtf(ToolPayloads.MAX_ADDRESS_TEXT),
+                    buf.readUtf(ToolPayloads.MAX_NAME_TEXT), buf.readVarInt());
         }
 
         public static PddAction of(final Kind kind) {

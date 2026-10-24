@@ -43,6 +43,14 @@ import java.util.Optional;
 public interface Stargates {
 
     /**
+     * The most chevrons a gate can have, and so the most symbols any gate dials. The implementation decides it, and it
+     * doesn't change while the game runs.
+     *
+     * @return the most chevrons a gate can have; at least 1
+     */
+    int maxChevrons();
+
+    /**
      * @param position any block
      * @return the gate that block is part of, if any
      */

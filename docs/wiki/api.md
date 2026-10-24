@@ -80,6 +80,7 @@ Actions that either happen or don't return an `ActionResult`:
 | `mostAppropriate(GlobalPos)` | The gate best suited to a position, such as to dial from |
 | `mostAppropriate(GlobalPos, Cause)` | The same, leaving out gates the cause may not use |
 | `place(GatePlacement, Cause)` | Build a whole formed gate |
+| `maxChevrons()` | The most chevrons a gate can have, and so the longest address any gate dials. The implementation sets it; SGCraft's is 9 |
 
 A `Stargate` is a view of a gate. You may keep one, but the gate can be broken at any time. After that, `exists()` is false, the getters return the last values, and actions report the gate is gone.
 
@@ -106,7 +107,7 @@ A `Stargate` has these getters: `position()` (the base block, which the address 
 | `remove(property, cause)` | The same |
 | `setOwner(Optional<UUID>, cause)` | `mayManage` |
 | `setType(type, cause)` | An idle gate, and a type that supports the gate's size |
-| `setChevrons(count, cause)` | An idle gate, and at least 1 chevron |
+| `setChevrons(count, cause)` | An idle gate, and from 1 to `maxChevrons()` chevrons |
 | `setOrientation(FrontAndTop, cause)` | An idle gate whose ring covers the same blocks that way (a flat gate turns face up or face down) |
 | `placeFixtures(FixtureBuffer, PlacementMode, cause)` | Room for the blocks, unless the mode is `FORCE` |
 

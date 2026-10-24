@@ -250,10 +250,10 @@ public interface Stargate {
     /**
      * Changes how many chevrons the gate has.
      *
-     * @param chevrons the new count; at least 1
+     * @param chevrons the new count, from 1 to {@link Stargates#maxChevrons()}
      * @param cause who is changing it
-     * @return {@link ActionResult#NOT_POSSIBLE} if {@code chevrons} is below 1, the gate isn't idle, or the gate no
-     *     longer exists
+     * @return {@link ActionResult#NOT_POSSIBLE} if {@code chevrons} is out of that range, the gate isn't idle, or the
+     *     gate no longer exists
      */
     ActionResult setChevrons(final int chevrons, final Cause cause);
 

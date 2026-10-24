@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.zat;
 
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.settings.SharedSettings;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -56,8 +57,11 @@ public record ZatSettings(double range, int cooldownTicks, int stunTicks, float 
                     .forGetter(ZatSettings::secondShotKills)
     ).apply(instance, ZatSettings::new));
 
-    /** @return the running server's Zat settings, or the defaults if no server is running */
+    /**
+     * @return the running server's Zat settings, or, where no server runs (a dedicated server's client), what the
+     *     server sent ({@link SharedSettings})
+     */
     public static ZatSettings current() {
-        return SGServer.current().map(server -> server.config().options().zat()).orElse(ZatSettings.DEFAULTS);
+        return SGServer.current().map(server -> server.config().options().zat()).orElseGet(SharedSettings::zat);
     }
 }

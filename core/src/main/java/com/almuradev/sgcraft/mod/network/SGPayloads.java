@@ -39,6 +39,7 @@ import com.almuradev.sgcraft.mod.obelisk.ObeliskActions;
 import com.almuradev.sgcraft.mod.obelisk.ObeliskPayloads;
 import com.almuradev.sgcraft.mod.settings.SettingsActions;
 import com.almuradev.sgcraft.mod.settings.SettingsPayloads;
+import com.almuradev.sgcraft.mod.settings.SharedSettings;
 import com.almuradev.sgcraft.mod.shield.CityShieldActions;
 import com.almuradev.sgcraft.mod.shield.ShieldConsoles;
 import com.almuradev.sgcraft.mod.shield.ShieldPayloads;
@@ -124,5 +125,7 @@ final class SGPayloads {
         SGNetwork.clientbound(SettingsPayloads.Confirm.TYPE, SettingsPayloads.Confirm::new);
         SGNetwork.serverbound(SettingsPayloads.Request.TYPE, SettingsPayloads.Request::new, SettingsActions::request);
         SGNetwork.serverbound(SettingsPayloads.Edits.TYPE, SettingsPayloads.Edits::new, SettingsActions::edits);
+        // The settings each client reads for itself, sent as a player joins and as they change
+        SGNetwork.clientbound(SharedSettings.Packet.TYPE, SharedSettings.Packet::new);
     }
 }

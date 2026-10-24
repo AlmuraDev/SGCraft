@@ -31,6 +31,7 @@ import com.almuradev.sgcraft.mod.addressbook.DefaultAddresses;
 import com.almuradev.sgcraft.mod.addressbook.SGAddressBooks;
 import com.almuradev.sgcraft.mod.gate.SGStargates;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
+import com.almuradev.sgcraft.mod.settings.SharedSettings;
 import com.almuradev.sgcraft.mod.tool.ToolActions;
 import com.almuradev.sgcraft.mod.view.RemoteViews;
 import com.almuradev.sgcraft.mod.zat.Zat;
@@ -117,6 +118,7 @@ public final class SGServer {
                 current.nextTick.remove().run();
             }
             current.stargates.tick();
+            SharedSettings.tick(current);
             RemoteViews.tick(server);
             MalpLinks.tick(server);
             Zat.tick(server);
@@ -125,12 +127,17 @@ public final class SGServer {
     }
 
     /**
-     * Tells an operator who joins what changed in the stargate addresses when the server started, or what in the
-     * address settings it couldn't follow, so they hear of it without reading the server log.
+     * Sends a player who joins the settings their client reads ({@link SharedSettings}), and tells an operator what
+     * changed in the stargate addresses when the server started, or what in the address settings it couldn't follow,
+     * so they hear of it without reading the server log.
      */
     public static void joined(final ServerPlayer player) {
         final SGServer current = SGServer.current;
-        if (current == null || !SGGateAccess.isOperator(player)) {
+        if (current == null) {
+            return;
+        }
+        SharedSettings.joined(current, player);
+        if (!SGGateAccess.isOperator(player)) {
             return;
         }
         for (final Component notice : current.addressing.notices()) {
@@ -144,6 +151,7 @@ public final class SGServer {
             current.stargates.stop();
             RemoteViews.clear();
             MalpLinks.clear();
+            SharedSettings.stopped();
             SGServer.current = null;
         }
     }

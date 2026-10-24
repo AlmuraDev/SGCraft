@@ -52,6 +52,7 @@ import com.almuradev.sgcraft.mod.malp.MalpPayloads;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
 import com.almuradev.sgcraft.mod.obelisk.ObeliskPayloads;
 import com.almuradev.sgcraft.mod.settings.SettingsPayloads;
+import com.almuradev.sgcraft.mod.settings.SharedSettings;
 import com.almuradev.sgcraft.mod.shield.ShieldPayloads;
 import com.almuradev.sgcraft.mod.tool.ExplorerPayloads;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads;
@@ -116,6 +117,13 @@ public final class SGClient {
                 screen.confirm(confirm);
             }
         });
+        SGNetwork.onClient(SharedSettings.Packet.TYPE, packet -> SharedSettings.receive(packet.values()));
+    }
+
+    /** Forgets what the server the player has left sent. Each loader calls this as the client disconnects. */
+    public static void disconnected() {
+        RemoteViewClient.disconnected();
+        SharedSettings.forget();
     }
 
     // A gate's base: the address goes to the base's menu the server has just opened, or opens on its own for a player

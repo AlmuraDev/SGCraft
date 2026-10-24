@@ -58,6 +58,7 @@ Put one battery and any number of naquadah in the crafting grid, in any arrangem
 
 - Other mods see a battery's charge as FE, 80 FE for each GE it holds. They can take FE out of a battery as well as put it in.
 - The capacity is the server's `battery_capacity` setting. If the server lowers it, a battery counts as holding no more than the new capacity.
+- The server sends its capacity to each player as they join and whenever it changes, so the bar and tooltip match it. ZPMs and the Zat's cooldown work the same way.
 - A MALP that is destroyed drops its battery. A MALP you pick up keeps its battery in the item.
 
 ## Data components

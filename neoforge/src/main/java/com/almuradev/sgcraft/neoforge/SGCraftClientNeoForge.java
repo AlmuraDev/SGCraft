@@ -50,7 +50,6 @@ import com.almuradev.sgcraft.mod.client.power.BatteryChargerScreen;
 import com.almuradev.sgcraft.mod.client.power.PowerUnitScreen;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldRenderer;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldScreen;
-import com.almuradev.sgcraft.mod.client.view.RemoteViewClient;
 import com.almuradev.sgcraft.mod.client.view.RemoteViewPicture;
 import com.almuradev.sgcraft.mod.client.zpm.ZpmScreen;
 import com.almuradev.sgcraft.mod.dhd.DhdFuelMenu;
@@ -110,9 +109,9 @@ public final class SGCraftClientNeoForge {
     @SubscribeEvent
     public static void setUp(final FMLClientSetupEvent event) {
         SGClient.init();
-        // A remote view goes when the client leaves the server
+        // A remote view, and the settings the server sent, go when the client leaves the server
         NeoForge.EVENT_BUS.addListener((final ClientPlayerNetworkEvent.LoggingOut loggingOut) ->
-                RemoteViewClient.disconnected());
+                SGClient.disconnected());
     }
 
     @SubscribeEvent

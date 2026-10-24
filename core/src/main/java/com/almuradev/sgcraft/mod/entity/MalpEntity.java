@@ -79,6 +79,7 @@ import java.util.UUID;
  *
  * <p>It belongs to the player who first put it down, if anyone did; its owner and operators change its settings
  * with a configurator, and pair it with MALP tablets by using a tablet on it while sneaking, besides its one console.
+ * Only they pack it up, rename it or open its battery; anyone may handle a MALP no one owns.
  * It goes through gates as anything else does, keeping its battery, its console, its name, its
  * owner and its settings, and the server keeps where it was last seen in the {@link MalpRegistry}, so its console
  * finds it while its chunk is unloaded.</p>
@@ -474,7 +475,9 @@ public final class MalpEntity extends VehicleEntity implements RemoteViewSource 
     public InteractionResult interact(final Player player, final InteractionHand hand, final Vec3 location) {
         final ItemStack held = player.getItemInHand(hand);
         if (held.is(Items.NAME_TAG) && held.has(DataComponents.CUSTOM_NAME)) {
-            if (!this.level().isClientSide()) {
+            if (player instanceof final ServerPlayer serverPlayer && !MalpConfigurator.mayHandle(player, this)) {
+                MalpConfigurator.refuseHandling(serverPlayer);
+            } else if (!this.level().isClientSide()) {
                 this.setCustomName(held.get(DataComponents.CUSTOM_NAME));
                 held.consume(1, player);
                 this.record();
@@ -497,8 +500,11 @@ public final class MalpEntity extends VehicleEntity implements RemoteViewSource 
         if (!held.isEmpty() || hand != InteractionHand.MAIN_HAND) {
             return InteractionResult.PASS;
         }
+        // Only its owner, or an operator, packs up or opens a MALP someone owns
         if (player instanceof ServerPlayer serverPlayer) {
-            if (player.isSecondaryUseActive()) {
+            if (!MalpConfigurator.mayHandle(player, this)) {
+                MalpConfigurator.refuseHandling(serverPlayer);
+            } else if (player.isSecondaryUseActive()) {
                 this.pickUp(serverPlayer);
             } else {
                 serverPlayer.openMenu(new SimpleMenuProvider((id, inventory, p) -> new MalpMenu(id, inventory, this),

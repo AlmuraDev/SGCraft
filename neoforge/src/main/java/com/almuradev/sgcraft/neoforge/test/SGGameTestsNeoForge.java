@@ -79,6 +79,8 @@ import com.almuradev.sgcraft.mod.gate.SGIris;
 import com.almuradev.sgcraft.mod.gate.SGStargate;
 import com.almuradev.sgcraft.mod.item.SGDataComponents;
 import com.almuradev.sgcraft.mod.item.SGItems;
+import com.almuradev.sgcraft.mod.malp.MalpSettings;
+import com.almuradev.sgcraft.mod.settings.SharedSettings;
 import com.almuradev.sgcraft.mod.tool.TabletGate;
 import com.almuradev.sgcraft.mod.tool.ToolActions;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads;
@@ -88,8 +90,12 @@ import com.almuradev.sgcraft.mod.worldgen.NaquadahOreFeature;
 import com.almuradev.sgcraft.mod.worldgen.NaquadahOreSettings;
 import com.almuradev.sgcraft.mod.worldgen.OreChunks;
 import com.almuradev.sgcraft.mod.worldgen.StructureGates;
+import com.almuradev.sgcraft.mod.zat.ZatSettings;
+import com.almuradev.sgcraft.mod.zpm.ZpmSettings;
 import com.almuradev.sgcraft.mod.zpm.Zpms;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import io.netty.buffer.Unpooled;
+import io.netty.handler.codec.DecoderException;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.FrontAndTop;
@@ -103,6 +109,7 @@ import net.minecraft.gametest.framework.FunctionGameTestInstance;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.TestData;
 import net.minecraft.gametest.framework.TestEnvironmentDefinition;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -214,6 +221,9 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("property_event_changes_value", SGGameTestsNeoForge::propertyEvent);
         SGGameTestsNeoForge.TESTS.put("pdd_book_actions", SGGameTestsNeoForge::pddBook);
         SGGameTestsNeoForge.TESTS.put("configurator_apply", SGGameTestsNeoForge::configuratorApply);
+        SGGameTestsNeoForge.TESTS.put("chevrons_stay_within_nine", SGGameTestsNeoForge::chevronsWithinNine);
+        SGGameTestsNeoForge.TESTS.put("addresses_stay_within_nine_symbols", SGGameTestsNeoForge::addressLength);
+        SGGameTestsNeoForge.TESTS.put("shared_settings_reach_clients", SGGameTestsNeoForge::sharedSettings);
         SGGameTestsNeoForge.TESTS.put("gdo_works_iris", SGGameTestsNeoForge::gdoIris);
         SGGameTestsNeoForge.TESTS.put("camouflage", SGGameTestsNeoForge::camouflage);
         SGGameTestsNeoForge.TESTS.put("supergate_placed", SGGameTestsNeoForge::supergatePlaced);
@@ -965,6 +975,94 @@ public final class SGGameTestsNeoForge {
                 gate.position().pos(), "", 0,
                 List.of(new ToolPayloads.Change("sgcraft:open_ticks", Optional.empty())), "", false, ""));
         helper.assertTrue(gate.get(GateProperties.OPEN_TICKS).orElse(0) == 6000, "Clearing didn't restore the default");
+        helper.succeed();
+    }
+
+    // No gate gets more chevrons than its ring has places for, from the configurator, the API or its base: clients
+    // draw one chevron in each place, and would fail on a tenth
+    private static void chevronsWithinNine(final GameTestHelper helper, final BlockPos origin) {
+        final Stargate gate = SGGameTestsNeoForge.place(helper, origin.offset(SGGameTestsNeoForge.A), 7);
+        final ServerPlayer player = SGGameTestsNeoForge.playerAt(helper, gate);
+        // The mock player is in creative mode, so may set chevrons freely, but not past nine
+        gate.setOwner(Optional.of(player.getUUID()), SGGameTestsNeoForge.server(helper));
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(SGItems.CONFIGURATOR));
+        ToolActions.configurator(player, new ToolPayloads.ConfiguratorApply(
+                gate.position().dimension().identifier().toString(), gate.position().pos(), "", 12, List.of(), "",
+                false, ""));
+        helper.assertTrue(gate.chevrons() == 7, "The configurator gave the gate " + gate.chevrons() + " chevrons");
+        helper.assertTrue(gate.setChevrons(10, SGGameTestsNeoForge.server(helper)) == ActionResult.NOT_POSSIBLE,
+                "The API gave the gate ten chevrons");
+        helper.assertTrue(gate.setChevrons(9, SGGameTestsNeoForge.server(helper)) == ActionResult.DONE,
+                "The API didn't give the gate nine chevrons");
+        if (!(helper.getLevel().getBlockEntity(gate.position().pos()) instanceof final StargateBaseBlockEntity base)) {
+            throw helper.assertionException(Component.literal("The gate has no base"));
+        }
+        base.setChevrons(42);
+        helper.assertTrue(base.chevrons() == 9, "The base took " + base.chevrons() + " chevrons");
+        base.giveChevrons(0);
+        helper.assertTrue(base.chevrons() == 1, "The base took " + base.chevrons() + " chevrons");
+        helper.succeed();
+    }
+
+    // A tool keeps no address longer than the most chevrons a gate has, nine in SGCraft, and a screen's packet carrying
+    // one longer than any is refused as it is read
+    private static void addressLength(final GameTestHelper helper, final BlockPos origin) {
+        final int most = SGCraftApi.get().stargates().maxChevrons();
+        helper.assertTrue(most == 9, "SGCraft's gates have at most " + most + " chevrons");
+        final FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            new ToolPayloads.PddAction(ToolPayloads.PddAction.Kind.ADD, "A".repeat(1000), "", 0).write(buf);
+            boolean refused = false;
+            try {
+                new ToolPayloads.PddAction(buf);
+            } catch (final DecoderException e) {
+                refused = true;
+            }
+            helper.assertTrue(refused, "A PDD packet with a 1000 character address was read");
+        } finally {
+            buf.release();
+        }
+        final Stargate gate = SGGameTestsNeoForge.place(helper, origin.offset(SGGameTestsNeoForge.A), 9);
+        final ServerPlayer player = SGGameTestsNeoForge.playerAt(helper, gate);
+        player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(SGItems.PDD));
+        ToolActions.pdd(player, new ToolPayloads.PddAction(ToolPayloads.PddAction.Kind.ADD, "ABCD-EFG-HIJK-LMNO",
+                "", 0));
+        final AddressBook book = ItemAddressBook.of(player.getItemInHand(InteractionHand.MAIN_HAND));
+        helper.assertTrue(book.stream().noneMatch(entry -> entry.address().size() > most),
+                "The PDD kept an address of more than " + most + " symbols");
+        helper.succeed();
+    }
+
+    // The settings a client reads itself go to it whole, and a client that leaves a server goes back to the defaults
+    private static void sharedSettings(final GameTestHelper helper, final BlockPos origin) {
+        final MalpSettings malp = MalpSettings.DEFAULTS;
+        final SharedSettings.Values values = new SharedSettings.Values(
+                ZpmSettings.DEFAULTS.with("capacity", 100_000_000), new MalpSettings(50_000L,
+                        malp.powerUnitChargeRate(), malp.chargerChargeRate(), malp.idleDrain(), malp.driveDrain(),
+                        malp.signalRange(), malp.lingerTicks(), malp.consoleDamageInterrupts(),
+                        malp.consoleSpectators(), malp.spectatorRange(), malp.tabletDrain()),
+                ZatSettings.DEFAULTS);
+        final FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        final SharedSettings.Values read;
+        try {
+            new SharedSettings.Packet(values).write(buf);
+            read = new SharedSettings.Packet(buf).values();
+        } finally {
+            buf.release();
+        }
+        helper.assertTrue(read.equals(values), "The settings came back as " + read);
+        helper.assertTrue(SharedSettings.Values.of(SGServer.require().config()).zpm()
+                .equals(SGServer.require().config().options().zpm()), "The server sends other ZPM settings");
+        try {
+            SharedSettings.receive(read);
+            helper.assertTrue(SharedSettings.zpm().capacity() == 100_000_000, "The client kept another ZPM capacity");
+            helper.assertTrue(SharedSettings.malp().batteryCapacity() == 50_000,
+                    "The client kept another battery capacity");
+        } finally {
+            SharedSettings.forget();
+        }
+        helper.assertTrue(SharedSettings.zpm().equals(ZpmSettings.DEFAULTS)
+                && SharedSettings.malp().equals(MalpSettings.DEFAULTS), "Leaving didn't bring back the defaults");
         helper.succeed();
     }
 

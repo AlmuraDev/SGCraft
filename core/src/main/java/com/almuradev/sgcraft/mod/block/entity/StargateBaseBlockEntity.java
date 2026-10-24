@@ -45,6 +45,7 @@ import com.almuradev.sgcraft.mod.gate.GateShape;
 import com.almuradev.sgcraft.mod.gate.IrisView;
 import com.almuradev.sgcraft.mod.gate.SGIris;
 import com.almuradev.sgcraft.mod.gate.SGStargate;
+import com.almuradev.sgcraft.mod.gate.SGStargates;
 import com.almuradev.sgcraft.mod.item.GateTypeUpgradeItem;
 import com.almuradev.sgcraft.mod.item.IrisUpgradeItem;
 import com.almuradev.sgcraft.mod.item.SGItems;
@@ -249,22 +250,30 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         return this.chevrons;
     }
 
+    // A count of chevrons the ring has places for
+    private static int keptChevrons(final int chevrons) {
+        return Math.clamp(chevrons, 1, SGStargates.MAX_CHEVRONS);
+    }
+
+    /** Sets how many chevrons the gate has, kept from 1 to the ring's nine places. */
     public void setChevrons(final int chevrons) {
-        if (this.chevrons == chevrons) {
+        final int kept = StargateBaseBlockEntity.keptChevrons(chevrons);
+        if (this.chevrons == kept) {
             return;
         }
-        this.chevrons = chevrons;
+        this.chevrons = kept;
         this.setChanged();
         this.sendUpdate();
     }
 
     /**
-     * Sets the gate's chevrons to {@code chevrons} without upgrades, as the server's settings do for a new gate, and
+     * Sets the gate's chevrons to {@code count}, kept from 1 to 9, without upgrades, as the server's settings do for a new gate, and
      * commands, operators and players in creative mode do, so breaking the base gives no chevron upgrades back for
      * the ones added. Chevrons taken away are those included first, so the ones fitted with upgrades still give them
      * back.
      */
-    public void giveChevrons(final int chevrons) {
+    public void giveChevrons(final int count) {
+        final int chevrons = StargateBaseBlockEntity.keptChevrons(count);
         if (this.chevrons == chevrons) {
             return;
         }
@@ -592,7 +601,9 @@ public final class StargateBaseBlockEntity extends BlockEntity {
         super.loadAdditional(input);
         this.formed = input.getBooleanOr("formed", false);
         input.read("gate_type", ResourceKey.codec(SGCraftRegistries.GATE_TYPE)).ifPresent(type -> this.gateType = type);
-        this.chevrons = input.getIntOr("chevrons", StargateBaseBlockEntity.DEFAULT_CHEVRONS);
+        // Kept in range, as the renderers draw one chevron in each of the ring's places
+        this.chevrons = StargateBaseBlockEntity.keptChevrons(input.getIntOr("chevrons",
+                StargateBaseBlockEntity.DEFAULT_CHEVRONS));
         this.includedChevrons = input.getIntOr("included_chevrons", StargateBaseBlockEntity.DEFAULT_CHEVRONS);
         this.typeFitted = input.getBooleanOr("type_fitted", false);
         this.shape = GateShape.ofRadius(input.getIntOr("radius", GateShape.STANDARD.radius()));

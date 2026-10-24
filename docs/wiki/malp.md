@@ -28,6 +28,7 @@ It goes through gates like any other traveler. It keeps its battery, its console
 - A new MALP is called `MALP` and the first four characters of its UUID, such as `MALP 3F2A`. Use a name tag on it, or change its name in its configurator screen, to rename it. Its name shows above it all the time, not only while you look at it.
 - Use the MALP with an empty hand to open its battery slot. The screen shows the battery's charge (or "Needs no power") and the console it is paired with. Stay within 8 blocks to keep it open.
 - To pick it up, sneak and use the MALP with an empty hand. The item keeps its battery, console pairing, name, owner and settings. Its tooltip shows the paired console and the battery's charge, or that it needs no power.
+- Only the owner and operators can pick up a MALP, rename it with a name tag or open its battery slot. Anyone else is told "This MALP isn't yours". Anyone can handle a MALP with no owner.
 
 > **Note:** A MALP you pick up and put down again is a new entity to tablets. Pair your [tablets](#the-malp-tablet) with it again. Its console pairing stays.
 

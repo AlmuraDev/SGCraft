@@ -238,7 +238,7 @@ public final class ToolActions {
             return;
         }
         final AddressBook book = held.get();
-        final Optional<Address> address = Address.parse(action.address());
+        final Optional<Address> address = ToolActions.address(action.address());
         final String name = action.name().strip();
         String message = "";
         switch (action.kind()) {
@@ -328,6 +328,11 @@ public final class ToolActions {
     private static String status(final Optional<Stargate> gate) {
         return gate.filter(Stargate::exists).map(g -> g.state().name().toLowerCase(Locale.ROOT))
                 .orElse(BookEntry.NO_GATE);
+    }
+
+    // An address typed into a tool's screen, if it is one that some gate could dial
+    private static Optional<Address> address(final String text) {
+        return Address.parse(text).filter(address -> address.size() <= SGCraftApi.get().stargates().maxChevrons());
     }
 
     private static String name(final String name, final Address address) {
@@ -430,7 +435,7 @@ public final class ToolActions {
                 ? Optional.of(gates.get(action.gate())) : Optional.empty();
         final Optional<Stargate> chosenGate = chosen.flatMap(listed -> SGCraftApi.get().stargates()
                 .at(listed.position())).filter(Stargate::exists);
-        final Optional<Address> address = Address.parse(action.address());
+        final Optional<Address> address = ToolActions.address(action.address());
         final String name = action.name().strip();
         int selected = action.gate();
         String message = "";

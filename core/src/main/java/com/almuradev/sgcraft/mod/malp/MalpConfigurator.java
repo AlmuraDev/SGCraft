@@ -62,6 +62,20 @@ public final class MalpConfigurator {
                 || player.getUUID().equals(malp.owner());
     }
 
+    /**
+     * @return whether a player may pack up a MALP, rename it or open its battery: its owner and operators may, and
+     *     anyone may handle a MALP that has no owner
+     */
+    public static boolean mayHandle(final Player player, final MalpEntity malp) {
+        return malp.owner() == null || MalpConfigurator.mayConfigure(player, malp);
+    }
+
+    /** Tells a player the MALP they tried to pack up, rename or open isn't theirs. */
+    public static void refuseHandling(final ServerPlayer player) {
+        player.sendOverlayMessage(Component.translatableWithFallback("message.sgcraft.malp.not_yours",
+                "This MALP isn't yours").withStyle(ChatFormatting.RED));
+    }
+
     /** A player used a configurator on a MALP: its settings screen opens, if they may change them. */
     public static void open(final ServerPlayer player, final MalpEntity malp) {
         if (!MalpConfigurator.mayConfigure(player, malp)) {
