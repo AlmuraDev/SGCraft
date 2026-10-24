@@ -56,7 +56,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * <p>A player sneak-uses a device with an empty hand, then uses any block of a formed gate in the same world, on which
  * they have the {@code configure} right, within a minute. Sneak-using the same device again cancels, or, if it is
- * linked, unlinks it. A device broken is unlinked. The links are kept with the world.</p>
+ * linked, unlinks it. Only a device's owner, or an operator, links or unlinks it, or anyone for a device with no owner.
+ * A device broken is unlinked. The links are kept with the world.</p>
  */
 public final class ZpmLinks {
 
@@ -76,6 +77,10 @@ public final class ZpmLinks {
     public static void sneakUse(final ServerPlayer player, final BlockPos pos) {
         final MinecraftServer server = player.level().getServer();
         final GlobalPos device = GlobalPos.of(player.level().dimension(), pos);
+        if (player.level().getBlockEntity(pos) instanceof final ZpmDeviceBlockEntity found && !found.mayLink(player)) {
+            ZpmLinks.tell(player, "message.sgcraft.zpm_link.not_yours", "This ZPM device isn't yours", true);
+            return;
+        }
         final Pending pending = ZpmLinks.PENDING.remove(player.getUUID());
         if (pending != null && pending.device().equals(device) && pending.until() >= server.getTickCount()) {
             if (ZpmLinks.unlink(server, device)) {

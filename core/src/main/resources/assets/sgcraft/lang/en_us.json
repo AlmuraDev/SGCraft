@@ -1023,6 +1023,7 @@
   "message.sgcraft.zpm_link.unlinked": "This ZPM device is no longer linked to a gate",
   "message.sgcraft.zpm_link.other_world": "A ZPM device links only to a gate in its own world",
   "message.sgcraft.zpm_link.denied": "You aren't allowed to configure this gate",
+  "message.sgcraft.zpm_link.not_yours": "This ZPM device isn't yours",
   "message.sgcraft.zpm_link.device_gone": "The ZPM device is no longer there",
   "message.sgcraft.zpm_link.linked": "Linked. The gate draws on this ZPM device from anywhere in this world while it's loaded",
   "message.sgcraft.obelisk.no_configure": "You aren't allowed to configure this obelisk",

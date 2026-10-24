@@ -29,7 +29,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -77,6 +79,17 @@ public abstract class ZpmDeviceBlock extends HorizontalDirectionalBlock implemen
     public @Nullable BlockState getStateForPlacement(final BlockPlaceContext context) {
         return this.defaultBlockState().setValue(HorizontalDirectionalBlock.FACING,
                 context.getHorizontalDirection().getOpposite());
+    }
+
+    // The player who puts it down owns it, and alone, with operators, links it to a gate
+    @Override
+    public void setPlacedBy(final Level level, final BlockPos pos, final BlockState state,
+            final @Nullable LivingEntity by, final ItemStack stack) {
+        super.setPlacedBy(level, pos, state, by, stack);
+        if (!level.isClientSide() && by instanceof Player
+                && level.getBlockEntity(pos) instanceof final ZpmDeviceBlockEntity device) {
+            device.setOwner(by.getUUID());
+        }
     }
 
     @Override

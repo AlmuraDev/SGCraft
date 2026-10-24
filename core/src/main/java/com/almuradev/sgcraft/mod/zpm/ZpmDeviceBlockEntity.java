@@ -25,11 +25,13 @@
 
 package com.almuradev.sgcraft.mod.zpm;
 
+import com.almuradev.sgcraft.mod.access.SGGateAccess;
 import com.almuradev.sgcraft.mod.energy.GeStore;
 import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.UUIDUtil;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -46,17 +48,23 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * A ZPM console, interface cart or hub, as in the original: it holds ZPMs and gives their gate energy to the gates near
  * it, and to an energy converter against it, which turns it into FE for other mods. Its ZPMs keep
  * what is left in them when they are taken out or the block is broken. Drawing on a tainted ZPM sets it off.
+ *
+ * <p>It belongs to the player who put it down, who, with operators, alone links it to a gate (see {@link ZpmLinks});
+ * anyone links a device put down before devices had owners.</p>
  */
 public final class ZpmDeviceBlockEntity extends BlockEntity implements GeStore {
 
     private final SimpleContainer zpms;
+    private @Nullable UUID owner;
 
     public ZpmDeviceBlockEntity(final BlockPos pos, final BlockState state) {
         super(SGBlockEntityTypes.ZPM_DEVICE, pos, state);
@@ -212,9 +220,25 @@ public final class ZpmDeviceBlockEntity extends BlockEntity implements GeStore {
         }
     }
 
+    /** @return the player who put it down, if it has an owner */
+    public @Nullable UUID owner() {
+        return this.owner;
+    }
+
+    public void setOwner(final @Nullable UUID owner) {
+        this.owner = owner;
+        this.setChanged();
+    }
+
+    /** @return whether a player may link it to a gate, or unlink it: its owner or an operator, or anyone if unowned */
+    public boolean mayLink(final Player player) {
+        return this.owner == null || this.owner.equals(player.getUUID()) || SGGateAccess.isOperator(player);
+    }
+
     @Override
     protected void loadAdditional(final ValueInput input) {
         super.loadAdditional(input);
+        this.owner = input.read("owner", UUIDUtil.CODEC).orElse(null);
         final NonNullList<ItemStack> items = NonNullList.withSize(this.zpms.getContainerSize(), ItemStack.EMPTY);
         ContainerHelper.loadAllItems(input, items);
         for (int slot = 0; slot < items.size(); slot++) {
@@ -230,5 +254,8 @@ public final class ZpmDeviceBlockEntity extends BlockEntity implements GeStore {
             items.set(slot, this.zpms.getItem(slot));
         }
         ContainerHelper.saveAllItems(output, items);
+        if (this.owner != null) {
+            output.store("owner", UUIDUtil.CODEC, this.owner);
+        }
     }
 }

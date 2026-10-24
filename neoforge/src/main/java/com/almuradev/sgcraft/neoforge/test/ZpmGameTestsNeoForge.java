@@ -88,6 +88,7 @@ final class ZpmGameTestsNeoForge {
         tests.put("gate_draws_nearest_first", ZpmGameTestsNeoForge::drawsNearestFirst);
         tests.put("zpm_console_powers_gate", ZpmGameTestsNeoForge::consolePowersGate);
         tests.put("zpm_linked_console_powers_gate", ZpmGameTestsNeoForge::linkedConsolePowersGate);
+        tests.put("zpm_link_needs_device_owner", ZpmGameTestsNeoForge::linkNeedsDeviceOwner);
         tests.put("energy_converter_gives_fe", ZpmGameTestsNeoForge::converterGivesFe);
         tests.put("zpm_console_gives_no_fe", ZpmGameTestsNeoForge::consoleGivesNoFe);
         tests.put("zpm_hub_goes_further", ZpmGameTestsNeoForge::hubGoesFurther);
@@ -147,6 +148,28 @@ final class ZpmGameTestsNeoForge {
         level.setBlock(far, Blocks.AIR.defaultBlockState(), Block.UPDATE_ALL);
         helper.assertTrue(ZpmLinks.devicesOf(level.getServer(), gate.position()).isEmpty(),
                 "The broken console stayed linked");
+        helper.succeed();
+    }
+
+    // Only a ZPM device's owner, or an operator, links it to a gate: another player can't send its ZPMs to their own
+    // gate, nor unlink it
+    private static void linkNeedsDeviceOwner(final GameTestHelper helper, final BlockPos origin) {
+        final Stargate gate = SGGameTestsNeoForge.place(helper, origin, 9);
+        final BlockPos far = origin.offset(0, 0, 40);
+        final ZpmDeviceBlockEntity console = ZpmGameTestsNeoForge.device(helper, far, SGBlocks.ZPM_CONSOLE);
+        final ServerPlayer owner = helper.makeMockServerPlayerInLevel();
+        final ServerPlayer other = helper.makeMockServerPlayerInLevel();
+        console.setOwner(owner.getUUID());
+        gate.setOwner(Optional.of(other.getUUID()), SGGameTestsNeoForge.server(helper));
+        ZpmLinks.sneakUse(other, far);
+        helper.assertTrue(!ZpmLinks.complete(other, gate.position().pos()), "Another player started a link");
+        helper.assertTrue(!ZpmSources.devices(gate).contains(console), "Another player's console powers the gate");
+        gate.setOwner(Optional.of(owner.getUUID()), SGGameTestsNeoForge.server(helper));
+        ZpmLinks.sneakUse(owner, far);
+        helper.assertTrue(ZpmLinks.complete(owner, gate.position().pos()), "The owner couldn't link the console");
+        ZpmLinks.sneakUse(other, far);
+        ZpmLinks.sneakUse(other, far);
+        helper.assertTrue(ZpmSources.devices(gate).contains(console), "Another player unlinked the console");
         helper.succeed();
     }
 
