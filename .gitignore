@@ -26,3 +26,7 @@ runs
 
 # Python caches
 __pycache__/
+
+# Local tools, not shared; the wiki builder is, as the wiki workflow runs it
+/tools/*
+!/tools/wiki/
