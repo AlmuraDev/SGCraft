@@ -59,8 +59,17 @@ import java.util.Set;
  */
 public final class ExplorerDialer {
 
+    /**
+     * The most gates the screen is sent, so the list stays well within what one packet holds; those the player
+     * visited or named come first.
+     */
+    public static final int MAX_LISTED = 4000;
+
     // Each answer lists every generated gate, so a screen's refreshes are answered at most once a second, as in 1.12,
     // and its buttons a few times a second
+    // The order gates are listed in: by world, then by address
+    private static final Comparator<ExplorerPayloads.Listed> ORDER = Comparator.comparing(
+            ExplorerPayloads.Listed::world).thenComparing(ExplorerPayloads.Listed::address);
     private static final ActionThrottle THROTTLE = new ActionThrottle(20, 4);
 
     private ExplorerDialer() {
@@ -126,8 +135,24 @@ public final class ExplorerDialer {
 
     private static void send(final ServerPlayer player, final boolean open, final String message) {
         final Optional<Stargate> near = GateTargeting.find(player, ToolActions.range());
+        final List<ExplorerPayloads.Listed> entries = ExplorerDialer.entries(player, near);
         SGNetwork.send(player, new ExplorerPayloads.State(open, near.map(gate -> ToolActions.info(player, gate)),
-                ExplorerDialer.entries(player, near), message));
+                ExplorerDialer.listed(entries), entries.size(), message));
+    }
+
+    /**
+     * @return as many of the gates as the screen is sent, at most {@link #MAX_LISTED}: those visited or named first,
+     *     then the rest, by world then address
+     */
+    public static List<ExplorerPayloads.Listed> listed(final List<ExplorerPayloads.Listed> entries) {
+        if (entries.size() <= ExplorerDialer.MAX_LISTED) {
+            return entries;
+        }
+        final List<ExplorerPayloads.Listed> kept = new ArrayList<>(entries);
+        kept.sort(Comparator.comparing((ExplorerPayloads.Listed entry) -> !entry.visited() && entry.name().isEmpty()));
+        final List<ExplorerPayloads.Listed> listed = new ArrayList<>(kept.subList(0, ExplorerDialer.MAX_LISTED));
+        listed.sort(ExplorerDialer.ORDER);
+        return listed;
     }
 
     /** @return every generated gate, by world then address, as the player sees it from the gate near them */
@@ -154,8 +179,7 @@ public final class ExplorerDialer {
                     address, record.position().dimension().identifier().toString(),
                     visited.contains(record.position()), gate.get().state().name().toLowerCase(Locale.ROOT)));
         }));
-        entries.sort(Comparator.comparing(ExplorerPayloads.Listed::world)
-                .thenComparing(ExplorerPayloads.Listed::address));
+        entries.sort(ExplorerDialer.ORDER);
         return entries;
     }
 

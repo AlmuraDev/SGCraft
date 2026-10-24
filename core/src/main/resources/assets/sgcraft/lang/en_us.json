@@ -603,6 +603,7 @@
   "screen.sgcraft.explorer.name": "Name",
   "screen.sgcraft.explorer.count": "Generated Addresses: (%s)",
   "screen.sgcraft.explorer.visited_count": " - Visited: %s",
+  "screen.sgcraft.explorer.shown": " - Showing %s",
   "screen.sgcraft.explorer.from": "Dialing from %s",
   "screen.sgcraft.explorer.no_gate": "No gate near you to dial from",
   "screen.sgcraft.explorer.unnamed": "Unnamed gate",

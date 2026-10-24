@@ -68,19 +68,22 @@ public final class ExplorerPayloads {
     }
 
     /**
-     * The explorer dialer's state: the gate near its holder, which it dials from, and every generated gate.
+     * The explorer dialer's state: the gate near its holder, which it dials from, and the generated gates, as many as
+     * fit one packet.
      *
      * @param open whether to open the screen, rather than only update it if it is still open
+     * @param entries the generated gates listed, at most {@link ExplorerDialer#MAX_LISTED}
+     * @param total how many generated gates there are, listed or not
      * @param message something to tell the player, or empty
      */
-    public record State(boolean open, Optional<GateInfo> gate, List<Listed> entries, String message)
+    public record State(boolean open, Optional<GateInfo> gate, List<Listed> entries, int total, String message)
             implements SGPacket {
 
         public static final Type<State> TYPE = new Type<>(SGCraft.id("explorer_state"));
 
         public State(final FriendlyByteBuf buf) {
             this(buf.readBoolean(), buf.readOptional(GateInfo::new), SGPacket.readList(buf, Listed::new),
-                    buf.readUtf());
+                    buf.readVarInt(), buf.readUtf());
         }
 
         @Override
@@ -88,6 +91,7 @@ public final class ExplorerPayloads {
             buf.writeBoolean(this.open);
             buf.writeOptional(this.gate, (out, gate) -> gate.write(out));
             SGPacket.writeList(buf, this.entries, (out, entry) -> entry.write(out));
+            buf.writeVarInt(this.total);
             buf.writeUtf(this.message);
         }
 
@@ -108,10 +112,15 @@ public final class ExplorerPayloads {
             REFRESH, DIAL, DISCONNECT, RENAME
         }
 
+        /** The longest place a screen may name a gate by, a world's identifier and three numbers. */
+        public static final int MAX_GATE_TEXT = 512;
+        /** The longest name a screen may send; the server cuts names shorter still. */
+        public static final int MAX_NAME_TEXT = 256;
+
         public static final Type<Action> TYPE = new Type<>(SGCraft.id("explorer_action"));
 
         public Action(final FriendlyByteBuf buf) {
-            this(buf.readEnum(Kind.class), buf.readUtf(), buf.readUtf());
+            this(buf.readEnum(Kind.class), buf.readUtf(Action.MAX_GATE_TEXT), buf.readUtf(Action.MAX_NAME_TEXT));
         }
 
         @Override

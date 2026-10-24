@@ -42,6 +42,7 @@ import net.minecraft.client.gui.components.ObjectSelectionList;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
@@ -179,10 +180,15 @@ public final class ExplorerScreen extends Screen {
         super.extractRenderState(graphics, mouseX, mouseY, partialTick);
         graphics.centeredText(this.font, this.title, this.width / 2, 8, 0xFFFFFFFF);
         final long visited = this.state.entries().stream().filter(Listed::visited).count();
-        final Component count = Component.translatableWithFallback("screen.sgcraft.explorer.count",
-                "Generated Addresses: (%s)", this.state.entries().size())
+        final MutableComponent count = Component.translatableWithFallback("screen.sgcraft.explorer.count",
+                "Generated Addresses: (%s)", this.state.total())
                 .append(Component.translatableWithFallback("screen.sgcraft.explorer.visited_count",
                         " - Visited: %s", visited).withStyle(ChatFormatting.GRAY));
+        // A server with more gates than one packet holds sends those visited or named first
+        if (this.state.entries().size() < this.state.total()) {
+            count.append(Component.translatableWithFallback("screen.sgcraft.explorer.shown", " - Showing %s",
+                    this.state.entries().size()).withStyle(ChatFormatting.GRAY));
+        }
         graphics.centeredText(this.font, count, this.width / 2, 20, 0xFFFFFFFF);
         final Component gate = this.state.gate().map(g -> Component.translatableWithFallback(
                 "screen.sgcraft.explorer.from", "Dialing from %s", g.address().isEmpty() ? "????-???-??"

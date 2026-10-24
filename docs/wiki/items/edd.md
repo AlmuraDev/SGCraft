@@ -42,6 +42,8 @@ The list holds every gate world generation built, in every world, sorted by worl
 
 The list refreshes every 3 seconds.
 
+The list holds up to 4,000 gates. On a server with more, the gates you have visited or named come first, the header still counts them all, and it adds "Showing 4000".
+
 The **Search** box above the list narrows it to the gates whose name, world or address has the text in it. Case doesn't matter, and neither do dashes in an address. The red **x** after it empties it.
 
 ### Buttons

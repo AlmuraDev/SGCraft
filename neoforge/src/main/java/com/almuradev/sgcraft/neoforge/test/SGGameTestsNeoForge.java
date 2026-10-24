@@ -82,6 +82,8 @@ import com.almuradev.sgcraft.mod.item.SGItems;
 import com.almuradev.sgcraft.mod.malp.MalpSettings;
 import com.almuradev.sgcraft.mod.settings.SharedSettings;
 import com.almuradev.sgcraft.mod.tool.ActionThrottle;
+import com.almuradev.sgcraft.mod.tool.ExplorerDialer;
+import com.almuradev.sgcraft.mod.tool.ExplorerPayloads;
 import com.almuradev.sgcraft.mod.tool.TabletGate;
 import com.almuradev.sgcraft.mod.tool.ToolActions;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads;
@@ -226,6 +228,7 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("addresses_stay_within_nine_symbols", SGGameTestsNeoForge::addressLength);
         SGGameTestsNeoForge.TESTS.put("shared_settings_reach_clients", SGGameTestsNeoForge::sharedSettings);
         SGGameTestsNeoForge.TESTS.put("tool_screens_answer_a_few_times_a_second", SGGameTestsNeoForge::throttle);
+        SGGameTestsNeoForge.TESTS.put("explorer_list_fits_one_packet", SGGameTestsNeoForge::explorerListFits);
         SGGameTestsNeoForge.TESTS.put("gdo_works_iris", SGGameTestsNeoForge::gdoIris);
         SGGameTestsNeoForge.TESTS.put("camouflage", SGGameTestsNeoForge::camouflage);
         SGGameTestsNeoForge.TESTS.put("supergate_placed", SGGameTestsNeoForge::supergatePlaced);
@@ -1051,6 +1054,39 @@ public final class SGGameTestsNeoForge {
         ActionThrottle.forget(player.getUUID());
         helper.assertTrue(throttle.allows(player, true) && throttle.allows(player, false),
                 "A player who left wasn't forgotten");
+        helper.succeed();
+    }
+
+    // With more generated gates than one packet holds, the explorer dialer is sent as many as fit, those visited or
+    // named first, with how many there are; and its screen can't send a gate's place longer than any
+    private static void explorerListFits(final GameTestHelper helper, final BlockPos origin) {
+        final List<ExplorerPayloads.Listed> all = new ArrayList<>();
+        for (int i = 0; i < ExplorerDialer.MAX_LISTED + 10; i++) {
+            all.add(new ExplorerPayloads.Listed("minecraft:overworld " + i + " 64 0", "", "", "minecraft:overworld",
+                    false, "idle"));
+        }
+        all.add(new ExplorerPayloads.Listed("minecraft:overworld -1 64 0", "", "", "minecraft:overworld", true,
+                "idle"));
+        all.add(new ExplorerPayloads.Listed("minecraft:overworld -2 64 0", "Home", "", "minecraft:overworld", false,
+                "idle"));
+        final List<ExplorerPayloads.Listed> listed = ExplorerDialer.listed(all);
+        helper.assertTrue(listed.size() == ExplorerDialer.MAX_LISTED, listed.size() + " gates were listed");
+        helper.assertTrue(listed.stream().anyMatch(ExplorerPayloads.Listed::visited)
+                && listed.stream().anyMatch(entry -> entry.name().equals("Home")),
+                "A visited or named gate was left off the list");
+        final FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        try {
+            new ExplorerPayloads.Action(ExplorerPayloads.Action.Kind.RENAME, "x".repeat(10_000), "").write(buf);
+            boolean refused = false;
+            try {
+                new ExplorerPayloads.Action(buf);
+            } catch (final DecoderException e) {
+                refused = true;
+            }
+            helper.assertTrue(refused, "An explorer action naming a 10,000 character place was read");
+        } finally {
+            buf.release();
+        }
         helper.succeed();
     }
 
