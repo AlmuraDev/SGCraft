@@ -51,6 +51,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -324,6 +325,34 @@ public final class DialingComputers {
                 DialingComputers.end(player);
             }
         }
+    }
+
+    /** Ends a player's turn at a computer as they leave the server, so the others draw them as usual. */
+    public static void left(final ServerPlayer player) {
+        DialingComputers.end(player);
+    }
+
+    /**
+     * Ends the turns at computers that are gone or whose chunk is no longer loaded, which don't tick to end them
+     * themselves, and forgets players who have left. The server calls this once a second.
+     */
+    public static void sweep(final MinecraftServer server) {
+        for (final Map.Entry<UUID, Session> entry : List.copyOf(DialingComputers.SESSIONS.entrySet())) {
+            final ServerPlayer player = server.getPlayerList().getPlayer(entry.getKey());
+            final GlobalPos at = entry.getValue().computer();
+            final ServerLevel level = server.getLevel(at.dimension());
+            if (player == null) {
+                DialingComputers.SESSIONS.remove(entry.getKey());
+            } else if (level == null || !level.isLoaded(at.pos())
+                    || !(level.getBlockState(at.pos()).getBlock() instanceof DialingComputerBlock)) {
+                DialingComputers.end(player);
+            }
+        }
+    }
+
+    /** Forgets every turn, as the server stops. */
+    public static void clear() {
+        DialingComputers.SESSIONS.clear();
     }
 
     /** A player got up from a chair: closes their computer's screen. */

@@ -29,12 +29,17 @@ import com.almuradev.sgcraft.mod.access.SGGateAccess;
 import com.almuradev.sgcraft.mod.address.SGAddressing;
 import com.almuradev.sgcraft.mod.addressbook.DefaultAddresses;
 import com.almuradev.sgcraft.mod.addressbook.SGAddressBooks;
+import com.almuradev.sgcraft.mod.computer.DialingComputers;
 import com.almuradev.sgcraft.mod.gate.SGStargates;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
+import com.almuradev.sgcraft.mod.obelisk.Obelisks;
+import com.almuradev.sgcraft.mod.settings.SettingsActions;
 import com.almuradev.sgcraft.mod.settings.SharedSettings;
+import com.almuradev.sgcraft.mod.tool.ActionThrottle;
 import com.almuradev.sgcraft.mod.tool.ToolActions;
 import com.almuradev.sgcraft.mod.view.RemoteViews;
 import com.almuradev.sgcraft.mod.zat.Zat;
+import com.almuradev.sgcraft.mod.zpm.ZpmLinks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.network.chat.Component;
@@ -58,6 +63,9 @@ public final class SGServer {
 
     /** Who stands for the server's console, as the owner of a selection. */
     public static final UUID CONSOLE = new UUID(0, 0);
+
+    // How often the turns at computers that are gone are looked for, in ticks
+    private static final int SWEEP_TICKS = 20;
 
     private static @Nullable SGServer current;
 
@@ -123,6 +131,9 @@ public final class SGServer {
             MalpLinks.tick(server);
             Zat.tick(server);
             ToolActions.tickGdo(server);
+            if (server.getTickCount() % SGServer.SWEEP_TICKS == 0) {
+                DialingComputers.sweep(server);
+            }
         }
     }
 
@@ -145,6 +156,19 @@ public final class SGServer {
         }
     }
 
+    /** Forgets what SGCraft keeps for a player, as they leave the server. */
+    public static void left(final ServerPlayer player) {
+        if (SGServer.current == null) {
+            return;
+        }
+        DialingComputers.left(player);
+        ActionThrottle.forget(player.getUUID());
+        Obelisks.forget(player.getUUID());
+        ZpmLinks.forget(player.getUUID());
+        SettingsActions.forget(player.getUUID());
+        ToolActions.forget(player.getUUID());
+    }
+
     public static void stopped(final MinecraftServer server) {
         final SGServer current = SGServer.current;
         if (current != null && current.server == server) {
@@ -152,6 +176,14 @@ public final class SGServer {
             RemoteViews.clear();
             MalpLinks.clear();
             SharedSettings.stopped();
+            // The next server, in single player, counts its ticks from 0 again
+            DialingComputers.clear();
+            ActionThrottle.clear();
+            Obelisks.clear();
+            ZpmLinks.clear();
+            SettingsActions.clear();
+            ToolActions.clear();
+            Zat.clear();
             SGServer.current = null;
         }
     }

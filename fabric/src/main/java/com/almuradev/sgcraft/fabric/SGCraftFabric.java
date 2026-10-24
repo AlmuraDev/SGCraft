@@ -171,6 +171,7 @@ public final class SGCraftFabric implements ModInitializer {
         ServerTickEvents.END_SERVER_TICK.register(NaquadahOre::tick);
         ServerLifecycleEvents.SERVER_STOPPED.register(SGServer::stopped);
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> SGServer.joined(handler.getPlayer()));
+        ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> SGServer.left(handler.getPlayer()));
         CommandRegistrationCallback.EVENT.register((dispatcher, registries, environment) ->
                 SGCommands.register(dispatcher));
     }

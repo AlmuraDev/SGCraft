@@ -72,6 +72,18 @@ public final class Obelisks {
     private Obelisks() {
     }
 
+    /** Forgets the link a player started and when they last arrived, as they leave the server. */
+    public static void forget(final UUID player) {
+        Obelisks.LINKING.remove(player);
+        Obelisks.ARRIVED.remove(player);
+    }
+
+    /** Forgets every player, as the server stops. */
+    public static void clear() {
+        Obelisks.LINKING.clear();
+        Obelisks.ARRIVED.clear();
+    }
+
     // ---- Linking ----
 
     /**
@@ -144,7 +156,7 @@ public final class Obelisks {
     public static void transport(final ServerPlayer player, final AsgardObeliskBlockEntity from) {
         final int now = player.level().getServer().getTickCount();
         final Integer arrived = Obelisks.ARRIVED.get(player.getUUID());
-        if (arrived != null && now - arrived < Obelisks.COOLDOWN_TICKS || from.beaming(player)) {
+        if (arrived != null && now >= arrived && now - arrived < Obelisks.COOLDOWN_TICKS || from.beaming(player)) {
             return;
         }
         if (!from.mayUse(player)) {

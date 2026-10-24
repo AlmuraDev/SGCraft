@@ -160,6 +160,17 @@ public final class SettingsActions {
         return new AddressChanges.Change(change.kind(), world, change.group(), change.value());
     }
 
+    /** Forgets a player, as they leave the server. */
+    public static void forget(final UUID player) {
+        SettingsActions.SENT.remove(player);
+    }
+
+    /** Forgets every player, and any refresh waiting, as the server stops. */
+    public static void clear() {
+        SettingsActions.SENT.clear();
+        SettingsActions.changedOn = -1;
+    }
+
     // Has every operator online sent the settings on the next tick, but the player who saved, who has been sent them
     // already with what the save did. Saves in one tick are sent once
     private static void changed() {

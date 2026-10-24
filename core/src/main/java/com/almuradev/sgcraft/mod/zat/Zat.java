@@ -73,6 +73,8 @@ public final class Zat {
     // The shots charging, and when each entity was last stunned, in game time
     private static final List<Shot> CHARGING = new ArrayList<>();
     private static final Map<UUID, Long> STUNNED = new ConcurrentHashMap<>();
+    // How often the stunned are looked through for those no longer stunned, in ticks
+    private static final int FORGET_TICKS = 200;
 
     private record Shot(ServerPlayer player, ServerLevel level, int firesAt) {
     }
@@ -90,6 +92,12 @@ public final class Zat {
 
     /** Fires the shots whose charge is done; one whose holder died or left the world goes. Called each server tick. */
     public static void tick(final MinecraftServer server) {
+        // Those no longer stunned are forgotten now and then, so the stunned don't build up forever
+        if (server.getTickCount() % Zat.FORGET_TICKS == 0 && !Zat.STUNNED.isEmpty()) {
+            final long now = server.overworld().getGameTime();
+            final int stun = ZatSettings.current().stunTicks();
+            Zat.STUNNED.values().removeIf(since -> now < since || now - since > stun);
+        }
         if (Zat.CHARGING.isEmpty()) {
             return;
         }
@@ -165,6 +173,12 @@ public final class Zat {
         target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, ticks, 2, false, false));
         target.addEffect(new MobEffectInstance(MobEffects.MINING_FATIGUE, ticks, 2, false, false));
         target.addEffect(new MobEffectInstance(MobEffects.NAUSEA, Math.min(ticks, 100), 0, false, false));
+    }
+
+    /** Forgets the shots charging and who is stunned, as the server stops. */
+    public static void clear() {
+        Zat.CHARGING.clear();
+        Zat.STUNNED.clear();
     }
 
     /** @return whether an entity is stunned by a Zat now */

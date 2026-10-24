@@ -105,6 +105,11 @@ public final class SGCraftNeoForge {
                 SGServer.joined(player);
             }
         });
+        NeoForge.EVENT_BUS.addListener((final PlayerEvent.PlayerLoggedOutEvent event) -> {
+            if (event.getEntity() instanceof final ServerPlayer player) {
+                SGServer.left(player);
+            }
+        });
         NeoForge.EVENT_BUS.addListener((final RegisterCommandsEvent event) ->
                 SGCommands.register(event.getDispatcher()));
         // Formed gates are kept whole unless they may be broken

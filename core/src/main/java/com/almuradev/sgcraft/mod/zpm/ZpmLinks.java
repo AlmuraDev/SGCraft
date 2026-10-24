@@ -69,6 +69,16 @@ public final class ZpmLinks {
     private ZpmLinks() {
     }
 
+    /** Forgets the link a player started, as they leave the server. */
+    public static void forget(final UUID player) {
+        ZpmLinks.PENDING.remove(player);
+    }
+
+    /** Forgets every link started, as the server stops, since the next server counts its ticks from 0 again. */
+    public static void clear() {
+        ZpmLinks.PENDING.clear();
+    }
+
     // A link a player started at a device, and the server tick it lapses at
     private record Pending(GlobalPos device, int until) {
     }

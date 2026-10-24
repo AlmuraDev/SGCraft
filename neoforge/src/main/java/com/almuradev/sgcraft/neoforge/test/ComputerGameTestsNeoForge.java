@@ -30,6 +30,7 @@ import com.almuradev.sgcraft.api.gate.GateProperties;
 import com.almuradev.sgcraft.api.gate.GateState;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.block.DialingComputerBlock;
+import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.block.SGBlocks;
 import com.almuradev.sgcraft.mod.block.entity.DialingComputerBlockEntity;
 import com.almuradev.sgcraft.mod.block.entity.PowerUnitBlockEntity;
@@ -74,6 +75,7 @@ final class ComputerGameTestsNeoForge {
     static void register(final Map<String, BiConsumer<GameTestHelper, BlockPos>> tests) {
         tests.put("dialing_computer_places_and_breaks_whole", ComputerGameTestsNeoForge::placesAndBreaksWhole);
         tests.put("dialing_computer_links_nearest_gate", ComputerGameTestsNeoForge::linksNearestGate);
+        tests.put("dialing_computer_turn_ends_when_gone", ComputerGameTestsNeoForge::turnEndsWhenGone);
         tests.put("dialing_computer_dials_slowly", (helper, origin) ->
                 ComputerGameTestsNeoForge.dials(helper, origin, false));
         tests.put("dialing_computer_dials_quickly", (helper, origin) ->
@@ -262,6 +264,24 @@ final class ComputerGameTestsNeoForge {
         // As the computer's tick does; the test's chunks needn't tick
         DialingComputers.tick(level, main);
         helper.assertTrue(DialingComputers.session(player).isEmpty(), "Walking away didn't close the screen");
+        helper.succeed();
+    }
+
+    // A turn at a computer that is gone ends, though the computer no longer ticks to end it, and so does the turn of
+    // a player who leaves the server
+    private static void turnEndsWhenGone(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final BlockPos main = ComputerGameTestsNeoForge.placeComputer(level, origin);
+        final ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        player.snapTo(Vec3.atBottomCenterOf(main.north(2)), 180, 0);
+        DialingComputers.use(player, main);
+        helper.assertTrue(DialingComputers.session(player).isPresent(), "The computer's screen wasn't opened");
+        SGServer.left(player);
+        helper.assertTrue(DialingComputers.session(player).isEmpty(), "Leaving the server didn't end the turn");
+        DialingComputers.use(player, main);
+        level.removeBlock(main, false);
+        DialingComputers.sweep(level.getServer());
+        helper.assertTrue(DialingComputers.session(player).isEmpty(), "The turn at a computer that is gone went on");
         helper.succeed();
     }
 

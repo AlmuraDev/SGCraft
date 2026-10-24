@@ -573,6 +573,16 @@ public final class ToolActions {
     // The players with a GDO's screen open: the gate it works, what it was last sent, and when it last asked
     private static final Map<UUID, GdoViewer> GDO_VIEWERS = new HashMap<>();
 
+    /** Forgets the gate a player's GDO watches, as they leave the server. */
+    public static void forget(final UUID player) {
+        ToolActions.GDO_VIEWERS.remove(player);
+    }
+
+    /** Forgets every GDO watching a gate, as the server stops. */
+    public static void clear() {
+        ToolActions.GDO_VIEWERS.clear();
+    }
+
     private record GdoViewer(BlockPos gate, GdoState sent, int asked) {
     }
 
