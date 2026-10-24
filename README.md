@@ -20,17 +20,6 @@
   <a href="https://almuradev.github.io/SGCraft-Docs/faq.html"><b>FAQ</b></a>
 </p>
 
-<table align="center">
-  <tr>
-    <td><img alt="An open Milky Way gate at night" src="https://almuradev.github.io/SGCraft-Docs/scenes/milky-way-open-night.jpg" width="400"></td>
-    <td><img alt="An open Pegasus gate at night" src="https://almuradev.github.io/SGCraft-Docs/scenes/pegasus-open-night.jpg" width="400"></td>
-  </tr>
-  <tr>
-    <td><img alt="An open Universe gate at night" src="https://almuradev.github.io/SGCraft-Docs/scenes/universe-open-night.jpg" width="400"></td>
-    <td><img alt="An open supergate at night" src="https://almuradev.github.io/SGCraft-Docs/scenes/supergate-open-night.jpg" width="400"></td>
-  </tr>
-</table>
-
 ## Quick start
 
 1. Install NeoForge or Fabric for Minecraft 26.3. On Fabric, add Fabric API too.
