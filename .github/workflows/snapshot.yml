@@ -1,6 +1,7 @@
 # Builds snapshot jars of the 26.3 remake for NeoForge and Fabric, runs the game tests, and keeps the jars as the run's
-# artifacts. Jars are named sgcraft-<loader>-<mod_version>.<build>-<minecraft_version>.jar, where <build> counts the
-# commits since mod_version last changed in gradle.properties (see build.gradle)
+# artifacts; a push also puts them on the snapshot pre-release, which keeps the newest for good. Jars are named
+# sgcraft-<loader>-<mod_version>.<build>-<minecraft_version>.jar, where <build> counts the commits since mod_version
+# last changed in gradle.properties (see build.gradle)
 name: Snapshot
 
 on:
@@ -25,6 +26,9 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Writes the snapshot pre-release on pushes; pull requests from forks get a read-only token whatever this says
+    permissions:
+      contents: write
     steps:
       # The whole history, which the build number is counted from
       - uses: actions/checkout@v4
@@ -56,3 +60,16 @@ jobs:
             !**/*-javadoc.jar
           if-no-files-found: error
           retention-days: 90
+      # Artifacts expire after 90 days, so the newest build also goes on one pre-release, snapshot-26.3, whose files
+      # never do: made again each build, as the jars' names change, so it holds only the newest two
+      - name: Publish the snapshot pre-release
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: ${{ steps.version.outputs.jar }}
+        run: |
+          tag=snapshot-$(grep '^minecraft_version=' gradle.properties | cut -d= -f2)
+          gh release delete "$tag" --cleanup-tag --yes || true
+          gh release create "$tag" --prerelease --target "$GITHUB_SHA" --title "Snapshot $NAME" \
+            --notes "The newest snapshot build of ${GITHUB_REF_NAME}, from ${GITHUB_SHA::7}. Untested beyond the game tests; use at your own risk." \
+            $(ls neoforge/build/libs/sgcraft-neoforge-*.jar fabric/build/libs/sgcraft-fabric-*.jar | grep -v -- '-sources.jar\|-javadoc.jar')
