@@ -25,6 +25,7 @@
         "client.AvatarRendererMixin",
         "client.GameRendererMixin",
         "client.HudMixin",
+        "client.KeyboardInputMixin",
         "client.MinecraftMixin",
         "client.PlayerModelMixin",
         "client.RenderTypeInvoker",

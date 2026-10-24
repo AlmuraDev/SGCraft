@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.mixin;
 
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
+import com.almuradev.sgcraft.mod.rings.RingHolds;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.damagesource.DamageSource;
@@ -34,9 +35,18 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-// Takes a player who takes damage off their MALP console, if the server's settings say damage does
+// Keeps a player a ring transport holds from damage, and takes a player who takes damage off their MALP console, if
+// the server's settings say damage does
 @Mixin(ServerPlayer.class)
 abstract class ServerPlayerMixin {
+
+    @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
+    private void sgcraft$ringHold(final ServerLevel level, final DamageSource source, final float damage,
+            final CallbackInfoReturnable<Boolean> callback) {
+        if (RingHolds.shields((ServerPlayer) (Object) this, source)) {
+            callback.setReturnValue(false);
+        }
+    }
 
     @Inject(method = "hurtServer", at = @At("RETURN"))
     private void sgcraft$consoleDamage(final ServerLevel level, final DamageSource source, final float damage,

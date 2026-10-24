@@ -34,7 +34,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-// Whitens the screen over everything else as an Asgard obelisk's beam comes
+// Covers the screen over the whole HUD, under any screen open, as an Asgard obelisk's beam comes or a ring transport
+// fades it
 @Mixin(Hud.class)
 abstract class HudMixin {
 

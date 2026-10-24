@@ -40,6 +40,7 @@ import com.almuradev.sgcraft.mod.client.malp.MalpConsoleUsers;
 import com.almuradev.sgcraft.mod.client.malp.MalpMonitorDisplays;
 import com.almuradev.sgcraft.mod.client.obelisk.BeamEffects;
 import com.almuradev.sgcraft.mod.client.obelisk.ObeliskScreen;
+import com.almuradev.sgcraft.mod.client.rings.RingHoldInput;
 import com.almuradev.sgcraft.mod.client.settings.SettingsScreen;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldScreen;
 import com.almuradev.sgcraft.mod.client.shield.ShieldConsoleScreen;
@@ -55,6 +56,7 @@ import com.almuradev.sgcraft.mod.gate.GateBaseInfo;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
 import com.almuradev.sgcraft.mod.obelisk.ObeliskPayloads;
+import com.almuradev.sgcraft.mod.rings.RingPayloads;
 import com.almuradev.sgcraft.mod.settings.SettingsPayloads;
 import com.almuradev.sgcraft.mod.settings.SharedSettings;
 import com.almuradev.sgcraft.mod.shield.ShieldPayloads;
@@ -111,6 +113,8 @@ public final class SGClient {
         SGNetwork.onClient(ComputerPayloads.ConfigState.TYPE, state -> SGClient.show(ComputerConfigScreen.class,
                 state, state.open(), ComputerConfigScreen::new, ComputerConfigScreen::update));
         SGNetwork.onClient(ObeliskPayloads.Beam.TYPE, BeamEffects::handle);
+        SGNetwork.onClient(ObeliskPayloads.Fade.TYPE, BeamEffects::fade);
+        SGNetwork.onClient(RingPayloads.Hold.TYPE, RingHoldInput::handle);
         SGNetwork.onClient(ObeliskPayloads.State.TYPE, state -> SGClient.show(ObeliskScreen.class, state,
                 state.open(), ObeliskScreen::new, ObeliskScreen::update));
         SGNetwork.onClient(ShieldPayloads.ConsoleState.TYPE, state -> SGClient.show(ShieldConsoleScreen.class, state,
@@ -129,6 +133,7 @@ public final class SGClient {
     public static void disconnected() {
         RemoteViewClient.disconnected();
         SharedSettings.forget();
+        RingHoldInput.disconnected();
     }
 
     // A gate's base: the address goes to the base's menu the server has just opened, or opens on its own for a player

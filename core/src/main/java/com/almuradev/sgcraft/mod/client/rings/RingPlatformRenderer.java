@@ -50,8 +50,9 @@ import org.jspecify.annotations.Nullable;
 /**
  * Draws a ring platform's five rings, as 2.2.0's did. At rest they lie sunk in the floor around the platform, a lip
  * showing, or in the ceiling. Set off, they rise one after another, the first highest, and stack around those inside
- * (a ceiling platform's drop, the first to the floor); a white glow builds along their inner edges, a column of white
- * light fills them at the transport, then they go back one at a time, the one nearest its resting place first.
+ * (a ceiling platform's drop, the first to the floor); a column of white light fills them as those inside leave, or
+ * arrive, then they go back one at a time, the one nearest its resting place first. Each platform runs in its own half
+ * of a transport: the receiver's rings rise once the sender's are home.
  */
 public final class RingPlatformRenderer implements BlockEntityRenderer<RingPlatformBlockEntity,
         RingPlatformRenderer.State> {
@@ -67,18 +68,20 @@ public final class RingPlatformRenderer implements BlockEntityRenderer<RingPlatf
     private static final double HEIGHT = 0.35;
     private static final double SPACING = 0.5;
     private static final double REST_LIP = 0.05;
-    // Ticks between rings setting off, and each one's travel; when they start back, the gap between them going back
-    // and each one's travel back, all back before the sound ends
+    // Ticks between rings setting off, and each one's travel; when they start back, once the light has gone, the gap
+    // between them going back and each one's travel back, the last of them home as the platform's half ends
     private static final int LAUNCH_GAP = 12;
     private static final int TRAVEL = 16;
-    private static final int RETURN_START = Rings.TRANSPORT_TICK + 8;
+    private static final int RETURN_START = Rings.LIGHT_END_TICK;
     private static final int RETURN_GAP = 5;
     private static final int RETURN_TRAVEL = 12;
-    // The light: a glow building once the rings are stacked, then the column around the transport
-    private static final int GLOW_START = Rings.STACK_TICKS + 6;
-    private static final int COLUMN_START = Rings.TRANSPORT_TICK - 10;
-    private static final int COLUMN_END = Rings.TRANSPORT_TICK + 12;
-    private static final int AFTERGLOW_END = RingPlatformRenderer.RETURN_START + 4;
+    // The light, as on the show: a column of solid white lines snapping on a quarter of a second after the last ring
+    // locks, holding, and fading before the rings drop; the rims' glow gone as they move off
+    private static final int LIGHT_START = Rings.DEPART_TICK;
+    private static final int LIGHT_ON = RingPlatformRenderer.LIGHT_START + 2;
+    private static final int AFTERGLOW_END = RingPlatformRenderer.RETURN_START + 8;
+    // How long the lines take to shoot up from the floor to the top ring, in ticks
+    private static final double RISE = 4;
 
     // One ring with its bottom at 0: its top and bottom faces, and its outside and inside walls
     private static final float[] FACES = RingPlatformRenderer.faces();
@@ -90,7 +93,7 @@ public final class RingPlatformRenderer implements BlockEntityRenderer<RingPlatf
     /** What the renderer needs to know about a platform for one frame. */
     public static final class State extends BlockEntityRenderState {
         public boolean ceiling;
-        // Ticks since its rings set off, or -1 at rest
+        // Ticks since its rings set off in its own half, or -1 at rest
         public double ticks = -1;
         // The floor its rings stack on, from the platform's own block
         public double floor;
@@ -110,7 +113,8 @@ public final class RingPlatformRenderer implements BlockEntityRenderer<RingPlatf
         final BlockPos pos = platform.getBlockPos();
         state.ceiling = platform.ceiling();
         final double ticks = level == null ? -1 : level.getGameTime() - platform.startTime() + partialTicks;
-        state.ticks = ticks >= 0 && ticks <= Rings.DONE_TICKS ? ticks : -1;
+        // At rest outside its own half: a receiver waits for the sender's to end
+        state.ticks = ticks >= 0 && ticks <= Rings.HALF_TICKS ? ticks : -1;
         state.floor = (state.ticks >= 0 ? platform.runFloor() : platform.findFloor()) - pos.getY();
         // Lit as the floor inside the rings is
         final BlockPos lit = BlockPos.containing(pos.getX(), pos.getY() + (state.ceiling ? state.floor : 1),
@@ -162,7 +166,7 @@ public final class RingPlatformRenderer implements BlockEntityRenderer<RingPlatf
                 RingPlatformRenderer.submitRing(poseStack, collector, rest + (stacked - rest) * go * (1 - back),
                         light);
             }
-            if (t >= RingPlatformRenderer.GLOW_START && t <= RingPlatformRenderer.AFTERGLOW_END) {
+            if (t >= RingPlatformRenderer.LIGHT_START && t <= RingPlatformRenderer.AFTERGLOW_END) {
                 RingPlatformRenderer.submitLight(poseStack, collector, t, state.floor);
             }
         }
@@ -197,59 +201,62 @@ public final class RingPlatformRenderer implements BlockEntityRenderer<RingPlatf
         return x * x * (3 - 2 * x);
     }
 
-    // How bright the column of light inside the rings is, from 0 to 1: swelling to the transport, then fading
+    // How bright the column of light inside the rings is, from 0 to 1: snapping on, holding, fading before the rings
+    // drop
     private static double columnStrength(final double t) {
-        if (t < RingPlatformRenderer.COLUMN_START || t > RingPlatformRenderer.COLUMN_END) {
+        if (t < RingPlatformRenderer.LIGHT_START || t > Rings.LIGHT_END_TICK) {
             return 0;
         }
-        final int peak = Rings.TRANSPORT_TICK;
-        return t <= peak ? RingPlatformRenderer.ease((t - RingPlatformRenderer.COLUMN_START)
-                / (peak - RingPlatformRenderer.COLUMN_START))
-                : 1 - RingPlatformRenderer.ease((t - peak) / (RingPlatformRenderer.COLUMN_END - peak));
+        if (t < RingPlatformRenderer.LIGHT_ON) {
+            return RingPlatformRenderer.ease((t - RingPlatformRenderer.LIGHT_START)
+                    / (RingPlatformRenderer.LIGHT_ON - RingPlatformRenderer.LIGHT_START));
+        }
+        return t <= Rings.LIGHT_FADE_TICK ? 1 : 1 - RingPlatformRenderer.ease((t - Rings.LIGHT_FADE_TICK)
+                / (Rings.LIGHT_END_TICK - Rings.LIGHT_FADE_TICK));
     }
 
-    // The transport's light, as on the show: a white glow growing along the rings' inner edges as they charge; a
-    // column of white light filling them at the transport, streaky at its edges; then a fading blue glow on their
-    // inner edges
+    // The transport's light, as on the show: the rings' inner rims shining a steady white, and a column of solid white
+    // lines filling them, from the floor to the top ring
     private static void submitLight(final PoseStack poseStack, final SubmitNodeCollector collector, final double t,
             final double floor) {
-        final int peak = Rings.TRANSPORT_TICK;
         final double column = RingPlatformRenderer.columnStrength(t);
-        final double edge = t < RingPlatformRenderer.COLUMN_START
-                ? RingPlatformRenderer.ease((t - RingPlatformRenderer.GLOW_START)
-                        / (RingPlatformRenderer.COLUMN_START - RingPlatformRenderer.GLOW_START))
-                : t <= peak ? 1 : 1 - RingPlatformRenderer.ease((t - peak)
-                        / (RingPlatformRenderer.AFTERGLOW_END - peak));
-        // How far the edge glow has gone blue
-        final double blue = t > peak ? 1 - column : 0;
+        // The rims: on with the column, steady until the rings drop, then fading
+        final double edge = t < RingPlatformRenderer.LIGHT_ON
+                ? RingPlatformRenderer.ease((t - RingPlatformRenderer.LIGHT_START)
+                        / (RingPlatformRenderer.LIGHT_ON - RingPlatformRenderer.LIGHT_START))
+                : t <= RingPlatformRenderer.RETURN_START ? 1
+                        : 1 - RingPlatformRenderer.ease((t - RingPlatformRenderer.RETURN_START)
+                                / (RingPlatformRenderer.AFTERGLOW_END - RingPlatformRenderer.RETURN_START));
         final double top = floor + (RingPlatformRenderer.RINGS - 1) * RingPlatformRenderer.SPACING
                 + RingPlatformRenderer.HEIGHT;
         collector.submitCustomGeometry(poseStack, RenderTypes.lightning(), (pose, buffer) -> {
-            // Along each ring's inner edge, and in the gaps between them: a band of light, brightest at its middle
+            // Along each ring's inner edge, and in the gaps between them: a band of bluish white light, brightest at
+            // its middle, steady
             if (edge > 0) {
-                final float r = (float) (1 - 0.6 * blue);
-                final float g = (float) (1 - 0.25 * blue);
+                final float alpha = (float) (0.55 * edge);
                 final double radius = RingPlatformRenderer.INNER - 0.03;
                 for (int k = 0; k < RingPlatformRenderer.RINGS; k++) {
                     final double y0 = floor + k * RingPlatformRenderer.SPACING;
                     final double y1 = y0 + RingPlatformRenderer.SPACING;
                     for (int i = 0; i < RingPlatformRenderer.SEGMENTS; i++) {
-                        final double flicker = 0.75 + 0.25 * Math.sin(i * 2.3 + k * 1.7 + t * 0.8);
-                        final float alpha = (float) (0.55 * edge * flicker);
-                        RingPlatformRenderer.band(pose, buffer, i, radius, y0, y1, r, g, 1, 0, alpha);
+                        RingPlatformRenderer.band(pose, buffer, i, radius, y0, y1, 0.85F, 0.93F, 1, 0, alpha);
                     }
                 }
             }
-            // The column: nested walls of light filling the rings, warm white, streaked up and down
+            // The column: solid white lines shooting up from the floor to the top ring, no higher, in nested circles
+            // that fill the rings; each line evenly bright from end to end, some brighter than others, shimmering a
+            // little. Drawn adding light, so where they overlap they are pure white.
             if (column > 0) {
-                for (int layer = 0; layer < 5; layer++) {
-                    final double radius = (RingPlatformRenderer.INNER - 0.08) * (0.25 + 0.75 * layer / 4.0);
+                final double rise = RingPlatformRenderer.ease((t - RingPlatformRenderer.LIGHT_START)
+                        / RingPlatformRenderer.RISE);
+                final double y1 = floor + (top - floor) * rise;
+                for (int layer = 0; layer < 4; layer++) {
+                    final double radius = (RingPlatformRenderer.INNER - 0.08) * (0.2 + 0.8 * layer / 3.0);
                     for (int i = 0; i < RingPlatformRenderer.SEGMENTS; i++) {
-                        final double streak = 0.55 + 0.45 * Math.sin(i * 3.1 + layer * 2.2 + t * 1.3)
-                                * Math.sin(i * 1.7 - t * 0.7);
-                        final float alpha = (float) (0.32 * column * streak);
-                        RingPlatformRenderer.band(pose, buffer, i, radius, floor, top, 1, 0.95F, 0.9F, alpha * 0.35F,
-                                alpha);
+                        final double line = 0.5 + 0.5 * Math.sin(i * 2.7 + layer * 1.9);
+                        final double shimmer = 0.85 + 0.15 * Math.sin(t * 1.1 + i * 0.9 + layer);
+                        final float alpha = (float) (column * (0.45 + 0.55 * line) * shimmer);
+                        RingPlatformRenderer.band(pose, buffer, i, radius, floor, y1, 1, 1, 1, alpha, alpha);
                     }
                 }
             }

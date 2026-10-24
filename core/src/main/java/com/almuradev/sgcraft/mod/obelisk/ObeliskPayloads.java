@@ -41,8 +41,7 @@ public final class ObeliskPayloads {
     }
 
     /**
-     * A beam starting for the player who gets it, or called off: the beam's sound, and their screen going white. Ring
-     * platforms send it too, without the sound, as their rings carry their own.
+     * A beam starting for the player who gets it, or called off: the beam's sound, and their screen going white.
      *
      * @param start whether it starts, rather than being called off
      * @param ticks how long until the beam comes, in ticks
@@ -66,6 +65,52 @@ public final class ObeliskPayloads {
         @Override
         public Type<Beam> type() {
             return Beam.TYPE;
+        }
+    }
+
+    /**
+     * One point of a screen fade: how covered the player's screen is, and how light its cover, a time after the fade
+     * starts. Between points the screen goes smoothly from one to the next.
+     *
+     * @param at when, in milliseconds after the fade starts
+     * @param cover how covered the screen is, from 0 (clear) to 1 (fully covered)
+     * @param light how light the cover is, from 0 (black) to 1 (white)
+     */
+    public record FadeStep(int at, float cover, float light) {
+
+        FadeStep(final FriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readFloat(), buf.readFloat());
+        }
+
+        void write(final FriendlyByteBuf buf) {
+            buf.writeVarInt(this.at);
+            buf.writeFloat(this.cover);
+            buf.writeFloat(this.light);
+        }
+    }
+
+    /**
+     * A ring transport's screen fade for a player inside the rings, starting as it arrives: white as they leave, black
+     * in transit, and white again as they arrive, clearing to show where they are.
+     *
+     * @param steps its points, in time order; the fade ends at the last
+     */
+    public record Fade(List<FadeStep> steps) implements SGPacket {
+
+        public static final Type<Fade> TYPE = new Type<>(SGCraft.id("screen_fade"));
+
+        public Fade(final FriendlyByteBuf buf) {
+            this(SGPacket.readList(buf, FadeStep::new));
+        }
+
+        @Override
+        public void write(final FriendlyByteBuf buf) {
+            SGPacket.writeList(buf, this.steps, (out, step) -> step.write(out));
+        }
+
+        @Override
+        public Type<Fade> type() {
+            return Fade.TYPE;
         }
     }
 

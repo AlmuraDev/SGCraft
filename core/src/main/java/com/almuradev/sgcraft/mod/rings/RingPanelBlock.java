@@ -47,7 +47,7 @@ import java.util.Map;
 
 /**
  * A ring control panel, as 2.2.0's: a small Goa'uld plate on a wall. Pressing it starts the nearest ring platform
- * within reach. It can be walked through.
+ * within {@link Rings#PANEL_REACH} blocks. It can be walked through.
  */
 public final class RingPanelBlock extends Block {
 
@@ -93,7 +93,7 @@ public final class RingPanelBlock extends Block {
     protected InteractionResult useWithoutItem(final BlockState state, final Level level, final BlockPos pos,
             final Player player, final BlockHitResult hit) {
         if (player instanceof final ServerPlayer serverPlayer) {
-            Rings.activate(serverPlayer, Rings.near(level, Vec3.atCenterOf(pos), null));
+            Rings.activate(serverPlayer, Rings.near(level, Vec3.atCenterOf(pos), null, Rings.PANEL_REACH));
         }
         return InteractionResult.SUCCESS;
     }

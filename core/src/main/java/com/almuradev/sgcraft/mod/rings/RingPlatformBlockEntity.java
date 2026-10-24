@@ -149,18 +149,24 @@ public final class RingPlatformBlockEntity extends BlockEntity implements Config
     // ---- Running ----
 
     /**
-     * @return whether its rings are running. A platform whose chunk stops ticking partway, a far partner most often,
-     *     is done once their time is up all the same, so it never stays busy
+     * @return whether its rings are running: the sender's through both halves, as it runs the transport, and the
+     *     receiver's from the start until the end of its own half, which follows the sender's. A platform whose chunk
+     *     stops ticking partway, a far partner most often, is done once their time is up all the same, so it never
+     *     stays busy
      */
     public boolean running() {
         return this.runTicks >= 0 && !this.overdue();
     }
 
     private boolean overdue() {
-        return this.level != null && this.level.getGameTime() - this.startTime > Rings.DONE_TICKS;
+        return this.level != null && this.level.getGameTime() - this.startTime
+                > (this.initiator ? Rings.DONE_TICKS : Rings.HALF_TICKS);
     }
 
-    /** @return when its rings last set off, in game time, for clients to draw them */
+    /**
+     * @return when its rings last set off, or will, in game time, for clients to draw them: a receiver's once the
+     *     sender's half is over
+     */
     public long startTime() {
         return this.startTime;
     }
@@ -170,19 +176,30 @@ public final class RingPlatformBlockEntity extends BlockEntity implements Config
         return this.floorY;
     }
 
+    // The sender's rings set off now, with their sound; the receiver's once the sender's half is over
     void start(final boolean initiator) {
         this.runTicks = 0;
         this.initiator = initiator;
         this.floorY = this.findFloor();
-        this.startTime = this.level == null ? 0 : this.level.getGameTime();
-        if (this.level != null) {
-            final Vec3 at = this.center();
-            this.level.playSound(null, at.x, at.y, at.z, SGSounds.RING_TRANSPORT, SoundSource.BLOCKS, 1.5F, 1.0F);
+        this.startTime = (this.level == null ? 0 : this.level.getGameTime()) + (initiator ? 0 : Rings.HALF_TICKS);
+        if (initiator) {
+            this.playSound();
         }
         this.sync();
     }
 
-    /** Runs its rings on: the one that started them whitens both sets and swaps what is inside them. */
+    // The ring sound, as its rings set off
+    void playSound() {
+        if (this.level != null) {
+            final Vec3 at = this.center();
+            this.level.playSound(null, at.x, at.y, at.z, SGSounds.RING_TRANSPORT, SoundSource.BLOCKS, 1.5F, 1.0F);
+        }
+    }
+
+    /**
+     * Runs its rings on. The one that started them runs the whole transport, so it goes on even with nobody near the
+     * receiver to keep its chunk ticking.
+     */
     public static void serverTick(final ServerLevel level, final BlockPos pos, final BlockState state,
             final RingPlatformBlockEntity platform) {
         if (platform.runTicks < 0) {
@@ -195,16 +212,8 @@ public final class RingPlatformBlockEntity extends BlockEntity implements Config
             return;
         }
         final int ticks = ++platform.runTicks;
-        if (platform.initiator && (ticks == Rings.TRANSPORT_TICK - Rings.WHITE_OUT_TICKS
-                || ticks == Rings.TRANSPORT_TICK)) {
-            Rings.partner(platform).ifPresent(partner -> {
-                if (ticks == Rings.TRANSPORT_TICK) {
-                    Rings.swap(platform, partner);
-                } else {
-                    Rings.whiteOut(platform);
-                    Rings.whiteOut(partner);
-                }
-            });
+        if (platform.initiator && Rings.steps(ticks)) {
+            Rings.partner(platform).ifPresent(partner -> Rings.step(platform, partner, ticks));
         }
         if (ticks >= Rings.DONE_TICKS) {
             platform.runTicks = -1;

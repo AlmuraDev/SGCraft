@@ -60,14 +60,17 @@ Sneak-use the first one again instead to cancel. Linking a platform that was alr
 
 ## Transporting
 
-Press a Ring Control Panel within 8 blocks of a platform, or use a Ring Remote while standing in a platform's rings or within 8 blocks of one. The nearest platform starts, and its partner with it:
+Press a Ring Control Panel within 16 blocks of a platform, or use a Ring Remote while standing in a platform's rings or within 8 blocks of one. The nearest platform starts, then its partner. A transport runs in two halves of about 7 seconds each:
 
-1. The five rings of both rise one after another, the first highest, and lock in a stack around those inside.
-2. A white glow builds along their inner edges.
-3. At 6.7 seconds a column of white light fills them. The screens of the players inside go white, and everything inside each set of rings swaps with everything inside the other, each keeping its place in the rings and the way it faces.
-4. The rings go back one at a time, the one nearest its resting place first. The whole run takes about 9 seconds.
+1. The five rings of the platform you started rise one after another, the first highest, and lock in a stack around those inside, with the ring sound.
+2. A quarter of a second after the last ring locks, a column of solid white lines snaps on inside them, from the floor to the top ring, and the rings' inner rims glow a steady white. The screens of the players inside fade to white, then to black.
+3. The light fades and the rings go back one at a time, the one nearest its resting place first.
+4. The partner's rings rise, and the ring sound plays again there as the first one stops. As they set off, everything inside each set of rings swaps with everything inside the other, each keeping its place in the rings and the way it faces. Players in the partner's rings see a white flash as they go.
+5. The partner's light snaps on around whoever arrived, with white sparkles, and their screens go from black to white, then clear. Its rings go back too. The whole run takes about 14 seconds.
 
-Players, creatures and dropped items all go. The remote rests for a second between uses.
+Players in the first platform's rings are held where they stand from the moment its rings set off, and players in the partner's rings from just before the swap, until the partner's rings are home. A held player can look around but can't move, and takes no damage except from `/kill`. Dying, leaving the world or leaving the server ends the hold.
+
+Players, creatures and dropped items all go. The sparkles show only where something arrives. The remote rests for a second between uses.
 
 ## Power
 

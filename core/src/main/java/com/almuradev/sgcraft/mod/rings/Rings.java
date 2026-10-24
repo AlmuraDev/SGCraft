@@ -27,14 +27,17 @@ package com.almuradev.sgcraft.mod.rings;
 
 import com.almuradev.sgcraft.mod.network.SGNetwork;
 import com.almuradev.sgcraft.mod.obelisk.ObeliskPayloads;
+import com.almuradev.sgcraft.mod.sound.SGSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundStopSoundPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -53,31 +56,61 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Goa'uld transport rings, as 2.2.0's: two ring platforms in one world, linked in pairs as Asgard obelisks are.
- * Started from a ring control panel near one, or a ring remote, the five rings of both rise from the floor, or drop
- * from the ceiling, around whoever stands inside, and everything inside one set is swapped with everything inside the
- * other. The platform that starts it pays, in gate energy, more the further it sends.
+ * Started from a ring control panel near one, or a ring remote, the five rings of the one started rise from the floor,
+ * or drop from the ceiling, around whoever stands inside, light up and go back; then its partner's do the same, and
+ * everything that was inside one set is swapped with everything inside the other as they set off. Players inside are
+ * held still and safe from damage until it is over. The platform that starts it pays, in gate energy, more the further
+ * it sends.
  */
 public final class Rings {
 
-    // Timed to the ring sound, 8.9 seconds long: the rings rise and lock over its first 3.2 seconds, the energy builds,
-    // the transport comes with its flash at 6.7 seconds, and the rings are back as it fades
+    // A transport runs in two halves, one after the other, each timed to the ring sound, 8.9 seconds long, which
+    // plays at each platform in turn. The sender's rings rise and lock over 3.2 seconds; a quarter of a second later a
+    // column of white light snaps on around those inside, holds, fades, and the rings drop, home as the half ends.
+    // Then the receiver's rings do the same, and those in transit arrive in its light. Ticks are from the start of
+    // each platform's half
     /** How long the rings take to rise and lock, in ticks. */
     public static final int STACK_TICKS = 64;
-    /** When the transport comes, in ticks after the rings set off. */
-    public static final int TRANSPORT_TICK = 134;
-    /** When the rings are back at rest, in ticks after they set off. */
-    public static final int DONE_TICKS = 178;
-    /** How long before the transport the screens of those inside go white, in ticks. */
-    public static final int WHITE_OUT_TICKS = 16;
+    /** When the column of light snaps on inside the rings, and those inside start to leave, in ticks. */
+    public static final int DEPART_TICK = Rings.STACK_TICKS + 5;
+    /** When the column of light starts to fade, in ticks. */
+    public static final int LIGHT_FADE_TICK = Rings.DEPART_TICK + 28;
+    /** When the column of light is gone and the rings start back, in ticks. */
+    public static final int LIGHT_END_TICK = Rings.LIGHT_FADE_TICK + 12;
+    /** How long each platform's half takes, its rings home at the end, in ticks. */
+    public static final int HALF_TICKS = Rings.LIGHT_END_TICK + 32;
+    /** How long a whole transport takes, both halves, in ticks after the sender's rings set off. */
+    public static final int DONE_TICKS = 2 * Rings.HALF_TICKS;
+    /**
+     * When those in transit arrive in the receiver's light, in ticks into its half. They are moved as its rings set
+     * off, while their screens are black, so they hear its sound from the start.
+     */
+    public static final int ARRIVE_TICK = Rings.DEPART_TICK + 2;
+    /** How long before the swap those in the receiver's rings are held and see a white flash, in ticks. */
+    public static final int RETURN_FLASH_TICKS = 14;
     /** How far below a ceiling platform the floor its rings drop to can be, in blocks. */
     public static final int MAX_DROP = 12;
-    // How far a panel or a remote reaches to find a platform, in blocks
-    private static final double CONTROL_REACH = 8;
+    /** How far a ring remote reaches to find a platform, in blocks. */
+    public static final double REMOTE_REACH = 8;
+    /** How far a ring control panel reaches to find a platform, in blocks. */
+    public static final double PANEL_REACH = 16;
+    // How far from a platform the ring sound can be heard, for stopping it as its half ends, in blocks
+    private static final double HEARING = 64;
 
     // The platform each player started linking from, kept by place, as its chunk may unload before the next click
     private static final Map<UUID, GlobalPos> LINKING = new ConcurrentHashMap<>();
 
     private Rings() {
+    }
+
+    /** Forgets the link a player had started, as they leave the server. */
+    public static void forget(final UUID player) {
+        Rings.LINKING.remove(player);
+    }
+
+    /** Forgets every link started, as the server stops. */
+    public static void clear() {
+        Rings.LINKING.clear();
     }
 
     /** @return the space a platform's rings close around, from the floor they stack on up */
@@ -172,13 +205,13 @@ public final class Rings {
 
     /**
      * @return the platform a panel or a remote at a place starts: the one whose rings the player stands in, else the
-     *     nearest within reach, among those already loaded
+     *     nearest within the given reach, in blocks, among those already loaded
      */
     public static Optional<RingPlatformBlockEntity> near(final Level level, final Vec3 at,
-            final @Nullable Player player) {
+            final @Nullable Player player, final double within) {
         RingPlatformBlockEntity nearest = null;
-        double best = Rings.CONTROL_REACH * Rings.CONTROL_REACH;
-        final int reach = (int) Math.ceil(Rings.CONTROL_REACH);
+        double best = within * within;
+        final int reach = (int) Math.ceil(within);
         final int x0 = SectionPos.blockToSectionCoord(at.x - reach);
         final int x1 = SectionPos.blockToSectionCoord(at.x + reach);
         final int z0 = SectionPos.blockToSectionCoord(at.z - reach);
@@ -249,27 +282,95 @@ public final class Rings {
         return RingSettings.current().cost(Math.sqrt(from.getBlockPos().distSqr(to.getBlockPos())));
     }
 
-    /** Pays for a transport and starts both platforms' rings, the first being the one that swaps the two. */
+    /**
+     * Pays for a transport and starts both platforms' rings: the first's half now, and the partner's once it is over.
+     * The first runs the whole transport, and those inside its rings are held still and safe until it is over.
+     */
     public static void start(final RingPlatformBlockEntity platform, final RingPlatformBlockEntity partner) {
         platform.pay(Rings.cost(platform, partner));
         platform.start(true);
         partner.start(false);
+        RingHolds.hold(platform, Rings.DONE_TICKS);
     }
 
     // ---- The transport ----
 
-    // Those inside a platform's rings see the world go white, as an obelisk's beam does, without its sound
-    static void whiteOut(final RingPlatformBlockEntity platform) {
+    /** @return whether a transport does something this many ticks into it, for the platform that started it */
+    static boolean steps(final int ticks) {
+        return ticks == Rings.DEPART_TICK || ticks == Rings.HALF_TICKS - Rings.RETURN_FLASH_TICKS
+                || ticks == Rings.HALF_TICKS || ticks == Rings.HALF_TICKS + Rings.ARRIVE_TICK;
+    }
+
+    /** Runs a transport on, a tick into it, from the platform that started it. */
+    static void step(final RingPlatformBlockEntity sender, final RingPlatformBlockEntity receiver, final int ticks) {
+        if (ticks == Rings.DEPART_TICK) {
+            // As its light snaps on, those inside go white, then black in transit, and white again as they arrive
+            Rings.transitScreen(sender);
+        } else if (ticks == Rings.HALF_TICKS - Rings.RETURN_FLASH_TICKS) {
+            // Those in the receiver's rings are held as the sender's were, and flash white as they are sent back
+            RingHolds.hold(receiver, Rings.DONE_TICKS - ticks);
+            Rings.returnScreen(receiver);
+        } else if (ticks == Rings.HALF_TICKS) {
+            // The receiver's half: its rings set off with the sound again, the sender's stopped, and those in transit
+            // are moved into them while their screens are black
+            Rings.stopSound(sender);
+            Rings.swap(sender, receiver);
+            receiver.playSound();
+        } else if (ticks == Rings.HALF_TICKS + Rings.ARRIVE_TICK && receiver.getLevel() != null
+                && !receiver.getLevel().getEntitiesOfClass(Entity.class, receiver.volume(), Entity::isAlive)
+                        .isEmpty()) {
+            // Its light snaps on around those who arrived, their screens clearing to show it
+            Rings.flash(receiver);
+        }
+    }
+
+    // What those leaving see, from the sender's light snapping on: their screens fade to white, hold, fade to black
+    // and stay so in transit, fade back to white as they arrive in the receiver's light, and clear to show it
+    private static void transitScreen(final RingPlatformBlockEntity platform) {
+        final int arrive = (Rings.HALF_TICKS + Rings.ARRIVE_TICK - Rings.DEPART_TICK) * 50;
+        Rings.screen(platform, List.of(new ObeliskPayloads.FadeStep(0, 0, 1),
+                new ObeliskPayloads.FadeStep(700, 1, 1), new ObeliskPayloads.FadeStep(950, 1, 1),
+                new ObeliskPayloads.FadeStep(1950, 1, 0), new ObeliskPayloads.FadeStep(arrive - 800, 1, 0),
+                new ObeliskPayloads.FadeStep(arrive, 1, 1), new ObeliskPayloads.FadeStep(arrive + 200, 1, 1),
+                new ObeliskPayloads.FadeStep(arrive + 1100, 0, 1)));
+    }
+
+    // What those in the receiver's rings see as they are sent the other way: a white flash, full as they go
+    private static void returnScreen(final RingPlatformBlockEntity platform) {
+        final int go = Rings.RETURN_FLASH_TICKS * 50;
+        Rings.screen(platform, List.of(new ObeliskPayloads.FadeStep(0, 0, 1),
+                new ObeliskPayloads.FadeStep(go, 1, 1), new ObeliskPayloads.FadeStep(go + 200, 1, 1),
+                new ObeliskPayloads.FadeStep(go + 1100, 0, 1)));
+    }
+
+    private static void screen(final RingPlatformBlockEntity platform, final List<ObeliskPayloads.FadeStep> steps) {
         if (platform.getLevel() == null) {
             return;
         }
         for (final ServerPlayer player : platform.getLevel().getEntitiesOfClass(ServerPlayer.class,
                 platform.volume())) {
-            SGNetwork.send(player, new ObeliskPayloads.Beam(true, Rings.WHITE_OUT_TICKS, false));
+            SGNetwork.send(player, new ObeliskPayloads.Fade(steps));
         }
     }
 
-    // The transport's flash inside a platform's rings: white sparkles and sparks, as an obelisk's beam gives
+    // Stops the ring sound for those within hearing of a platform whose half is over, as the other's starts: the
+    // sound runs on past it
+    private static void stopSound(final RingPlatformBlockEntity platform) {
+        if (!(platform.getLevel() instanceof final ServerLevel level)) {
+            return;
+        }
+        final Vec3 at = platform.center();
+        final ClientboundStopSoundPacket stop = new ClientboundStopSoundPacket(SGSounds.RING_TRANSPORT.location(),
+                SoundSource.BLOCKS);
+        for (final ServerPlayer player : level.players()) {
+            if (player.distanceToSqr(at) < Rings.HEARING * Rings.HEARING) {
+                player.connection.send(stop);
+            }
+        }
+    }
+
+    // The light snapping on inside a platform's rings around what arrives: white sparkles and sparks, as an
+    // obelisk's beam gives
     private static void flash(final RingPlatformBlockEntity platform) {
         if (platform.getLevel() instanceof final ServerLevel level) {
             final Vec3 at = platform.center();
@@ -288,8 +389,11 @@ public final class Rings {
         }
         final List<Entity> fromA = level.getEntitiesOfClass(Entity.class, a.volume(), Entity::isAlive);
         final List<Entity> fromB = level.getEntitiesOfClass(Entity.class, b.volume(), Entity::isAlive);
-        Rings.flash(a);
-        Rings.flash(b);
+        // Done in the dark, as the receiver's rings set off: what goes there sparkles as its light comes on (see
+        // step); what is sent back to the sender, whose rings are home, sparkles as it lands
+        if (!fromB.isEmpty()) {
+            Rings.flash(a);
+        }
         final Vec3 offset = b.floorCenter().subtract(a.floorCenter());
         // Riders are let go first, so each is carried on its own
         fromA.forEach(Entity::stopRiding);
@@ -302,6 +406,8 @@ public final class Rings {
         entity.teleport(new TeleportTransition(level, entity.position().add(by), entity.getDeltaMovement(),
                 entity.getYRot(), entity.getXRot(), TeleportTransition.DO_NOTHING));
         entity.resetFallDistance();
+        // A held player is held where they arrive
+        RingHolds.moved(entity);
     }
 
     /** Tells a player something about rings, over their hotbar. */

@@ -33,6 +33,8 @@ import com.almuradev.sgcraft.mod.computer.DialingComputers;
 import com.almuradev.sgcraft.mod.gate.SGStargates;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import com.almuradev.sgcraft.mod.obelisk.Obelisks;
+import com.almuradev.sgcraft.mod.rings.RingHolds;
+import com.almuradev.sgcraft.mod.rings.Rings;
 import com.almuradev.sgcraft.mod.settings.SettingsActions;
 import com.almuradev.sgcraft.mod.settings.SharedSettings;
 import com.almuradev.sgcraft.mod.tool.ActionThrottle;
@@ -130,6 +132,7 @@ public final class SGServer {
             RemoteViews.tick(server);
             MalpLinks.tick(server);
             Zat.tick(server);
+            RingHolds.tick(server);
             ToolActions.tickGdo(server);
             if (server.getTickCount() % SGServer.SWEEP_TICKS == 0) {
                 DialingComputers.sweep(server);
@@ -165,6 +168,8 @@ public final class SGServer {
         ActionThrottle.forget(player.getUUID());
         Obelisks.forget(player.getUUID());
         ZpmLinks.forget(player.getUUID());
+        Rings.forget(player.getUUID());
+        RingHolds.forget(player.getUUID());
         SettingsActions.forget(player.getUUID());
         ToolActions.forget(player.getUUID());
     }
@@ -181,6 +186,8 @@ public final class SGServer {
             ActionThrottle.clear();
             Obelisks.clear();
             ZpmLinks.clear();
+            Rings.clear();
+            RingHolds.clear();
             SettingsActions.clear();
             ToolActions.clear();
             Zat.clear();

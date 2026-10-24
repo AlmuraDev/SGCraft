@@ -34,7 +34,7 @@ import net.minecraft.world.level.Level;
 
 /**
  * A Goa'uld ring remote, as 2.2.0's, worn on the hand: using it starts the ring platform its holder stands in, or
- * else the nearest within reach.
+ * else the nearest within {@link Rings#REMOTE_REACH} blocks.
  */
 public final class RingRemoteItem extends Item {
 
@@ -47,7 +47,7 @@ public final class RingRemoteItem extends Item {
     @Override
     public InteractionResult use(final Level level, final Player player, final InteractionHand hand) {
         if (player instanceof final ServerPlayer serverPlayer) {
-            Rings.activate(serverPlayer, Rings.near(level, player.position(), player));
+            Rings.activate(serverPlayer, Rings.near(level, player.position(), player, Rings.REMOTE_REACH));
         }
         player.getCooldowns().addCooldown(player.getItemInHand(hand), RingRemoteItem.COOLDOWN_TICKS);
         return InteractionResult.SUCCESS;

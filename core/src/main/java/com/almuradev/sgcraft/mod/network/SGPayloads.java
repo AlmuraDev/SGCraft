@@ -37,6 +37,7 @@ import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads;
 import com.almuradev.sgcraft.mod.obelisk.ObeliskActions;
 import com.almuradev.sgcraft.mod.obelisk.ObeliskPayloads;
+import com.almuradev.sgcraft.mod.rings.RingPayloads;
 import com.almuradev.sgcraft.mod.settings.SettingsActions;
 import com.almuradev.sgcraft.mod.settings.SettingsPayloads;
 import com.almuradev.sgcraft.mod.settings.SharedSettings;
@@ -109,10 +110,14 @@ final class SGPayloads {
         // The explorer dialer: its list out, its buttons in
         SGNetwork.clientbound(ExplorerPayloads.State.TYPE, ExplorerPayloads.State::new);
         SGNetwork.serverbound(ExplorerPayloads.Action.TYPE, ExplorerPayloads.Action::new, ExplorerDialer::action);
-        // The shield console: its state out, its buttons in
+        // Asgard obelisks and ring platforms: the beam out, and their screen's state out and its changes in
         SGNetwork.clientbound(ObeliskPayloads.Beam.TYPE, ObeliskPayloads.Beam::new);
         SGNetwork.clientbound(ObeliskPayloads.State.TYPE, ObeliskPayloads.State::new);
         SGNetwork.serverbound(ObeliskPayloads.Apply.TYPE, ObeliskPayloads.Apply::new, ObeliskActions::apply);
+        // A ring transport: the screens of those inside it, and holding them still
+        SGNetwork.clientbound(ObeliskPayloads.Fade.TYPE, ObeliskPayloads.Fade::new);
+        SGNetwork.clientbound(RingPayloads.Hold.TYPE, RingPayloads.Hold::new);
+        // The shield console: its state out, its buttons in
         SGNetwork.clientbound(ShieldPayloads.ConsoleState.TYPE, ShieldPayloads.ConsoleState::new);
         SGNetwork.serverbound(ShieldPayloads.ConsoleAction.TYPE, ShieldPayloads.ConsoleAction::new,
                 ShieldConsoles::action);
