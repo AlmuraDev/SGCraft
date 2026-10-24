@@ -419,20 +419,21 @@ public final class ConfiguratorScreen extends Screen {
     }
 
     // The store, and what dialing costs: each cost a switch and an amount, the server's unless the gate has its own
+    // What the gate pays, which only operators change; anyone else sees them but can't change them
     private void energyPage(final int left, final int top) {
-        this.toggle(this.slot(left, top, 0), "requires_power", "Needs energy", true);
-        this.number(this.slot(left, top, 1), "energy_capacity", "Reserve", 1);
+        this.operatorsOnly(this.toggle(this.slot(left, top, 0), "requires_power", "Needs energy", true));
+        this.operatorsOnly(this.number(this.slot(left, top, 1), "energy_capacity", "Reserve", 1));
         int i = 2;
         for (final String[] cost : ConfiguratorScreen.COSTS) {
-            this.toggle(this.slot(left, top, i++), cost[0] + "_enabled", cost[1], true);
-            this.decimal(this.slot(left, top, i++), cost[0], cost[2]);
+            this.operatorsOnly(this.toggle(this.slot(left, top, i++), cost[0] + "_enabled", cost[1], true));
+            this.operatorsOnly(this.decimal(this.slot(left, top, i++), cost[0], cost[2]));
         }
         this.toggle(this.slot(left, top, i++), "dhd_fuel", "DHD fuel powers it", true);
         for (final String[] setting : ConfiguratorScreen.ENERGY_SETTINGS) {
-            this.decimal(this.slot(left, top, i++), setting[0], setting[1]);
+            this.operatorsOnly(this.decimal(this.slot(left, top, i++), setting[0], setting[1]));
         }
         final int[] at = this.slot(left, top, i);
-        this.tip(this.addRenderableWidget(Button.builder(Component.translatableWithFallback(
+        this.operatorsOnly(this.tip(this.addRenderableWidget(Button.builder(Component.translatableWithFallback(
                 "screen.sgcraft.configurator.server_costs", "Use server's costs"), b -> {
                     for (final String[] cost : ConfiguratorScreen.COSTS) {
                         this.values.remove(ConfiguratorScreen.NS + cost[0] + "_enabled");
@@ -442,7 +443,7 @@ public final class ConfiguratorScreen extends Screen {
                         this.values.remove(ConfiguratorScreen.NS + setting[0]);
                     }
                     this.rebuildWidgets();
-                }).bounds(at[0], at[1], 150, 20).build()), "server_costs");
+                }).bounds(at[0], at[1], 150, 20).build()), "server_costs"));
         // The ZPM devices linked to the gate, listed in its tip; they are linked and unlinked at the devices
         final int[] zpms = this.slot(left, top, i + 1);
         final List<String> links = this.state.zpmLinks();
@@ -673,7 +674,7 @@ public final class ConfiguratorScreen extends Screen {
 
     // A whole number, shown divided by {@code scale}, such as ticks shown as seconds; left empty, the fallback
     // applies, and shows faintly in the box
-    private void number(final int[] at, final String path, final String label, final long scale) {
+    private EditBox number(final int[] at, final String path, final String label, final long scale) {
         final String id = ConfiguratorScreen.NS + path;
         final EditBox box = this.addRenderableWidget(new EditBox(this.font, at[0] + 90, at[1], 60, 20,
                 Component.translatableWithFallback("screen.sgcraft.configurator." + path, label)));
@@ -697,10 +698,11 @@ public final class ConfiguratorScreen extends Screen {
         });
         this.labels.add(new Label(at[0], at[1] + 6, Component.translatableWithFallback(
                 "screen.sgcraft.configurator." + path, label)));
+        return box;
     }
 
     // An amount that may have a fraction; left empty, the fallback applies, and shows faintly in the box
-    private void decimal(final int[] at, final String path, final String label) {
+    private EditBox decimal(final int[] at, final String path, final String label) {
         final String id = ConfiguratorScreen.NS + path;
         final EditBox box = this.addRenderableWidget(new EditBox(this.font, at[0] + 90, at[1], 60, 20,
                 Component.translatableWithFallback("screen.sgcraft.configurator." + path, label)));
@@ -724,6 +726,7 @@ public final class ConfiguratorScreen extends Screen {
         });
         this.labels.add(new Label(at[0], at[1] + 6, Component.translatableWithFallback(
                 "screen.sgcraft.configurator." + path, label)));
+        return box;
     }
 
     private static String amount(final double value) {
@@ -744,6 +747,19 @@ public final class ConfiguratorScreen extends Screen {
         }
         widget.active = false;
         return this.tip(widget, key + ".locked");
+    }
+
+    // A setting only operators change: shown to anyone else, with a tip saying so, but not changed
+    private <W extends AbstractWidget> void operatorsOnly(final W widget) {
+        if (this.state.operator()) {
+            return;
+        }
+        widget.active = false;
+        if (widget instanceof final EditBox box) {
+            box.setEditable(false);
+        }
+        widget.setTooltip(Tooltip.create(Component.translatableWithFallback(
+                "screen.sgcraft.configurator.operators_only", "Only operators change what a gate pays for dialing")));
     }
 
     private static Component tipText(final String key) {

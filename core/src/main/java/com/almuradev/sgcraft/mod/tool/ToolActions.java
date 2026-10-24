@@ -731,7 +731,8 @@ public final class ToolActions {
                 values, players, message,
                 1 / SGCraftApi.get().energy().rate(PowerUnitBlockEntity.FORGE_ENERGY),
                 GateOrientation.of(gate.orientation()).getSerializedName(), owner,
-                manage, ToolActions.fitsFreely(player), ToolActions.zpmLinks(player, gate)));
+                manage, ToolActions.fitsFreely(player), SGGateAccess.isOperator(player),
+                ToolActions.zpmLinks(player, gate)));
     }
 
     // The ZPM devices linked to a gate, each as where it is and how many ZPMs it holds, or that it isn't loaded

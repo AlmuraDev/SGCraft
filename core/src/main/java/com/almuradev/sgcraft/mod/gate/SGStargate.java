@@ -108,6 +108,16 @@ public final class SGStargate implements Stargate {
     private static final Set<GateProperty<?>> MANAGED = Set.of(GateProperties.DEFAULT_RIGHTS,
             GateProperties.PLAYER_RIGHTS, GateProperties.BREAKABLE, GateProperties.INVULNERABLE,
             GateProperties.GENERATED);
+    /**
+     * The properties that set what the gate pays for dialing and holding a wormhole open, which only operators change,
+     * as a gate an owner made free could hold its wormhole, and both ends' chunks, open for good. Commands and the
+     * server change them too.
+     */
+    public static final Set<GateProperty<?>> OPERATORS_ONLY = Set.of(GateProperties.REQUIRES_POWER,
+            GateProperties.ENERGY_CAPACITY, GateProperties.CHEVRON_COST_ENABLED, GateProperties.CHEVRON_COST,
+            GateProperties.OPEN_COST_ENABLED, GateProperties.OPEN_COST, GateProperties.TICK_COST_ENABLED,
+            GateProperties.TICK_COST, GateProperties.ENERGY_PER_NAQUADAH, GateProperties.DISTANCE_FACTOR_MULTIPLIER,
+            GateProperties.INTER_WORLD_MULTIPLIER);
 
     private final SGStargates stargates;
     private final GlobalPos position;
@@ -537,6 +547,10 @@ public final class SGStargate implements Stargate {
         }
         if (SGStargate.MANAGED.contains(property) ? !this.access.mayManage(cause)
                 : !this.access.allows(cause, GateRight.CONFIGURE)) {
+            return ActionResult.DENIED;
+        }
+        if (SGStargate.OPERATORS_ONLY.contains(property)
+                && cause.first(Player.class).filter(player -> !SGGateAccess.isOperator(player)).isPresent()) {
             return ActionResult.DENIED;
         }
         final Optional<T> own = this.stargates.ownProperty(this.position, property);

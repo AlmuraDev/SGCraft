@@ -338,6 +338,29 @@ final class SGAccessGameTestsNeoForge {
     }
 
     // Makes a player an operator; the test server's own operators have no permissions, so this one is a game master
+    // What a gate pays is the operators' to change, so an owner can't make a gate free and hold its wormhole, and
+    // both ends' chunks, open for good; the owner still sets how long the wormhole stays open
+    static void energySettingsOperatorsOnly(final GameTestHelper helper, final BlockPos origin) {
+        final Stargate gate = SGGameTestsNeoForge.place(helper, origin, 9);
+        final ServerPlayer owner = helper.makeMockServerPlayerInLevel();
+        final ServerPlayer operator = helper.makeMockServerPlayerInLevel();
+        gate.setOwner(Optional.of(owner.getUUID()), SGGameTestsNeoForge.server(helper));
+        SGAccessGameTestsNeoForge.expect(helper, gate.set(GateProperties.REQUIRES_POWER, false, Cause.of(owner)),
+                ActionResult.DENIED, "The owner made the gate dial for free");
+        SGAccessGameTestsNeoForge.expect(helper, gate.set(GateProperties.TICK_COST_ENABLED, false, Cause.of(owner)),
+                ActionResult.DENIED, "The owner turned the gate's tick cost off");
+        SGAccessGameTestsNeoForge.expect(helper, gate.set(GateProperties.OPEN_TICKS, 0, Cause.of(owner)),
+                ActionResult.DONE, "The owner couldn't change how long the wormhole stays open");
+        SGAccessGameTestsNeoForge.op(operator);
+        try {
+            SGAccessGameTestsNeoForge.expect(helper, gate.set(GateProperties.REQUIRES_POWER, false,
+                    Cause.of(operator)), ActionResult.DONE, "An operator couldn't make the gate free");
+        } finally {
+            operator.level().getServer().getPlayerList().deop(operator.nameAndId());
+        }
+        helper.succeed();
+    }
+
     private static void op(final ServerPlayer player) {
         player.level().getServer().getPlayerList().op(player.nameAndId(),
                 Optional.of(LevelBasedPermissionSet.GAMEMASTER), Optional.empty());

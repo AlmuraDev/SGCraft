@@ -367,11 +367,13 @@ public final class ToolPayloads {
      * @param manage whether the player may change who has which rights, and whether others may break the gate
      * @param fitFreely whether the player may change the gate's type, chevrons and iris here, as an operator or a
      *     player in creative mode may; anyone else changes them with upgrade items
+     * @param operator whether the player is an operator, who alone changes what the gate pays for dialing
      */
     public record ConfiguratorState(boolean open, GateInfo gate, int chevrons, List<String> types,
             String world, List<String> typeNames, List<String> irisTypes, List<String> irisNames,
             List<Property> properties, List<Named> players, String message, double fePerEnergy, String orientation,
-            Optional<Named> owner, boolean manage, boolean fitFreely, List<String> zpmLinks) implements SGPacket {
+            Optional<Named> owner, boolean manage, boolean fitFreely, boolean operator, List<String> zpmLinks)
+            implements SGPacket {
 
         public static final Type<ConfiguratorState> TYPE = new Type<>(SGCraft.id("configurator_state"));
 
@@ -383,7 +385,7 @@ public final class ToolPayloads {
                     SGPacket.readList(buf, FriendlyByteBuf::readUtf),
                     SGPacket.readList(buf, Property::new),
                     SGPacket.readList(buf, Named::new), buf.readUtf(), buf.readDouble(), buf.readUtf(),
-                    buf.readOptional(Named::new), buf.readBoolean(), buf.readBoolean(),
+                    buf.readOptional(Named::new), buf.readBoolean(), buf.readBoolean(), buf.readBoolean(),
                     SGPacket.readList(buf, FriendlyByteBuf::readUtf));
         }
 
@@ -405,6 +407,7 @@ public final class ToolPayloads {
             buf.writeOptional(this.owner, (out, named) -> named.write(out));
             buf.writeBoolean(this.manage);
             buf.writeBoolean(this.fitFreely);
+            buf.writeBoolean(this.operator);
             SGPacket.writeList(buf, this.zpmLinks, FriendlyByteBuf::writeUtf);
         }
 

@@ -173,6 +173,8 @@ The gate must be idle to change its type, chevrons or orientation.
 
 ### Energy page
 
+Only operators change this page's settings, apart from **DHD fuel powers it**. Anyone else sees them grayed out. See [Per-gate settings](power.md#per-gate-settings).
+
 | Setting | Property | Default | What it does |
 | --- | --- | --- | --- |
 | Needs energy | `sgcraft:requires_power` | on | Whether dialing out costs this gate energy. Off, it dials for free |

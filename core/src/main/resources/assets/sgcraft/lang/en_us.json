@@ -303,6 +303,7 @@
   "command.sgcraft.ore.unmark.none": "Chunk %s, %s hasn't had its naquadah ore",
   "command.sgcraft.ore.unmark.done": "Chunk %s, %s gets naquadah ore again when it next loads, while add_ores_to_existing_worlds is on",
   "screen.sgcraft.configurator.server_costs": "Use server's costs",
+  "screen.sgcraft.configurator.operators_only": "Only operators change what a gate pays for dialing",
   "screen.sgcraft.configurator.server_costs.tip": "Clears this gate's own costs and energy settings, so it uses what the server sets",
   "screen.sgcraft.configurator.energy_units": "Amounts are gate energy, before distance: one is worth %s FE from other mods",
   "screen.sgcraft.configurator.generated": "Built by: %s",

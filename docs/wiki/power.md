@@ -207,6 +207,8 @@ The table is for two gates side by side, with the default settings. A supergate 
 
 A gate can have its own costs and energy settings in place of the server's. Set them on the configurator's **Energy** page (see [Tools](tools.md#stargate-configurator)) or with `/sgcraft property`. A value the gate has no setting of its own for shows in gray, and the server's value applies. **Use server's costs** clears the gate's own costs, per naquadah, distance factor and other worlds values.
 
+Only operators change these, the gate's owner included: a gate made free could hold its wormhole, and the chunks at both ends, open for good. Anyone else sees the **Energy** page grayed out, with the tip "Only operators change what a gate pays for dialing". **DHD fuel powers it** and **Open seconds** on the **Gate** page stay the owner's to change.
+
 | Configurator | Gate property | Default |
 | --- | --- | --- |
 | Needs energy | `sgcraft:requires_power` | true |

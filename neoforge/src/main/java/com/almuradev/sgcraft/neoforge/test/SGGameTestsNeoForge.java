@@ -286,6 +286,8 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("gate_defaults_reach_new_gates", SGAccessGameTestsNeoForge::formationDefaults);
         SGGameTestsNeoForge.TESTS.put("builder_owns_gate", SGAccessGameTestsNeoForge::builderOwns);
         SGGameTestsNeoForge.TESTS.put("configure_needs_owner_or_right", SGAccessGameTestsNeoForge::configureRights);
+        SGGameTestsNeoForge.TESTS.put("energy_settings_operators_only",
+                SGAccessGameTestsNeoForge::energySettingsOperatorsOnly);
         SGGameTestsNeoForge.TESTS.put("breaking_follows_owner_and_settings", SGAccessGameTestsNeoForge::breaking);
         SGGameTestsNeoForge.TESTS.put("client_lists_are_capped", SGAccessGameTestsNeoForge::entryLimits);
         SGGameTestsNeoForge.TESTS.put("invulnerable_gate_holds", SGAccessGameTestsNeoForge::invulnerable);
