@@ -76,6 +76,7 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -121,6 +122,7 @@ public final class RemoteViewGameTestsNeoForge {
     private static final String THROUGH_GATE = "remote_view_follows_through_gate";
     private static final int GATE_APART = 128;
     private static final int THROUGH_GATE_TICKS = 2400;
+    private static final int THROUGH_GATE_ATTEMPTS = 3;
     private static final Map<String, BiConsumer<GameTestHelper, BlockPos>> TESTS = new LinkedHashMap<>();
 
     static {
@@ -190,12 +192,17 @@ public final class RemoteViewGameTestsNeoForge {
         modBus.addListener((final RegisterGameTestsEvent event) -> {
             final Holder<TestEnvironmentDefinition<?>> environment = event.registerEnvironment(
                     SGCraft.id("remote_view"), new TestEnvironmentDefinition.AllOf(List.of()));
+            // The probe through a gate waits on its forced chunks loading their entities, which with every other
+            // test running at once can now and then take longer than it allows, so it gets more than one try
             RemoteViewGameTestsNeoForge.TESTS.keySet().forEach(name -> event.registerTest(SGCraft.id(name),
                     new FunctionGameTestInstance(ResourceKey.create(Registries.TEST_FUNCTION, SGCraft.id(name)),
-                            new TestData<>(environment, RemoteViewGameTestsNeoForge.STRUCTURE,
-                                    name.equals(RemoteViewGameTestsNeoForge.THROUGH_GATE)
-                                            ? RemoteViewGameTestsNeoForge.THROUGH_GATE_TICKS
-                                            : RemoteViewGameTestsNeoForge.TICKS, 0, true))));
+                            name.equals(RemoteViewGameTestsNeoForge.THROUGH_GATE)
+                                    ? new TestData<>(environment, Level.OVERWORLD,
+                                            RemoteViewGameTestsNeoForge.STRUCTURE,
+                                            RemoteViewGameTestsNeoForge.THROUGH_GATE_TICKS, 0, true, Rotation.NONE,
+                                            false, RemoteViewGameTestsNeoForge.THROUGH_GATE_ATTEMPTS, 1, false, 0)
+                                    : new TestData<>(environment, RemoteViewGameTestsNeoForge.STRUCTURE,
+                                            RemoteViewGameTestsNeoForge.TICKS, 0, true))));
             NeoForge.EVENT_BUS.addListener((final ServerStartedEvent started) -> {
                 final ServerLevel level = started.getServer().overworld();
                 final BlockPos origin = RemoteViewGameTestsNeoForge.origin(RemoteViewGameTestsNeoForge.THROUGH_GATE);
