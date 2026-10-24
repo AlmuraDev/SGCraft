@@ -5,7 +5,12 @@ plugins {
 }
 
 base {
-    archivesName = "${mod_id}-${project.name}-${minecraft_version}"
+    archivesName = "${mod_id}-${project.name}"
+}
+
+// The Minecraft version goes in the file name only: in the mod's own version a -26.3 would read as a pre-release
+tasks.withType(Jar).configureEach {
+    archiveVersion = "${project.version}-${minecraft_version}"
 }
 
 java {

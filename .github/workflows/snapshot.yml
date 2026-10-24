@@ -1,0 +1,58 @@
+# Builds snapshot jars of the 26.3 remake for NeoForge and Fabric, runs the game tests, and keeps the jars as the run's
+# artifacts. Jars are named sgcraft-<loader>-<mod_version>.<build>-<minecraft_version>.jar, where <build> counts the
+# commits since mod_version last changed in gradle.properties (see build.gradle)
+name: Snapshot
+
+on:
+  push:
+    branches: [remake/26.3]
+    paths-ignore:
+      - 'docs/**'
+      - 'tools/wiki/**'
+      - '.github/workflows/wiki.yml'
+  pull_request:
+    branches: [remake/26.3]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A newer push to the same branch replaces a build still under way
+concurrency:
+  group: snapshot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # The whole history, which the build number is counted from
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Build
+        run: ./gradlew build
+      - name: Game tests
+        run: ./gradlew :neoforge:runGameTestServer
+      # Named as the jars are, less the loader: sgcraft-3.0.0.17-26.3
+      - name: Name the artifact
+        id: version
+        run: |
+          mc=$(grep '^minecraft_version=' gradle.properties | cut -d= -f2)
+          jar=$(basename neoforge/build/libs/sgcraft-neoforge-*-"$mc".jar .jar)
+          echo "jar=sgcraft-${jar#sgcraft-neoforge-}" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.version.outputs.jar }}
+          path: |
+            neoforge/build/libs/sgcraft-neoforge-*.jar
+            fabric/build/libs/sgcraft-fabric-*.jar
+            !**/*-sources.jar
+            !**/*-javadoc.jar
+          if-no-files-found: error
+          retention-days: 90

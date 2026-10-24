@@ -4,3 +4,22 @@ plugins {
     // see https://projects.neoforged.net/neoforged/moddevgradle
     id 'net.neoforged.moddev' version '2.0.148' apply false
 }
+
+// Every project's version: mod_version, then a build number, the commits since mod_version last changed in
+// gradle.properties, so a bump of major, minor or revision starts it again from 0, and a build of the same commit
+// anywhere gets the same number. -Pbuild_number=N sets it instead; with no git history it is 0.
+def git = { List<String> args ->
+    providers.exec {
+        commandLine(['git'] + args)
+        ignoreExitValue = true
+    }.standardOutput.asText.get().trim()
+}
+def buildNumber = providers.gradleProperty('build_number').getOrNull()
+if (buildNumber == null) {
+    def bump = git(['log', '-1', '--format=%H', '-G^mod_version=', '--', 'gradle.properties'])
+    def count = bump ? git(['rev-list', '--count', "${bump}..HEAD"]) : ''
+    buildNumber = count.isInteger() ? count : '0'
+}
+allprojects {
+    version = "${mod_version}.${buildNumber}"
+}
