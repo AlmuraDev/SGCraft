@@ -79,7 +79,8 @@ import java.util.function.Predicate;
  * as {@code city-shield-*.png}; and a ZPM console, interface cart and hub with ZPMs in them as
  * {@code zpm-devices-*.png}; and a dialing computer with its chair before a gate, dialing slowly, from behind the chair
  * as {@code dialing-computer-*.png}, its screen close up as {@code dialing-computer-screen-*.png}, and once the gate
- * is open as {@code dialing-computer-open-*.png}. When the last is saved it closes the game.
+ * is open as {@code dialing-computer-open-*.png}; and a puddle jumper hovering before an open gate as
+ * {@code puddle-jumper-*.png}. When the last is saved it closes the game.
  */
 public final class SceneExport {
 
@@ -110,6 +111,15 @@ public final class SceneExport {
     // How far back from a city shield the player stands, and how long its shield takes to spread before the picture
     private static final int CITY_BACK = 30;
     private static final int CITY_SPREAD_TICKS = 160;
+    // Where a puddle jumper hovers before its gate: how far the player stands from the gate, how far in front of the
+    // gate it hovers, how far to the side, how high above the ground, and the way it faces, in degrees (180 is north,
+    // toward the player)
+    private static final int JUMPER_BACK = 24;
+    private static final int JUMPER_FRONT = 10;
+    private static final int JUMPER_SIDE = 6;
+    private static final int JUMPER_RISE = 2;
+    private static final float JUMPER_TURN = 140.0F;
+    private static final int JUMPER_PITCH = -2;
 
     private static @Nullable SceneExport running;
 
@@ -135,6 +145,7 @@ public final class SceneExport {
         this.city(6);
         this.zpmDevices(7);
         this.dialingComputer(8);
+        this.puddleJumper(9);
     }
 
     /** Starts taking the pictures, saved in {@code out}. Call this on the render thread, in the export's world. */
@@ -322,6 +333,42 @@ public final class SceneExport {
                 .filter(state -> state == GateState.CONNECTED).isPresent()));
         this.waitTicks(SceneExport.SETTLE_TICKS);
         this.shots("dialing-computer-open");
+    }
+
+    // Builds a gate with its wormhole open, and hovers a puddle jumper before it with its drive on, nose to the
+    // camera, as a pilot would hold it before a jump. The far gate stands behind the player, out of the picture
+    private void puddleJumper(final int index) {
+        final int x = SceneExport.ORIGIN_X + index * SceneExport.SPACING;
+        final int z = SceneExport.ORIGIN_Z;
+        final int standZ = z - SceneExport.JUMPER_BACK;
+        final int farZ = standZ - SceneExport.BEHIND;
+        this.command(String.format(Locale.ROOT, "tp @s %d.5 %d %d.5 0 0", x, SceneExport.GROUND, standZ));
+        this.waitTicks(SceneExport.LOAD_TICKS);
+        this.command(String.format(Locale.ROOT, "fill %d %d %d %d %d %d air", x - SceneExport.CLEAR,
+                SceneExport.GROUND, farZ - SceneExport.CLEAR, x + SceneExport.CLEAR, SceneExport.GROUND
+                + SceneExport.CLEAR, z + SceneExport.CLEAR));
+        this.command(String.format(Locale.ROOT, "fill %d %d %d %d %d %d grass_block", x - SceneExport.CLEAR,
+                SceneExport.GROUND - 1, farZ - SceneExport.CLEAR, x + SceneExport.CLEAR, SceneExport.GROUND - 1,
+                z + SceneExport.CLEAR));
+        this.command("kill @e[type=!player]");
+        this.command(String.format(Locale.ROOT, "execute positioned %d %d %d rotated 0 0 run sgcraft place %s 9 2",
+                x, SceneExport.GROUND, z, "sgcraft:milky_way"));
+        this.command(String.format(Locale.ROOT, "execute positioned %d %d %d rotated 180 0 run sgcraft place %s 9",
+                x, SceneExport.GROUND, farZ, "sgcraft:milky_way"));
+        this.command(String.format(Locale.ROOT, "tp @s %d.5 %d %d.5 0 %d", x, SceneExport.GROUND, standZ,
+                SceneExport.JUMPER_PITCH));
+        this.waitTicks(SceneExport.SETTLE_TICKS);
+        final BlockPos near = new BlockPos(x, SceneExport.GROUND, z + 3);
+        final BlockPos far = new BlockPos(x, SceneExport.GROUND, farZ - 3);
+        this.steps.add(Step.run(server -> SceneExport.open(server, near, far)));
+        this.steps.add(Step.until(server -> SceneExport.gate(server, near).map(Stargate::state)
+                .filter(state -> state == GateState.CONNECTED).isPresent()));
+        this.command(String.format(Locale.ROOT, "summon sgcraft:puddle_jumper %d.5 %d %d.5 "
+                + "{Rotation:[%sf,0.0f],powered:1b,headlights:1b}", x + SceneExport.JUMPER_SIDE,
+                SceneExport.GROUND + SceneExport.JUMPER_RISE, z - SceneExport.JUMPER_FRONT,
+                SceneExport.JUMPER_TURN));
+        this.waitTicks(2 * SceneExport.SETTLE_TICKS);
+        this.shots("puddle-jumper");
     }
 
     // Places a dialing computer as its item does, its screen facing north
