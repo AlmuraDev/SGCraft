@@ -118,7 +118,7 @@ The GDO works the [iris](iris.md) of the gate near you and, once its wormhole is
 
 - **This gate**: the near gate's iris state, with **Open Iris** and **Close Iris**. A gate without an iris shows "No iris".
 - **The other end**: the same for the far gate, shown once the wormhole is connected. Until then the screen says "No wormhole open".
-- **Disconnect** closes the wormhole or stops a dial. It works while the gate is dialing or open.
+- **Disconnect** closes the wormhole. It shows only while the wormhole is opening or open.
 
 For a gate with a shield, the buttons read **Activate Shield** and **Deactivate Shield**, and the state shows as **Shield Active**, **Raising Shield...**, **Lowering Shield...** or **Shield Inactive**.
 

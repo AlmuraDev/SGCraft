@@ -51,7 +51,7 @@ The screen changes as soon as either iris or the wormhole does.
 | --- | --- |
 | **Open Iris** | Opens that side's iris. It works while the iris is fully shut |
 | **Close Iris** | Shuts that side's iris. It works while the iris is fully open |
-| **Disconnect** | Closes the near gate's wormhole or stops its dial. It works while the gate is dialing, opening, connected or has an incoming wormhole |
+| **Disconnect** | Closes the near gate's wormhole. It shows only while the wormhole is opening or open, at either end |
 | **Close** | Closes the screen |
 
 An iris that is moving takes no orders until it stops. Errors show in red, such as "That gate has no iris" or "The wormhole isn't open".

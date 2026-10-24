@@ -123,6 +123,9 @@ public final class GdoScreen extends Screen {
         GdoScreen.irisButtons(this.openLocal, this.closeLocal, this.state.local());
         GdoScreen.irisButtons(this.openRemote, this.closeRemote, this.state.remote().orElse(null));
         if (this.disconnect != null) {
+            // Shown only while the wormhole is open, as in 2.2.x, not while dialing or closing
+            final String gate = this.state.local().state();
+            this.disconnect.visible = gate.equals("opening") || gate.equals("connected");
             this.disconnect.active = this.state.canDisconnect();
         }
     }
