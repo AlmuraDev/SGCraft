@@ -25,8 +25,8 @@
 
 package com.almuradev.sgcraft.mod.generator;
 
+import com.almuradev.sgcraft.mod.ClientTicks;
 import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
-import com.almuradev.sgcraft.mod.client.generator.GeneratorHum;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -133,7 +133,7 @@ public final class NaquadahGeneratorBlock extends Block implements EntityBlock {
             return null;
         }
         if (level.isClientSide()) {
-            return (tickLevel, pos, tickState, entity) -> GeneratorHum.tick((NaquadahGeneratorBlockEntity) entity);
+            return (tickLevel, pos, tickState, entity) -> ClientTicks.generator((NaquadahGeneratorBlockEntity) entity);
         }
         return (tickLevel, pos, tickState, entity) -> NaquadahGeneratorBlockEntity.serverTick((ServerLevel) tickLevel,
                 pos, tickState, (NaquadahGeneratorBlockEntity) entity);

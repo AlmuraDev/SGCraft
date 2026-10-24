@@ -25,11 +25,15 @@
 
 package com.almuradev.sgcraft.mod.client;
 
+import com.almuradev.sgcraft.mod.ClientTicks;
+import com.almuradev.sgcraft.mod.client.computer.ComputerAlarms;
 import com.almuradev.sgcraft.mod.client.computer.ComputerConfigScreen;
 import com.almuradev.sgcraft.mod.client.computer.DialingComputerScreen;
 import com.almuradev.sgcraft.mod.client.dhd.DhdScreen;
 import com.almuradev.sgcraft.mod.client.gate.GateAddressScreen;
 import com.almuradev.sgcraft.mod.client.gate.GateBaseScreen;
+import com.almuradev.sgcraft.mod.client.gate.GateLoopSounds;
+import com.almuradev.sgcraft.mod.client.generator.GeneratorHum;
 import com.almuradev.sgcraft.mod.client.malp.MalpConfigScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleUsers;
@@ -77,6 +81,7 @@ public final class SGClient {
     public static void init() {
         SGClientConfig.load();
         DhdHooks.setOpenScreen(pos -> Minecraft.getInstance().gui.setScreen(new DhdScreen(pos)));
+        ClientTicks.set(GateLoopSounds::tick, ComputerAlarms::tick, GeneratorHum::tick);
         SGNetwork.onClient(GateBaseInfo.TYPE, SGClient::gateBase);
         SGNetwork.onClient(ToolPayloads.PddState.TYPE, state ->
                 SGClient.show(PddScreen.class, state, state.open(), PddScreen::new, PddScreen::update));

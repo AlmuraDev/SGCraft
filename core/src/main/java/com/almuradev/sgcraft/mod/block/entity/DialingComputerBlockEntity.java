@@ -26,8 +26,8 @@
 package com.almuradev.sgcraft.mod.block.entity;
 
 import com.almuradev.sgcraft.api.gate.Stargate;
+import com.almuradev.sgcraft.mod.ClientTicks;
 import com.almuradev.sgcraft.mod.SGServer;
-import com.almuradev.sgcraft.mod.client.computer.ComputerAlarms;
 import com.almuradev.sgcraft.mod.computer.ComputerDialMode;
 import com.almuradev.sgcraft.mod.computer.ComputerPower;
 import com.almuradev.sgcraft.mod.computer.ComputerSettings;
@@ -225,7 +225,7 @@ public final class DialingComputerBlockEntity extends BlockEntity implements Pow
 
     /** Keeps the alarm sounding while it should. Only clients call this. */
     public static void clientTick(final DialingComputerBlockEntity computer) {
-        ComputerAlarms.tick(computer);
+        ClientTicks.computer(computer);
     }
 
     private void relink(final ServerLevel level) {

@@ -28,11 +28,11 @@ package com.almuradev.sgcraft.mod.block.entity;
 import com.almuradev.sgcraft.api.SGCraftRegistries;
 import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.api.gate.GateTypes;
+import com.almuradev.sgcraft.mod.ClientTicks;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.block.DhdBlock;
 import com.almuradev.sgcraft.mod.block.RingBlock;
 import com.almuradev.sgcraft.mod.block.StargateBaseBlock;
-import com.almuradev.sgcraft.mod.client.gate.GateLoopSounds;
 import com.almuradev.sgcraft.mod.entity.IrisPlateEntity;
 import com.almuradev.sgcraft.mod.gate.DialPhase;
 import com.almuradev.sgcraft.mod.gate.DialView;
@@ -527,7 +527,7 @@ public final class StargateBaseBlockEntity extends BlockEntity {
      * opens and stirring it as it shuts. Only clients call this.
      */
     public static void clientTick(final Level level, final BlockPos pos, final StargateBaseBlockEntity base) {
-        GateLoopSounds.tick(base);
+        ClientTicks.gate(base);
         if (StargateBaseBlockEntity.tickHorizon(base, level.getRandom()) && base.spill != null
                 && base.dialView.phase() == DialPhase.CONNECTED) {
             base.spill.spray(level, base.frame(), level.getRandom());
