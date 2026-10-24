@@ -120,6 +120,10 @@ public final class ToolActions {
     // How much further than the tool's range a player may wander with its screen open
     private static final int SLACK = 4;
     private static final int MAX_NAME = 48;
+    // Each answer to the PDD's and the tablet's screens looks up the gate of every entry, so their refreshes, which
+    // come once a second, are answered at most twice a second, and their buttons ten times
+    private static final ActionThrottle PDD_THROTTLE = new ActionThrottle(10, 10);
+    private static final ActionThrottle TABLET_THROTTLE = new ActionThrottle(10, 10);
     // Players with a name lookup under way for the configurator, so each has one at a time
     private static final Set<UUID> LOOKING_UP = ConcurrentHashMap.newKeySet();
 
@@ -232,6 +236,9 @@ public final class ToolActions {
     }
 
     public static void pdd(final ServerPlayer player, final PddAction action) {
+        if (!ToolActions.PDD_THROTTLE.allows(player, action.kind() == PddAction.Kind.REFRESH)) {
+            return;
+        }
         final Optional<AddressBook> held = ToolActions.pddBook(player);
         if (held.isEmpty()) {
             ToolActions.sendPdd(player, false, "You aren't holding a PDD");
@@ -423,6 +430,9 @@ public final class ToolActions {
     }
 
     public static void tablet(final ServerPlayer player, final TabletAction action) {
+        if (!ToolActions.TABLET_THROTTLE.allows(player, action.kind() == TabletAction.Kind.REFRESH)) {
+            return;
+        }
         final Optional<ItemStack> held = ToolActions.tablet(player);
         if (held.isEmpty()) {
             ToolActions.sendTablet(player, false, action.gate(), "You aren't holding a gate control tablet");

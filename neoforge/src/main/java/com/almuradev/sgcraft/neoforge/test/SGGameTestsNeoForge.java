@@ -81,6 +81,7 @@ import com.almuradev.sgcraft.mod.item.SGDataComponents;
 import com.almuradev.sgcraft.mod.item.SGItems;
 import com.almuradev.sgcraft.mod.malp.MalpSettings;
 import com.almuradev.sgcraft.mod.settings.SharedSettings;
+import com.almuradev.sgcraft.mod.tool.ActionThrottle;
 import com.almuradev.sgcraft.mod.tool.TabletGate;
 import com.almuradev.sgcraft.mod.tool.ToolActions;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads;
@@ -224,6 +225,7 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("chevrons_stay_within_nine", SGGameTestsNeoForge::chevronsWithinNine);
         SGGameTestsNeoForge.TESTS.put("addresses_stay_within_nine_symbols", SGGameTestsNeoForge::addressLength);
         SGGameTestsNeoForge.TESTS.put("shared_settings_reach_clients", SGGameTestsNeoForge::sharedSettings);
+        SGGameTestsNeoForge.TESTS.put("tool_screens_answer_a_few_times_a_second", SGGameTestsNeoForge::throttle);
         SGGameTestsNeoForge.TESTS.put("gdo_works_iris", SGGameTestsNeoForge::gdoIris);
         SGGameTestsNeoForge.TESTS.put("camouflage", SGGameTestsNeoForge::camouflage);
         SGGameTestsNeoForge.TESTS.put("supergate_placed", SGGameTestsNeoForge::supergatePlaced);
@@ -1032,6 +1034,23 @@ public final class SGGameTestsNeoForge {
         final AddressBook book = ItemAddressBook.of(player.getItemInHand(InteractionHand.MAIN_HAND));
         helper.assertTrue(book.stream().noneMatch(entry -> entry.address().size() > most),
                 "The PDD kept an address of more than " + most + " symbols");
+        helper.succeed();
+    }
+
+    // A tool's screen has a refresh answered at most once each few ticks, and a few buttons each second, however many
+    // come; a player who leaves is forgotten
+    private static void throttle(final GameTestHelper helper, final BlockPos origin) {
+        final ActionThrottle throttle = new ActionThrottle(10, 3);
+        final ServerPlayer player = helper.makeMockServerPlayerInLevel();
+        helper.assertTrue(throttle.allows(player, true), "The first refresh wasn't answered");
+        helper.assertTrue(!throttle.allows(player, true), "A second refresh in the same tick was answered");
+        for (int i = 0; i < 3; i++) {
+            helper.assertTrue(throttle.allows(player, false), "Button " + (i + 1) + " wasn't answered");
+        }
+        helper.assertTrue(!throttle.allows(player, false), "A fourth button in the same second was answered");
+        ActionThrottle.forget(player.getUUID());
+        helper.assertTrue(throttle.allows(player, true) && throttle.allows(player, false),
+                "A player who left wasn't forgotten");
         helper.succeed();
     }
 
