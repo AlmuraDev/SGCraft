@@ -81,6 +81,8 @@ public final class SGConnection implements Connection {
     private static final int DISCONNECTING_TICKS = 40;
     // How long a dialed Pegasus gate takes to fill with light, at most
     private static final int PEGASUS_FILL_TICKS = 90;
+    // How many ticks apart a gate dialed with every chevron at once locks its own, as in 2.2.x
+    private static final int INCOMING_LOCK_TICKS = 4;
     // How often the two gates' chunks are kept loaded; less than the loading ticket's lifetime
     private static final int KEEP_LOADED_TICKS = 100;
     // How long into the wormhole forming its sound starts, so the sound's burst meets the kawoosh
@@ -119,6 +121,9 @@ public final class SGConnection implements Connection {
     private int elapsed;
     private int symbol;
     private int engaged;
+    // How many chevrons the gate dialed has locked: as many as the dialing gate's, but for a dial with every chevron
+    // at once, whose gate dialed locks its own one after another while the gates wait to open
+    private int targetEngaged;
     private int age;
     private int ticksOpen;
     private float ringAngle;
@@ -176,10 +181,13 @@ public final class SGConnection implements Connection {
                 SGEventBus.get().post(new SGEvents.DialLockChevron(this.cause, this.dialer, this.address, i));
             }
             this.lockTick = this.now();
+            // The gate dialed can't know the address until it is all in, so it locks its own chevrons then, one
+            // after another, each with its sound, a Pegasus gate's light filling in step; both open after
+            final int locking = this.address.size() * SGConnection.INCOMING_LOCK_TICKS;
+            this.targetEngaged = 0;
             this.fillStart = this.now();
-            this.fillEnd = this.now();
-            SGConnection.chevron(this.target, false);
-            this.enter(DialPhase.SYNC_AWAIT, this.syncTicks());
+            this.fillEnd = this.now() + locking;
+            this.enter(DialPhase.SYNC_AWAIT, this.syncTicks() + locking);
             return;
         }
         this.scheduleFill();
@@ -292,6 +300,12 @@ public final class SGConnection implements Connection {
             this.dialerTravel.kawoosh();
             this.targetTravel.kawoosh();
         }
+        if (this.phase == DialPhase.SYNC_AWAIT && this.targetEngaged < this.engaged
+                && this.elapsed >= (this.targetEngaged + 1) * SGConnection.INCOMING_LOCK_TICKS) {
+            this.targetEngaged++;
+            SGConnection.chevron(this.target, false);
+            this.sync();
+        }
         if (this.phase == DialPhase.ESTABLISHING && this.elapsed == this.openSoundTicks()) {
             this.dialer.play(SGSounds.open(this.style));
             this.target.play(SGSounds.open(this.style));
@@ -309,6 +323,7 @@ public final class SGConnection implements Connection {
                     return true;
                 }
                 this.engaged++;
+                this.targetEngaged = this.engaged;
                 this.lockTick = this.now();
                 SGEventBus.get().post(new SGEvents.DialLockChevron(this.cause, this.dialer, this.address,
                         this.engaged - 1));
@@ -712,7 +727,7 @@ public final class SGConnection implements Connection {
         // A dialed Ori supergate links in step with the one dialing it, so it is shown each symbol's timing too
         final boolean ori = this.style == DialStyle.ORI;
         final DialView targetView = this.shownToTarget(new DialView(this.phase, false, this.homeAddress,
-                this.engaged, 0, 0, ori ? this.phaseStart : 0, ori ? ringEnd : 0, this.lockTick, this.fillStart,
+                this.targetEngaged, 0, 0, ori ? this.phaseStart : 0, ori ? ringEnd : 0, this.lockTick, this.fillStart,
                 this.fillEnd, this.phaseStart, ori ? this.address.size() : 0));
         this.dialer.enter(this, dialerView, cause);
         this.target.enter(this, targetView, cause);
@@ -741,6 +756,7 @@ public final class SGConnection implements Connection {
         tag.putInt("phase_ticks", this.phaseTicks);
         tag.putInt("symbol", this.symbol);
         tag.putInt("engaged", this.engaged);
+        tag.putInt("target_engaged", this.targetEngaged);
         tag.putFloat("ring_angle", this.ringAngle);
         tag.putFloat("move_from", this.move.from());
         tag.putFloat("move_to", this.move.to());
@@ -792,6 +808,7 @@ public final class SGConnection implements Connection {
         connection.timeout = Math.max(0, connection.phaseTicks - connection.elapsed);
         connection.symbol = tag.getIntOr("symbol", 0);
         connection.engaged = tag.getIntOr("engaged", 0);
+        connection.targetEngaged = tag.getIntOr("target_engaged", connection.engaged);
         connection.ringAngle = tag.getFloatOr("ring_angle", 0);
         connection.move = new DialStyle.Move(tag.getFloatOr("move_from", 0), tag.getFloatOr("move_to", 0),
                 tag.getIntOr("move_ticks", 0));

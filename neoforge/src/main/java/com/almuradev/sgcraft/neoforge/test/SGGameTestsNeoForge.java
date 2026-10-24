@@ -229,6 +229,8 @@ public final class SGGameTestsNeoForge {
         SGGameTestsNeoForge.TESTS.put("shared_settings_reach_clients", SGGameTestsNeoForge::sharedSettings);
         SGGameTestsNeoForge.TESTS.put("tool_screens_answer_a_few_times_a_second", SGGameTestsNeoForge::throttle);
         SGGameTestsNeoForge.TESTS.put("explorer_list_fits_one_packet", SGGameTestsNeoForge::explorerListFits);
+        SGGameTestsNeoForge.TESTS.put("quick_dial_target_locks_in_turn",
+                SGGameTestsNeoForge::quickDialTargetLocksInTurn);
         SGGameTestsNeoForge.TESTS.put("gdo_works_iris", SGGameTestsNeoForge::gdoIris);
         SGGameTestsNeoForge.TESTS.put("camouflage", SGGameTestsNeoForge::camouflage);
         SGGameTestsNeoForge.TESTS.put("supergate_placed", SGGameTestsNeoForge::supergatePlaced);
@@ -1038,6 +1040,25 @@ public final class SGGameTestsNeoForge {
         helper.assertTrue(book.stream().noneMatch(entry -> entry.address().size() > most),
                 "The PDD kept an address of more than " + most + " symbols");
         helper.succeed();
+    }
+
+    // Dialed with every chevron at once, the gate dialed locks its own one after another, and the gates open after
+    private static void quickDialTargetLocksInTurn(final GameTestHelper helper, final BlockPos origin) {
+        final Stargate a = SGGameTestsNeoForge.place(helper, origin.offset(SGGameTestsNeoForge.A), 9);
+        final Stargate b = SGGameTestsNeoForge.place(helper, origin.offset(SGGameTestsNeoForge.B), 9);
+        a.set(GateProperties.REQUIRES_POWER, false, SGGameTestsNeoForge.server(helper));
+        final Address address = SGCraftApi.get().addressing().addressOf(b.position(), a.position().dimension())
+                .orElseThrow();
+        a.dial(address, DialMode.QUICK, SGGameTestsNeoForge.server(helper));
+        final SGStargate target = (SGStargate) b;
+        helper.assertTrue(target.view().engaged() == 0, "The gate dialed locked " + target.view().engaged()
+                + " chevrons at once");
+        helper.startSequence()
+                .thenWaitUntil(() -> helper.assertTrue(target.view().engaged() > 0
+                        && target.view().engaged() < address.size(), "The gate dialed didn't lock some first"))
+                .thenWaitUntil(() -> helper.assertTrue(b.state() == GateState.CONNECTED, "The gates didn't open"))
+                .thenExecute(() -> a.disconnect(SGGameTestsNeoForge.server(helper)))
+                .thenSucceed();
     }
 
     // A tool's screen has a refresh answered at most once each few ticks, and a few buttons each second, however many

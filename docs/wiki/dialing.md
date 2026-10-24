@@ -19,7 +19,7 @@ A [dialing computer](blocks/dialing-computer.md) dials the nearest gate within 3
 | Mode | What happens |
 | --- | --- |
 | Standard | The gate dials one symbol at a time. A Milky Way gate turns its glyph ring to bring each symbol to the top, a Universe gate turns its whole ring, and a Pegasus gate runs a light around its screens. Each chevron locks in turn. |
-| Quick | Every chevron locks at once and no ring moves. All the chevron costs are paid together. |
+| Quick | Every chevron of the dialing gate locks at once and no ring moves. All the chevron costs are paid together. The gate dialed then locks its own chevrons one after another, 0.2 seconds apart, each with its sound, and both gates open after. |
 
 The DHD, the PDD and the tablet dial in standard mode, or in quick mode when the gate's `chevrons_lock_on_dial` property is on (**Chevrons lock at once** in the [configurator](tools.md)). With the command, add `--quick` or `-q` for quick mode. An [Ori supergate](building-gates.md#ori-supergates) always dials in standard mode, linking its ring segments one after another.
 
