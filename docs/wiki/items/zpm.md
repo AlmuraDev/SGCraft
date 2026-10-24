@@ -54,6 +54,7 @@ A ZPM holds 26,843,546 GE when found (`zpm.capacity`). Gates and city shields ta
 - It keeps what is left in it when you take it out, carry it or break the block that holds it.
 - Its tooltip shows the GE left as "Power: N GE".
 - Once something has drawn on it, a bar on the item shows how full it is.
+- A tainted ZPM shows neither, so it can't be told apart by its power.
 - A gate or city shield takes from the nearest ZPM block first, and from the next only when the nearer runs short.
 - A hub draws on the ZPMs it holds evenly, and so does a city shield generator on the ZPMs in its own slots.
 
@@ -61,7 +62,7 @@ See [Power](../power.md#zpms) for how gates use ZPMs alongside their other sourc
 
 ## Tainted ZPMs
 
-A tainted ZPM shines like an enchanted item. It holds as much as any other.
+A tainted ZPM shines like an enchanted item. It holds as much as any other, but its tooltip and bar never show its power.
 
 When a ZPM console, interface cart or hub holding a tainted ZPM is drawn on, by a gate, a city shield or an energy converter, it explodes. The explosion has a power of 250 by default (a block of TNT has 4) and sets fires (`zpm.tainted_explosion`, 0 turns it off).
 

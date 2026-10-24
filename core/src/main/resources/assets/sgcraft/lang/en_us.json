@@ -109,6 +109,8 @@
   "screen.sgcraft.configurator.save": "Save",
   "screen.sgcraft.configurator.revert": "Revert",
   "screen.sgcraft.close": "Close",
+  "screen.sgcraft.search": "Search",
+  "screen.sgcraft.search.clear": "Clear the search",
   "screen.sgcraft.configurator.type": "Type",
   "screen.sgcraft.configurator.type.tip": "The kind of gate: Milky Way, Pegasus or Universe. It changes how the gate looks and dials",
   "screen.sgcraft.configurator.type.locked.tip": "The kind of gate. Use a gate upgrade on the gate to change it; only an operator or a player in creative mode changes it here",

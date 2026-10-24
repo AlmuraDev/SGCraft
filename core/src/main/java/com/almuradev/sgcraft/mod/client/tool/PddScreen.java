@@ -49,7 +49,8 @@ import java.util.Optional;
 /**
  * The PDD, the personal dialing device: the addresses kept on the PDD itself, dialed from the gate near its holder,
  * each with what the gate it reaches is doing and the world it is in, or that it is gone. Choosing an entry fills the boxes below the list,
- * which add, rename and remove entries; the gate's own address can be added with a click.
+ * which add, rename and remove entries; the gate's own address can be added with a click. The search box above the list
+ * narrows it, and entries can't be moved up or down while it does.
  */
 public final class PddScreen extends Screen {
 
@@ -60,11 +61,17 @@ public final class PddScreen extends Screen {
     // where the list's count is written
     private static final int BOTTOM = 100;
     private static final int COUNT_HEIGHT = 12;
+    // Where the search box is, and the list below it
+    private static final int SEARCH_TOP = 34;
+    private static final int LIST_TOP = PddScreen.SEARCH_TOP + ListSearch.HEIGHT + 4;
 
     private PddState state;
+    private final ListSearch search = new ListSearch();
     private @Nullable Entries list;
     private @Nullable EditBox name;
     private @Nullable EditBox address;
+    private @Nullable Button up;
+    private @Nullable Button down;
     private @Nullable Button dial;
     private @Nullable Button disconnect;
     private @Nullable Button addHere;
@@ -78,19 +85,29 @@ public final class PddScreen extends Screen {
     /** Shows a newer state from the server, keeping what the player has typed. */
     public void update(final PddState state) {
         this.state = state;
+        this.refill();
+        this.updateButtons();
+    }
+
+    // Shows the entries that match the search, keeping the chosen one chosen while it is shown
+    private void refill() {
         if (this.list != null) {
             final String selected = this.list.getSelected() == null ? "" : this.list.getSelected().entry.address();
-            this.list.fill(state.entries(), selected);
+            this.list.fill(this.state.entries(), selected);
         }
-        this.updateButtons();
     }
 
     @Override
     protected void init() {
         final int left = (this.width - PddScreen.LIST_WIDTH) / 2;
         final int bottom = this.height - PddScreen.BOTTOM;
+        this.addRenderableWidget(this.search.box(this.font, left, PddScreen.SEARCH_TOP, PddScreen.LIST_WIDTH, () -> {
+            this.refill();
+            this.updateButtons();
+        }));
+        this.addRenderableWidget(this.search.clear(left, PddScreen.SEARCH_TOP, PddScreen.LIST_WIDTH));
         this.list = this.addRenderableWidget(new Entries(this.minecraft, PddScreen.LIST_WIDTH,
-                bottom - 40 - PddScreen.COUNT_HEIGHT, 40));
+                bottom - PddScreen.LIST_TOP - PddScreen.COUNT_HEIGHT, PddScreen.LIST_TOP));
         this.list.setX(left);
         this.list.fill(this.state.entries(), "");
         this.name = this.addRenderableWidget(new EditBox(this.font, left, bottom + 6, 180, 20,
@@ -110,10 +127,10 @@ public final class PddScreen extends Screen {
                 () -> this.send(PddAction.Kind.RENAME, 0)));
         this.addRenderableWidget(PddScreen.button("screen.sgcraft.pdd.remove", "Remove", left + 128, row1, w,
                 () -> this.send(PddAction.Kind.REMOVE, 0)));
-        this.addRenderableWidget(PddScreen.button("screen.sgcraft.pdd.up", "Up", left + 192, row1, w,
+        this.up = this.addRenderableWidget(PddScreen.button("screen.sgcraft.pdd.up", "Up", left + 192, row1, w,
                 () -> this.move(-1)));
-        this.addRenderableWidget(PddScreen.button("screen.sgcraft.pdd.down", "Down", left + 256, row1, 64,
-                () -> this.move(1)));
+        this.down = this.addRenderableWidget(PddScreen.button("screen.sgcraft.pdd.down", "Down", left + 256, row1,
+                64, () -> this.move(1)));
         final int row2 = bottom + 56;
         this.dial = this.addRenderableWidget(PddScreen.button("screen.sgcraft.pdd.dial", "Dial", left, row2, 78,
                 () -> this.send(PddAction.Kind.DIAL, 0)));
@@ -147,6 +164,11 @@ public final class PddScreen extends Screen {
         if (this.addHere != null) {
             this.addHere.active = gate.map(g -> !g.address().isEmpty()).orElse(false);
         }
+        // Not while searching: an entry would swap places with one that isn't shown
+        if (this.up != null && this.down != null) {
+            this.up.active = !this.search.searching();
+            this.down.active = !this.search.searching();
+        }
     }
 
     private void addHere() {
@@ -162,7 +184,7 @@ public final class PddScreen extends Screen {
     }
 
     private void move(final int by) {
-        if (this.list == null || this.list.getSelected() == null) {
+        if (this.list == null || this.list.getSelected() == null || this.search.searching()) {
             return;
         }
         final int index = this.state.entries().indexOf(this.list.getSelected().entry) + by;
@@ -245,6 +267,9 @@ public final class PddScreen extends Screen {
         void fill(final List<BookEntry> entries, final String selected) {
             this.clearEntries();
             for (final BookEntry entry : entries) {
+                if (!PddScreen.this.search.matches(entry.name(), entry.world(), entry.address())) {
+                    continue;
+                }
                 final Row row = new Row(entry);
                 this.addEntry(row);
                 if (entry.address().equals(selected)) {

@@ -43,8 +43,8 @@ import java.util.function.Consumer;
 /**
  * A Zero Point Module, as in the original: a great store of gate energy (GE) that gates, ZPM consoles, interface
  * carts and hubs, and city shields draw on. A ZPM holds the server's {@link #capacity()} when found, and keeps what is
- * left as it is moved about; it is never used up, only emptied. A tainted ZPM, which shines like an enchanted item,
- * explodes when a console, cart or hub draws on it.
+ * left as it is moved about; it is never used up, only emptied. A tainted ZPM, which shines like an enchanted item and
+ * never shows its power, explodes when a console, cart or hub draws on it.
  */
 public final class ZpmItem extends Item {
 
@@ -94,9 +94,10 @@ public final class ZpmItem extends Item {
         stack.set(DataComponents.ENCHANTMENT_GLINT_OVERRIDE, true);
     }
 
+    // A tainted ZPM passes for a sound one: it never shows its power, by bar or tooltip
     @Override
     public boolean isBarVisible(final ItemStack stack) {
-        return ZpmItem.energy(stack) < ZpmItem.capacity();
+        return !ZpmItem.tainted(stack) && ZpmItem.energy(stack) < ZpmItem.capacity();
     }
 
     @Override
@@ -112,6 +113,9 @@ public final class ZpmItem extends Item {
     @Override
     public void appendHoverText(final ItemStack stack, final TooltipContext context, final TooltipDisplay display,
             final Consumer<Component> builder, final TooltipFlag flag) {
+        if (ZpmItem.tainted(stack)) {
+            return;
+        }
         builder.accept(Component.translatableWithFallback("item.sgcraft.zpm.power", "Power: %s GE",
                 NumberFormat.getIntegerInstance(Locale.US).format(Math.floor(ZpmItem.energy(stack))))
                 .withStyle(ChatFormatting.GRAY));

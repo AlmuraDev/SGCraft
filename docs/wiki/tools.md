@@ -31,9 +31,9 @@ The PDD dials the gate near you from a list of addresses kept on the PDD itself.
 The screen shows:
 
 - The gate near you: "This gate: <address>, <state>". With no gate near you it says "No gate near you. You can still change its addresses". A gate with **Address shown** off shows "address hidden".
-- The PDD's addresses, each with a name and what the gate at that address is doing, and "Addresses: <count>".
+- The PDD's addresses, each with a name and what the gate at that address is doing, and "Addresses: <count>". The **Search** box above them narrows the list by name, world or address, and the red **x** empties it.
 - **Name** and **Address** boxes. Choosing an entry fills them.
-- **Add**, **Rename**, **Remove**, **Up** and **Down** for the list. Names are cut to 48 characters. An entry without a name is named by its address.
+- **Add**, **Rename**, **Remove**, **Up** and **Down** for the list. **Up** and **Down** are off while you search. Names are cut to 48 characters. An entry without a name is named by its address.
 - **Dial** dials the address in the box from the gate near you. **Disconnect** closes its wormhole or stops its dial. **Add this gate** adds the near gate to the address book: it puts the gate's address in the box, and in the name box too if that is empty, and saves the entry. **Close** closes the screen.
 
 Dialing needs the `use` right on the gate (see [Access](access.md)). The ring turns for each symbol unless the gate has **Chevrons lock at once** on. A PDD keeps each address in the form that names its world, and dials the shortest form from the gate's world. See [Addresses](addresses.md).
@@ -90,7 +90,7 @@ Dictionary: [Explorer Dialer Device](items/edd.md)
 
 The Explorer Dialer Device lists every gate that world generation built, in every world, sorted by world and then by address. You don't add gates to it: the list comes from the world.
 
-The header reads "Generated Addresses: (N) - Visited: V". Each row shows the name you gave the gate (or "Unnamed gate"), its address in letters and glyphs, its world, and **Visited** in green or **Not visited**. The list refreshes every 3 seconds.
+The header reads "Generated Addresses: (N) - Visited: V". Each row shows the name you gave the gate (or "Unnamed gate"), its address in letters and glyphs, its world, and **Visited** in green or **Not visited**. The list refreshes every 3 seconds. The **Search** box above it narrows it by name, world or address, and the red **x** empties it.
 
 - **Dial** dials the chosen gate from the gate near you. Double-clicking an entry dials it too. With no gate near, the screen says "No gate near you to dial from".
 - **Disconnect** closes the near gate's wormhole or stops its dial.

@@ -40,6 +40,7 @@ The PDD finds the gate again each time you press a button, so you can walk from 
 The screen shows, from the top:
 
 - The gate near you: "This gate: <address>, <state>", with the address in letters and in the gate's glyphs. With no gate near you it says "No gate near you. You can still change its addresses". A gate with **Address shown** off shows "address hidden".
+- A **Search** box. Typing in it narrows the list to the entries whose name, world or address has the text in it. Case doesn't matter, and neither do dashes in an address. The red **x** after it empties it.
 - The PDD's addresses, one to a row: the name, the world the gate at that address is in, the address in letters and glyphs, and what that gate is doing. The glyphs are those of the near gate's type. Under the list, "Addresses: <count>".
 - A **Name** box (up to 48 characters) and an **Address** box (up to 11 characters). Choosing an entry in the list fills both.
 - Two rows of buttons.
@@ -53,7 +54,7 @@ The state of each gate shows as a colored word: **Idle** (green), **Dialing** (y
 | **Add** | Adds the address in the box under the name in the box. An entry without a name is named by its address |
 | **Rename** | Renames the entry whose address is in the box to the name in the box. Choosing an entry fills both boxes |
 | **Remove** | Takes the entry whose address is in the box off the list |
-| **Up**, **Down** | Move the chosen entry one place in the list |
+| **Up**, **Down** | Move the chosen entry one place in the list. They are off while the **Search** box has text in it |
 | **Dial** | Dials the address in the box from the gate near you. It works while that gate is idle and the box holds a whole address |
 | **Disconnect** | Closes the near gate's wormhole or stops its dial. It works while the gate isn't idle |
 | **Add this gate** | Puts the near gate's address in the box, and in the name box if that is empty, then adds it. It works only when the gate's address is shown |

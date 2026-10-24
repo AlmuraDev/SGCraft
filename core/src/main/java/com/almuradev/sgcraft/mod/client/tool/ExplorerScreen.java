@@ -50,7 +50,8 @@ import java.util.Optional;
 /**
  * The explorer dialer's screen, as in SGCraft 2.2.0: every gate world generation built, by world, each with the name
  * its holder gave it, its address and whether they have visited it. Choosing one puts its name in the box below, to
- * rename it, and it dials from the gate near the holder. The list keeps up while the screen is open.
+ * rename it, and it dials from the gate near the holder. The list keeps up while the screen is open, and the search box
+ * above it narrows it.
  */
 public final class ExplorerScreen extends Screen {
 
@@ -58,8 +59,12 @@ public final class ExplorerScreen extends Screen {
     private static final int ROW = 24;
     private static final int REFRESH_TICKS = 60;
     private static final int BOTTOM = 76;
+    // Where the search box is, and the list below it
+    private static final int SEARCH_TOP = 42;
+    private static final int LIST_TOP = ExplorerScreen.SEARCH_TOP + ListSearch.HEIGHT + 4;
 
     private State state;
+    private final ListSearch search = new ListSearch();
     private @Nullable Entries list;
     private @Nullable EditBox name;
     private @Nullable Button dial;
@@ -75,18 +80,29 @@ public final class ExplorerScreen extends Screen {
     /** Shows a newer state from the server, keeping the chosen gate and what the player has typed. */
     public void update(final State state) {
         this.state = state;
-        if (this.list != null) {
-            this.list.fill(state.entries(), this.chosen().map(Listed::gate).orElse(""));
-        }
+        this.refill();
         this.updateButtons();
+    }
+
+    // Shows the gates that match the search, keeping the chosen one chosen while it is shown
+    private void refill() {
+        if (this.list != null) {
+            this.list.fill(this.state.entries(), this.chosen().map(Listed::gate).orElse(""));
+        }
     }
 
     @Override
     protected void init() {
         final int left = (this.width - ExplorerScreen.LIST_WIDTH) / 2;
         final int bottom = this.height - ExplorerScreen.BOTTOM;
-        this.list = this.addRenderableWidget(new Entries(this.minecraft, ExplorerScreen.LIST_WIDTH, bottom - 44,
-                44));
+        this.addRenderableWidget(this.search.box(this.font, left, ExplorerScreen.SEARCH_TOP, ExplorerScreen.LIST_WIDTH,
+                () -> {
+                    this.refill();
+                    this.updateButtons();
+                }));
+        this.addRenderableWidget(this.search.clear(left, ExplorerScreen.SEARCH_TOP, ExplorerScreen.LIST_WIDTH));
+        this.list = this.addRenderableWidget(new Entries(this.minecraft, ExplorerScreen.LIST_WIDTH,
+                bottom - ExplorerScreen.LIST_TOP, ExplorerScreen.LIST_TOP));
         this.list.setX(left);
         this.list.fill(this.state.entries(), "");
         this.name = this.addRenderableWidget(new EditBox(this.font, left, bottom + 6, 250, 20,
@@ -188,6 +204,9 @@ public final class ExplorerScreen extends Screen {
         void fill(final List<Listed> entries, final String selected) {
             this.clearEntries();
             for (final Listed entry : entries) {
+                if (!ExplorerScreen.this.search.matches(entry.name(), entry.world(), entry.address())) {
+                    continue;
+                }
                 final Row row = new Row(entry);
                 this.addEntry(row);
                 if (entry.gate().equals(selected)) {
