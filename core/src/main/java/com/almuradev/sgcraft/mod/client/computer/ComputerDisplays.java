@@ -41,12 +41,14 @@ import java.util.Map;
 /**
  * The pictures on the dialing computers' screens, one for each computer in view, painted again up to
  * {@value #FRAMES_PER_SECOND} times a second while something shows it: the monitor in the world, or the screen of the
- * player working it. A picture nothing has shown for a few seconds is let go.
+ * player working it. A computer whose gate is idle is painted only a few times a second, as only its stream of data
+ * moves, and at once whenever what it shows changes. A picture nothing has shown for a few seconds is let go.
  */
 public final class ComputerDisplays {
 
     private static final int FRAMES_PER_SECOND = 20;
     private static final long FRAME_NANOS = 1_000_000_000L / ComputerDisplays.FRAMES_PER_SECOND;
+    private static final long IDLE_FRAME_NANOS = 250_000_000L;
     private static final long FORGET_NANOS = 5_000_000_000L;
 
     private static final Map<String, Display> DISPLAYS = new HashMap<>();
@@ -70,9 +72,16 @@ public final class ComputerDisplays {
         ComputerDisplays.forgetOld(now);
         final Display display = ComputerDisplays.DISPLAYS.computeIfAbsent(computer.pictureName(), Display::new);
         display.asked = now;
-        if (level != null && now - display.painted >= ComputerDisplays.FRAME_NANOS) {
+        if (level == null) {
+            return display.id;
+        }
+        final ComputerDisplay.View view = ComputerDisplay.View.of(level, computer, partialTick);
+        final ComputerDisplay.View still = view.still();
+        final long every = view.busy() ? ComputerDisplays.FRAME_NANOS : ComputerDisplays.IDLE_FRAME_NANOS;
+        if (now - display.painted >= every || !still.equals(display.shown)) {
             display.painted = now;
-            ComputerDisplay.paint(display.canvas, ComputerDisplay.View.of(level, computer, partialTick));
+            display.shown = still;
+            ComputerDisplay.paint(display.canvas, view);
             display.canvas.copyTo(display.texture.getPixels());
             display.texture.upload();
             if (!display.registered) {
@@ -110,6 +119,8 @@ public final class ComputerDisplays {
         final ComputerCanvas canvas = new ComputerCanvas(ComputerDisplay.WIDTH, ComputerDisplay.HEIGHT);
         final DynamicTexture texture;
         long painted = Long.MIN_VALUE / 2;
+        // What it showed when last painted, but for its moving parts
+        ComputerDisplay.@Nullable View shown;
         long asked;
         boolean registered;
 

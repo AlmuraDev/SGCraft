@@ -77,8 +77,10 @@ import java.util.function.Consumer;
  */
 final class RemoteView {
 
-    // How often a sent section is looked at again for changes, and block entities and entities are gone over
-    private static final int SECTION_CHECK_TICKS = 10;
+    // How often a sent section is looked at again, past the changes the world reports, rain heights are, and block
+    // entities and entities are gone over
+    private static final int SECTION_CHECK_TICKS = 400;
+    private static final int HEIGHT_CHECK_TICKS = 10;
     private static final int BLOCK_ENTITY_CHECK_TICKS = 4;
     private static final int ENTITY_TICKS = 2;
     // How long a source may be missing, such as between leaving one world and turning up in another
@@ -104,6 +106,10 @@ final class RemoteView {
     private int missing;
     // Sent sections by position, with the hash of what was sent
     private final Long2LongMap sections = new Long2LongOpenHashMap();
+    // The sent sections whose blocks or light have changed since, to send again; and the sections whose block
+    // entities are to be looked at again: changed, newly sent, or forgotten
+    private final LongSet changed = new LongOpenHashSet();
+    private final LongSet blockEntitySections = new LongOpenHashSet();
     // Chunks whose rain heights were sent, with the hash of what was sent
     private final Long2LongMap heights = new Long2LongOpenHashMap();
     // Sent block entities by position, with a hash of what was sent
@@ -180,6 +186,8 @@ final class RemoteView {
         if (found.level() != this.level) {
             this.level = (ServerLevel) found.level();
             this.sections.clear();
+            this.changed.clear();
+            this.blockEntitySections.clear();
             this.heights.clear();
             this.blockEntities.clear();
             this.entities.clear();
@@ -253,24 +261,25 @@ final class RemoteView {
                     vertical + RemoteView.FORGET_MARGIN)) {
                 iterator.remove();
                 forgotten.add(pos);
+                this.blockEntitySections.add(pos);
             }
         }
         final Batch batch = new Batch(player, forgotten);
         int budget = this.reach.bytesPerTick();
+        // Those the world has said changed, and now and then each of the rest, in case one changed unannounced
+        final LongIterator changes = this.changed.iterator();
+        while (budget > 0 && changes.hasNext()) {
+            final long pos = changes.nextLong();
+            changes.remove();
+            budget -= this.resend(batch, pos);
+        }
         for (final Long2LongMap.Entry entry : this.sections.long2LongEntrySet()) {
             if (budget <= 0) {
                 break;
             }
             final long pos = entry.getLongKey();
-            if (Math.floorMod(Long.hashCode(pos) + this.ticks, RemoteView.SECTION_CHECK_TICKS) != 0) {
-                continue;
-            }
-            final byte[] data = this.encode(pos);
-            if (data != null && RemoteViewSections.hash(data) != entry.getLongValue()) {
-                entry.setValue(RemoteViewSections.hash(data));
-                batch.add(pos, data);
-                budget -= data.length;
-                this.resends++;
+            if (Math.floorMod(Long.hashCode(pos) + this.ticks, RemoteView.SECTION_CHECK_TICKS) == 0) {
+                budget -= this.resend(batch, pos);
             }
         }
         if (budget > 0) {
@@ -280,6 +289,7 @@ final class RemoteView {
                     continue;
                 }
                 this.sections.put(pos, RemoteViewSections.hash(data));
+                this.blockEntitySections.add(pos);
                 batch.add(pos, data);
                 budget -= data.length;
                 if (budget <= 0) {
@@ -288,6 +298,33 @@ final class RemoteView {
             }
         }
         batch.flush();
+    }
+
+    /** A block or the light in a section of a world has changed; if the view has sent it, it is sent again. */
+    void changed(final ServerLevel level, final long section) {
+        if (level == this.level && this.sections.containsKey(section)) {
+            this.changed.add(section);
+            this.blockEntitySections.add(section);
+        }
+    }
+
+    // Sends a sent section again if it has changed since, returning how many bytes that took
+    private int resend(final Batch batch, final long pos) {
+        if (!this.sections.containsKey(pos)) {
+            return 0;
+        }
+        final byte[] data = this.encode(pos);
+        if (data == null) {
+            return 0;
+        }
+        final long hash = RemoteViewSections.hash(data);
+        if (hash == this.sections.get(pos)) {
+            return 0;
+        }
+        this.sections.put(pos, hash);
+        batch.add(pos, data);
+        this.resends++;
+        return data.length;
     }
 
     // Rain heights, for the client to draw the source's weather: those of each chunk a section of which has been
@@ -310,7 +347,7 @@ final class RemoteView {
         final List<RemoteViewPackets.RainHeights> changed = new ArrayList<>();
         for (final long column : columns) {
             final boolean sent = this.heights.containsKey(column);
-            if (sent && Math.floorMod(Long.hashCode(column) + this.ticks, RemoteView.SECTION_CHECK_TICKS) != 0) {
+            if (sent && Math.floorMod(Long.hashCode(column) + this.ticks, RemoteView.HEIGHT_CHECK_TICKS) != 0) {
                 continue;
             }
             final LevelChunk chunk = this.level.getChunkSource().getChunkNow(ChunkPos.getX(column),
@@ -404,12 +441,20 @@ final class RemoteView {
         return dx * dx + dy * dy + dz * dz;
     }
 
-    // Block entities in the sent sections: new or changed ones are sent, and gone ones are named
+    // Block entities in the sent sections: new or changed ones are sent, and gone ones are named. Only those in the
+    // sections the world has said changed, or that were sent or forgotten since, are looked at, as a block entity
+    // whose look changes says so as its block does; and now and then all of them, in case one changed unannounced
     private void sendBlockEntities(final ServerPlayer player) {
+        final boolean all = Math.floorMod(this.ticks, RemoteView.SECTION_CHECK_TICKS) == 0;
+        if (!all && this.blockEntitySections.isEmpty()) {
+            return;
+        }
+        final LongSet looked = new LongOpenHashSet(this.blockEntitySections);
+        this.blockEntitySections.clear();
         final LongSet seen = new LongOpenHashSet();
         final List<RemoteViewPackets.BlockEntityState> changed = new ArrayList<>();
         final LongSet columns = new LongOpenHashSet();
-        for (final long pos : this.sections.keySet()) {
+        for (final long pos : all ? this.sections.keySet() : looked) {
             columns.add(ChunkPos.pack(SectionPos.x(pos), SectionPos.z(pos)));
         }
         int bytes = 0;
@@ -421,7 +466,8 @@ final class RemoteView {
             }
             for (final BlockEntity entity : chunk.getBlockEntities().values()) {
                 final BlockPos at = entity.getBlockPos();
-                if (!this.sections.containsKey(SectionPos.asLong(at))) {
+                final long section = SectionPos.asLong(at);
+                if (!this.sections.containsKey(section) || !all && !looked.contains(section)) {
                     continue;
                 }
                 final long key = at.asLong();
@@ -446,7 +492,7 @@ final class RemoteView {
         final LongIterator iterator = this.blockEntities.keySet().iterator();
         while (iterator.hasNext()) {
             final long key = iterator.nextLong();
-            if (!seen.contains(key)) {
+            if (!seen.contains(key) && (all || looked.contains(SectionPos.blockToSection(key)))) {
                 iterator.remove();
                 removed.add(key);
             }

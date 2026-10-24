@@ -48,7 +48,15 @@ import org.jspecify.annotations.Nullable;
  */
 public final class RemoteViewPicture extends PictureInPictureRenderer<RemoteViewPicture.State> {
 
+    // The picture is drawn again at most this often, so a fast frame rate doesn't draw the far world twice over
+    private static final long FRAME_NANOS = 16_666_666L;
+
     private final RemoteViewTarget target = new RemoteViewTarget("SGCraft remote view");
+    // When the picture was last drawn, of which view and how big, to show it again until the next is due
+    private long lastDrawn;
+    private int lastScene = -1;
+    private int lastWidth;
+    private int lastHeight;
 
     /**
      * A remote view to be drawn into a rectangle of the screen, in GUI coordinates.
@@ -89,9 +97,22 @@ public final class RemoteViewPicture extends PictureInPictureRenderer<RemoteView
     public void prepare(final State state, final GuiRenderState gui, final FeatureRenderDispatcher features,
             final int guiScale) {
         final RemoteViewScene scene = RemoteViewClient.scene();
-        if (scene == null || !this.target.draw(scene, (state.x1() - state.x0()) * guiScale,
-                (state.y1() - state.y0()) * guiScale, features, state.partialTick())) {
+        if (scene == null) {
             return;
+        }
+        final int width = (state.x1() - state.x0()) * guiScale;
+        final int height = (state.y1() - state.y0()) * guiScale;
+        final long now = System.nanoTime();
+        final boolean shown = this.target.colorView() != null && scene.id == this.lastScene
+                && width == this.lastWidth && height == this.lastHeight;
+        if (!shown || now - this.lastDrawn >= RemoteViewPicture.FRAME_NANOS) {
+            if (!this.target.draw(scene, width, height, features, state.partialTick())) {
+                return;
+            }
+            this.lastDrawn = now;
+            this.lastScene = scene.id;
+            this.lastWidth = width;
+            this.lastHeight = height;
         }
         final GpuTextureView picture = this.target.colorView();
         if (picture == null) {

@@ -68,12 +68,12 @@ public final class DhdFuelProvider implements EnergySourceProvider {
             sources.add(new EnergySource() {
                 @Override
                 public long available() {
-                    return dhd.available();
+                    return dhd.isRemoved() ? 0 : dhd.available();
                 }
 
                 @Override
                 public long draw(final long wanted, final boolean simulate) {
-                    return dhd.draw(wanted, simulate);
+                    return dhd.isRemoved() ? 0 : dhd.draw(wanted, simulate);
                 }
             });
         }

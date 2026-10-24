@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.mod.client.computer;
 
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.block.entity.DialingComputerBlockEntity;
+import com.almuradev.sgcraft.mod.client.ViewCulling;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -136,6 +137,13 @@ public final class DialingComputerRenderer implements BlockEntityRenderer<Dialin
     @Override
     public boolean shouldRenderOffScreen() {
         return true;
+    }
+
+    // Culled by its whole box, on Fabric too
+    @Override
+    public boolean shouldRender(final DialingComputerBlockEntity blockEntity, final Vec3 cameraPosition) {
+        return BlockEntityRenderer.super.shouldRender(blockEntity, cameraPosition)
+                && ViewCulling.visible(this.getRenderBoundingBox(blockEntity));
     }
 
     /**

@@ -256,6 +256,9 @@ public final class SGConnection implements Connection {
 
     // How often the fluid each end pours out of the other is looked at again, in ticks
     private static final int SPILL_TICKS = 10;
+    // A body of fluid found endless, as the sea is, is taken to stay so for this many spills before it is searched
+    // again, as searching it means going over thousands of its blocks
+    private static final int ENDLESS_SPILLS = 20;
     // Fluid going each way through the wormhole
     private final Flow toTarget = new Flow();
     private final Flow toDialer = new Flow();
@@ -496,6 +499,7 @@ public final class SGConnection implements Connection {
             SGConnection.draw(fromLevel, from, spill.get(), flow, back);
         } else {
             flow.drawn = 0;
+            flow.endless = 0;
         }
         if (spill.isEmpty() || !to.get(GateProperties.SPILLS_FLUID).orElse(true)) {
             SGConnection.clear(toLevel, spilled);
@@ -521,7 +525,15 @@ public final class SGConnection implements Connection {
     // rest can't fill it again; the sea and other endless bodies give it up without losing any
     private static void draw(final ServerLevel level, final SGStargate from, final FluidSpill spill, final Flow flow,
             final Flow back) {
+        if (flow.endless > 0) {
+            flow.endless--;
+            flow.drawn = 0;
+            return;
+        }
         final Optional<Set<BlockPos>> body = spill.body(level, from.frame(), back.spilled);
+        if (body.isEmpty()) {
+            flow.endless = SGConnection.ENDLESS_SPILLS;
+        }
         if (body.isEmpty() || body.get().isEmpty()) {
             flow.drawn = 0;
             return;
@@ -889,10 +901,12 @@ public final class SGConnection implements Connection {
     }
 
     // Fluid going one way through the wormhole: what it put out at the far gate, to take away again once the wormhole
-    // closes, and how much has gone from the near side since it last lost a layer
+    // closes, how much has gone from the near side since it last lost a layer, and for how many more spills the body
+    // it comes from is taken to be endless
     private static final class Flow {
         private final List<BlockPos> spilled = new ArrayList<>();
         private int drawn;
+        private int endless;
 
         private long[] save() {
             return this.spilled.stream().mapToLong(BlockPos::asLong).toArray();

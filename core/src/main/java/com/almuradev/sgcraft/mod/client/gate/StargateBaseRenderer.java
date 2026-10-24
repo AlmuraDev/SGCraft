@@ -30,6 +30,7 @@ import com.almuradev.sgcraft.api.gate.GateTypes;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.mod.client.SGClientConfig;
+import com.almuradev.sgcraft.mod.client.ViewCulling;
 import com.almuradev.sgcraft.mod.gate.ChevronOrder;
 import com.almuradev.sgcraft.mod.gate.ChevronSpacing;
 import com.almuradev.sgcraft.mod.gate.DialPhase;
@@ -286,6 +287,13 @@ public final class StargateBaseRenderer
     public boolean shouldRenderOffScreen() {
         // The gate reaches well beyond its base, so it stays drawn while the base is off screen
         return true;
+    }
+
+    // Culled by its whole box, on Fabric too
+    @Override
+    public boolean shouldRender(final StargateBaseBlockEntity blockEntity, final Vec3 cameraPosition) {
+        return BlockEntityRenderer.super.shouldRender(blockEntity, cameraPosition)
+                && ViewCulling.visible(this.getRenderBoundingBox(blockEntity));
     }
 
     // Each block of camouflage, as a block lit where it stands, as the original draws it in place of that block

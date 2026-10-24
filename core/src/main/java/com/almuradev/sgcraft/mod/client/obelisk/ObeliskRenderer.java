@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.client.obelisk;
 
+import com.almuradev.sgcraft.mod.client.ViewCulling;
 import com.almuradev.sgcraft.mod.client.gate.GateFeatureRenderer;
 import com.almuradev.sgcraft.mod.client.gate.GateGeometry;
 import com.almuradev.sgcraft.mod.client.gate.GateMesh;
@@ -81,6 +82,13 @@ public final class ObeliskRenderer implements BlockEntityRenderer<AsgardObeliskB
     @Override
     public boolean shouldRenderOffScreen() {
         return true;
+    }
+
+    // Culled by its whole box, on Fabric too
+    @Override
+    public boolean shouldRender(final AsgardObeliskBlockEntity blockEntity, final Vec3 cameraPosition) {
+        return BlockEntityRenderer.super.shouldRender(blockEntity, cameraPosition)
+                && ViewCulling.visible(this.getRenderBoundingBox(blockEntity));
     }
 
     /**

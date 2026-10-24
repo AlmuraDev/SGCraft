@@ -45,8 +45,14 @@ import java.util.List;
 public final class SGGateEnergy implements GateEnergy {
 
     private static final String STORED = "energy";
+    // How long the sources found for paying are kept before they are looked for again, in ticks: an open wormhole
+    // pays every tick, and finding them searches the blocks round the gate for each kind of source
+    private static final int SOURCES_TICKS = 20;
 
     private final SGStargate gate;
+    // The sources found for paying, and the server tick they were found on
+    private List<EnergySource> paying = List.of();
+    private int payingFound = Integer.MIN_VALUE;
 
     public SGGateEnergy(final SGStargate gate) {
         this.gate = gate;
@@ -83,6 +89,10 @@ public final class SGGateEnergy implements GateEnergy {
     }
 
     private void store(final long amount) {
+        // Each payment comes here, mostly leaving the store as full as it was, and the saved state is copied to change
+        if (amount == this.gate.saved().getLongOr(SGGateEnergy.STORED, 0)) {
+            return;
+        }
         final CompoundTag state = this.gate.saved();
         state.putLong(SGGateEnergy.STORED, amount);
         this.gate.setSaved(state);
@@ -96,6 +106,18 @@ public final class SGGateEnergy implements GateEnergy {
             sources.addAll(provider.sourcesFor(this.gate));
         }
         return sources;
+    }
+
+    // The sources to pay from, found again once those found last are a little old, or if asked and they weren't
+    // found this tick
+    private List<EnergySource> payingSources(final boolean again) {
+        final int now = this.gate.server().getTickCount();
+        if (now - this.payingFound >= SGGateEnergy.SOURCES_TICKS || now < this.payingFound
+                || again && now != this.payingFound) {
+            this.paying = this.sources();
+            this.payingFound = now;
+        }
+        return this.paying;
     }
 
     /** @return how much the gate could pay now, from its store and its sources */
@@ -117,10 +139,13 @@ public final class SGGateEnergy implements GateEnergy {
         if (amount <= 0) {
             return true;
         }
-        final List<EnergySource> sources = this.sources();
-        long fromSources = 0;
-        for (final EnergySource source : sources) {
-            fromSources = SGGateEnergy.add(fromSources, source.available());
+        // The sources found a moment ago, unless they are old or fall short, when they are looked for again, as one
+        // may have been set down since
+        List<EnergySource> sources = this.payingSources(false);
+        long fromSources = SGGateEnergy.available(sources);
+        if (SGGateEnergy.add(fromSources, this.stored()) < amount) {
+            sources = this.payingSources(true);
+            fromSources = SGGateEnergy.available(sources);
         }
         if (SGGateEnergy.add(fromSources, this.stored()) < amount) {
             return false;
@@ -144,6 +169,14 @@ public final class SGGateEnergy implements GateEnergy {
         }
         this.store(Math.min(total - amount, this.capacity()));
         return true;
+    }
+
+    private static long available(final List<EnergySource> sources) {
+        long available = 0;
+        for (final EnergySource source : sources) {
+            available = SGGateEnergy.add(available, source.available());
+        }
+        return available;
     }
 
     private static long add(final long a, final long b) {

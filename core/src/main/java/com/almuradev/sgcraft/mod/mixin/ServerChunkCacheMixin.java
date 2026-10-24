@@ -26,16 +26,22 @@
 package com.almuradev.sgcraft.mod.mixin;
 
 import com.almuradev.sgcraft.mod.malp.MalpPresence;
+import com.almuradev.sgcraft.mod.view.RemoteViews;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 // Counts the chunks that spawn mobs for watched MALPs among those a world's mob cap is shared over, so each MALP adds
-// to the cap as much as those chunks would for a player
+// to the cap as much as those chunks would for a player; and tells remote views of each block that changes, so they
+// send again only the sections that changed
 @Mixin(ServerChunkCache.class)
 abstract class ServerChunkCacheMixin {
 
@@ -47,5 +53,10 @@ abstract class ServerChunkCacheMixin {
             value = "INVOKE", target = "Lnet/minecraft/server/level/DistanceManager;getNaturalSpawnChunkCount()I"))
     private int sgcraft$countMalpChunks(final int count) {
         return count + MalpPresence.spawningChunks(this.level).size();
+    }
+
+    @Inject(method = "blockChanged", at = @At("HEAD"))
+    private void sgcraft$blockChanged(final BlockPos pos, final CallbackInfo callback) {
+        RemoteViews.changed(this.level, SectionPos.asLong(pos));
     }
 }

@@ -61,8 +61,10 @@ public final class RemoteViewDisplays {
     // The server streams a display's view only to players near it, as near as its settings say; this only caps how
     // far off a display that has a view may be and still be drawn
     private static final double RANGE = 64;
-    // A picture is drawn at most twenty times a second
+    // A picture is drawn at most twenty times a second, and half as often on a display further off than this, in
+    // blocks, where so fine a picture can't be told from a coarser one
     private static final long FRAME_NANOS = 50_000_000L;
+    private static final double NEAR = 24;
     // At most this many displays have pictures at once, and this many are drawn in one frame
     private static final int SLOTS = 8;
     private static final int DRAWS_PER_FRAME = 2;
@@ -88,6 +90,8 @@ public final class RemoteViewDisplays {
         private boolean drawn;
         private long lastDrawn;
         private long lastAsked;
+        // How far the display was from the camera when last asked for, squared
+        private double distance;
         private @Nullable DisplayTexture texture;
         // Whether the texture is in the texture manager, which closes it when it is released
         private boolean registered;
@@ -173,6 +177,7 @@ public final class RemoteViewDisplays {
             final Slot slot = RemoteViewDisplays.slotFor(asked.getKey());
             if (slot != null) {
                 slot.lastAsked = now;
+                slot.distance = asked.getValue();
             }
         }
         for (final Slot slot : RemoteViewDisplays.SLOT_LIST) {
@@ -206,8 +211,9 @@ public final class RemoteViewDisplays {
         }
         final List<Slot> due = new ArrayList<>();
         for (final Slot slot : RemoteViewDisplays.SLOT_LIST) {
-            if (slot.display != null && slot.lastAsked == now
-                    && now - slot.lastDrawn >= RemoteViewDisplays.FRAME_NANOS) {
+            final long every = slot.distance > RemoteViewDisplays.NEAR * RemoteViewDisplays.NEAR
+                    ? RemoteViewDisplays.FRAME_NANOS * 2 : RemoteViewDisplays.FRAME_NANOS;
+            if (slot.display != null && slot.lastAsked == now && now - slot.lastDrawn >= every) {
                 due.add(slot);
             }
         }

@@ -117,6 +117,19 @@ public final class RemoteViews {
     }
 
     /** @return whether a viewer can be started on a view: their client shows them, or they are redirected */
+    /**
+     * A block or the light in a section of a world has changed, so any view that has sent that section sends it
+     * again. Only the server's thread calls this, as the world reports each change.
+     */
+    public static void changed(final ServerLevel level, final long section) {
+        if (RemoteViews.VIEWS.isEmpty()) {
+            return;
+        }
+        for (final RemoteView view : RemoteViews.VIEWS.values()) {
+            view.changed(level, section);
+        }
+    }
+
     public static boolean canView(final ServerPlayer viewer) {
         return RemoteViews.SINKS.containsKey(viewer.getUUID())
                 || Platform.get().canSend(viewer, RemoteViewPackets.Frame.TYPE);

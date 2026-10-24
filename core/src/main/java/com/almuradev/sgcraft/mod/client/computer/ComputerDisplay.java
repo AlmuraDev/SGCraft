@@ -125,6 +125,20 @@ final class ComputerDisplay {
             }
             return new View(false, GateTypes.MILKY_WAY, 7, DialView.IDLE, null, false, time);
         }
+
+        /**
+         * @return whether the screen moves quickly now, as it does while its gate dials, is open or moves its iris;
+         *     otherwise only its stream of data moves, a line every half second
+         */
+        boolean busy() {
+            return this.dial.phase() != DialPhase.IDLE || this.iris != null
+                    && (this.iris.state() == IrisState.OPENING || this.iris.state() == IrisState.CLOSING);
+        }
+
+        /** @return the view with no time, to tell whether anything but its moving parts has changed */
+        View still() {
+            return new View(this.linked, this.type, this.chevrons, this.dial, this.iris, this.alarmOff, 0);
+        }
     }
 
     static void paint(final ComputerCanvas canvas, final View view) {

@@ -65,12 +65,12 @@ public final class GeneratorPowerProvider implements EnergySourceProvider {
             sources.add(new EnergySource() {
                 @Override
                 public long available() {
-                    return generator.available();
+                    return generator.isRemoved() ? 0 : generator.available();
                 }
 
                 @Override
                 public long draw(final long wanted, final boolean simulate) {
-                    return generator.draw(wanted, simulate);
+                    return generator.isRemoved() ? 0 : generator.draw(wanted, simulate);
                 }
             });
         }

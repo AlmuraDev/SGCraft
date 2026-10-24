@@ -97,6 +97,9 @@ public final class CityShieldBlockEntity extends BlockEntity {
     private static final double MOST_MOVED = 10;
     // How loud the shield rising and falling is: heard about 64 blocks away
     private static final float VOLUME = 4.0F;
+    // How long the sources found for paying are kept before they are looked for again, in ticks: a raised shield pays
+    // every tick, and finding them searches the blocks round it for power units and ZPM devices
+    private static final int SOURCES_TICKS = 20;
 
     private boolean active;
     private int width = 32;
@@ -111,6 +114,9 @@ public final class CityShieldBlockEntity extends BlockEntity {
     private float spread;
     // Where each thing near the raised shield was last tick, by its UUID
     private Map<UUID, Vec3> lastSeen = new HashMap<>();
+    // The sources found for paying, and the game tick they were found on
+    private List<EnergySource> paying = List.of();
+    private long payingFound = Long.MIN_VALUE;
     // The generator's own ZPMs, which the shield draws on beside the power units and ZPM devices round it
     private final SimpleContainer zpms = new SimpleContainer(CityShieldMenu.SLOTS) {
         @Override
@@ -131,6 +137,8 @@ public final class CityShieldBlockEntity extends BlockEntity {
         @Override
         public void setChanged() {
             super.setChanged();
+            // Its own ZPMs are among the sources it pays from, found again now
+            CityShieldBlockEntity.this.payingFound = Long.MIN_VALUE;
             CityShieldBlockEntity.this.setChanged();
         }
     };
@@ -257,12 +265,12 @@ public final class CityShieldBlockEntity extends BlockEntity {
             sources.add(new EnergySource() {
                 @Override
                 public long available() {
-                    return unit.available();
+                    return unit.isRemoved() ? 0 : unit.available();
                 }
 
                 @Override
                 public long draw(final long wanted, final boolean simulate) {
-                    return unit.draw(wanted, simulate);
+                    return unit.isRemoved() ? 0 : unit.draw(wanted, simulate);
                 }
             });
         }
@@ -281,12 +289,12 @@ public final class CityShieldBlockEntity extends BlockEntity {
                 sources.add(new EnergySource() {
                     @Override
                     public long available() {
-                        return device.available();
+                        return device.isRemoved() ? 0 : device.available();
                     }
 
                     @Override
                     public long draw(final long wanted, final boolean simulate) {
-                        return device.draw(wanted, simulate);
+                        return device.isRemoved() ? 0 : device.draw(wanted, simulate);
                     }
                 });
             }
@@ -384,14 +392,23 @@ public final class CityShieldBlockEntity extends BlockEntity {
         if (due <= 0) {
             return true;
         }
-        final List<EnergySource> sources = this.sources();
-        long available = 0;
-        for (final EnergySource source : sources) {
-            available += source.available();
+        // The sources found a moment ago, unless they are old or fall short, when they are looked for again, as one
+        // may have been set down since
+        final long now = this.level == null ? 0 : this.level.getGameTime();
+        if (now - this.payingFound >= CityShieldBlockEntity.SOURCES_TICKS || now < this.payingFound) {
+            this.paying = this.sources();
+            this.payingFound = now;
+        }
+        long available = CityShieldBlockEntity.available(this.paying);
+        if (available < due && this.payingFound != now) {
+            this.paying = this.sources();
+            this.payingFound = now;
+            available = CityShieldBlockEntity.available(this.paying);
         }
         if (available < due) {
             return false;
         }
+        final List<EnergySource> sources = this.paying;
         long left = due;
         for (final EnergySource source : sources) {
             if (left <= 0) {
@@ -401,6 +418,14 @@ public final class CityShieldBlockEntity extends BlockEntity {
         }
         this.owed -= due - left;
         return left <= 0;
+    }
+
+    private static long available(final List<EnergySource> sources) {
+        long available = 0;
+        for (final EnergySource source : sources) {
+            available += source.available();
+        }
+        return available;
     }
 
     // Pushes back whatever has just reached the shield from outside, and stops shots
@@ -415,8 +440,12 @@ public final class CityShieldBlockEntity extends BlockEntity {
         // Where each thing was last tick, by the shield's own reckoning, as players' last positions aren't kept on
         // the server
         final Map<UUID, Vec3> seen = new HashMap<>();
+        // Anything further inside than it could move in a tick can't have just come in; a point a share of the way
+        // in from the shell, of the dome's least reach, is at least that share of it in
+        final double least = Math.min(this.width, Math.min(this.above, this.below));
         for (final Entity entity : level.getEntities((Entity) null, around, Entity::isAlive)) {
-            if (entity.isPassenger()) {
+            if (entity.isPassenger() || (1 - this.reach(entity.getX(), entity.getY() + entity.getBbHeight() / 2,
+                    entity.getZ())) * least > CityShieldBlockEntity.MOST_MOVED + entity.getBbHeight()) {
                 continue;
             }
             final Vec3 feet = entity.position();
@@ -444,6 +473,16 @@ public final class CityShieldBlockEntity extends BlockEntity {
             seen.put(entity.getUUID(), last);
         }
         this.lastSeen = seen;
+    }
+
+    // How far out towards the shell a point is, from 0 at the dome's middle to 1 on the shell, as inside reckons it
+    private double reach(final double x, final double y, final double z) {
+        final Vec3 center = this.center();
+        final double dy = y - center.y;
+        final double up = dy / (dy >= 0 ? this.above : this.below);
+        final double across = (x - center.x) / this.width;
+        final double along = (z - center.z) / this.width;
+        return Math.sqrt(across * across + up * up + along * along);
     }
 
     // Keeps the chunks under the shield loaded with one ticket at the generator, reaching past the shield's width

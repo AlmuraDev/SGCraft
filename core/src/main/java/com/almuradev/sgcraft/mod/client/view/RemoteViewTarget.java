@@ -53,6 +53,7 @@ import net.minecraft.client.renderer.Projection;
 import net.minecraft.client.renderer.ProjectionMatrixBuffer;
 import net.minecraft.client.renderer.SubmitNodeStorage;
 import net.minecraft.client.renderer.chunk.ChunkSectionLayer;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.feature.FeatureRenderDispatcher;
 import net.minecraft.client.renderer.fog.FogRenderer;
 import net.minecraft.client.renderer.state.LightmapRenderState;
@@ -61,6 +62,7 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.dimension.DimensionType;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fStack;
@@ -220,7 +222,15 @@ final class RemoteViewTarget implements AutoCloseable {
             minecraft.gameRenderer.lighting().setupFor(Lighting.Entry.LEVEL);
             modelView.set(view);
             this.submitFeatures(scene, camera, rotation, view, pitch, yaw, partialTick, now);
-            final List<RemoteViewMeshes.SectionMesh> sections = new ArrayList<>(scene.meshes.sections());
+            // Only the sections the view's own camera can see are drawn, as the game culls its own
+            final Frustum frustum = new Frustum(view, this.projection.getMatrix(new Matrix4f()));
+            frustum.prepare(camera.x, camera.y, camera.z);
+            final List<RemoteViewMeshes.SectionMesh> sections = new ArrayList<>();
+            for (final RemoteViewMeshes.SectionMesh mesh : scene.meshes.sections()) {
+                if (frustum.isVisible(new AABB(mesh.x, mesh.y, mesh.z, mesh.x + 16, mesh.y + 16, mesh.z + 16))) {
+                    sections.add(mesh);
+                }
+            }
             sections.sort(Comparator.comparingDouble(mesh -> RemoteViewMeshes.distanceSq(mesh.pos, camera)));
             // The weather is written before the pass, as the game writes its own
             this.weather.prepare(scene.level, atmosphere, camera, partialTick);

@@ -149,6 +149,8 @@ public record FluidSpill(Fluid fluid, float amount) {
      *     world isn't loaded
      */
     public Optional<Set<BlockPos>> body(final Level level, final GateFrame frame, final Collection<BlockPos> skip) {
+        // Asked of every block the search reaches, so it is looked up rather than gone through
+        final Set<BlockPos> skipped = skip instanceof final Set<BlockPos> set ? set : new HashSet<>(skip);
         final GateShape shape = frame.shape();
         final Set<BlockPos> body = new HashSet<>();
         final Queue<BlockPos> next = new ArrayDeque<>();
@@ -158,7 +160,7 @@ public record FluidSpill(Fluid fluid, float amount) {
                     continue;
                 }
                 final BlockPos pos = FluidSpill.measured(level, frame, x, y);
-                if (this.isSource(level, pos, skip) && body.add(pos)) {
+                if (this.isSource(level, pos, skipped) && body.add(pos)) {
                     next.add(pos);
                 }
             }
@@ -173,7 +175,7 @@ public record FluidSpill(Fluid fluid, float amount) {
                 if (!level.isLoaded(pos)) {
                     return Optional.empty();
                 }
-                if (this.isSource(level, pos, skip)) {
+                if (this.isSource(level, pos, skipped)) {
                     body.add(pos);
                     if (body.size() > FluidSpill.MOST_DRAINED) {
                         return Optional.empty();

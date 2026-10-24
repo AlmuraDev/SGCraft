@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.client.rings;
 
 import com.almuradev.sgcraft.mod.SGCraft;
+import com.almuradev.sgcraft.mod.client.ViewCulling;
 import com.almuradev.sgcraft.mod.client.gate.GateGeometry;
 import com.almuradev.sgcraft.mod.rings.RingPlatformBlockEntity;
 import com.almuradev.sgcraft.mod.rings.Rings;
@@ -126,6 +127,13 @@ public final class RingPlatformRenderer implements BlockEntityRenderer<RingPlatf
     @Override
     public boolean shouldRenderOffScreen() {
         return true;
+    }
+
+    // Culled by its whole box, on Fabric too
+    @Override
+    public boolean shouldRender(final RingPlatformBlockEntity blockEntity, final Vec3 cameraPosition) {
+        return BlockEntityRenderer.super.shouldRender(blockEntity, cameraPosition)
+                && ViewCulling.visible(this.getRenderBoundingBox(blockEntity));
     }
 
     /**

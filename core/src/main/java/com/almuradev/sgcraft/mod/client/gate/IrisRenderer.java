@@ -106,6 +106,12 @@ public final class IrisRenderer {
         final float[] triangles = IrisRenderer.build(aperture, bore);
         final Identifier texture = IrisRenderer.TEXTURES.getOrDefault(type,
                 IrisRenderer.TEXTURES.get(GateTypes.MILKY_WAY));
+        if (aperture <= 0) {
+            // The shut iris, the same every frame, is kept on the GPU as the ring's parts are; only one swinging open
+            // or shut is built and sent again each frame
+            GateFeatureRenderer.submit(collector, poseStack.last(), texture, GateMesh.of(triangles), -1, light);
+            return;
+        }
         collector.submitCustomGeometry(poseStack, RenderTypes.entityCutout(texture),
                 (pose, buffer) -> GateGeometry.emit(pose, buffer, triangles, -1, light));
     }

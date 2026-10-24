@@ -72,12 +72,12 @@ public final class ZpmSources implements EnergySourceProvider {
             sources.add(new EnergySource() {
                 @Override
                 public long available() {
-                    return device.available();
+                    return device.isRemoved() ? 0 : device.available();
                 }
 
                 @Override
                 public long draw(final long wanted, final boolean simulate) {
-                    return device.draw(wanted, simulate);
+                    return device.isRemoved() ? 0 : device.draw(wanted, simulate);
                 }
             });
         }

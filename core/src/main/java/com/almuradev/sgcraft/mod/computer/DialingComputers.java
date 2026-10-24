@@ -64,6 +64,7 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.jspecify.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -400,7 +401,10 @@ public final class DialingComputers {
             return;
         }
         final Vec3 spot = DialingComputers.spot(computer, state.getValue(HorizontalDirectionalBlock.FACING));
-        for (final Map.Entry<UUID, Session> entry : List.copyOf(DialingComputers.SESSIONS.entrySet())) {
+        // Every computer asks each tick, so the sessions are only gone over, and those to end ended after
+        List<UUID> gone = List.of();
+        List<ServerPlayer> ending = List.of();
+        for (final Map.Entry<UUID, Session> entry : DialingComputers.SESSIONS.entrySet()) {
             final Session session = entry.getValue();
             if (!session.standing() || !session.computer().pos().equals(computer)
                     || !session.computer().dimension().equals(level.dimension())) {
@@ -408,12 +412,16 @@ public final class DialingComputers {
             }
             final ServerPlayer player = level.getServer().getPlayerList().getPlayer(entry.getKey());
             if (player == null) {
-                DialingComputers.SESSIONS.remove(entry.getKey());
+                gone = gone.isEmpty() ? new ArrayList<>() : gone;
+                gone.add(entry.getKey());
             } else if (player.isRemoved() || player.level() != level || player.isPassenger()
                     || player.position().distanceTo(spot) > DialingComputers.WANDER) {
-                DialingComputers.end(player);
+                ending = ending.isEmpty() ? new ArrayList<>() : ending;
+                ending.add(player);
             }
         }
+        gone.forEach(DialingComputers.SESSIONS::remove);
+        ending.forEach(DialingComputers::end);
     }
 
     /** Tells a player who starts tracking another how to draw the other, if the other stands at a computer. */

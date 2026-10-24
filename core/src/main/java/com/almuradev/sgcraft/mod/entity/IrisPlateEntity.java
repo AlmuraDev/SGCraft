@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.mod.entity;
 
 import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.SectionPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -136,10 +137,24 @@ public final class IrisPlateEntity extends Entity {
     public void tick() {
         super.tick();
         if (this.level() instanceof ServerLevel level && this.tickCount % IrisPlateEntity.CHECK_TICKS == 0
-                && (this.base == null || !(level.getBlockEntity(this.base) instanceof StargateBaseBlockEntity gate)
-                        || !gate.holdsPlate(this))) {
+                && this.unheld(level)) {
             this.discard();
         }
+    }
+
+    // Whether no gate holds it: it has none, or its base is gone or holds another plate. A base whose chunk isn't in
+    // memory is left to be looked at once it is, rather than loaded here
+    private boolean unheld(final ServerLevel level) {
+        final BlockPos base = this.base;
+        if (base == null) {
+            return true;
+        }
+        if (level.getChunkSource().getChunkNow(SectionPos.blockToSectionCoord(base.getX()),
+                SectionPos.blockToSectionCoord(base.getZ())) == null) {
+            return false;
+        }
+        return !(level.getBlockEntity(base) instanceof final StargateBaseBlockEntity gate)
+                || !gate.holdsPlate(this);
     }
 
     @Override

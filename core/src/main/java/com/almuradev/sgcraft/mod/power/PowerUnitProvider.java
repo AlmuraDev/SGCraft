@@ -66,12 +66,12 @@ public final class PowerUnitProvider implements EnergySourceProvider {
             sources.add(new EnergySource() {
                 @Override
                 public long available() {
-                    return unit.available();
+                    return unit.isRemoved() ? 0 : unit.available();
                 }
 
                 @Override
                 public long draw(final long wanted, final boolean simulate) {
-                    return unit.draw(wanted, simulate);
+                    return unit.isRemoved() ? 0 : unit.draw(wanted, simulate);
                 }
             });
         }
