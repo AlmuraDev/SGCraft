@@ -220,7 +220,7 @@ public final class SGItems {
         for (final Item item : SGItems.TAB_ITEMS) {
             stacks.add(new ItemStack(item));
             if (item == SGItems.BATTERY) {
-                stacks.add(BatteryItem.full());
+                stacks.add(BatteryItem.fullAtAnyCapacity());
             }
         }
         return stacks;

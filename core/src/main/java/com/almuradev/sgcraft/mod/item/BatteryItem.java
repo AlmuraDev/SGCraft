@@ -95,6 +95,17 @@ public final class BatteryItem extends Item {
         return battery;
     }
 
+    /**
+     * @return a new battery that reads as full whatever the server's capacity, now or after it changes, as the
+     *     creative tab shows: the client builds the tab once and keeps it, and may not know the server's capacity
+     *     yet. It holds the capacity once anything takes from it
+     */
+    public static ItemStack fullAtAnyCapacity() {
+        final ItemStack battery = new ItemStack(SGItems.BATTERY);
+        battery.set(SGDataComponents.ENERGY, Double.MAX_VALUE);
+        return battery;
+    }
+
     /** Sets the gate energy a battery holds, kept between none and its capacity. */
     public static void setEnergy(final ItemStack battery, final double energy) {
         battery.set(SGDataComponents.ENERGY, Math.max(0, Math.min(energy, (double) BatteryItem.capacity())));
