@@ -92,6 +92,10 @@ public final class SGDataComponents {
             .networkSynchronized(UUIDUtil.STREAM_CODEC.apply(ByteBufCodecs.list()))
             .build();
 
+    /** A MALP tablet's own ID, which the server keeps its pairings by; given as it is first paired. */
+    public static final DataComponentType<UUID> TABLET_ID = DataComponentType.<UUID>builder()
+            .persistent(UUIDUtil.CODEC).networkSynchronized(UUIDUtil.STREAM_CODEC).build();
+
     /** The gate energy a ZPM holds; a ZPM without it is full. */
     public static final DataComponentType<Double> ZPM_ENERGY = DataComponentType.<Double>builder()
             .persistent(Codec.DOUBLE).networkSynchronized(ByteBufCodecs.DOUBLE).build();
@@ -120,6 +124,8 @@ public final class SGDataComponents {
                 SGDataComponents.MALP_OPTIONS);
         sink.register(ResourceKey.create(Registries.DATA_COMPONENT_TYPE, SGCraft.id("tablet_malps")),
                 SGDataComponents.TABLET_MALPS);
+        sink.register(ResourceKey.create(Registries.DATA_COMPONENT_TYPE, SGCraft.id("tablet_id")),
+                SGDataComponents.TABLET_ID);
         sink.register(ResourceKey.create(Registries.DATA_COMPONENT_TYPE, SGCraft.id("zpm_energy")),
                 SGDataComponents.ZPM_ENERGY);
         sink.register(ResourceKey.create(Registries.DATA_COMPONENT_TYPE, SGCraft.id("zpm_tainted")),

@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.malp;
 
+import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.block.MalpConsoleBlock;
 import com.almuradev.sgcraft.mod.entity.MalpEntity;
 import com.almuradev.sgcraft.mod.item.MalpTabletItem;
@@ -127,13 +128,14 @@ public sealed interface MalpController {
 
         @Override
         public List<MalpRegistry.Entry> malps(final MinecraftServer server) {
-            final Set<UUID> paired = new HashSet<>(MalpTabletItem.malps(this.stack));
+            final Set<UUID> paired = new HashSet<>(MalpTabletItem.paired(server, this.stack));
             return MalpRegistry.get(server).all().stream().filter(entry -> paired.contains(entry.id())).toList();
         }
 
         @Override
         public boolean lists(final UUID malp, final @Nullable MalpEntity loaded) {
-            return MalpTabletItem.malps(this.stack).contains(malp);
+            return SGServer.current().map(server -> MalpTabletItem.paired(server.server(), this.stack).contains(malp))
+                    .orElse(false);
         }
 
         @Override

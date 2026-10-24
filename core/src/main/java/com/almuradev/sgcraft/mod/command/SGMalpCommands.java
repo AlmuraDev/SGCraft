@@ -195,7 +195,7 @@ final class SGMalpCommands {
         final ItemStack tablet = SGMalpCommands.heldTablet(context.getSource());
         final CommandSourceStack source = context.getSource();
         if (pair) {
-            if (!MalpTabletItem.pair(tablet, entry.id())) {
+            if (!MalpTabletItem.pair(source.getServer(), tablet, entry.id())) {
                 source.sendFailure(SGCommands.text("malp.tablet.already_paired",
                         "%s is already paired with your tablet", entry.name()));
                 return 0;
@@ -204,7 +204,7 @@ final class SGMalpCommands {
                     entry.name()), true);
             return 1;
         }
-        if (!MalpTabletItem.unpair(tablet, entry.id())) {
+        if (!MalpTabletItem.unpair(source.getServer(), tablet, entry.id())) {
             source.sendFailure(SGCommands.text("malp.tablet.not_paired", "%s isn't paired with your tablet",
                     entry.name()));
             return 0;

@@ -29,9 +29,11 @@ import com.almuradev.sgcraft.mod.entity.MalpEntity;
 import com.almuradev.sgcraft.mod.malp.MalpConfigurator;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import com.almuradev.sgcraft.mod.malp.MalpMenu;
+import com.almuradev.sgcraft.mod.malp.TabletPairings;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -55,8 +57,12 @@ import java.util.function.Consumer;
  * sneaking, by the MALP's owner or an operator, it pairs that MALP with the tablet, and the MALP stays paired with its
  * console too. Any number of tablets can be paired with one MALP.
  *
- * <p>The tablet keeps the MALPs it is paired with in {@link SGDataComponents#TABLET_MALPS} and its battery in
- * {@link DataComponents#CONTAINER}. While its screen shows a live feed it uses gate energy from that battery, as much
+ * <p>The tablet keeps the MALPs it is paired with in {@link SGDataComponents#TABLET_MALPS}, its own ID in
+ * {@link SGDataComponents#TABLET_ID} and its battery in {@link DataComponents#CONTAINER}. The server keeps which MALPs
+ * it paired each tablet with ({@link TabletPairings}); a MALP on the tablet's list that it didn't pair is never shown,
+ * so a list written into the item reaches no one's MALP.</p>
+ *
+ * <p> While its screen shows a live feed it uses gate energy from that battery, as much
  * each tick as the server's settings say; with a flat battery or none it shows no feed.</p>
  */
 public final class MalpTabletItem extends Item {
@@ -90,7 +96,7 @@ public final class MalpTabletItem extends Item {
                     "You aren't allowed to pair this MALP").withStyle(ChatFormatting.RED));
             return;
         }
-        if (MalpTabletItem.pair(tablet, malp.getUUID())) {
+        if (MalpTabletItem.pair(player.level().getServer(), tablet, malp.getUUID())) {
             player.sendOverlayMessage(Component.translatableWithFallback("message.sgcraft.malp.tablet_paired",
                     "%s is paired with this tablet", malp.displayName()).withStyle(ChatFormatting.GREEN));
         } else {
@@ -105,14 +111,35 @@ public final class MalpTabletItem extends Item {
     }
 
     /**
-     * Pairs a MALP with a tablet, after those it is paired with already.
+     * @return the MALPs on a tablet's list that the server paired it with, in the order they were paired; only these
+     *     are shown and driven
+     */
+    public static List<UUID> paired(final MinecraftServer server, final ItemStack tablet) {
+        final UUID id = tablet.get(SGDataComponents.TABLET_ID);
+        if (id == null) {
+            return List.of();
+        }
+        final TabletPairings pairings = TabletPairings.get(server);
+        return MalpTabletItem.malps(tablet).stream().filter(malp -> pairings.paired(id, malp)).toList();
+    }
+
+    /**
+     * Pairs a MALP with a tablet, after those it is paired with already, giving the tablet its ID if it has none.
      *
      * @return whether the MALP wasn't paired with the tablet before
      */
-    public static boolean pair(final ItemStack tablet, final UUID malp) {
+    public static boolean pair(final MinecraftServer server, final ItemStack tablet, final UUID malp) {
+        UUID id = tablet.get(SGDataComponents.TABLET_ID);
+        if (id == null) {
+            id = UUID.randomUUID();
+            tablet.set(SGDataComponents.TABLET_ID, id);
+        }
+        final TabletPairings pairings = TabletPairings.get(server);
+        final boolean known = pairings.paired(id, malp);
+        pairings.pair(id, malp);
         final List<UUID> malps = MalpTabletItem.malps(tablet);
         if (malps.contains(malp)) {
-            return false;
+            return !known;
         }
         final List<UUID> more = new ArrayList<>(malps);
         more.add(malp);
@@ -125,7 +152,11 @@ public final class MalpTabletItem extends Item {
      *
      * @return whether the MALP was paired with the tablet
      */
-    public static boolean unpair(final ItemStack tablet, final UUID malp) {
+    public static boolean unpair(final MinecraftServer server, final ItemStack tablet, final UUID malp) {
+        final UUID tabletId = tablet.get(SGDataComponents.TABLET_ID);
+        if (tabletId != null) {
+            TabletPairings.get(server).unpair(tabletId, malp);
+        }
         final List<UUID> malps = MalpTabletItem.malps(tablet);
         if (!malps.contains(malp)) {
             return false;

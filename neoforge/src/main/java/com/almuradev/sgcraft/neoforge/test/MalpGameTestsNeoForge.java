@@ -137,6 +137,7 @@ final class MalpGameTestsNeoForge {
         tests.put("watched_malp_streams_until_signal_lost", MalpGameTestsNeoForge::streamsUntilSignalLost);
         tests.put("malp_pairs_on_console", MalpGameTestsNeoForge::pairsOnConsole);
         tests.put("malp_handled_by_owner_only", MalpGameTestsNeoForge::handledByOwner);
+        tests.put("malp_forged_tablet_reaches_none", MalpGameTestsNeoForge::forgedTabletReachesNone);
         tests.put("malp_signal_direct_within_range", MalpGameTestsNeoForge::directSignal);
         tests.put("malp_signal_relays_through_gates", MalpGameTestsNeoForge::relayedSignal);
         tests.put("malp_keeps_itself_through_gate", MalpGameTestsNeoForge::keepsItself);
@@ -1315,8 +1316,31 @@ final class MalpGameTestsNeoForge {
     private static ItemStack tablet(final double energy, final MalpEntity malp) {
         final ItemStack tablet = new ItemStack(SGItems.MALP_TABLET);
         MalpTabletItem.setBattery(tablet, MalpGameTestsNeoForge.battery(energy));
-        MalpTabletItem.pair(tablet, malp.getUUID());
+        MalpTabletItem.pair(malp.level().getServer(), tablet, malp.getUUID());
         return tablet;
+    }
+
+    // A tablet whose list was written into the item, as a player in creative mode can, reaches none of the MALPs on
+    // it: only those the server paired it with
+    private static void forgedTabletReachesNone(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final BlockPos at = MalpGameTestsNeoForge.inside(helper, 24, 3);
+        final MalpEntity malp = MalpGameTestsNeoForge.malp(level, Vec3.atBottomCenterOf(at), BatteryItem.capacity(),
+                GlobalPos.of(level.dimension(), at.north(5)));
+        final ItemStack forged = new ItemStack(SGItems.MALP_TABLET);
+        forged.set(SGDataComponents.TABLET_MALPS, List.of(malp.getUUID()));
+        forged.set(SGDataComponents.TABLET_ID, UUID.randomUUID());
+        helper.assertTrue(MalpTabletItem.paired(level.getServer(), forged).isEmpty(),
+                "A tablet the server never paired reaches the MALP");
+        final ItemStack real = MalpGameTestsNeoForge.tablet(BatteryItem.capacity(), malp);
+        helper.assertTrue(MalpTabletItem.paired(level.getServer(), real).equals(List.of(malp.getUUID())),
+                "A paired tablet doesn't reach its MALP");
+        MalpTabletItem.unpair(level.getServer(), real, malp.getUUID());
+        real.set(SGDataComponents.TABLET_MALPS, List.of(malp.getUUID()));
+        helper.assertTrue(MalpTabletItem.paired(level.getServer(), real).isEmpty(),
+                "An unpaired tablet given its list back reaches the MALP");
+        malp.discard();
+        helper.succeed();
     }
 
     // Only a MALP's owner and operators pair it with a tablet, by using the tablet on it while sneaking; it stays

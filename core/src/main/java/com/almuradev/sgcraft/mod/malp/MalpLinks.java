@@ -251,9 +251,11 @@ public final class MalpLinks {
             return;
         }
         final MalpRegistry registry = MalpRegistry.get(player.level().getServer());
+        // MALPs that are gone, or that the server never paired the tablet with, come off its list
+        final List<UUID> paired = MalpTabletItem.paired(player.level().getServer(), tablet);
         for (final UUID id : MalpTabletItem.malps(tablet)) {
-            if (registry.get(id).isEmpty()) {
-                MalpTabletItem.unpair(tablet, id);
+            if (registry.get(id).isEmpty() || !paired.contains(id)) {
+                MalpTabletItem.unpair(player.level().getServer(), tablet, id);
             }
         }
         MalpLinks.open(player, new MalpController.Tablet(hand, tablet, player.level().dimension()));
@@ -508,7 +510,7 @@ public final class MalpLinks {
             case REMOVE -> {
                 final UUID gone = action.malp().orElse(null);
                 if (gone != null && link.controller instanceof MalpController.Tablet tablet
-                        && MalpTabletItem.unpair(tablet.stack(), gone) && gone.equals(link.selected)) {
+                        && MalpTabletItem.unpair(server, tablet.stack(), gone) && gone.equals(link.selected)) {
                     MalpLinks.select(link, MalpLinks.initial(link, link.controller.malps(server), null));
                 } else if (gone != null && link.controller instanceof MalpController.Console) {
                     MalpLinks.unpairAtConsole(link, gone);

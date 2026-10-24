@@ -116,7 +116,7 @@ Dictionary: [MALP Tablet](items/malp-tablet.md)
 
 The tablet is a MALP console in your hand.
 
-- To pair a MALP, sneak and use the tablet on the MALP. Only the MALP's owner or an operator can do this. The MALP stays paired with its console too, and any number of tablets can pair with one MALP.
+- To pair a MALP, sneak and use the tablet on the MALP. Only the MALP's owner or an operator can do this. The MALP stays paired with its console too, and any number of tablets can pair with one MALP. The server keeps which tablets it paired with which MALPs, so a tablet's list edited in creative mode reaches no MALP it wasn't paired with.
 - To open the feed, use the tablet in the air. The list on the left shows the paired MALPs. The **x** beside each one takes it off the tablet.
 - To open the battery slot, sneak and use the tablet in the air. The tablet needs a charged battery to show a feed. The screen shows **TABLET BATTERY** with its charge, or **NO TABLET BATTERY**. With a flat battery the feed shows **NO TABLET POWER**.
 - Keep the tablet in the hand you used it from, in the same world, or the screen closes. Other players see you holding it out with both hands.
