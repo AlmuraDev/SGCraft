@@ -30,6 +30,7 @@
         "client.AvatarRendererMixin",
         "client.BossHealthOverlayMixin",
         "client.CameraMixin",
+        "client.EntityRenderDispatcherMixin",
         "client.EntityRendererMixin",
         "client.FirstPersonHandsAndItemsRendererMixin",
         "client.GameRendererMixin",

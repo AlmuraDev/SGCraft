@@ -273,6 +273,12 @@ public final class JumperControls {
         while (JumperKeys.DOOR.consumeClick()) {
             ClientPlatform.get().sendToServer(new JumperPayloads.Press(PuddleJumperEntity.Button.DOOR));
         }
+        while (JumperKeys.SHIELD.consumeClick()) {
+            ClientPlatform.get().sendToServer(new JumperPayloads.Press(PuddleJumperEntity.Button.SHIELD));
+        }
+        while (JumperKeys.CLOAK.consumeClick()) {
+            ClientPlatform.get().sendToServer(new JumperPayloads.Press(PuddleJumperEntity.Button.CLOAK));
+        }
 
         return new JumperInput(keys.forward(), keys.backward(), keys.left(), keys.right(), keys.jump(),
                 JumperKeys.DESCEND.isDown(), turbo);

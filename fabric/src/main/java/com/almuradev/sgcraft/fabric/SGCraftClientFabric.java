@@ -83,6 +83,7 @@ import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.special.SpecialModelRenderers;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.minecraft.resources.Identifier;
 
 
 /**
@@ -119,6 +120,8 @@ public final class SGCraftClientFabric implements ClientModInitializer {
         KeyMappingHelper.registerKeyMapping(JumperKeys.PODS);
         KeyMappingHelper.registerKeyMapping(JumperKeys.DOOR);
         KeyMappingHelper.registerKeyMapping(JumperKeys.COMPUTER);
+        KeyMappingHelper.registerKeyMapping(JumperKeys.SHIELD);
+        KeyMappingHelper.registerKeyMapping(JumperKeys.CLOAK);
         KeyMappingHelper.registerKeyMapping(JumperKeys.ARM);
         KeyMappingHelper.registerKeyMapping(JumperKeys.TARGET);
         KeyMappingHelper.registerKeyMapping(JumperKeys.FIRE);
@@ -131,6 +134,16 @@ public final class SGCraftClientFabric implements ClientModInitializer {
                 hotbar.extractRenderState(graphics, deltaTracker);
             }
         });
+        // and the player's own bars on its console, in place of the game's
+        for (final Identifier bar : new Identifier[] {VanillaHudElements.HEALTH_BAR, VanillaHudElements.ARMOR_BAR,
+                VanillaHudElements.FOOD_BAR, VanillaHudElements.AIR_BAR, VanillaHudElements.INFO_BAR,
+                VanillaHudElements.EXPERIENCE_LEVEL}) {
+            HudElementRegistry.replaceElement(bar, element -> (graphics, deltaTracker) -> {
+                if (!JumperHud.vitalsShown()) {
+                    element.extractRenderState(graphics, deltaTracker);
+                }
+            });
+        }
         // Into vanilla's own list, which the access widener opens, as Fabric API has no way to register one
         SpecialModelRenderers.ID_MAPPER.put(DhdItemRenderer.TYPE, DhdItemRenderer.Unbaked.CODEC);
         SpecialModelRenderers.ID_MAPPER.put(GeneratorItemRenderer.TYPE, GeneratorItemRenderer.Unbaked.CODEC);

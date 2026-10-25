@@ -35,6 +35,8 @@ import com.almuradev.sgcraft.mod.computer.DialerRef;
 import com.almuradev.sgcraft.mod.entity.DroneEntity;
 import com.almuradev.sgcraft.mod.entity.JumperHull;
 import com.almuradev.sgcraft.mod.entity.JumperSeat;
+import com.almuradev.sgcraft.mod.entity.JumperSettings;
+import com.almuradev.sgcraft.mod.entity.JumperShelter;
 import com.almuradev.sgcraft.mod.entity.PuddleJumperEntity;
 import com.almuradev.sgcraft.mod.entity.SGEntityTypes;
 import com.almuradev.sgcraft.mod.gate.GateFrame;
@@ -53,11 +55,13 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.zombie.Zombie;
+import net.minecraft.world.entity.projectile.arrow.Arrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
@@ -89,6 +93,160 @@ final class JumperGameTestsNeoForge {
         tests.put("jumper_drone_strikes_hostile", JumperGameTestsNeoForge::droneStrikes);
         tests.put("jumper_copilot_works_weapons", JumperGameTestsNeoForge::copilotWeapons);
         tests.put("jumper_seats_only_those_inside", JumperGameTestsNeoForge::seatsOnlyInside);
+        tests.put("jumper_shield_stops_blows_until_knocked_down", JumperGameTestsNeoForge::shieldStopsBlows);
+        tests.put("jumper_shield_and_cloak_one_at_a_time", JumperGameTestsNeoForge::shieldOrCloak);
+        tests.put("jumper_crash_hurts_shield_or_hull", JumperGameTestsNeoForge::crashHurts);
+        tests.put("jumper_takes_blows_at_riders", JumperGameTestsNeoForge::takesRidersBlows);
+        tests.put("jumper_doorway_walks_through", JumperGameTestsNeoForge::doorwayWalks);
+    }
+
+    // A player walking ahead down the cabin, in its middle or a little to either side, goes through the bulkhead's
+    // doorway into the cockpit, however the jumper faces
+    private static void doorwayWalks(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        int placed = 0;
+        for (final float yaw : new float[] {0, 37, 90, 128}) {
+            for (final double off : new double[] {-0.25, 0, 0.25}) {
+                final BlockPos at = origin.offset(placed++ * 9, 0, 0);
+                final PuddleJumperEntity jumper = JumperGameTestsNeoForge.place(level, Vec3.atBottomCenterOf(at),
+                        yaw);
+                final ServerPlayer walker = helper.makeMockServerPlayerInLevel();
+                walker.setGameMode(GameType.SURVIVAL);
+                final double angle = yaw * Mth.DEG_TO_RAD;
+                final Vec3 start = jumper.position().add(JumperHull.toWorld(new Vec3(off, JumperSeat.FLOOR, -1.5),
+                        angle));
+                walker.snapTo(start.x, start.y, start.z, 0, 0);
+                final Vec3 step = JumperHull.toWorld(new Vec3(0, 0, 0.1), angle);
+                for (int i = 0; i < 30; i++) {
+                    walker.move(MoverType.SELF, step);
+                }
+                final Vec3 local = JumperHull.toLocal(walker.position().subtract(jumper.position()), yaw);
+                helper.assertTrue(local.z > 1.2, "A player walking ahead at yaw " + yaw + ", " + off
+                        + " off the middle, stopped at " + local);
+                jumper.discard();
+            }
+        }
+        helper.succeed();
+    }
+
+    // Flown into a wall fast, the jumper's shield takes the crash; with no shield, its hull does
+    private static void crashHurts(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final BlockPos air = origin.above(3);
+        for (final boolean shield : new boolean[] {true, false}) {
+            final BlockPos at = air.offset(shield ? 0 : 6, 0, 0);
+            // A wall a few blocks ahead of its nose, which faces south, along +z
+            for (int x = -2; x <= 2; x++) {
+                for (int y = -1; y <= 4; y++) {
+                    level.setBlockAndUpdate(at.offset(x, y, 8), Blocks.STONE.defaultBlockState());
+                }
+            }
+            final PuddleJumperEntity jumper = JumperGameTestsNeoForge.place(level, Vec3.atBottomCenterOf(at), 0);
+            jumper.setPowered(true);
+            if (shield) {
+                helper.assertTrue(jumper.setShield(true) == null, "The shield didn't rise");
+            }
+            final double before = jumper.generatorEnergy();
+            jumper.setDeltaMovement(0, 0, 1.2);
+            for (int tick = 0; tick < 20; tick++) {
+                jumper.tick();
+            }
+            if (shield) {
+                helper.assertTrue(jumper.getDamage() == 0, "The crash hurt the hull through the shield");
+                helper.assertTrue(before - jumper.generatorEnergy() > 20 * JumperSettings.current().shieldDrain() + 1,
+                        "The crash cost the shield nothing");
+            } else {
+                helper.assertTrue(jumper.getDamage() > 0, "The crash didn't hurt the hull");
+            }
+        }
+        helper.succeed();
+    }
+
+    // A blow from outside at a rider falls on the jumper's shield, not the rider; a cloaked jumper hides its riders
+    // from mobs, but one that isn't doesn't
+    private static void takesRidersBlows(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final PuddleJumperEntity jumper = JumperGameTestsNeoForge.place(level, Vec3.atBottomCenterOf(origin), 0);
+        final ServerPlayer rider = JumperGameTestsNeoForge.board(helper, jumper);
+        rider.setGameMode(GameType.SURVIVAL);
+        final Zombie zombie = EntityTypes.ZOMBIE.create(level, EntitySpawnReason.COMMAND);
+        zombie.snapTo(jumper.position().add(4, 0, 0), 0, 0);
+        level.addFreshEntity(zombie);
+        jumper.setPowered(true);
+        helper.assertTrue(jumper.setShield(true) == null, "The shield didn't rise");
+        helper.assertTrue(rider.canBeSeenAsEnemy(), "Mobs can't go after a rider in a jumper that isn't cloaked");
+        // Asked straight, as the test's world is peaceful, where a mob's blow does no harm anyway
+        final double before = jumper.generatorEnergy();
+        helper.assertTrue(JumperShelter.takeBlow(rider, level, level.damageSources().mobAttack(zombie), 4),
+                "A blow from outside reached the rider");
+        helper.assertTrue(jumper.generatorEnergy() < before, "A blow from outside at a rider missed the shield");
+        // An arrow shot from outside that has reached the rider is inside the hull, but its blow falls on the jumper
+        final Arrow arrow = EntityTypes.ARROW.create(level, EntitySpawnReason.COMMAND);
+        arrow.snapTo(rider.getEyePosition(), 0, 0);
+        arrow.setOwner(zombie);
+        helper.assertTrue(JumperShelter.takeBlow(rider, level, level.damageSources().arrow(arrow, zombie), 4),
+                "An arrow shot from outside reached the rider");
+        // With the cargo door down, the cabin is open; it lowers once the jumper has stood still a moment, which it is
+        // ticked here for, as the test's world ticks no entities with no player near
+        for (int tick = 0; tick < 10; tick++) {
+            jumper.tick();
+        }
+        jumper.toggleHatch(rider);
+        helper.assertTrue(jumper.hatchOpen(), "The cargo door didn't lower");
+        helper.assertTrue(!JumperShelter.takeBlow(rider, level, level.damageSources().mobAttack(zombie), 4),
+                "A blow through the open cargo door didn't reach the rider");
+        jumper.toggleHatch(rider);
+        helper.assertTrue(jumper.setCloak(true) == null, "The cloak didn't come on");
+        helper.assertTrue(!rider.canBeSeenAsEnemy(), "Mobs can go after a rider in a cloaked jumper");
+        helper.succeed();
+    }
+
+    // The shield takes blows for the hull, spending energy on each; one it can't pay for knocks it down, passes what
+    // is left to the hull, and keeps it down a while
+    private static void shieldStopsBlows(final GameTestHelper helper, final BlockPos origin) {
+        final ServerLevel level = helper.getLevel();
+        final PuddleJumperEntity jumper = JumperGameTestsNeoForge.place(level, Vec3.atBottomCenterOf(origin), 0);
+        helper.assertTrue(jumper.setShield(true) != null, "The shield rose with the drive off");
+        jumper.setPowered(true);
+        helper.assertTrue(jumper.setShield(true) == null && jumper.shieldUp(), "The shield didn't rise");
+        final JumperSettings settings = JumperSettings.current();
+        final double before = jumper.generatorEnergy();
+        jumper.hurtServer(level, level.damageSources().generic(), 10);
+        helper.assertTrue(jumper.getDamage() == 0, "A blow the shield stopped hurt the hull");
+        helper.assertTrue(Math.abs(before - jumper.generatorEnergy() - 10 * settings.hitCost()) < 1.0E-6,
+                "The shield didn't spend its energy on the blow");
+        jumper.setGeneratorEnergy(settings.hitCost() * 2);
+        jumper.hurtServer(level, level.damageSources().generic(), 10);
+        helper.assertTrue(!jumper.shieldUp(), "A blow the generator couldn't pay for didn't knock the shield down");
+        helper.assertTrue(jumper.getDamage() > 0, "What the shield couldn't stop didn't reach the hull");
+        helper.assertTrue(jumper.shieldDownTicks() > 0, "The knocked down shield isn't kept down");
+        jumper.setGeneratorEnergy(settings.generatorCapacity());
+        helper.assertTrue(jumper.setShield(true) != null, "The knocked down shield rose at once");
+        jumper.clearKnockdown();
+        helper.assertTrue(jumper.setShield(true) == null, "The shield didn't rise once it recovered");
+        helper.succeed();
+    }
+
+    // The generator runs the shield or the cloak, never both; the cloak drains it, and powering down drops either
+    private static void shieldOrCloak(final GameTestHelper helper, final BlockPos origin) {
+        final PuddleJumperEntity jumper = JumperGameTestsNeoForge.place(helper.getLevel(),
+                Vec3.atBottomCenterOf(origin), 0);
+        jumper.setPowered(true);
+        helper.assertTrue(jumper.setCloak(true) == null && jumper.cloaked(), "The cloak didn't come on");
+        helper.assertTrue(jumper.setShield(true) == null && jumper.shieldUp() && !jumper.cloaked(),
+                "Raising the shield didn't drop the cloak");
+        helper.assertTrue(jumper.setCloak(true) == null && jumper.cloaked() && !jumper.shieldUp(),
+                "Putting the cloak on didn't lower the shield");
+        final double before = jumper.generatorEnergy();
+        // The test's world ticks no entities with no player near, so it is ticked here
+        for (int tick = 0; tick < 20; tick++) {
+            jumper.tick();
+        }
+        helper.assertTrue(Math.abs(before - jumper.generatorEnergy() - 20 * JumperSettings.current().cloakDrain())
+                < 1.0E-6, "The cloak didn't use its energy: " + before + " to " + jumper.generatorEnergy());
+        jumper.setPowered(false);
+        helper.assertTrue(!jumper.cloaked() && !jumper.shieldUp(), "Powering down left the cloak on");
+        helper.succeed();
     }
 
     // Used from outside, the jumper lowers its cargo door, and raises it again; nobody boards
@@ -151,6 +309,7 @@ final class JumperGameTestsNeoForge {
         }
         final PuddleJumperEntity jumper = JumperGameTestsNeoForge.place(level, Vec3.atBottomCenterOf(origin), 0);
         final ServerPlayer rider = JumperGameTestsNeoForge.board(helper, jumper);
+        rider.setGameMode(GameType.SURVIVAL);
         final ServerPlayer stander = helper.makeMockServerPlayerInLevel();
         stander.snapTo(jumper.position().add(0, JumperSeat.FLOOR, -1), 0, 0);
         final ServerPlayer swimmer = helper.makeMockServerPlayerInLevel();

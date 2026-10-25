@@ -132,6 +132,15 @@ public final class JumperRenderer extends EntityRenderer<PuddleJumperEntity, Jum
     private static final float GLASS_INSIDE = 0.22F;
     private static final int GLASS_TINT = 0xDCEAFF;
     private static final double GLASS_FADE = 0.5;
+    // The cloak: how much it hides from a rider looking on from behind in third person, how bright the shimmer of a
+    // cloaked jumper moving at its top speed is, beyond the faint trace it always shows, and the flicker as the cloak comes on or goes off, the speed that
+    // shimmer is full at, in blocks a tick, and the pale blue it is tinted as it fades
+    private static final float CLOAK_ABOARD = 0.55F;
+    private static final float SHIMMER = 0.2F;
+    private static final float SHIMMER_REST = 0.035F;
+    private static final float CLOAK_FLICKER = 0.35F;
+    private static final double SHIMMER_SPEED = 0.55;
+    private static final int CLOAK_TINT = 0xBFDCFF;
 
     private final JumperModel model;
     private final JumperModel glass;
@@ -152,6 +161,12 @@ public final class JumperRenderer extends EntityRenderer<PuddleJumperEntity, Jum
         return super.getBoundingBoxForCulling(entity, partialTicks).inflate(reach, 0, reach);
     }
 
+    // The cloak hides its shadow from those outside as it hides the jumper
+    @Override
+    protected float getShadowRadius(final JumperRenderState state) {
+        return super.getShadowRadius(state) * (state.viewerInside ? 1 : 1 - state.cloak);
+    }
+
     @Override
     public JumperRenderState createRenderState() {
         return new JumperRenderState();
@@ -160,7 +175,21 @@ public final class JumperRenderer extends EntityRenderer<PuddleJumperEntity, Jum
     @Override
     public void extractRenderState(final PuddleJumperEntity entity, final JumperRenderState state,
             final float partialTick) {
+        // Before the shadow is worked out, which the cloak hides
+        state.cloak = entity.cloak(partialTick);
+        state.viewerInside = JumperControls.viewerInside(entity);
         super.extractRenderState(entity, state, partialTick);
+        state.shimmer = (float) Mth.clamp(Math.sqrt(Mth.square(entity.getX() - entity.xo)
+                + Mth.square(entity.getY() - entity.yo) + Mth.square(entity.getZ() - entity.zo))
+                / JumperRenderer.SHIMMER_SPEED, 0, 1);
+        state.time = entity.level().getGameTime() + partialTick;
+        state.hits = JumperShield.of(entity);
+        state.shieldAge = entity.shieldChanged() == Long.MIN_VALUE ? Float.MAX_VALUE
+                : entity.level().getGameTime() - entity.shieldChanged() + partialTick;
+        state.shieldRose = entity.shieldRose();
+        if (state.cloak > 0.5F && !state.viewerInside) {
+            state.nameTag = null;
+        }
         state.yRot = entity.getYRot(partialTick);
         state.hurtTime = entity.getHurtTime() - partialTick;
         state.hurtDir = entity.getHurtDir();
@@ -201,25 +230,36 @@ public final class JumperRenderer extends EntityRenderer<PuddleJumperEntity, Jum
         poseStack.rotateDegrees(Axis.ZP, -state.bank);
         poseStack.rotateDegrees(Axis.XP, -state.tilt);
         poseStack.translate(0, -pivot, 0);
-        collector.submitModel(this.model, state, poseStack, JumperRenderer.TEXTURE, state.lightCoords,
-                OverlayTexture.NO_OVERLAY, state.outlineColor);
-        // The windows: as they are from outside; from inside, a faint blue tint, so they read as glass without
-        // darkening the view or hiding the water and weather beyond, easing from one to the other as the camera crosses
-        // into the hull
         final Vec3 cameraOffset = camera.pos.subtract(state.x, state.y, state.z);
         final double depth = JumperHull.depthInside(JumperHull.toLocal(cameraOffset, state.yRot));
         final boolean fromInside = depth > 0;
-        final float inward = (float) Mth.clamp(depth / JumperRenderer.GLASS_FADE, 0, 1);
-        final int tint = ARGB.color(Math.round(255 * Mth.lerp(inward, 1, JumperRenderer.GLASS_INSIDE)),
-                fromInside ? JumperRenderer.GLASS_TINT : 0xFFFFFF);
-        collector.submitModel(this.glass, state, poseStack, this.glass.renderType(JumperRenderer.TEXTURE),
-                state.lightCoords, OverlayTexture.NO_OVERLAY, tint, null, state.outlineColor);
+        // How much the cloak hides it from the camera: from inside the hull, not at all; from behind a rider aboard,
+        // in third person, only partly, so they see it is on; from outside, wholly once it has come on
+        final float hidden = fromInside ? 0 : state.viewerInside ? state.cloak * JumperRenderer.CLOAK_ABOARD
+                : state.cloak;
+        final boolean shown = hidden < 0.5F;
+        if (hidden <= 0) {
+            collector.submitModel(this.model, state, poseStack, JumperRenderer.TEXTURE, state.lightCoords,
+                    OverlayTexture.NO_OVERLAY, state.outlineColor);
+        } else {
+            this.cloaked(state, poseStack, collector, hidden);
+        }
+        if (shown) {
+            // The windows: as they are from outside; from inside, a faint blue tint, so they read as glass without
+            // darkening the view or hiding the water and weather beyond, easing from one to the other as the camera
+            // crosses into the hull
+            final float inward = (float) Mth.clamp(depth / JumperRenderer.GLASS_FADE, 0, 1);
+            final int tint = ARGB.color(Math.round(255 * Mth.lerp(inward, 1, JumperRenderer.GLASS_INSIDE)
+                    * (1 - hidden)), fromInside ? JumperRenderer.GLASS_TINT : 0xFFFFFF);
+            collector.submitModel(this.glass, state, poseStack, this.glass.renderType(JumperRenderer.TEXTURE),
+                    state.lightCoords, OverlayTexture.NO_OVERLAY, tint, null, state.outlineColor);
+        }
         // Its lights, inside and out, and the computer's screen go dark with its drive off
-        if (state.powered) {
+        if (state.powered && shown) {
             collector.submitModel(this.glow, state, poseStack, JumperRenderer.TEXTURE,
                     LightCoordsUtil.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, state.outlineColor);
         }
-        if (state.picture != null) {
+        if (state.picture != null && shown) {
             collector.submitCustomGeometry(poseStack, RenderTypes.textPolygonOffset(state.picture),
                     JumperRenderer::screen);
         }
@@ -236,7 +276,7 @@ public final class JumperRenderer extends EntityRenderer<PuddleJumperEntity, Jum
         // Where the beams' glows are, along each from its lamp, as the hull turns and banks
         // From inside, looking along them, the beams' glows stack up into flat, angular patches over the lit ground;
         // there the light on the ground shows the beams, but for in water, where nothing else would
-        final Vector3f[][] beams = state.headlights && (!fromInside || state.inWater)
+        final Vector3f[][] beams = state.headlights && shown && (!fromInside || state.inWater)
                 ? JumperRenderer.beamPoints(toBase) : null;
         poseStack.popPose();
         if (beams != null) {
@@ -244,10 +284,35 @@ public final class JumperRenderer extends EntityRenderer<PuddleJumperEntity, Jum
         }
         // From inside the hull its walls hide the engines, and the glows, standing out beyond them, would show over
         // the walls' inner faces
-        if (state.pods > 0.05F && state.thrust > 0.01F && !fromInside) {
+        if (state.pods > 0.05F && state.thrust > 0.01F && !fromInside && shown) {
             JumperRenderer.halos(state, poseStack, collector, camera, engines, cameraOffset);
         }
+        JumperShield.submit(state.hits, state.yRot, state.time, poseStack, collector);
+        JumperShield.sweep(state.shieldAge, state.shieldRose, state.yRot, state.time, poseStack, collector);
         super.submit(state, poseStack, collector, camera);
+    }
+
+    // The hull as the cloak leaves it: fading out as the cloak comes on, and once it is on, gone but for a faint,
+    // flickering shimmer of its shape while it moves, stronger the faster, and a flicker as the cloak comes on or goes
+    // off. Its sounds are left as they are
+    private void cloaked(final JumperRenderState state, final PoseStack poseStack,
+            final SubmitNodeCollector collector, final float hidden) {
+        final float flicker = 0.75F + 0.25F * Mth.sin(state.time * 0.9F) * Mth.sin(state.time * 0.37F + 1);
+        float alpha = 1 - hidden;
+        if (!state.viewerInside) {
+            // Never quite gone, so a jumper left cloaked can still be found by someone who looks hard
+            final float moving = state.cloak * (JumperRenderer.SHIMMER_REST + state.shimmer * JumperRenderer.SHIMMER)
+                    * flicker;
+            final float changing = 4 * state.cloak * (1 - state.cloak) * JumperRenderer.CLOAK_FLICKER * flicker;
+            alpha = Math.max(alpha, Math.max(moving, changing));
+        }
+        if (alpha < 0.004F) {
+            return;
+        }
+        final int tint = ARGB.srgbLerp(Mth.clamp(hidden * 1.5F, 0, 1), 0xFFFFFF, JumperRenderer.CLOAK_TINT);
+        collector.submitModel(this.model, state, poseStack, RenderTypes.entityTranslucent(JumperRenderer.TEXTURE),
+                state.lightCoords, OverlayTexture.NO_OVERLAY, ARGB.color(alpha, tint), null,
+                hidden < 0.5F ? state.outlineColor : 0);
     }
 
     // The glow behind each engine, facing the camera: light added to whatever lies behind it, a soft blue disc with a

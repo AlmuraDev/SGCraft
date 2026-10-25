@@ -30,6 +30,7 @@ import com.almuradev.sgcraft.mod.client.dev.SceneExport;
 import com.almuradev.sgcraft.mod.client.jumper.JumperControls;
 import com.almuradev.sgcraft.mod.client.jumper.JumperFoliage;
 import com.almuradev.sgcraft.mod.client.jumper.JumperLights;
+import com.almuradev.sgcraft.mod.client.jumper.JumperPick;
 import com.almuradev.sgcraft.mod.client.jumper.JumperSounds;
 import net.minecraft.client.Minecraft;
 import org.spongepowered.asm.mixin.Mixin;
@@ -39,7 +40,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Lets the icon export, when the client was started for one, open once its world has loaded, and runs the scene
- * export that follows it.
+ * export that follows it; ticks the puddle jumper's client side; and aims at a jumper by its whole hull.
  */
 @Mixin(Minecraft.class)
 public abstract class MinecraftMixin {
@@ -52,5 +53,11 @@ public abstract class MinecraftMixin {
         JumperLights.tick((Minecraft) (Object) this);
         JumperFoliage.tick((Minecraft) (Object) this);
         JumperSounds.tick((Minecraft) (Object) this);
+    }
+
+    // A puddle jumper is aimed at by its whole hull, not just its hitbox; see JumperPick
+    @Inject(method = "pick(F)V", at = @At("TAIL"))
+    private void sgcraft$pickJumperHull(final float partialTicks, final CallbackInfo callback) {
+        JumperPick.pick((Minecraft) (Object) this, partialTicks);
     }
 }

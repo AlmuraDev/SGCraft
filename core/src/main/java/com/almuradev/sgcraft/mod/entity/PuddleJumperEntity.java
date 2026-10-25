@@ -55,6 +55,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -123,6 +124,12 @@ import java.util.UUID;
  * <p>Its hitbox is a square as wide as its hull, as every entity's is, but its nose and tail stop against blocks as
  * well, so the whole of its length meets the world: it turns only where there is room, and goes through a gate head
  * or tail first. Its riders keep their seats through a gate, to another world too.</p>
+ *
+ * <p>Its cloak generator runs either a shield or a cloak, one at a time, from a charge of its own that refills while
+ * it runs neither and the drive is on; see {@link JumperSettings}. The shield shows only where it is struck, and each
+ * blow it stops costs it energy; emptied, it falls and stays down a while. The cloak hides the jumper and everyone in
+ * it from those outside, but not its sounds, and a faint shimmer gives it away as it moves. Launching a drone drops
+ * it.</p>
  */
 public final class PuddleJumperEntity extends VehicleEntity {
 
@@ -248,6 +255,28 @@ public final class PuddleJumperEntity extends VehicleEntity {
             PuddleJumperEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> TARGET = SynchedEntityData.defineId(PuddleJumperEntity.class,
             EntityDataSerializers.INT);
+    // The cloak generator: how full it is, from 0 to 1, whether it runs the shield or the cloak, and the game time the
+    // shield may be raised again after it was knocked down
+    private static final EntityDataAccessor<Float> GENERATOR = SynchedEntityData.defineId(PuddleJumperEntity.class,
+            EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> SHIELD = SynchedEntityData.defineId(PuddleJumperEntity.class,
+            EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Boolean> CLOAKED = SynchedEntityData.defineId(PuddleJumperEntity.class,
+            EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Long> SHIELD_DOWN_UNTIL = SynchedEntityData.defineId(
+            PuddleJumperEntity.class, EntityDataSerializers.LONG);
+    // How finely clients are told how full the generator is, so its slow drain isn't sent every tick
+    private static final float GENERATOR_STEP = 1 / 200F;
+    // How long the cloak takes to come on or go off all the way, in ticks
+    private static final float CLOAK_TICKS = 20;
+    // Where the shield's middle is, above the jumper's middle underside, in blocks
+    public static final double SHIELD_MIDDLE = PuddleJumperEntity.HEIGHT / 2.0;
+    // A crash: how much of its speed it keeps at most, in a tick, to have stopped; how much of the fastest it has
+    // lately gone is still remembered each tick after; and how far on, in blocks, a block must stand for it to have
+    // met one
+    private static final double CRASH_STOP = 0.3;
+    private static final double CRASH_FADE = 0.8;
+    private static final double CRASH_REACH = 0.3;
     // With its drive off it drops like the weight it is: how much faster it falls each tick, and the fastest, in
     // blocks a tick
     private static final double FALL_GRAVITY = 0.08;
@@ -282,8 +311,24 @@ public final class PuddleJumperEntity extends VehicleEntity {
     // next leaves from, and when it may launch again, on the server
     private float bays;
     private float baysO;
+    // How much gate energy the cloak generator holds, on the server; below 0 until first set, when it fills
+    private double generator = -1;
+    // How far the cloak has come on, from 0 to 1, now and a tick ago
+    private float cloak;
+    private float cloakO;
+    // Watching for a crash, on the server: the fastest it has lately gone, in blocks a tick, and which way; how many
+    // ticks it has since gone far slower, and how fast it went as it began to
+    private double crashPeak;
+    private Vec3 crashWay = Vec3.ZERO;
+    private int slowTicks;
+    private double impactSpeed;
+    // On clients, the game time the shield last rose or fell, and whether it rose, for the sweep across it
+    private long shieldChanged = Long.MIN_VALUE;
+    private boolean shieldRose;
     private int launched;
     private long nextLaunch;
+    // How many ticks it has spent building its next drone, on the server
+    private int droneBuild;
     // On clients, how hard the engines run, from 0 to 1, now and a tick ago, and how fast it went last tick, in blocks
     private float thrust;
     private float thrustO;
@@ -340,6 +385,10 @@ public final class PuddleJumperEntity extends VehicleEntity {
         builder.define(PuddleJumperEntity.ARMED, false);
         builder.define(PuddleJumperEntity.FRIENDLY_FIRE, false);
         builder.define(PuddleJumperEntity.TARGET, -1);
+        builder.define(PuddleJumperEntity.GENERATOR, 1F);
+        builder.define(PuddleJumperEntity.SHIELD, false);
+        builder.define(PuddleJumperEntity.CLOAKED, false);
+        builder.define(PuddleJumperEntity.SHIELD_DOWN_UNTIL, 0L);
     }
 
     @Override
@@ -349,6 +398,22 @@ public final class PuddleJumperEntity extends VehicleEntity {
             this.seats.clear();
             this.seats.putAll(PuddleJumperEntity.decodeSeats(this.entityData.get(PuddleJumperEntity.SEATS)));
         }
+        // The shield rising or falling sweeps across its shell, but not as a jumper with its shield up first comes in
+        // sight
+        if (PuddleJumperEntity.SHIELD.equals(accessor) && this.level().isClientSide() && this.tickCount > 0) {
+            this.shieldChanged = this.level().getGameTime();
+            this.shieldRose = this.shieldUp();
+        }
+    }
+
+    /** @return the game time the shield last rose or fell, as its clients saw; only on clients */
+    public long shieldChanged() {
+        return this.shieldChanged;
+    }
+
+    /** @return whether the shield rose, rather than fell, when it last changed; only on clients */
+    public boolean shieldRose() {
+        return this.shieldRose;
     }
 
     @Override
@@ -451,6 +516,8 @@ public final class PuddleJumperEntity extends VehicleEntity {
                 1 / PuddleJumperEntity.HATCH_TICKS);
         this.baysO = this.bays;
         this.bays = Mth.approach(this.bays, this.armed() ? 1 : 0, 1 / PuddleJumperEntity.BAYS_TICKS);
+        this.cloakO = this.cloak;
+        this.cloak = Mth.approach(this.cloak, this.cloaked() ? 1 : 0, 1 / PuddleJumperEntity.CLOAK_TICKS);
         if (this.isLocalInstanceAuthoritative()) {
             // The pilot's client flies it; the server moves it only while no one does, to drift it to a stop
             final LivingEntity pilot = this.getControllingPassenger();
@@ -513,12 +580,16 @@ public final class PuddleJumperEntity extends VehicleEntity {
                 this.setDeltaMovement(moved);
             }
         }
+        if (this.lastPosition != null) {
+            this.watchForCrash(level, now.subtract(this.lastPosition));
+        }
         this.lastPosition = now;
         this.lastYaw = this.getYRot();
         this.stillTicks = still ? this.stillTicks + 1 : 0;
         if (!still) {
             this.seatStanders(level);
         }
+        this.runGenerator(level);
         // No pilot, no pods; nor near an open gate. Otherwise as the pilot chose by their button, or, if they haven't,
         // out off the ground; and for the turbo whether or not
         if (this.tickCount % 5 == 0) {
@@ -541,9 +612,79 @@ public final class PuddleJumperEntity extends VehicleEntity {
         if (this.headlights.any()) {
             this.headlights.clear(level);
         }
+        this.rebuildDrones();
         if (this.tickCount % PuddleJumperEntity.LINK_TICKS == 0) {
             this.dialer.gate();
             this.forgetLeftSeats(level);
+        }
+    }
+
+    // Flown into a block, by its pilot's client or drifting here, it stops dead; the server sees it go from its speed to
+    // nothing with a block the way it was going, and hurts it the harder the faster it met it, the shield taking the
+    // blow if it is up. A stop must last two ticks, so a tick with no word from the pilot's client isn't taken for
+    // one, and a jump through a gate is no crash at all
+    private void watchForCrash(final ServerLevel level, final Vec3 moved) {
+        final double speed = moved.length();
+        if (speed > PuddleJumperEntity.MOST_MOVED) {
+            this.crashPeak = 0;
+            this.slowTicks = 0;
+            return;
+        }
+        if (speed < this.crashPeak * PuddleJumperEntity.CRASH_STOP) {
+            if (++this.slowTicks == 1) {
+                this.impactSpeed = this.crashPeak;
+            }
+            if (this.slowTicks == 2) {
+                final JumperSettings settings = JumperSettings.current();
+                if (this.impactSpeed > settings.crashSpeed() && this.blockedToward(this.crashWay)) {
+                    this.crash(level, settings, this.impactSpeed, this.crashWay);
+                }
+                this.crashPeak = 0;
+            }
+            return;
+        }
+        this.slowTicks = 0;
+        if (speed >= this.crashPeak * PuddleJumperEntity.CRASH_FADE) {
+            this.crashWay = moved.scale(1 / Math.max(speed, 1.0E-6));
+        }
+        this.crashPeak = Math.max(speed, this.crashPeak * PuddleJumperEntity.CRASH_FADE);
+    }
+
+    // Whether the jumper, nose to tail, would meet a block a little further the way it was going
+    private boolean blockedToward(final Vec3 way) {
+        final Vec3 step = way.scale(PuddleJumperEntity.CRASH_REACH);
+        if (!this.level().noCollision(this, this.getBoundingBox().move(step))) {
+            return true;
+        }
+        for (final AABB end : this.ends(this.getYRot(), this.position())) {
+            if (!this.level().noCollision(this, end.move(step))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Met a block this fast, in blocks a tick, going this way: the faster, the harder it is hurt
+    private void crash(final ServerLevel level, final JumperSettings settings, final double speed, final Vec3 way) {
+        final float damage = (float) ((speed - settings.crashSpeed()) * settings.crashDamage());
+        if (damage <= 0) {
+            return;
+        }
+        this.playSound(SoundEvents.ZOMBIE_ATTACK_IRON_DOOR, (float) Math.min(1.5, 0.4 + speed), 0.7F);
+        final Vec3 from = this.position().add(0, PuddleJumperEntity.SHIELD_MIDDLE, 0).add(way.scale(10));
+        this.hurtFrom(level, level.damageSources().flyIntoWall(), damage, from);
+    }
+
+    // Short of drones, it builds them again, one at a time, slowly
+    private void rebuildDrones() {
+        final int ticks = JumperSettings.current().droneRefillTicks();
+        if (ticks <= 0 || this.drones() >= PuddleJumperEntity.DRONES) {
+            this.droneBuild = 0;
+            return;
+        }
+        if (++this.droneBuild >= ticks) {
+            this.droneBuild = 0;
+            this.entityData.set(PuddleJumperEntity.DRONES_LEFT, this.drones() + 1);
         }
     }
 
@@ -799,6 +940,8 @@ public final class PuddleJumperEntity extends VehicleEntity {
         }
         drone.launch(player, from, out, target, !this.friendlyFire());
         level.addFreshEntity(drone);
+        // Launching opens the bays through the cloak, which drops
+        this.setCloaked(false);
         if (!endless) {
             this.entityData.set(PuddleJumperEntity.DRONES_LEFT, this.drones() - 1);
         }
@@ -820,6 +963,8 @@ public final class PuddleJumperEntity extends VehicleEntity {
         this.setHeadlights(on);
         if (!on) {
             this.podsWanted = false;
+            this.setShield(false);
+            this.setCloaked(false);
             this.entityData.set(PuddleJumperEntity.ARMED, false);
             this.entityData.set(PuddleJumperEntity.TARGET, -1);
             // The computer goes dark, closing its screen for whoever works it
@@ -834,6 +979,181 @@ public final class PuddleJumperEntity extends VehicleEntity {
     /** Switches the headlights on, or off; they come on only while its drive is on. */
     public void setHeadlights(final boolean on) {
         this.entityData.set(PuddleJumperEntity.HEADLIGHTS, on && this.powered());
+    }
+
+    // The cloak generator. As on the show, where the expedition retuned a jumper's cloak to act as a shield, the one
+    // generator runs either the shield or the cloak, never both, from a charge of its own
+
+    /** @return how full the cloak generator is, from 0 to 1 */
+    public float generator() {
+        return this.entityData.get(PuddleJumperEntity.GENERATOR);
+    }
+
+    /** @return whether the shield is up */
+    public boolean shieldUp() {
+        return this.entityData.get(PuddleJumperEntity.SHIELD);
+    }
+
+    /** @return whether the cloak is on, or coming on */
+    public boolean cloaked() {
+        return this.entityData.get(PuddleJumperEntity.CLOAKED);
+    }
+
+    /** @return how far the cloak has come on, from 0 seen to 1 hidden, between the last tick and this one */
+    public float cloak(final float partialTick) {
+        return Mth.lerp(partialTick, this.cloakO, this.cloak);
+    }
+
+    /** @return how many ticks are left before the shield may be raised again after it was knocked down; 0 if none */
+    public long shieldDownTicks() {
+        return Math.max(0, this.entityData.get(PuddleJumperEntity.SHIELD_DOWN_UNTIL) - this.level().getGameTime());
+    }
+
+    /** @return how much gate energy the cloak generator holds now; only on the server */
+    public double generatorEnergy() {
+        if (this.generator < 0) {
+            this.generator = JumperSettings.current().generatorCapacity();
+        }
+        return this.generator;
+    }
+
+    /** Sets how much gate energy the cloak generator holds, up to its capacity; only on the server. */
+    public void setGeneratorEnergy(final double energy) {
+        final double capacity = JumperSettings.current().generatorCapacity();
+        this.generator = Mth.clamp(energy, 0, capacity);
+        final float share = (float) (this.generator / capacity);
+        // Told in steps, but always told once it is empty or full
+        final float told = share <= 0 || share >= 1 ? share
+                : Math.round(share / PuddleJumperEntity.GENERATOR_STEP) * PuddleJumperEntity.GENERATOR_STEP;
+        if (told != this.generator()) {
+            this.entityData.set(PuddleJumperEntity.GENERATOR, told);
+        }
+    }
+
+    // Each tick the shield or the cloak draws on the generator, and with neither running it refills while the drive is
+    // on. Emptied, the cloak goes off, and the shield is knocked down
+    private void runGenerator(final ServerLevel level) {
+        final JumperSettings settings = JumperSettings.current();
+        final double energy = this.generatorEnergy();
+        if (this.shieldUp()) {
+            this.setGeneratorEnergy(energy - settings.shieldDrain());
+            if (this.generatorEnergy() <= 0) {
+                this.knockDownShield(level);
+            }
+        } else if (this.cloaked()) {
+            this.setGeneratorEnergy(energy - settings.cloakDrain());
+            if (this.generatorEnergy() <= 0) {
+                this.setCloaked(false);
+            }
+        } else if (this.powered()) {
+            this.setGeneratorEnergy(energy + settings.rechargeRate());
+        } else {
+            // Keeps clients' share right after the capacity changes
+            this.setGeneratorEnergy(energy);
+        }
+    }
+
+    /**
+     * Raises the shield, dropping the cloak, if the drive is on, the generator holds any energy and the shield isn't
+     * knocked down; or lowers it.
+     *
+     * @return why the shield won't rise, or null if it did as asked
+     */
+    public @Nullable Component setShield(final boolean up) {
+        if (up == this.shieldUp()) {
+            return null;
+        }
+        if (up) {
+            final Component refusal = this.generatorRefusal(true);
+            if (refusal != null) {
+                return refusal;
+            }
+            this.setCloaked(false);
+        }
+        this.entityData.set(PuddleJumperEntity.SHIELD, up);
+        this.playSound(up ? SoundEvents.BEACON_ACTIVATE : SoundEvents.BEACON_DEACTIVATE, 0.6F, 1.6F);
+        return null;
+    }
+
+    /**
+     * Puts the cloak on, lowering the shield, if the drive is on and the generator holds any energy; or takes it off.
+     *
+     * @return why the cloak won't come on, or null if it did as asked
+     */
+    public @Nullable Component setCloak(final boolean on) {
+        if (on && !this.cloaked()) {
+            final Component refusal = this.generatorRefusal(false);
+            if (refusal != null) {
+                return refusal;
+            }
+            this.setShield(false);
+        }
+        this.setCloaked(on);
+        return null;
+    }
+
+    private void setCloaked(final boolean on) {
+        if (on != this.cloaked()) {
+            this.entityData.set(PuddleJumperEntity.CLOAKED, on);
+            this.playSound(on ? SoundEvents.BEACON_ACTIVATE : SoundEvents.BEACON_DEACTIVATE, 0.5F, 0.7F);
+        }
+    }
+
+    // Why the generator won't start the shield or the cloak, or null if it will
+    private @Nullable Component generatorRefusal(final boolean shield) {
+        if (!this.powered()) {
+            return Component.translatableWithFallback("message.sgcraft.puddle_jumper.generator_off",
+                    "The cloak generator needs the drive on").withStyle(ChatFormatting.RED);
+        }
+        if (shield && this.shieldDownTicks() > 0) {
+            return Component.translatableWithFallback("message.sgcraft.puddle_jumper.shield_recovering",
+                    "The shield recovers in %s seconds", (this.shieldDownTicks() + 19) / 20)
+                    .withStyle(ChatFormatting.RED);
+        }
+        if (this.generatorEnergy() <= 0) {
+            return Component.translatableWithFallback("message.sgcraft.puddle_jumper.generator_empty",
+                    "The cloak generator is empty").withStyle(ChatFormatting.RED);
+        }
+        return null;
+    }
+
+    // The generator emptied with the shield up: it falls, and stays down a while
+    private void knockDownShield(final ServerLevel level) {
+        this.entityData.set(PuddleJumperEntity.SHIELD, false);
+        this.entityData.set(PuddleJumperEntity.SHIELD_DOWN_UNTIL, level.getGameTime()
+                + JumperSettings.current().knockdownTicks());
+        this.playSound(SoundEvents.BEACON_DEACTIVATE, 1, 0.8F);
+        this.playSound(SoundEvents.GENERIC_EXPLODE.value(), 0.4F, 1.8F);
+    }
+
+    /** Clears the shield's knockdown, so it may be raised again at once. */
+    public void clearKnockdown() {
+        this.entityData.set(PuddleJumperEntity.SHIELD_DOWN_UNTIL, 0L);
+    }
+
+    // The shield stops a blow, spending energy on each point of damage, and its clients are shown where it was struck;
+    // what the generator can't pay for gets through to the hull. Returns the damage that gets through
+    private float shieldHit(final ServerLevel level, final Vec3 from, final float damage) {
+        final JumperSettings settings = JumperSettings.current();
+        final double cost = damage * settings.hitCost();
+        final double energy = this.generatorEnergy();
+        final boolean collapsed = cost >= energy;
+        this.setGeneratorEnergy(energy - cost);
+        // Where it was struck, from the shield's middle, in the jumper's own frame
+        final Vec3 middle = this.position().add(0, PuddleJumperEntity.SHIELD_MIDDLE, 0);
+        Vec3 way = JumperHull.toLocal(from.subtract(middle), this.getYRot());
+        if (way.lengthSqr() < 1.0E-6) {
+            way = new Vec3(0, -1, 0);
+        }
+        final float strength = (float) Mth.clamp(cost / Math.max(1, settings.generatorCapacity()) * 8, 0.25, 1);
+        SGNetwork.sendNear(this, new JumperPayloads.ShieldHit(this.getId(), way.normalize().toVector3f(), strength,
+                collapsed));
+        this.playSound(SoundEvents.AMETHYST_BLOCK_RESONATE, 1, 1.4F + this.random.nextFloat() * 0.3F);
+        if (!collapsed) {
+            return 0;
+        }
+        this.knockDownShield(level);
+        return settings.hitCost() <= 0 ? 0 : (float) ((cost - energy) / settings.hitCost());
     }
 
     @Override
@@ -1293,8 +1613,9 @@ public final class PuddleJumperEntity extends VehicleEntity {
     private void useStanding(final ServerPlayer player) {
         final JumperSeat aimed = this.seatLookedAt(player, null);
         if (aimed != null) {
-            // Only from within the hull, not through its windows or walls
-            if (!this.seatInSight(player, aimed)) {
+            // Only from within the hull, not through its windows or walls: anywhere in the cabin, though the
+            // bulkhead's doorway frame stands across the way to a seat ahead, or else with nothing of the hull between
+            if (!this.interior(player.getEyePosition()) && !this.seatInSight(player, aimed)) {
                 return;
             }
             if (this.occupant(aimed) != null) {
@@ -1324,7 +1645,11 @@ public final class PuddleJumperEntity extends VehicleEntity {
         /** Arms its drones, sliding their bays out, or stows them again. */
         WEAPONS(new Vec3(0.1, 0.875, 2.95)),
         /** Lets its drones be launched at, and their blasts reach, creatures that aren't hostile, or no longer. */
-        FRIENDLY_FIRE(new Vec3(-0.15, 0.875, 2.95));
+        FRIENDLY_FIRE(new Vec3(-0.15, 0.875, 2.95)),
+        /** Raises or lowers the shield, which drops the cloak. */
+        SHIELD(new Vec3(-0.4, 0.875, 2.95)),
+        /** Puts the cloak on or takes it off, which lowers the shield. */
+        CLOAK(new Vec3(-0.65, 0.875, 2.95));
 
         /** @return whether the button works its weapons, so is its weapons' operator's to press */
         public boolean weapons() {
@@ -1360,8 +1685,17 @@ public final class PuddleJumperEntity extends VehicleEntity {
                 this.entityData.set(PuddleJumperEntity.TARGET, -1);
             }
             case FRIENDLY_FIRE -> this.entityData.set(PuddleJumperEntity.FRIENDLY_FIRE, !this.friendlyFire());
+            case SHIELD -> this.refuse(player, this.setShield(!this.shieldUp()));
+            case CLOAK -> this.refuse(player, this.setCloak(!this.cloaked()));
         }
         this.playSound(SoundEvents.STONE_BUTTON_CLICK_ON, 0.6F, 1.4F);
+    }
+
+    // Tells a player why what they asked for wasn't done, if it wasn't
+    private void refuse(final ServerPlayer player, final @Nullable Component refusal) {
+        if (refusal != null) {
+            player.sendOverlayMessage(refusal);
+        }
     }
 
     // The button the pilot looks at, if they look near enough at one
@@ -1487,14 +1821,39 @@ public final class PuddleJumperEntity extends VehicleEntity {
         this.discard();
     }
 
-    // Those aboard, seated or standing, can't hurt it, and others hurt it less than they would a boat
+    // Those aboard, seated or standing, can't hurt it, and others hurt it less than they would a boat. With its shield
+    // up the shield takes the blow, and only what it can't stop reaches the hull; a player in creative, breaking it as
+    // they would a boat, and whatever kills outright, go through
     @Override
     public boolean hurtServer(final ServerLevel level, final DamageSource source, final float damage) {
+        return this.hurtFrom(level, source, damage, null);
+    }
+
+    /**
+     * Hurts the jumper as {@link #hurtServer} does, its shield taking the blow if it is up, struck from a point.
+     *
+     * @param from where the blow came from, which the shield shows it struck nearest; null for wherever the damage
+     *     says, its source's position or its attacker's eyes, or else from below
+     * @return whether the hull was hurt
+     */
+    public boolean hurtFrom(final ServerLevel level, final DamageSource source, final float damage,
+            final @Nullable Vec3 from) {
         final Entity attacker = source.getEntity();
         if (attacker != null && (attacker.getVehicle() == this || this.inside(attacker.getEyePosition()))) {
             return false;
         }
-        return super.hurtServer(level, source, damage / PuddleJumperEntity.TOUGHNESS);
+        float through = damage;
+        if (this.shieldUp() && !source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)
+                && !(attacker instanceof final Player player && player.getAbilities().instabuild)) {
+            final Vec3 struck = from != null ? from : source.getSourcePosition() != null ? source.getSourcePosition()
+                    : attacker != null ? attacker.getEyePosition() : this.position().add(0, -1, 0);
+            through = this.shieldHit(level, struck, damage);
+            // Stopped, as an arrow glances off it
+            if (through <= 0) {
+                return false;
+            }
+        }
+        return super.hurtServer(level, source, through / PuddleJumperEntity.TOUGHNESS);
     }
 
     @Override
@@ -1525,6 +1884,12 @@ public final class PuddleJumperEntity extends VehicleEntity {
         this.entityData.set(PuddleJumperEntity.ARMED, input.getBooleanOr("armed", false) && this.powered());
         this.entityData.set(PuddleJumperEntity.FRIENDLY_FIRE, input.getBooleanOr("friendly_fire", false));
         this.entityData.set(PuddleJumperEntity.HEADLIGHTS, input.getBooleanOr("headlights", false));
+        this.setGeneratorEnergy(input.getDoubleOr("generator", JumperSettings.current().generatorCapacity()));
+        this.entityData.set(PuddleJumperEntity.SHIELD, input.getBooleanOr("shield", false) && this.powered());
+        this.entityData.set(PuddleJumperEntity.CLOAKED, input.getBooleanOr("cloaked", false) && this.powered()
+                && !this.shieldUp());
+        this.cloak = this.cloaked() ? 1 : 0;
+        this.cloakO = this.cloak;
         // Lights left standing when last saved, which its next move takes away
         this.headlights.remember(input.read("lights", BlockPos.CODEC.listOf()).orElse(List.of()));
     }
@@ -1541,6 +1906,9 @@ public final class PuddleJumperEntity extends VehicleEntity {
         output.putBoolean("armed", this.armed());
         output.putBoolean("friendly_fire", this.friendlyFire());
         output.putBoolean("headlights", this.headlights());
+        output.putDouble("generator", this.generatorEnergy());
+        output.putBoolean("shield", this.shieldUp());
+        output.putBoolean("cloaked", this.cloaked());
         output.store("lights", BlockPos.CODEC.listOf(), this.headlights.placed());
     }
 

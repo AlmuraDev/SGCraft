@@ -35,6 +35,7 @@ import com.almuradev.sgcraft.mod.client.gate.GateBaseScreen;
 import com.almuradev.sgcraft.mod.client.gate.GateLoopSounds;
 import com.almuradev.sgcraft.mod.client.generator.GeneratorHum;
 import com.almuradev.sgcraft.mod.client.jumper.JumperControls;
+import com.almuradev.sgcraft.mod.client.jumper.JumperShield;
 import com.almuradev.sgcraft.mod.client.malp.MalpConfigScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleScreen;
 import com.almuradev.sgcraft.mod.client.malp.MalpConsoleUsers;
@@ -54,6 +55,7 @@ import com.almuradev.sgcraft.mod.client.view.RemoteViewClient;
 import com.almuradev.sgcraft.mod.computer.ComputerPayloads;
 import com.almuradev.sgcraft.mod.dhd.DhdHooks;
 import com.almuradev.sgcraft.mod.entity.JumperHooks;
+import com.almuradev.sgcraft.mod.entity.JumperPayloads;
 import com.almuradev.sgcraft.mod.gate.GateBaseInfo;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
@@ -116,6 +118,7 @@ public final class SGClient {
         SGNetwork.onClient(ComputerPayloads.ConfigState.TYPE, state -> SGClient.show(ComputerConfigScreen.class,
                 state, state.open(), ComputerConfigScreen::new, ComputerConfigScreen::update));
         SGNetwork.onClient(ObeliskPayloads.Beam.TYPE, BeamEffects::handle);
+        SGNetwork.onClient(JumperPayloads.ShieldHit.TYPE, JumperShield::handle);
         SGNetwork.onClient(ObeliskPayloads.Fade.TYPE, BeamEffects::fade);
         SGNetwork.onClient(RingPayloads.Hold.TYPE, RingHoldInput::handle);
         SGNetwork.onClient(ObeliskPayloads.State.TYPE, state -> SGClient.show(ObeliskScreen.class, state,
@@ -137,6 +140,7 @@ public final class SGClient {
         RemoteViewClient.disconnected();
         SharedSettings.forget();
         RingHoldInput.disconnected();
+        JumperShield.clear();
     }
 
     // A gate's base: the address goes to the base's menu the server has just opened, or opens on its own for a player

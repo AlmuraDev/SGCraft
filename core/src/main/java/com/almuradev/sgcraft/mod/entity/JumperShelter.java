@@ -25,12 +25,16 @@
 
 package com.almuradev.sgcraft.mod.entity;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.util.Mth;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -72,17 +76,70 @@ public final class JumperShelter {
 
     /** @return whether a point lies inside a jumper's hull, between its walls, floor and roof */
     public static boolean inside(final Level level, final Vec3 point) {
+        return JumperShelter.around(level, point) != null;
+    }
+
+    /** @return the jumper whose hull a point lies inside, between its walls, floor and roof, if any */
+    public static @Nullable PuddleJumperEntity around(final Level level, final Vec3 point) {
         // Asked of every mob's targets and every entity in water, so a world with no jumper answers at once
         if (!JumperIndex.any(level)) {
-            return false;
+            return null;
         }
         for (final PuddleJumperEntity jumper : JumperIndex.near(level,
                 new AABB(point, point).inflate(JumperShelter.REACH))) {
             if (JumperHull.within(JumperHull.toLocal(point.subtract(jumper.position()), jumper.getYRot()))) {
-                return true;
+                return jumper;
             }
         }
-        return false;
+        return null;
+    }
+
+    /**
+     * @return whether an entity rides in, or stands inside, a cloaked jumper, which hides it from mobs; one that isn't
+     *     cloaked, mobs may still go after
+     */
+    public static boolean hidden(final Entity entity) {
+        final PuddleJumperEntity jumper = JumperShelter.shelter(entity);
+        return jumper != null && jumper.cloaked();
+    }
+
+    /**
+     * A blow from outside a jumper, at a player riding in it or standing inside it, falls on the jumper instead: on its
+     * shield if it is up, else on its hull. A blow struck from inside, or one that comes from nowhere, such as hunger,
+     * reaches the player, as does any blow while the cargo door is down; an explosion has already struck the jumper
+     * itself, so it is only kept off them.
+     *
+     * @return whether the jumper took the blow, so the player takes none
+     */
+    public static boolean takeBlow(final Player player, final ServerLevel level, final DamageSource source,
+            final float damage) {
+        final PuddleJumperEntity jumper = JumperShelter.shelter(player);
+        // With its cargo door down, the cabin is open, and blows reach those inside
+        if (jumper == null || jumper.hatchOpen() || source.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) {
+            return false;
+        }
+        // Whether the blow came from inside is told by who struck it, not by where it landed: an arrow that has
+        // reached a rider is inside the hull by then, though it was shot from outside
+        final Entity attacker = source.getEntity();
+        final boolean thrown = source.getDirectEntity() != null && source.getDirectEntity() != attacker;
+        final Vec3 from = attacker != null ? attacker.getEyePosition() : source.getSourcePosition();
+        if (from == null || attacker != null && (attacker.getRootVehicle() == jumper || jumper.inside(from))
+                || attacker == null && !thrown && jumper.inside(from)) {
+            return false;
+        }
+        if (!source.is(DamageTypeTags.IS_EXPLOSION)) {
+            jumper.hurtFrom(level, source, damage, from);
+        }
+        return true;
+    }
+
+    /** @return the jumper an entity rides in, or stands inside the hull of with its eyes, if any */
+    public static @Nullable PuddleJumperEntity shelter(final Entity entity) {
+        if (entity instanceof PuddleJumperEntity) {
+            return null;
+        }
+        return entity.getRootVehicle() instanceof final PuddleJumperEntity jumper ? jumper
+                : JumperShelter.around(entity.level(), entity.getEyePosition());
     }
 
     /** @return the jumpers near a point, whose roofs may shelter the columns round it */

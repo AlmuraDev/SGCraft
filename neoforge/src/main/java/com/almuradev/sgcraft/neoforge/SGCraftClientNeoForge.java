@@ -68,6 +68,7 @@ import com.almuradev.sgcraft.mod.rings.RingPlatformMenu;
 import com.almuradev.sgcraft.mod.shield.CityShieldMenu;
 import com.almuradev.sgcraft.mod.zpm.ZpmMenu;
 import net.minecraft.client.renderer.entity.NoopRenderer;
+import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
@@ -120,6 +121,16 @@ public final class SGCraftClientNeoForge {
                 hotbar.render(graphics, deltaTracker);
             }
         });
+        // and the player's own bars on its console, in place of the game's
+        for (final Identifier bar : new Identifier[] {VanillaGuiLayers.PLAYER_HEALTH, VanillaGuiLayers.ARMOR_LEVEL,
+                VanillaGuiLayers.FOOD_LEVEL, VanillaGuiLayers.AIR_LEVEL, VanillaGuiLayers.CONTEXTUAL_INFO_BAR_BACKGROUND,
+                VanillaGuiLayers.CONTEXTUAL_INFO_BAR, VanillaGuiLayers.EXPERIENCE_LEVEL}) {
+            event.wrapLayer(bar, layer -> (graphics, deltaTracker) -> {
+                if (!JumperHud.vitalsShown()) {
+                    layer.render(graphics, deltaTracker);
+                }
+            });
+        }
     }
 
     @SubscribeEvent
@@ -131,6 +142,8 @@ public final class SGCraftClientNeoForge {
         event.register(JumperKeys.PODS);
         event.register(JumperKeys.DOOR);
         event.register(JumperKeys.COMPUTER);
+        event.register(JumperKeys.SHIELD);
+        event.register(JumperKeys.CLOAK);
         event.register(JumperKeys.ARM);
         event.register(JumperKeys.TARGET);
         event.register(JumperKeys.FIRE);

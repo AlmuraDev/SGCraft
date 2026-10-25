@@ -115,6 +115,7 @@ final class SGPayloads {
                 JumperPayloads.Computer::handle);
         SGNetwork.serverbound(JumperPayloads.Fire.TYPE, JumperPayloads.Fire::new, JumperPayloads.Fire::handle);
         SGNetwork.serverbound(JumperPayloads.Target.TYPE, JumperPayloads.Target::new, JumperPayloads.Target::handle);
+        SGNetwork.clientbound(JumperPayloads.ShieldHit.TYPE, JumperPayloads.ShieldHit::new);
         // The explorer dialer: its list out, its buttons in
         SGNetwork.clientbound(ExplorerPayloads.State.TYPE, ExplorerPayloads.State::new);
         SGNetwork.serverbound(ExplorerPayloads.Action.TYPE, ExplorerPayloads.Action::new, ExplorerDialer::action);

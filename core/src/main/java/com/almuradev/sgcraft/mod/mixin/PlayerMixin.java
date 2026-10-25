@@ -37,7 +37,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 // A puddle jumper's riders stay in their seats while it moves, and are told to wait if they try to get up; and those
-// riding in one, or inside its hull, are safe from mobs, which neither go after them nor keep after them
+// riding in a cloaked one, or inside its hull, are hidden from mobs, which neither go after them nor keep after them;
+// an uncloaked jumper's riders mobs may attack, and its shield or hull takes their blows (see JumperShelter)
 @Mixin(Player.class)
 abstract class PlayerMixin {
 
@@ -55,6 +56,6 @@ abstract class PlayerMixin {
 
     @ModifyReturnValue(method = "canBeSeenAsEnemy", at = @At("RETURN"))
     private boolean sgcraft$safeInJumper(final boolean enemy) {
-        return enemy && !JumperShelter.sheltered((Player) (Object) this);
+        return enemy && !JumperShelter.hidden((Player) (Object) this);
     }
 }

@@ -29,6 +29,8 @@ import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.resources.Identifier;
 import org.jspecify.annotations.Nullable;
 
+import java.util.List;
+
 /** What a puddle jumper's renderer needs of it for a frame. */
 public final class JumperRenderState extends EntityRenderState {
 
@@ -57,4 +59,16 @@ public final class JumperRenderState extends EntityRenderState {
     public boolean powered;
     /** The computer's screen as it is now, if the jumper is near enough to the camera to show it. */
     public @Nullable Identifier picture;
+    /** How far its cloak has come on, from 0 seen to 1 hidden, and whether the camera's player is inside it. */
+    public float cloak;
+    public boolean viewerInside;
+    /** How fast it moves, as a share of its top speed without the turbo, which shows its shimmer while cloaked. */
+    public float shimmer;
+    /** The game time, in ticks, with the part tick. */
+    public float time;
+    /** The blows showing on its shield. */
+    public List<JumperShield.Hit> hits = List.of();
+    /** How long ago its shield last rose or fell, in ticks, and whether it rose. */
+    public float shieldAge = Float.MAX_VALUE;
+    public boolean shieldRose;
 }

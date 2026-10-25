@@ -61,6 +61,15 @@ abstract class ServerPlayerMixin {
         }
     }
 
+    // A blow from outside a puddle jumper at someone inside it falls on the jumper, its shield first
+    @Inject(method = "hurtServer", at = @At("HEAD"), cancellable = true)
+    private void sgcraft$jumperTakesBlow(final ServerLevel level, final DamageSource source, final float damage,
+            final CallbackInfoReturnable<Boolean> callback) {
+        if (JumperShelter.takeBlow((ServerPlayer) (Object) this, level, source, damage)) {
+            callback.setReturnValue(false);
+        }
+    }
+
     @Inject(method = "tick", at = @At("TAIL"))
     private void sgcraft$putOutSheltered(final CallbackInfo callback) {
         final ServerPlayer player = (ServerPlayer) (Object) this;

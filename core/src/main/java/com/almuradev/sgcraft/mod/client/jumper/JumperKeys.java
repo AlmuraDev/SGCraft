@@ -42,14 +42,14 @@ public final class JumperKeys {
             JumperKeys.CATEGORY);
     public static final KeyMapping HEADLIGHTS = new KeyMapping("key.sgcraft.jumper_headlights", InputConstants.KEY_H,
             JumperKeys.CATEGORY);
-    public static final KeyMapping POWER = new KeyMapping("key.sgcraft.jumper_power", InputConstants.KEY_O,
+    public static final KeyMapping POWER = new KeyMapping("key.sgcraft.jumper_power", InputConstants.KEY_I,
             JumperKeys.CATEGORY);
     public static final KeyMapping PODS = new KeyMapping("key.sgcraft.jumper_pods", InputConstants.KEY_R,
             JumperKeys.CATEGORY);
     public static final KeyMapping DOOR = new KeyMapping("key.sgcraft.jumper_door", InputConstants.KEY_G,
             JumperKeys.CATEGORY);
     // The drones: the bays swung out or in, the next hostile locked as the target, and a drone launched at it
-    public static final KeyMapping ARM = new KeyMapping("key.sgcraft.jumper_arm", InputConstants.KEY_B,
+    public static final KeyMapping ARM = new KeyMapping("key.sgcraft.jumper_arm", InputConstants.KEY_Y,
             JumperKeys.CATEGORY);
     public static final KeyMapping TARGET = new KeyMapping("key.sgcraft.jumper_target", InputConstants.KEY_Z,
             JumperKeys.CATEGORY);
@@ -59,6 +59,11 @@ public final class JumperKeys {
             InputConstants.KEY_N, JumperKeys.CATEGORY);
     // Opens the computer aboard, from the pilot's seat or the one beside it
     public static final KeyMapping COMPUTER = new KeyMapping("key.sgcraft.jumper_computer", InputConstants.KEY_K,
+            JumperKeys.CATEGORY);
+    // The cloak generator, which the pilot runs as a shield or as a cloak, one at a time
+    public static final KeyMapping SHIELD = new KeyMapping("key.sgcraft.jumper_shield", InputConstants.KEY_J,
+            JumperKeys.CATEGORY);
+    public static final KeyMapping CLOAK = new KeyMapping("key.sgcraft.jumper_cloak", InputConstants.KEY_X,
             JumperKeys.CATEGORY);
 
     private JumperKeys() {

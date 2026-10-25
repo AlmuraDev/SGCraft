@@ -186,6 +186,7 @@ public final class SGCommands {
                 .then(SGAddressCommands.addresses())
                 .then(SGMalpCommands.malp())
                 .then(SGMalpCommands.battery())
+                .then(SGJumperCommands.jumper())
                 .then(SGShieldCommands.shields())
                 .then(SGExplorerCommands.explorer())
                 .then(SGZpmCommands.zpm())

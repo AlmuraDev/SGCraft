@@ -73,6 +73,7 @@ public final class SettingsCatalog {
         ENERGY(SettingsCatalog.text("page.energy", "Energy")),
         SHIELDS(SettingsCatalog.text("page.shields", "Shields")),
         MALP(SettingsCatalog.text("page.malp", "MALP")),
+        JUMPER(SettingsCatalog.text("page.jumper", "Jumper")),
         WORLDGEN(SettingsCatalog.text("page.worldgen", "Worldgen"));
 
         private final Component title;
@@ -600,6 +601,39 @@ public final class SettingsCatalog {
                 SettingsCatalog.text("malp.tablet_drain.tip", "How much gate energy a MALP tablet uses from its own "
                         + "battery each tick while it shows a live feed"), 0, false,
                 config -> config.malp().tabletDrain());
+
+        add.page(Page.JUMPER, SettingsCatalog.text("section.jumper_generator", "Shield and cloak"));
+        add.decimal("jumper.generator_capacity", SettingsCatalog.text("jumper.generator_capacity",
+                "Generator capacity"), SettingsCatalog.text("jumper.generator_capacity.tip", "The most gate energy a "
+                + "puddle jumper's cloak generator holds"), 1, false,
+                config -> config.options().jumper().generatorCapacity());
+        add.decimal("jumper.recharge_rate", SettingsCatalog.text("jumper.recharge_rate", "Recharge per tick"),
+                SettingsCatalog.text("jumper.recharge_rate.tip", "How much gate energy the generator gains each tick "
+                        + "while the drive is on and neither the shield nor the cloak runs"), 0, false,
+                config -> config.options().jumper().rechargeRate());
+        add.decimal("jumper.shield_drain", SettingsCatalog.text("jumper.shield_drain", "Shield energy per tick"),
+                SettingsCatalog.text("jumper.shield_drain.tip", "How much gate energy the shield uses each tick while "
+                        + "it is up"), 0, false, config -> config.options().jumper().shieldDrain());
+        add.decimal("jumper.cloak_drain", SettingsCatalog.text("jumper.cloak_drain", "Cloak energy per tick"),
+                SettingsCatalog.text("jumper.cloak_drain.tip", "How much gate energy the cloak uses each tick while it "
+                        + "is on"), 0, false, config -> config.options().jumper().cloakDrain());
+        add.decimal("jumper.hit_cost", SettingsCatalog.text("jumper.hit_cost", "Energy per damage"),
+                SettingsCatalog.text("jumper.hit_cost.tip", "How much gate energy the shield spends on each point of "
+                        + "damage it stops"), 0, false, config -> config.options().jumper().hitCost());
+        add.whole("jumper.knockdown_ticks", SettingsCatalog.text("jumper.knockdown_ticks", "Knocked down for"),
+                SettingsCatalog.text("jumper.knockdown_ticks.tip", "How long the shield stays down once its energy "
+                        + "runs out, in ticks"), 0, 72_000, config -> config.options().jumper().knockdownTicks());
+        add.decimal("jumper.crash_speed", SettingsCatalog.text("jumper.crash_speed", "Safe crash speed"),
+                SettingsCatalog.text("jumper.crash_speed.tip", "How fast a jumper may meet a block, in blocks a tick, "
+                        + "before it is hurt"), 0, false, config -> config.options().jumper().crashSpeed());
+        add.decimal("jumper.crash_damage", SettingsCatalog.text("jumper.crash_damage", "Crash damage"),
+                SettingsCatalog.text("jumper.crash_damage.tip", "How much damage a jumper takes meeting a block, for "
+                        + "each block a tick it goes faster than the safe speed"), 0, false,
+                config -> config.options().jumper().crashDamage());
+        add.whole("jumper.drone_refill_ticks", SettingsCatalog.text("jumper.drone_refill_ticks", "Drone rebuild time"),
+                SettingsCatalog.text("jumper.drone_refill_ticks.tip", "How long a jumper takes to build each drone it "
+                        + "has launched again, in ticks; 0 never does"), 0, 72_000,
+                config -> config.options().jumper().droneRefillTicks());
 
         add.page(Page.WORLDGEN, SettingsCatalog.text("section.naquadah_ore", "Naquadah ore"));
         add.bool("worldgen.naquadah_ore.enable_naquadah_ore",

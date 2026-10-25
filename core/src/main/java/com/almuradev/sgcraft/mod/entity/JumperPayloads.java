@@ -29,11 +29,14 @@ import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.network.SGPacket;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import org.joml.Vector3f;
+import org.joml.Vector3fc;
 
 /**
  * What a puddle jumper's pilot tells the server beside how the jumper flies, which their client sends as it would a
  * boat's: whether they want the drive pods out, for the turbo, and the dashboard's buttons pressed by their keys. The
- * server takes these only from the player at the helm; and the computer's key, from either front seat.
+ * server takes these only from the player at the helm; and the computer's key, from either front seat. The server
+ * tells clients near a jumper where its shield was struck.
  */
 public final class JumperPayloads {
 
@@ -131,6 +134,36 @@ public final class JumperPayloads {
             if (player.getVehicle() instanceof final PuddleJumperEntity jumper) {
                 jumper.shareTarget(player, target.target);
             }
+        }
+    }
+
+    /**
+     * A jumper's shield stopped a blow, which the clients near it show where it fell.
+     *
+     * @param jumper the jumper's entity id
+     * @param way which way from the shield's middle it was struck, in the jumper's own frame, as a unit vector
+     * @param strength how hard, from a glancing 0.25 to 1
+     * @param collapsed whether the blow emptied the generator, knocking the shield down
+     */
+    public record ShieldHit(int jumper, Vector3fc way, float strength, boolean collapsed) implements SGPacket {
+
+        public static final Type<ShieldHit> TYPE = new Type<>(SGCraft.id("jumper_shield_hit"));
+
+        public ShieldHit(final FriendlyByteBuf buf) {
+            this(buf.readVarInt(), buf.readVector3f(), buf.readFloat(), buf.readBoolean());
+        }
+
+        @Override
+        public void write(final FriendlyByteBuf buf) {
+            buf.writeVarInt(this.jumper);
+            buf.writeVector3f(new Vector3f(this.way));
+            buf.writeFloat(this.strength);
+            buf.writeBoolean(this.collapsed);
+        }
+
+        @Override
+        public Type<ShieldHit> type() {
+            return ShieldHit.TYPE;
         }
     }
 

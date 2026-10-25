@@ -65,8 +65,9 @@ import java.util.Optional;
  *
  * <p>Two panes stand either side of the screen, angled in like the cockpit's windows. The left one holds the world,
  * the biome and the time of day, the scanner, a round map of the ground round the jumper that fills in as the world
- * arrives (see {@link JumperMap}), the jumper's position and the distance to the gate the computer links to. The right
- * one holds the speed and height dials, the height above the ground, the climb, whether the drive is on
+ * arrives (see {@link JumperMap}), the jumper's position, the distance to the gate the computer links to, and how full
+ * the cloak generator is, which the shield and the cloak run on, with the seconds till the shield may rise again while
+ * it is knocked down. The right one holds the speed and height dials, the height above the ground, the climb, whether the drive is on
  * or off, and the jumper's systems, each lit while it is on, the drive pods' lamp yellow while their arms move them and
  * green once they are out. Between them the
  * hotbar sits on a console strip of its own, its slots cut at the corners too. Where the linked gate is in view, a
@@ -128,12 +129,15 @@ public final class JumperHud {
     // The dials: how many segments, how tall, and what each stands for: meters a second of speed, and blocks above the
     // ground
     private static final int SEGMENTS = 8;
-    private static final int SEGMENT_HEIGHT = 6;
+    private static final int SEGMENT_HEIGHT = 5;
     private static final double SEGMENT_SPEED = 5;
     private static final double SEGMENT_GROUND = 4;
     // The system lamps' size
     private static final int LAMP_WIDTH = 44;
     private static final int LAMP_HEIGHT = 11;
+    // The cloak generator's charge: how wide each of its segments, and below what share it shows low
+    private static final int GENERATOR_SEGMENT = 4;
+    private static final float GENERATOR_LOW = 0.3F;
     // How far down the height dial looks for the ground, in blocks
     private static final int GROUND_REACH = 128;
     // How far back the camera is in third person, as CameraMixin puts it, in blocks
@@ -141,6 +145,13 @@ public final class JumperHud {
     // The hotbar's size and its slots', as the game's is, so the health and food above it sit as they always do
     private static final int HOTBAR_WIDTH = 182;
     private static final int SLOT = 20;
+    // The player's own readings over the hotbar: the strip's height, how wide each reading's name is, how many
+    // segments its bar has and how wide each is, and how wide its reading after it
+    private static final int VITALS_HEIGHT = 25;
+    private static final int VITAL_LABEL = 30;
+    private static final int VITAL_SEGMENTS = 10;
+    private static final int VITAL_SEGMENT = 4;
+    private static final int VITAL_READING = 16;
     // The compass tape along the top: how wide and tall, how far from the top, how many degrees it shows either side
     // of the heading, and how far apart its ticks are, in degrees
     private static final int COMPASS_WIDTH = 200;
@@ -493,6 +504,37 @@ public final class JumperHud {
                 .orElse(Component.translatableWithFallback("hud.sgcraft.jumper.no_gate", "NO GATE").getString());
         pane.text(font, font.plainSubstrByWidth(gateText, width), left, below + JumperHud.LINE * 2,
                 gate.isPresent() ? JumperHud.GREEN : JumperHud.FAINT);
+        JumperHud.generator(font, pane, jumper, left, below + JumperHud.LINE * 3 + 3, width);
+    }
+
+    // The cloak generator's charge, under the scanner: its name, a row of segments lit as far as it is full, blue, or
+    // yellow once low, and how full it is; while the shield is knocked down, the segments are red and the seconds
+    // till it may rise again blink in place of how full
+    private static void generator(final Font font, final Surface pane, final PuddleJumperEntity jumper,
+            final int left, final int top, final int width) {
+        final long down = jumper.shieldDownTicks();
+        final boolean blink = jumper.level().getGameTime() / 10 % 2 == 0;
+        final float charge = jumper.generator();
+        pane.text(font, Component.translatableWithFallback("hud.sgcraft.jumper.generator", "GEN").getString(), left,
+                top, JumperHud.BLUE);
+        final int barLeft = left + 22;
+        final int barRight = left + width - 26;
+        final int segments = (barRight - barLeft) / JumperHud.GENERATOR_SEGMENT;
+        final int lit = (int) Math.ceil(charge * segments - 0.2);
+        final int color = down > 0 ? JumperHud.RED : charge < JumperHud.GENERATOR_LOW ? JumperHud.YELLOW
+                : JumperHud.BLUE;
+        for (int segment = 0; segment < segments; segment++) {
+            final int x = barLeft + segment * JumperHud.GENERATOR_SEGMENT;
+            pane.fill(x, top + 1, x + JumperHud.GENERATOR_SEGMENT - 1, top + 7, segment < lit ? color
+                    : JumperHud.UNLIT);
+        }
+        final String reading = down > 0
+                ? Component.translatableWithFallback("hud.sgcraft.jumper.generator_down", "%sS",
+                        (down + 19) / 20).getString()
+                : Math.round(charge * 100) + "%";
+        if (down <= 0 || blink) {
+            pane.text(font, reading, left + width - font.width(reading), top, down > 0 ? JumperHud.RED : color);
+        }
     }
 
     // What the right pane shows: the speed and height dials, the readings beside them, the power and the systems' lamps
@@ -554,6 +596,16 @@ public final class JumperHud {
         JumperHud.lamp(pane, font, right, lower + JumperHud.LAMP_HEIGHT + 2,
                 Component.translatableWithFallback("hud.sgcraft.jumper.friendly_fire", "FRIEND"),
                 jumper.friendlyFire() ? JumperHud.YELLOW : 0);
+        // The cloak generator's: the shield's lamp green while it is up and red while it is knocked down, and the
+        // cloak's yellow while it comes on or goes off and green once it is on
+        final int generatorRow = lower + (JumperHud.LAMP_HEIGHT + 2) * 2;
+        JumperHud.lamp(pane, font, left, generatorRow, Component.translatableWithFallback("hud.sgcraft.jumper.shield",
+                "SHIELD"), jumper.shieldUp() ? JumperHud.GREEN : jumper.shieldDownTicks() > 0 ? JumperHud.RED : 0);
+        final float cloak = jumper.cloak(1);
+        final int cloakLamp = jumper.cloaked() ? cloak >= 1 ? JumperHud.GREEN : JumperHud.YELLOW
+                : cloak > 0 ? JumperHud.YELLOW : 0;
+        JumperHud.lamp(pane, font, right, generatorRow, Component.translatableWithFallback("hud.sgcraft.jumper.cloak",
+                "CLOAK"), cloakLamp);
     }
 
     // A vertical bar of segments, lit from the bottom as far as a reading, in segments
@@ -850,7 +902,9 @@ public final class JumperHud {
             new String[] {JumperHud.keyName(JumperKeys.POWER), JumperHud.keyLabel("drive", "DRIVE")},
             new String[] {JumperHud.keyName(JumperKeys.HEADLIGHTS), JumperHud.keyLabel("lights", "LIGHTS")},
             new String[] {JumperHud.keyName(JumperKeys.PODS), JumperHud.keyLabel("pods", "PODS")},
-            new String[] {JumperHud.keyName(JumperKeys.DOOR), JumperHud.keyLabel("door", "DOOR")});
+            new String[] {JumperHud.keyName(JumperKeys.DOOR), JumperHud.keyLabel("door", "DOOR")},
+            new String[] {JumperHud.keyName(JumperKeys.SHIELD), JumperHud.keyLabel("shield", "SHIELD")},
+            new String[] {JumperHud.keyName(JumperKeys.CLOAK), JumperHud.keyLabel("cloak", "CLOAK")});
     }
 
     // A key as the player has it bound, short and in capitals
@@ -899,7 +953,8 @@ public final class JumperHud {
 
     /**
      * Draws the hotbar on a console strip, in place of the game's hotbar, if this client's player rides a jumper;
-     * the slots sit where the game's do, and the health and food over them.
+     * the slots sit where the game's do, and over them, on a strip of their own, the player's health, food, armor and
+     * experience, in place of the game's bars, while the player can be hurt.
      *
      * @return whether it drew it, so the game's hotbar needn't be
      */
@@ -929,7 +984,60 @@ public final class JumperHud {
             JumperHud.slot(graphics, x, top + 1, false);
             JumperHud.item(graphics, minecraft, player, offhand, x + 2, top + 3, seed);
         }
+        if (JumperHud.vitalsShown()) {
+            JumperHud.vitals(graphics, minecraft.font, player, left - 3, top - 2 - JumperHud.VITALS_HEIGHT - 1);
+        }
         return true;
+    }
+
+    /**
+     * @return whether this client's player, seated in a jumper, sees their health, food, armor and experience on the
+     *     jumper's console, in place of the game's own bars, which each loader leaves out while this is so
+     */
+    public static boolean vitalsShown() {
+        final Minecraft minecraft = Minecraft.getInstance();
+        return JumperHud.ridden(minecraft.player) != null && minecraft.gameMode != null
+                && minecraft.gameMode.canHurtPlayer();
+    }
+
+    // The player's health, food, armor and experience on a console strip over the hotbar's: each a row of segments
+    // lit as far as it is full, two points to a segment as the game's hearts and shanks are, beside its name and its
+    // reading; health red, or yellow with absorption over it, food amber, armor blue, and the experience bar green
+    // towards the next level, the level its reading
+    private static void vitals(final GuiGraphicsExtractor graphics, final Font font, final LocalPlayer player,
+            final int left, final int top) {
+        final Flat screen = new Flat(graphics);
+        final int width = JumperHud.HOTBAR_WIDTH + 6;
+        JumperHud.cutPanel(screen, left, top, width, JumperHud.VITALS_HEIGHT, 5, JumperHud.BAR, JumperHud.BLUE);
+        final int half = width / 2;
+        final int upper = top + 4;
+        final int lower = upper + JumperHud.LINE;
+        final float absorption = player.getAbsorptionAmount();
+        final float health = player.getHealth();
+        JumperHud.vital(screen, font, left + 4, upper, "health", "HP", health / Math.max(1, player.getMaxHealth()),
+                Integer.toString(Mth.ceil(health + absorption)), absorption > 0 ? JumperHud.YELLOW : JumperHud.RED);
+        JumperHud.vital(screen, font, left + half + 2, upper, "food", "FOOD", player.getFoodData().getFoodLevel() / 20F,
+                Integer.toString(player.getFoodData().getFoodLevel()), JumperHud.YELLOW);
+        JumperHud.vital(screen, font, left + 4, lower, "armor", "ARMOR", player.getArmorValue() / 20F,
+                Integer.toString(player.getArmorValue()), JumperHud.PALE);
+        JumperHud.vital(screen, font, left + half + 2, lower, "experience", "XP", player.experienceProgress,
+                Integer.toString(player.experienceLevel), JumperHud.GREEN);
+    }
+
+    // One of the player's readings: its name, ten segments lit as far as it is full, and its reading after them
+    private static void vital(final Surface screen, final Font font, final int left, final int top, final String key,
+            final String fallback, final float share, final String reading, final int color) {
+        screen.text(font, Component.translatableWithFallback("hud.sgcraft.jumper.vital." + key, fallback).getString(),
+                left, top, JumperHud.BLUE);
+        final int barLeft = left + JumperHud.VITAL_LABEL;
+        final int lit = Mth.ceil(Mth.clamp(share, 0, 1) * JumperHud.VITAL_SEGMENTS - 0.05F);
+        for (int segment = 0; segment < JumperHud.VITAL_SEGMENTS; segment++) {
+            final int x = barLeft + segment * JumperHud.VITAL_SEGMENT;
+            screen.fill(x, top + 1, x + JumperHud.VITAL_SEGMENT - 1, top + 7, segment < lit ? color
+                    : JumperHud.UNLIT);
+        }
+        final int end = barLeft + JumperHud.VITAL_SEGMENTS * JumperHud.VITAL_SEGMENT + JumperHud.VITAL_READING;
+        screen.text(font, reading, end - font.width(reading), top, JumperHud.PALE);
     }
 
     // A system's lamp: a panel cut at its corners, lit green, yellow or red, or dark if the color is 0
