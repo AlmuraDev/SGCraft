@@ -44,12 +44,12 @@ public enum JumperSeat implements StringRepresentable {
     DIALER(-0.5625, 2.375, 0),
     COCKPIT_LEFT(0.6875, 1.375, 0),
     COCKPIT_RIGHT(-0.6875, 1.375, 0),
-    CABIN_LEFT_FORE(0.625, -0.125, 90),
-    CABIN_RIGHT_FORE(-0.625, -0.125, -90),
-    CABIN_LEFT_MIDDLE(0.625, -1, 90),
-    CABIN_RIGHT_MIDDLE(-0.625, -1, -90),
-    CABIN_LEFT_AFT(0.625, -1.875, 90),
-    CABIN_RIGHT_AFT(-0.625, -1.875, -90);
+    CABIN_LEFT_FORE(1.0, -0.125, 90),
+    CABIN_RIGHT_FORE(-1.0, -0.125, -90),
+    CABIN_LEFT_MIDDLE(1.0, -1, 90),
+    CABIN_RIGHT_MIDDLE(-1.0, -1, -90),
+    CABIN_LEFT_AFT(1.0, -1.875, 90),
+    CABIN_RIGHT_AFT(-1.0, -1.875, -90);
 
     public static final Codec<JumperSeat> CODEC = StringRepresentable.fromEnum(JumperSeat::values);
 

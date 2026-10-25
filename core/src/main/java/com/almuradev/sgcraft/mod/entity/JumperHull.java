@@ -70,11 +70,12 @@ public final class JumperHull {
     // hatch
     private static final double HINGE = JumperHull.NOSE - 0.125;
     private static final double RAMP_TOP = 0.15;
-    // The bulkhead, ahead of the middle: its front and back, and its doorway's half width and height
+    // The bulkhead, ahead of the middle: its front and back, and its doorway's half width, inside its frame, and height,
+    // wide and tall enough for a player to walk through without lining up on it
     private static final double BULKHEAD_FRONT = 0.75;
     private static final double BULKHEAD_BACK = 0.625;
-    private static final double DOOR_HALF = 0.4375;
-    private static final double DOOR_TOP = 2.125;
+    private static final double DOOR_HALF = 0.5625;
+    private static final double DOOR_TOP = 2.25;
 
     private static final List<AABB> ALWAYS = JumperHull.always();
     private static final List<AABB> HATCH = JumperHull.raked(-1);
@@ -103,8 +104,8 @@ public final class JumperHull {
                         JumperHull.ROOF, JumperHull.BULKHEAD_FRONT),
                 new AABB(-JumperHull.DOOR_HALF, JumperHull.DOOR_TOP, JumperHull.BULKHEAD_BACK, JumperHull.DOOR_HALF,
                         JumperHull.ROOF, JumperHull.BULKHEAD_FRONT),
-                new AABB(0.5, 0, JumperHull.BULKHEAD_FRONT, 1.1875, 1.625, 1.0),
-                new AABB(-1.1875, 0, JumperHull.BULKHEAD_FRONT, -0.5, 1.625, 1.0)));
+                new AABB(0.59375, 0, JumperHull.BULKHEAD_FRONT, 1.1875, 1.625, 1.0),
+                new AABB(-1.1875, 0, JumperHull.BULKHEAD_FRONT, -0.59375, 1.625, 1.0)));
         // The nose, raked back as it rises
         boxes.addAll(JumperHull.raked(1));
         return List.copyOf(boxes);

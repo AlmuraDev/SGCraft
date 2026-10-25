@@ -46,11 +46,12 @@ import java.util.function.Function;
  * as the Ancients' are, over a gray underside; a broad windshield in a bronze rim in the face of its nose, with two
  * headlamps under it; a cargo door filling its back, with a small window, which lowers to the ground as a ramp; and in
  * the lower sides of its rear half the drive pods, fins of the hull carrying ribbed engines, their backs grids of blue
- * lights, which a pair of arms push out for flight and draw back in against the hull, the fins tipping down past flat
- * once out so the engines ride on top. Inside, dark bronze cut by angular grooves,
- * with lamps along the walls and frosted panels lit from behind, are the dashboard, with the pilot's hand controls and
- * the computer's screen, the center console with the dialer's orange tiles, four gray padded chairs, the bulkhead with
- * its doorway and its two consoles, and a bench of three seats along each wall of the rear compartment.
+ * lights, which a pair of arms push out for flight and draw back in to lie folded against the outside of the hull, as
+ * the show's do, the fins tipping down past flat once out so the engines ride on top. Inside, dark bronze cut by
+ * angular grooves, with lamps along the walls and frosted panels lit from behind, are the dashboard, with the pilot's
+ * hand controls and the computer's screen, the center console with the dialer's orange tiles, four gray padded
+ * chairs, the bulkhead with its doorway and its two consoles, and a bench of three seats against each wall of the rear
+ * compartment.
  *
  * <p>It is drawn in three layers on one texture, each this model: the solid hull, the windows, which are see-through,
  * and the lights, which glow in the dark, the headlamps among them only while the headlights are on. Each layer moves
@@ -73,29 +74,32 @@ public final class JumperModel extends EntityModel<JumperRenderState> {
     private static final float DOOR_SHUT = (float) Math.atan2(10, 40);
     private static final float DOOR_LOWERED = -1.52F;
     // The drive pods, as the show's, each an arm curving out of the hull's side and up, its engine standing on the end
-    // of the curve leaning in towards the hull, as tools/jumper/make_jumper_art.py builds them. Going out, the door
-    // over the pod's recess swings down out of the way, the arm slides out of the hull, and the engine rises off the
-    // arm's end; folding, the engine tips down to lie facing the hull, the arm draws back in, and the door shuts. How
-    // far the door swings, in radians; how far the arm slides, in pixels; how far the engine leans in out and lies
-    // in folded, in radians from upright; where the arm leaves the hull, and where its engine stands, out, in pixels
-    // from the middle and the underside, the left one's; and where each push arm's base is, at the back of the recess
-    private static final float DOOR_SWING = (float) Math.toRadians(95);
-    private static final float SLIDE = 17;
+    // of the curve leaning in towards the hull, as tools/jumper/make_jumper_art.py builds them. Folded, the engine
+    // stands upright against the outside of the hull's lower side, proud of it, nothing of it inside the cabin. Going
+    // out, the engine rides up the hull's side to the height it stands out at, then the arm runs straight out of the
+    // side under it, carrying it out, and it leans in as it rises; folding, all of it the other way. Only the arm's
+    // parts out of the hull's side and above its underside show, so it is never seen inside the cabin nor hanging
+    // under the hull; folded, what shows is a short rail under the engine. How far the engine leans in out, in radians
+    // from upright; where the arm leaves the hull, and where its engine stands, out and folded, in pixels from the
+    // middle and the underside, the left one's; and where each push arm's base is, on the hull's side
     private static final float ENGINE_OUT = (float) Math.toRadians(-22.5);
-    private static final float ENGINE_IN = (float) Math.toRadians(-90);
     private static final float ARM_LEAVES_SIDE = 22;
     private static final float ARM_LEAVES_HEIGHT = -8;
     private static final float ENGINE_SIDE = 39;
     private static final float ENGINE_HEIGHT = -19;
-    private static final float ARM_SIDE = 15;
+    private static final float ENGINE_FOLDED_SIDE = 23.5F;
+    private static final float ENGINE_FOLDED_HEIGHT = -6;
+    private static final float ARM_SIDE = 22;
     private static final float ARM_HEIGHT = -12;
+    // How far out from the middle the hull's sides are, within which an arm's part is inside the hull, and how low an
+    // arm's part may hang before it is under the hull, in pixels
+    private static final float HULL_SIDE = 21.5F;
+    private static final float HULL_UNDER = -3;
     // The drone bays, each a smaller curved arm on a lower side of the front cabin, the drones lying in its curve: how
     // far it slides out of the hull as the drones are armed, in pixels
     private static final float BAY_SLIDE = 9;
 
     private final @Nullable ModelPart door;
-    private final @Nullable ModelPart leftPod;
-    private final @Nullable ModelPart rightPod;
     private final @Nullable ModelPart headlamps;
     private final List<ModelPart> leftArms = new ArrayList<>();
     private final List<ModelPart> rightArms = new ArrayList<>();
@@ -111,8 +115,6 @@ public final class JumperModel extends EntityModel<JumperRenderState> {
     public JumperModel(final ModelPart root, final Function<Identifier, RenderType> renderType) {
         super(root, renderType);
         this.door = JumperModel.part(root, "cargo_door");
-        this.leftPod = JumperModel.part(root, "left_pod");
-        this.rightPod = JumperModel.part(root, "right_pod");
         this.headlamps = JumperModel.part(root, "headlamps");
         for (int i = 0; root.hasChild("left_arm_" + i); i++) {
             this.leftArms.add(root.getChild("left_arm_" + i));
@@ -147,27 +149,33 @@ public final class JumperModel extends EntityModel<JumperRenderState> {
         return clamped * clamped * (3 - 2 * clamped);
     }
 
-    // How far, from 0 to 1, as the pods go out from 0 to 1: the doors swing open, the arms slide out, the engines rise
-    private static float door(final float pods) {
-        return JumperModel.smooth(pods / 0.3F);
+    // How far, from 0 to 1, as the pods go out from 0 to 1: the engines ride up the hull's sides, the arms run out
+    // carrying them, and the engines lean in as they rise
+    private static float lift(final float pods) {
+        return JumperModel.smooth(pods / 0.35F);
     }
 
-    private static float slide(final float pods) {
-        return JumperModel.smooth((pods - 0.2F) / 0.5F);
+    private static float run(final float pods) {
+        return JumperModel.smooth((pods - 0.35F) / 0.45F);
     }
 
     private static float rise(final float pods) {
-        return JumperModel.smooth((pods - 0.65F) / 0.35F);
+        return JumperModel.smooth((pods - 0.6F) / 0.4F);
     }
 
-    // How far a pod's arm is from out, across, in pixels, drawn in towards the hull
-    private static float drawnIn(final boolean left, final float pods) {
-        return -(1 - JumperModel.slide(pods)) * JumperModel.SLIDE * (left ? 1 : -1);
+    // How far a pod's arm and engine are from out, across and up, in pixels: from folded against the hull to out
+    private static float shiftSide(final boolean left, final float pods) {
+        return (1 - JumperModel.run(pods)) * (JumperModel.ENGINE_FOLDED_SIDE - JumperModel.ENGINE_SIDE)
+                * (left ? 1 : -1);
+    }
+
+    private static float shiftHeight(final float pods) {
+        return (1 - JumperModel.lift(pods)) * (JumperModel.ENGINE_FOLDED_HEIGHT - JumperModel.ENGINE_HEIGHT);
     }
 
     // How far a pod's engine leans from upright, in radians, in towards the hull
     private static float lean(final boolean left, final float pods) {
-        return Mth.lerp(JumperModel.rise(pods), JumperModel.ENGINE_IN, JumperModel.ENGINE_OUT) * (left ? 1 : -1);
+        return JumperModel.rise(pods) * JumperModel.ENGINE_OUT * (left ? 1 : -1);
     }
 
     /**
@@ -179,11 +187,10 @@ public final class JumperModel extends EntityModel<JumperRenderState> {
      * @return the point, x and y, in pixels in the model's space
      */
     public static float[] engineBack(final boolean left, final float pods, final float along) {
-        final float side = left ? 1 : -1;
         final float angle = JumperModel.lean(left, pods);
         return new float[] {
-            JumperModel.ENGINE_SIDE * side + JumperModel.drawnIn(left, pods) + along * Mth.sin(angle),
-            JumperModel.ENGINE_HEIGHT - along * Mth.cos(angle)
+            JumperModel.ENGINE_SIDE * (left ? 1 : -1) + JumperModel.shiftSide(left, pods) + along * Mth.sin(angle),
+            JumperModel.ENGINE_HEIGHT + JumperModel.shiftHeight(pods) - along * Mth.cos(angle)
         };
     }
 
@@ -197,22 +204,14 @@ public final class JumperModel extends EntityModel<JumperRenderState> {
         if (this.door != null) {
             this.door.xRot = Mth.lerp(state.hatch, JumperModel.DOOR_SHUT, JumperModel.DOOR_LOWERED);
         }
-        // The pods: their doors, their arms and engines; and the push arms, stretched from the backs of the recesses
-        // to the pods' arms
-        final boolean out = JumperModel.slide(state.pods) > 0.02F;
-        if (this.leftPod != null) {
-            this.leftPod.zRot = JumperModel.door(state.pods) * JumperModel.DOOR_SWING;
-        }
-        if (this.rightPod != null) {
-            this.rightPod.zRot = -JumperModel.door(state.pods) * JumperModel.DOOR_SWING;
-        }
-        JumperModel.slideOut(this.leftArc, this.leftEngine, true, state, out);
-        JumperModel.slideOut(this.rightArc, this.rightEngine, false, state, out);
+        // The pods: their arms and engines; and the push arms, stretched from the hull's sides to the pods' arms
+        JumperModel.slideOut(this.leftArc, this.leftEngine, true, state.pods);
+        JumperModel.slideOut(this.rightArc, this.rightEngine, false, state.pods);
         // The drone bays, slid out as the drones are armed, each with its share of the drones left in its curve
         JumperModel.slideBay(this.leftBay, this.leftDrones, true, state.bays, (state.drones + 1) / 2);
         JumperModel.slideBay(this.rightBay, this.rightDrones, false, state.bays, state.drones / 2);
-        JumperModel.reach(this.leftArms, true, state.pods, out);
-        JumperModel.reach(this.rightArms, false, state.pods, out);
+        JumperModel.reach(this.leftArms, true, state.pods);
+        JumperModel.reach(this.rightArms, false, state.pods);
         if (this.headlamps != null) {
             this.headlamps.visible = state.headlights;
         }
@@ -234,29 +233,33 @@ public final class JumperModel extends EntityModel<JumperRenderState> {
         }
     }
 
-    // A pod's arm and engine slid out of the hull, or drawn back in, as one, the engine leaning as it rises or lies
-    // down
+    // A pod's arm run out of the hull, or back in, carrying its engine, which leans as it goes; only the arm's parts
+    // out of the hull's side and above its underside show
     private static void slideOut(final List<ModelPart> arc, final @Nullable ModelPart engine, final boolean left,
-            final JumperRenderState state, final boolean out) {
-        final float shift = JumperModel.drawnIn(left, state.pods);
+            final float pods) {
+        final float across = JumperModel.shiftSide(left, pods);
+        final float up = JumperModel.shiftHeight(pods);
         for (final ModelPart segment : arc) {
-            segment.x += shift;
-            segment.visible = out;
+            segment.x += across;
+            segment.y += up;
+            segment.visible = Math.abs(segment.x) >= JumperModel.HULL_SIDE && segment.y <= JumperModel.HULL_UNDER;
         }
         if (engine != null) {
-            engine.x += shift;
-            engine.zRot = JumperModel.lean(left, state.pods);
-            engine.visible = out;
+            engine.x += across;
+            engine.y += up;
+            engine.zRot = JumperModel.lean(left, pods);
         }
     }
 
-    private static void reach(final List<ModelPart> arms, final boolean left, final float pods, final boolean out) {
+    // The push arms, stretched from their bases on the hull's side to where the pod's arm leaves it, once the arm is
+    // all but out
+    private static void reach(final List<ModelPart> arms, final boolean left, final float pods) {
         final float side = left ? 1 : -1;
-        final float dx = JumperModel.ARM_LEAVES_SIDE * side + JumperModel.drawnIn(left, pods)
-                - JumperModel.ARM_SIDE * side;
-        final float dy = JumperModel.ARM_LEAVES_HEIGHT - JumperModel.ARM_HEIGHT;
+        final float dx = (JumperModel.ARM_LEAVES_SIDE - JumperModel.ARM_SIDE) * side
+                + JumperModel.shiftSide(left, pods);
+        final float dy = JumperModel.ARM_LEAVES_HEIGHT + JumperModel.shiftHeight(pods) - JumperModel.ARM_HEIGHT;
         for (final ModelPart arm : arms) {
-            arm.visible = out;
+            arm.visible = JumperModel.run(pods) > 0.95F;
             arm.zRot = (float) (left ? Math.atan2(dy, dx) : Math.atan2(-dy, -dx));
             arm.xScale = (float) Math.max(0.01, Math.hypot(dx, dy));
         }
