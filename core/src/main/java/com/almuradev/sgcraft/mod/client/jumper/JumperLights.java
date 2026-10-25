@@ -137,6 +137,13 @@ public final class JumperLights {
         }
         JumperLights.sinceCast = 0;
         final ClientLevel level = minecraft.level;
+        // Out of the world, nothing is drawn to mark again, and the world's drawing is gone with it; whatever was lit
+        // is simply forgotten
+        if (level == null) {
+            JumperLights.lit = Long2ByteMaps.EMPTY_MAP;
+            JumperLights.castFrom = LongLists.EMPTY_LIST;
+            return;
+        }
         final List<PuddleJumperEntity> casting = new ArrayList<>();
         final LongList from = new LongArrayList();
         if (level != null && minecraft.player != null) {
