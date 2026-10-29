@@ -16,7 +16,9 @@ import gcewing.sg.util.SGState;
 import gcewing.sg.util.GateUtil;
 import net.malisis.core.client.gui.Anchor;
 import net.malisis.core.client.gui.BasicScreen;
-import net.malisis.core.client.gui.GuiTexture;
+import net.malisis.core.client.gui.render.GuiIcon;
+import net.malisis.core.client.gui.render.GuiTexture;
+import net.malisis.core.client.gui.component.UIComponent;
 import net.malisis.core.client.gui.component.container.BasicForm;
 import net.malisis.core.client.gui.component.decoration.UIImage;
 import net.malisis.core.client.gui.component.decoration.UILabel;
@@ -33,6 +35,7 @@ import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.world.World;
@@ -99,7 +102,7 @@ public class GdoScreen extends BasicScreen {
         }
 
         // Master Panel
-        this.form = new BasicForm(this, 400, 225, "");
+        this.form = new BasicForm(400, 225, "");
         this.form.setAnchor(Anchor.CENTER | Anchor.MIDDLE);
         this.form.setMovable(true);
         this.form.setClosable(true);
@@ -110,13 +113,13 @@ public class GdoScreen extends BasicScreen {
         this.form.setTopPadding(20);
         this.form.setLeftPadding(3);
 
-        final UILabel titleLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.gdo.label.gdoController"));
+        final UILabel titleLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.gdo.label.gdoController"));
         titleLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         titleLabel.setPosition(0, -15, Anchor.CENTER | Anchor.TOP);
         // ****************************************************************************************************************************
         // Local Gate Control
         // ****************************************************************************************************************************
-        localGateControlArea = new BasicForm(this, 195, 185, "");
+        localGateControlArea = new BasicForm(195, 185, "");
         localGateControlArea.setPosition(0, 0, Anchor.LEFT | Anchor.MIDDLE);
         localGateControlArea.setMovable(false);
         localGateControlArea.setClosable(false);
@@ -127,19 +130,19 @@ public class GdoScreen extends BasicScreen {
         localGateControlArea.setTopPadding(3);
         localGateControlArea.setLeftPadding(3);
 
-        final UILabel localGateControlLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.gdo.label.localGateControl"));
+        final UILabel localGateControlLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.gdo.label.localGateControl"));
         localGateControlLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         localGateControlLabel.setPosition(0, 0, Anchor.CENTER | Anchor.TOP);
 
-        localGateImage = new UIImage(this, new GuiTexture(SGCraft.mod.resourceLocation("textures/gui_image1.png")), null);
+        localGateImage = new UIImage(wholeTexture(SGCraft.mod.resourceLocation("textures/gui_image1.png")));
         localGateImage.setSize(110, 110);
         localGateImage.setPosition(0, 20, Anchor.TOP | Anchor.CENTER);
 
-        localGateAddressLabel = new UILabel(this, "gateAddress");
+        localGateAddressLabel = new UILabel("gateAddress");
         localGateAddressLabel.setFontOptions(FontOptions.builder().from(FontColors.BLUE_FO).shadow(true).scale(1.3F).build());
         localGateAddressLabel.setPosition(0, -30, Anchor.CENTER | Anchor.BOTTOM);
 
-        localIrisOpenButton = new UIButtonBuilder(this)
+        localIrisOpenButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.LEFT)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.openIris"))
@@ -150,7 +153,7 @@ public class GdoScreen extends BasicScreen {
             .listener(this)
             .build("button.local.iris.open");
 
-        localGateCloseButton = new UIButtonBuilder(this)
+        localGateCloseButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.CENTER)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.disconnect"))
@@ -161,7 +164,7 @@ public class GdoScreen extends BasicScreen {
             .listener(this)
             .build("button.local.gate.disconnect");
 
-        localIrisCloseButton = new UIButtonBuilder(this)
+        localIrisCloseButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.RIGHT)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.closeIris"))
@@ -177,7 +180,7 @@ public class GdoScreen extends BasicScreen {
         // ****************************************************************************************************************************
         // Remote Gate Control
         // ****************************************************************************************************************************
-        remoteGateControlArea = new BasicForm(this, 195, 185, "");
+        remoteGateControlArea = new BasicForm(195, 185, "");
         remoteGateControlArea.setPosition(0, 0, Anchor.RIGHT | Anchor.MIDDLE);
         remoteGateControlArea.setMovable(false);
         remoteGateControlArea.setClosable(false);
@@ -188,19 +191,19 @@ public class GdoScreen extends BasicScreen {
         remoteGateControlArea.setTopPadding(3);
         remoteGateControlArea.setLeftPadding(3);
 
-        final UILabel remoteGateControlLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.gdo.label.remoteGateControl"));
+        final UILabel remoteGateControlLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.gdo.label.remoteGateControl"));
         remoteGateControlLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         remoteGateControlLabel.setPosition(0, 0, Anchor.CENTER | Anchor.TOP);
 
-        remoteGateImage = new UIImage(this, new GuiTexture(SGCraft.mod.resourceLocation("textures/gui_image1.png")), null);  // Fake Image
+        remoteGateImage = new UIImage(wholeTexture(SGCraft.mod.resourceLocation("textures/gui_image1.png")));  // Fake Image
         remoteGateImage.setSize(110, 110);
         remoteGateImage.setPosition(0, 20, Anchor.TOP | Anchor.CENTER);
 
-        remoteGateAddressLabel = new UILabel(this, "gateAddress"); // Incorrect Value
+        remoteGateAddressLabel = new UILabel("gateAddress"); // Incorrect Value
         remoteGateAddressLabel.setFontOptions(FontOptions.builder().from(FontColors.BLUE_FO).shadow(true).scale(1.3F).build());
         remoteGateAddressLabel.setPosition(0, -30, Anchor.CENTER | Anchor.BOTTOM);
 
-        remoteIrisOpenButton = new UIButtonBuilder(this)
+        remoteIrisOpenButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.LEFT)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.openIris"))
@@ -211,7 +214,7 @@ public class GdoScreen extends BasicScreen {
             .listener(this)
             .build("button.remote.iris.open");
 
-        remoteGateCloseButton = new UIButtonBuilder(this)
+        remoteGateCloseButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.CENTER)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.disconnect"))
@@ -222,7 +225,7 @@ public class GdoScreen extends BasicScreen {
             .listener(this)
             .build("button.remote.gate.disconnect");
 
-        remoteIrisCloseButton = new UIButtonBuilder(this)
+        remoteIrisCloseButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.RIGHT)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.closeIris"))
@@ -238,7 +241,7 @@ public class GdoScreen extends BasicScreen {
         // ****************************************************************************************************************************
 
         // Close button
-        final UIButton buttonClose = new UIButtonBuilder(this)
+        final UIButton buttonClose = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.RIGHT)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.close"))
@@ -254,12 +257,12 @@ public class GdoScreen extends BasicScreen {
     }
 
     // Picture of a gate for the local or remote gate panel
-    private GuiTexture gateImage(int gateType, boolean connected, boolean hasIrisUpgrade, boolean irisClosed) {
+    private GuiIcon gateImage(int gateType, boolean connected, boolean hasIrisUpgrade, boolean irisClosed) {
         String iris = !hasIrisUpgrade ? "no_iris" : irisClosed ? "iris_closed" : "iris_open";
         // Universe and Ori gates have no pictures of their own, so show as Milky Way gates
         GateType type = GateType.fromId(gateType);
         String name = (type == GateType.PEGASUS ? type : GateType.MILKY_WAY).assetName + (connected ? "_connected_" : "_disconnected_") + iris;
-        return new GuiTexture(SGCraft.mod.resourceLocation("textures/" + name + ".png"));
+        return wholeTexture(SGCraft.mod.resourceLocation("textures/" + name + ".png"));
     }
 
     // A gate with a shield in place of the iris has its buttons say so
@@ -287,11 +290,17 @@ public class GdoScreen extends BasicScreen {
     }
 
     private void setButtonLabel(UIButton button, String key) {
-        String text = TextFormatting.WHITE + I18n.format(key);
-        if (!text.equals(button.getText())) {
-            button.setText(text);
+        // The button keeps the key of its label (MalisisCore 6.6 buttons have no getText)
+        if (!key.equals(button.getData())) {
+            button.attachData(key);
+            button.setText(TextFormatting.WHITE + I18n.format(key));
             button.setSize(40, button.getHeight()); // grows to fit the text, and back down when it's shorter again
         }
+    }
+
+    // A whole image as an icon: the texture size only converts pixels to UVs, unused for 0 to 1
+    private static GuiIcon wholeTexture(ResourceLocation location) {
+        return new GuiIcon(new GuiTexture(location, 1, 1), 0F, 0F, 1F, 1F);
     }
 
     // The panels are 195 wide, or as wide as their three buttons need (the shield's labels are longer than the
@@ -321,7 +330,7 @@ public class GdoScreen extends BasicScreen {
                 // drawScreen draws the live gate here instead; the image just holds its place
                 this.localGateImage.setVisible(false);
             } else {
-                this.localGateImage.setIcon(gateImage(localGate.gateType, localGate.isConnected(), localGate.hasIrisUpgrade, localGate.irisIsClosed()), null);
+                this.localGateImage.setIcon(gateImage(localGate.gateType, localGate.isConnected(), localGate.hasIrisUpgrade, localGate.irisIsClosed()));
             }
 
             if (!localGate.hasIrisUpgrade) {
@@ -361,7 +370,7 @@ public class GdoScreen extends BasicScreen {
                 this.remoteGateAddressLabel.setText(r_address);
 
                 // The remote gate is always shown connected
-                this.remoteGateImage.setIcon(gateImage(r_gateType, true, r_hasIrisUpgrade, r_isIrisClosed), null);
+                this.remoteGateImage.setIcon(gateImage(r_gateType, true, r_hasIrisUpgrade, r_isIrisClosed));
 
                 // The live copy of the remote gate is updated twice a second, far sooner than the timed refresh that
                 // sets r_hasIrisUpgrade and r_isIrisClosed, so its iris decides the buttons once it has arrived
@@ -397,8 +406,8 @@ public class GdoScreen extends BasicScreen {
     }
 
     @Override
-    public void update(int mouseX, int mouseY, float partialTick) {
-        super.update(mouseX, mouseY, partialTick);
+    public void update() {
+        super.update();
         if (unlockMouse && this.lastUpdate == 25) {
             Mouse.setGrabbed(false); // Force the mouse to be visible even though Mouse.isGrabbed() is false.  //#BugsUnited.
             unlockMouse = false; // Only unlock once per session.
@@ -521,8 +530,8 @@ public class GdoScreen extends BasicScreen {
     }
 
     @Override
-    protected void mouseClicked(int x, int y, int button) {
-        super.mouseClicked(x, y, button);
+    protected void mousePressed(final UIComponent component, final int button) {
+        super.mousePressed(component, button);
         this.lastUpdate = 0; // Reset the timer when mouse is pressed.
     }
 

@@ -55,7 +55,7 @@ public class CityShieldScreen extends BasicScreen {
         this.guiscreenBackground = false;
         Keyboard.enableRepeatEvents(true);
 
-        final BasicForm form = new BasicForm(this, 320, 300, "");
+        final BasicForm form = new BasicForm(320, 300, "");
         form.setAnchor(Anchor.CENTER | Anchor.MIDDLE);
         form.setMovable(true);
         form.setClosable(true);
@@ -66,15 +66,15 @@ public class CityShieldScreen extends BasicScreen {
         form.setTopPadding(20);
         form.setLeftPadding(3);
 
-        final UILabel titleLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.cityshield.label.title"));
+        final UILabel titleLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.cityshield.label.title"));
         titleLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         titleLabel.setPosition(0, -15, Anchor.CENTER | Anchor.TOP);
 
-        this.statusLabel = new UILabel(this, "");
+        this.statusLabel = new UILabel("");
         this.statusLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.2F).build());
         this.statusLabel.setPosition(0, 0, Anchor.CENTER | Anchor.TOP);
 
-        final UILabel sizeLabel = new UILabel(this, TextFormatting.GRAY + I18n.format("sgcraft.gui.cityshield.label.size", this.status.maxRadius));
+        final UILabel sizeLabel = new UILabel(TextFormatting.GRAY + I18n.format("sgcraft.gui.cityshield.label.size", this.status.maxRadius));
         sizeLabel.setPosition(0, 18, Anchor.LEFT | Anchor.TOP);
 
         this.widthField = sizeField("width", this.status.width, 32);
@@ -89,12 +89,12 @@ public class CityShieldScreen extends BasicScreen {
         final int buttonsY = 138;
 
         // The generator's own ZPMs (it draws on any nearby too), and the player's inventory to fill them from
-        final UIInventory zpmSlots = new UIInventory(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.cityshield.label.zpms"), this.zpms, CityShieldTE.numZpmSlots);
+        final UIInventory zpmSlots = new UIInventory(TextFormatting.WHITE + I18n.format("sgcraft.gui.cityshield.label.zpms"), this.zpms, CityShieldTE.numZpmSlots);
         zpmSlots.setPosition(-15, 32, Anchor.TOP | Anchor.RIGHT);
-        final UIPlayerInventory playerInventory = new UIPlayerInventory(this, this.inventoryContainer.getPlayerInventory());
+        final UIPlayerInventory playerInventory = new UIPlayerInventory(this.inventoryContainer.getPlayerInventory());
         playerInventory.setPosition(0, -6, Anchor.BOTTOM | Anchor.CENTER);
 
-        this.applyButton = new UIButtonBuilder(this)
+        this.applyButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.TOP | Anchor.CENTER)
             .position(0, buttonsY)
@@ -103,7 +103,7 @@ public class CityShieldScreen extends BasicScreen {
             .listener(this)
             .build("button.cityshield.apply");
 
-        this.activateButton = new UIButtonBuilder(this)
+        this.activateButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.TOP | Anchor.LEFT)
             .position(0, buttonsY)
@@ -112,7 +112,7 @@ public class CityShieldScreen extends BasicScreen {
             .listener(this)
             .build("button.cityshield.activate");
 
-        this.deactivateButton = new UIButtonBuilder(this)
+        this.deactivateButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.TOP | Anchor.RIGHT)
             .position(0, buttonsY)
@@ -132,7 +132,7 @@ public class CityShieldScreen extends BasicScreen {
     }
 
     private UITextField sizeField(String name, int value, int y) {
-        final UITextField field = new UITextField(this, "", false);
+        final UITextField field = new UITextField("");
         field.setText(String.valueOf(value));
         field.setSize(50, 0);
         field.setPosition(135, y, Anchor.LEFT | Anchor.TOP);
@@ -142,13 +142,13 @@ public class CityShieldScreen extends BasicScreen {
     }
 
     private void addSizeRow(BasicForm form, String name, UITextField field, int y) {
-        final UILabel label = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.cityshield.label." + name) + ":");
+        final UILabel label = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.cityshield.label." + name) + ":");
         label.setPosition(10, y + 1, Anchor.LEFT | Anchor.TOP);
         form.add(label, field);
     }
 
     private UILabel infoLabel(int y) {
-        final UILabel label = new UILabel(this, "");
+        final UILabel label = new UILabel("");
         label.setPosition(10, y, Anchor.LEFT | Anchor.TOP);
         return label;
     }
@@ -200,8 +200,8 @@ public class CityShieldScreen extends BasicScreen {
     }
 
     @Override
-    public void update(int mouseX, int mouseY, float partialTick) {
-        super.update(mouseX, mouseY, partialTick);
+    public void update() {
+        super.update();
         if (this.unlockMouse && this.lastUpdate == 25) {
             Mouse.setGrabbed(false); // Force the mouse to be visible even though Mouse.isGrabbed() is false.  //#BugsUnited.
             this.unlockMouse = false;

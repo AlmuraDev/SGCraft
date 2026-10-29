@@ -75,13 +75,13 @@ compile 'org.spongepowered:configurate-yaml:3.7'
     //deobfCompile "cofh:ThermalDynamics:1.12.2-2.5.5.21:universal"
     // Compile-only: MalisisCore is a coremod that also contains a mod, and Forge only loads the mod
     // part from the mods folder, so the dev client gets it from run/mods (see copyDevMods)
-    deobfProvided ('com.almuradev:malisiscore:1.12.2-6.5.3-SNAPSHOT-dev') {
+    deobfProvided ('com.almuradev:malisiscore:1.12.2-6.6.0-SNAPSHOT-dev') {
         transitive = false
     }
 }
 
 task copyDevMods(type: Copy) {
-    from 'lib/malisiscore-1.12.2-6.5.3-SNAPSHOT-dev.jar'
+    from 'lib/malisiscore-1.12.2-6.6.0-SNAPSHOT-dev.jar'
     into 'run/mods'
 }
 
@@ -147,6 +147,12 @@ shadowJar {
     afterEvaluate {
         from zipTree(reobfJar.jar)
     }
+}
+
+// MCP names, for another project's dev client (e.g. Almura's run/mods): the classes and resources, without the shaded libraries
+task devJar(type: Jar) {
+    classifier = 'dev'
+    from sourceSets.main.output
 }
 
 artifacts {

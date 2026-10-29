@@ -4,6 +4,7 @@ import gcewing.sg.features.configurator.network.ConfiguratorNetworkHandler;
 import gcewing.sg.tileentity.SGBaseTE;
 import net.malisis.core.client.gui.Anchor;
 import net.malisis.core.client.gui.BasicScreen;
+import net.malisis.core.client.gui.component.UIComponent;
 import net.malisis.core.client.gui.component.container.BasicForm;
 import net.malisis.core.client.gui.component.decoration.UILabel;
 import net.malisis.core.client.gui.component.interaction.UIButton;
@@ -45,7 +46,7 @@ public class PlayerAccessEntryScreen extends BasicScreen {
         Keyboard.enableRepeatEvents(true);
 
         // Master Panel
-        this.form = new BasicForm(this, 180, 100, "");
+        this.form = new BasicForm(180, 100, "");
         this.form.setAnchor(Anchor.CENTER | Anchor.MIDDLE);
         this.form.setMovable(true);
         this.form.setClosable(true);
@@ -56,7 +57,7 @@ public class PlayerAccessEntryScreen extends BasicScreen {
         this.form.setTopPadding(20);
         this.form.setLeftPadding(3);
 
-        final UILabel titleLabel = new UILabel(this, "");
+        final UILabel titleLabel = new UILabel("");
         titleLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         titleLabel.setPosition(0, -15, Anchor.CENTER | Anchor.TOP);
 
@@ -68,11 +69,11 @@ public class PlayerAccessEntryScreen extends BasicScreen {
             titleLabel.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.deletePlayer"));
         }
 
-        final UILabel addressLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.playerName") + ":");
+        final UILabel addressLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.playerName") + ":");
         addressLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         addressLabel.setPosition(15, 10, Anchor.LEFT | Anchor.TOP);
 
-        this.nameTextField = new UITextField(this, "", false);
+        this.nameTextField = new UITextField("");
         if (!(function == 1)) {
             this.nameTextField.setText(this.oldName);
         }
@@ -83,7 +84,7 @@ public class PlayerAccessEntryScreen extends BasicScreen {
         // ****************************************************************************************************************************
 
         // Close button
-        final UIButton buttonClose = new UIButtonBuilder(this)
+        final UIButton buttonClose = new UIButtonBuilder()
                 .width(40)
                 .anchor(Anchor.BOTTOM | Anchor.RIGHT)
                 .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.close"))
@@ -94,7 +95,7 @@ public class PlayerAccessEntryScreen extends BasicScreen {
                 .build("button.close");
 
         // Delete Feature button
-        final UIButton buttonDelete = new UIButtonBuilder(this)
+        final UIButton buttonDelete = new UIButtonBuilder()
             .width(40)
             .position(-(buttonClose.getX() + buttonClose.getWidth() + 5), 0)
             .visible(function == 3)
@@ -108,7 +109,7 @@ public class PlayerAccessEntryScreen extends BasicScreen {
             .build("button.delete");
 
         // Save Feature button
-        final UIButton buttonSave = new UIButtonBuilder(this)
+        final UIButton buttonSave = new UIButtonBuilder()
             .width(40)
             .position(-(buttonClose.getX() + buttonClose.getWidth() + 5), 0)
             .visible(!(function == 3))
@@ -129,8 +130,8 @@ public class PlayerAccessEntryScreen extends BasicScreen {
     }
 
     @Override
-    public void update(int mouseX, int mouseY, float partialTick) {
-        super.update(mouseX, mouseY, partialTick);
+    public void update() {
+        super.update();
         if (unlockMouse && this.lastUpdate == 25) {
             Mouse.setGrabbed(false); // Force the mouse to be visible even though Mouse.isGrabbed() is false.  //#BugsUnited.
             unlockMouse = false; // Only unlock once per session.
@@ -158,8 +159,8 @@ public class PlayerAccessEntryScreen extends BasicScreen {
     }
 
     @Override
-    protected void mouseClicked(int x, int y, int button) {
-        super.mouseClicked(x, y, button);
+    protected void mousePressed(final UIComponent component, final int button) {
+        super.mousePressed(component, button);
         this.lastUpdate = 0; // Reset the timer when mouse is pressed.
     }
 

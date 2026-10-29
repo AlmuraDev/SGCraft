@@ -1,11 +1,13 @@
 package gcewing.sg.features.ic2.zpm.interfacecart;
 
+import gcewing.sg.features.zpm.ZpmSource;
 import ic2.api.energy.prefab.BasicSource;
 import ic2.api.energy.tile.IEnergyAcceptor;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 
-public final class ZpmInterfaceCartBasicSource extends BasicSource {
+// The cart's source with IC2 installed: on the IC2 energy network as well (made by Ic2ZpmSources, so the cart never names it)
+public final class ZpmInterfaceCartBasicSource extends BasicSource implements ZpmSource {
 
     private final TileEntity parent;
 
@@ -18,12 +20,8 @@ public final class ZpmInterfaceCartBasicSource extends BasicSource {
     public void drawEnergy(double amount) {
         super.drawEnergy(amount);
         if (this.parent instanceof ZpmInterfaceCartTE) {
-            ((ZpmInterfaceCartTE) this.parent).markChanged();
-            if (((ZpmInterfaceCartTE)this.parent).isTainted(((ZpmInterfaceCartTE)this.parent).getStackInSlot(0))) {
-                world.newExplosion(null, this.pos.getX(), this.pos.getY(), this.pos.getZ(), (float)250, true, true);
-            }
+            ((ZpmInterfaceCartTE) this.parent).afterDraw(amount);
         }
-
     }
 
     @Override

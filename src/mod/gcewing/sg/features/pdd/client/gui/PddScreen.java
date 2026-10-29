@@ -18,7 +18,9 @@ import net.malisis.core.client.gui.component.container.BasicForm;
 import net.malisis.core.client.gui.component.container.BasicList;
 import net.malisis.core.client.gui.component.decoration.UILabel;
 import net.malisis.core.client.gui.component.decoration.UISeparator;
-import net.malisis.core.client.gui.GuiTexture;
+import net.malisis.core.client.gui.element.size.Size;
+import net.malisis.core.client.gui.render.GuiIcon;
+import net.malisis.core.client.gui.render.GuiTexture;
 import net.malisis.core.client.gui.component.decoration.UIImage;
 import net.malisis.core.client.gui.component.interaction.UIButton;
 import net.malisis.core.client.gui.component.interaction.UICheckBox;
@@ -119,7 +121,7 @@ public class PddScreen extends BasicScreen {
         }
 
         // Master Panel
-        this.form = new BasicForm(this, BASE_FORM_WIDTH, 241, TextFormatting.WHITE + I18n.format(this.explorer
+        this.form = new BasicForm(BASE_FORM_WIDTH, 241, TextFormatting.WHITE + I18n.format(this.explorer
             ? "sgcraft.gui.edd.label.explorerDialerDevice" : "sgcraft.gui.pdd.label.personalDialerDevice"));
         this.form.setMovable(true);
         this.form.setBackgroundAlpha(255);
@@ -127,23 +129,23 @@ public class PddScreen extends BasicScreen {
         // ****************************************************************************************************************************
         // Address List Area
         // ****************************************************************************************************************************
-        this.addressContainer = new BasicContainer(this, BASE_CONTAINER_WIDTH, 201);
+        this.addressContainer = new BasicContainer(BASE_CONTAINER_WIDTH, 201);
         this.addressContainer.setPosition(0, 0, Anchor.LEFT | Anchor.MIDDLE);
         this.addressContainer.setBorder(FontColors.WHITE, 1, 185);
         this.addressContainer.setPadding(0, 3);
         this.addressContainer.setBackgroundAlpha(0);
 
-        availableAddressesLabel = new UILabel(this, TextFormatting.WHITE + I18n.format(this.explorer
+        availableAddressesLabel = new UILabel(TextFormatting.WHITE + I18n.format(this.explorer
             ? "sgcraft.gui.edd.label.generatedAddresses" : "sgcraft.gui.pdd.label.availableAddresses")+":");
         availableAddressesLabel.setPosition(5, 1, Anchor.LEFT | Anchor.TOP);
 
         // Narrows the list to the entries whose name, world or address has what's typed in it
-        this.searchLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.pdd.label.search") + ":");
+        this.searchLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.pdd.label.search") + ":");
         this.searchLabel.setPosition(5, BasicScreen.getPaddedY(availableAddressesLabel, 4), Anchor.LEFT | Anchor.TOP);
-        this.searchField = new UITextField(this, "", false);
+        this.searchField = new UITextField("");
         this.searchField.setPosition(BasicScreen.getPaddedX(this.searchLabel, 4), this.searchLabel.getY() - 2, Anchor.LEFT | Anchor.TOP);
         this.searchField.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(false).build());
-        this.searchClearButton = new UIButtonBuilder(this)
+        this.searchClearButton = new UIButtonBuilder()
             .text(TextFormatting.RED + "x")
             .size(SEARCH_CLEAR_SIZE, SEARCH_CLEAR_SIZE)
             .anchor(Anchor.LEFT | Anchor.TOP)
@@ -151,25 +153,25 @@ public class PddScreen extends BasicScreen {
             .build("button.pdd.search.clear");
         layoutSearchRow(BASE_CONTAINER_WIDTH);
 
-        localGateAddressLabel = new UILabel(this, "gateAddress");
+        localGateAddressLabel = new UILabel("gateAddress");
         localGateAddressLabel.setFontOptions(FontOptions.builder().from(FontColors.BLUE_FO).shadow(true).scale(1.0F).build());
         localGateAddressLabel.setPosition(-5, 1, Anchor.RIGHT | Anchor.TOP);
 
-        gateStatusLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.pdd.label.dialing"));
+        gateStatusLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.pdd.label.dialing"));
         gateStatusLabel.setFontOptions(FontOptions.builder().from(FontColors.BLUE_FO).shadow(true).scale(1.8F).build());
         gateStatusLabel.setPosition(-5, 50, Anchor.CENTER | Anchor.TOP);
         gateStatusLabel.setVisible(true);
 
-        addressTextureLabel = new UILabel(this, "... template ...");
+        addressTextureLabel = new UILabel("... template ...");
         addressTextureLabel.setFontOptions(FontOptions.builder().from(FontColors.BLUE_FO).shadow(true).scale(1.8F).build());
         addressTextureLabel.setPosition(-5, 60, Anchor.CENTER | Anchor.TOP);
         addressTextureLabel.setVisible(false);
 
-        valuesSeparator = new UISeparator(this);
+        valuesSeparator = new UISeparator(false);
         valuesSeparator.setSize(this.addressContainer.getWidth() - 55, 1);
         valuesSeparator.setPosition(0, 70, Anchor.TOP | Anchor.CENTER);
 
-        this.addressList = new BasicList<>(this, UIComponent.INHERITED, this.addressContainer.getHeight() - 30);
+        this.addressList = new BasicList<>(UIComponent.INHERITED, this.addressContainer.getHeight() - 30);
         this.addressList.setPosition(0, BasicScreen.getPaddedY(this.searchField, 2));
         this.addressList.setItemComponentFactory(AddressItemComponent::new);
         this.addressList.setItemComponentSpacing(1);
@@ -183,7 +185,7 @@ public class PddScreen extends BasicScreen {
 
         // ****************************************************************************************************************************
 
-        this.addAddressButton = new UIButtonBuilder(this)
+        this.addAddressButton = new UIButtonBuilder()
             .text(TextFormatting.GREEN + "+")
             .onClick(() -> new PddEntryScreen(this, player, "Name Here", "Address Here", 10, 0, false, false,false, 1).display())
             .anchor(Anchor.BOTTOM | Anchor.LEFT)
@@ -191,7 +193,7 @@ public class PddScreen extends BasicScreen {
             //.visible(this.canAdd)
             .build("button.add");
 
-        this.deleteAddressButton = new UIButtonBuilder(this)
+        this.deleteAddressButton = new UIButtonBuilder()
             .text(TextFormatting.RED + "-")
             .onClick(() -> {
                 if (addressList.getSelectedItem() != null && !addressList.getSelectedItem().isLocked()) {
@@ -203,7 +205,7 @@ public class PddScreen extends BasicScreen {
             //.visible(this.canRemove)
             .build("button.remove");
 
-        this.editAddressButton = new UIButtonBuilder(this)
+        this.editAddressButton = new UIButtonBuilder()
             .text(TextFormatting.YELLOW + "?")
             .onClick(() -> {
                 if (this.explorer) {
@@ -224,14 +226,14 @@ public class PddScreen extends BasicScreen {
             this.editAddressButton.setPosition(0, 0); // where the add and delete buttons, not shown here, would be
         }
 
-        this.autoCloseChk = new UICheckBox(this, TextFormatting.WHITE + "Auto Close");
+        this.autoCloseChk = new UICheckBox(TextFormatting.WHITE + "Auto Close");
         this.autoCloseChk.setAnchor(Anchor.BOTTOM | Anchor.LEFT);
         this.autoCloseChk.setPosition(BasicScreen.getPaddedX(this.editAddressButton, 2), -2);
         // The PDD shows each entry's own setting; generated gates have none, so there the player ticks it themselves
         this.autoCloseChk.setEnabled(this.explorer);
         this.autoCloseChk.setChecked(false);
 
-        buttonDial = new UIButtonBuilder(this)
+        buttonDial = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.CENTER)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.dialSelectedAddress"))
@@ -241,7 +243,7 @@ public class PddScreen extends BasicScreen {
             })
             .build("button.dial");
 
-        buttonReset = new UIButtonBuilder(this)
+        buttonReset = new UIButtonBuilder()
                 .width(40)
                 .anchor(Anchor.BOTTOM | Anchor.CENTER)
                 .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.reset"))
@@ -251,7 +253,7 @@ public class PddScreen extends BasicScreen {
                 })
                 .build("button.reset");
 
-        buttonDisconnect = new UIButtonBuilder(this)
+        buttonDisconnect = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.CENTER)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.disconnect"))
@@ -266,14 +268,14 @@ public class PddScreen extends BasicScreen {
             })
             .build("button.disconnect");
 
-        final UIButton buttonClose = new UIButtonBuilder(this)
+        final UIButton buttonClose = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.RIGHT)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.close"))
             .onClick(this::close)
             .build("button.close");
 
-        userFeedbackLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.pdd.label.warning"));
+        userFeedbackLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.pdd.label.warning"));
         userFeedbackLabel.setPosition(-15, -3, Anchor.CENTER | Anchor.BOTTOM);
 
         this.form.add(this.addressContainer, addAddressButton, editAddressButton, deleteAddressButton, autoCloseChk, buttonDial, buttonReset, buttonDisconnect, userFeedbackLabel, buttonClose);
@@ -310,8 +312,8 @@ public class PddScreen extends BasicScreen {
     }
 
     @Override
-    public void update(int mouseX, int mouseY, float partialTick) {
-        super.update(mouseX, mouseY, partialTick);
+    public void update() {
+        super.update();
         this.symbolsToDraw = null; // set again below while the symbols should show
 
         if (unlockMouse && this.lastUpdate == 25) {
@@ -533,8 +535,8 @@ public class PddScreen extends BasicScreen {
     }
 
     @Override
-    protected void mouseClicked(int x, int y, int button) {
-        super.mouseClicked(x, y, button);
+    protected void mousePressed(final UIComponent component, final int button) {
+        super.mousePressed(component, button);
         this.lastUpdate = 0; // Reset the timer when mouse is pressed.
     }
 
@@ -887,8 +889,8 @@ public class PddScreen extends BasicScreen {
     private void layoutSearchRow(int containerWidth) {
         int fieldWidth = containerWidth - this.searchField.getX() - 6 - SEARCH_CLEAR_SIZE - 2;
         this.searchField.setSize(fieldWidth, 0);
-        this.searchClearButton.setAutoSize(false);
-        this.searchClearButton.setSize(SEARCH_CLEAR_SIZE, this.searchField.getHeight());
+        // A fixed size: setSize(width, height) only sets the least a button may be (it grows to fit its text)
+        this.searchClearButton.setSize(Size.of(SEARCH_CLEAR_SIZE, this.searchField.getHeight()));
         this.searchClearButton.setPosition(this.searchField.getX() + fieldWidth + 2, this.searchField.getY(),
             Anchor.LEFT | Anchor.TOP);
     }
@@ -927,11 +929,11 @@ public class PddScreen extends BasicScreen {
         // The gate being dialled from can't be dialled, so its entry is greyed out and can't be selected (its arrows
         // still move it)
         @Override
-        public boolean onClick(final int x, final int y) {
+        public boolean onClick() {
             if (isLocalGateAddress(this.item.getAddress())) {
                 return true;
             }
-            return super.onClick(x, y);
+            return super.onClick();
         }
 
         @Override
@@ -942,14 +944,14 @@ public class PddScreen extends BasicScreen {
             this.setPadding(1);
 
             final boolean isLocal = isLocalGateAddress(this.item.getAddress());
-            this.nameLabel = new UILabel(this.getGui(), (isLocal ? TextFormatting.DARK_GRAY : TextFormatting.WHITE) + this.item.getName());
+            this.nameLabel = new UILabel((isLocal ? TextFormatting.DARK_GRAY : TextFormatting.WHITE) + this.item.getName());
             this.nameLabel.setPosition(4, 3);
 
             // The address, then its symbols in teal, then the world it leads to: "ABCD-EFG-HI - <symbols> - world"
             final String worldName = worldNames.get(this.item.getAddress());
             final String symbols = this.item.getAddress().replace("-", "").trim().toUpperCase();
             final boolean showSymbols = !symbols.isEmpty() && SGAddressing.validSymbols(symbols);
-            this.addressLabel = new UILabel(this.getGui(), (isLocal ? TextFormatting.DARK_GRAY : TextFormatting.BLUE) + this.item.getAddress()
+            this.addressLabel = new UILabel((isLocal ? TextFormatting.DARK_GRAY : TextFormatting.BLUE) + this.item.getAddress()
                 + (showSymbols || worldName != null ? TextFormatting.GRAY + " - " : ""));
             this.addressLabel.setPosition(4, BasicScreen.getPaddedY(this.nameLabel, 2));
 
@@ -957,9 +959,8 @@ public class PddScreen extends BasicScreen {
             if (showSymbols) {
                 for (int i = 0; i < symbols.length(); i++) {
                     int s = SGBaseTE.charToSymbol(symbols.charAt(i));
-                    final UIImage symbol = new UIImage(this.getGui(), tealSymbols,
-                        tealSymbols.getIcon((s % symbolsPerRowInTexture) * symbolWidthInTexture, (s / symbolsPerRowInTexture) * symbolHeightInTexture,
-                            symbolWidthInTexture, symbolHeightInTexture));
+                    final UIImage symbol = new UIImage(new GuiIcon(tealSymbols, (s % symbolsPerRowInTexture) * symbolWidthInTexture,
+                        (s / symbolsPerRowInTexture) * symbolHeightInTexture, symbolWidthInTexture, symbolHeightInTexture));
                     symbol.setSize(listSymbolSize, listSymbolSize);
                     symbol.setPosition(x, this.addressLabel.getY() - 1);
                     this.add(symbol);
@@ -967,21 +968,21 @@ public class PddScreen extends BasicScreen {
                 }
             }
             if (worldName != null) {
-                final UILabel worldLabel = new UILabel(this.getGui(), TextFormatting.GRAY + (showSymbols ? " - " : "") + worldName);
+                final UILabel worldLabel = new UILabel(TextFormatting.GRAY + (showSymbols ? " - " : "") + worldName);
                 worldLabel.setPosition(x, this.addressLabel.getY());
                 this.add(worldLabel);
                 x += worldLabel.getWidth();
             }
             fitAddressLine(x);
 
-            this.lockedStatusContainer = new BasicContainer(this.getGui(), 5, UIComponent.INHERITED);
+            this.lockedStatusContainer = new BasicContainer(5, UIComponent.INHERITED);
             this.lockedStatusContainer.setPosition(0, 0, Anchor.MIDDLE | Anchor.RIGHT);
 
             if (explorer) {
                 // Whether the player has been to this gate, where the PDD has its move arrows: generated gates keep
                 // the server's order
                 final boolean visited = visitedAddresses.contains(this.item.getAddress());
-                final UILabel visitedLabel = new UILabel(this.getGui(), (visited ? TextFormatting.GREEN : TextFormatting.DARK_GRAY)
+                final UILabel visitedLabel = new UILabel((visited ? TextFormatting.GREEN : TextFormatting.DARK_GRAY)
                     + I18n.format(visited ? "sgcraft.gui.edd.label.visited" : "sgcraft.gui.edd.label.notVisited"));
                 visitedLabel.setPosition(-8, 3, Anchor.TOP | Anchor.RIGHT);
                 // Room for a long name beside it, as for the address line (which keeps its reserve on the right)
@@ -1006,9 +1007,11 @@ public class PddScreen extends BasicScreen {
         }
 
         private UIButton arrowButton(String texture, int direction, int anchor, boolean enabled) {
-            final UIImage arrow = new UIImage(this.getGui(), new GuiTexture(SGCraft.mod.resourceLocation("textures/gui/" + texture + ".png")), null);
+            // The whole image: the texture size only converts pixels to UVs, unused for 0 to 1
+            final UIImage arrow = new UIImage(new GuiIcon(new GuiTexture(SGCraft.mod.resourceLocation("textures/gui/" + texture + ".png"), 1, 1),
+                0F, 0F, 1F, 1F));
             arrow.setSize(9, 5);
-            return new UIButtonBuilder(this.getGui())
+            return new UIButtonBuilder()
                 .image(arrow)
                 .size(15, 12)
                 .position(-8, 0)

@@ -8,6 +8,7 @@ import gcewing.sg.tileentity.SGBaseTE;
 import gcewing.sg.tileentity.data.GateAccessData;
 import net.malisis.core.client.gui.Anchor;
 import net.malisis.core.client.gui.BasicScreen;
+import net.malisis.core.client.gui.component.UIComponent;
 import net.malisis.core.client.gui.component.container.BasicForm;
 import net.malisis.core.client.gui.component.decoration.UILabel;
 import net.malisis.core.client.gui.component.interaction.UIButton;
@@ -50,7 +51,7 @@ public class GateAddressAccessEntryScreen extends BasicScreen {
         Keyboard.enableRepeatEvents(true);
 
         // Master Panel
-        this.form = new BasicForm(this, 180, 100, "");
+        this.form = new BasicForm(180, 100, "");
         this.form.setAnchor(Anchor.CENTER | Anchor.MIDDLE);
         this.form.setMovable(true);
         this.form.setClosable(true);
@@ -61,7 +62,7 @@ public class GateAddressAccessEntryScreen extends BasicScreen {
         this.form.setTopPadding(20);
         this.form.setLeftPadding(3);
 
-        final UILabel titleLabel = new UILabel(this, "");
+        final UILabel titleLabel = new UILabel("");
         titleLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         titleLabel.setPosition(0, -15, Anchor.CENTER | Anchor.TOP);
 
@@ -73,11 +74,11 @@ public class GateAddressAccessEntryScreen extends BasicScreen {
             titleLabel.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.deleteGateAddress"));
         }
 
-        final UILabel addressLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.address")+":");
+        final UILabel addressLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.address")+":");
         addressLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         addressLabel.setPosition(15, 10, Anchor.LEFT | Anchor.TOP);
 
-        this.addressTextField = new UITextField(this, "", false);
+        this.addressTextField = new UITextField("");
         if (this.oldAddress.isEmpty()) {
             this.addressTextField.setText(this.newAddress);
         } else {
@@ -87,14 +88,14 @@ public class GateAddressAccessEntryScreen extends BasicScreen {
         this.addressTextField.setPosition(addressLabel.getX() + addressLabel.getWidth() + 10, addressLabel.getY() - 1, Anchor.LEFT | Anchor.TOP);
         this.addressTextField.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(false).build());
 
-        final UILabel addressFormatLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.format")+": XXXX-XXX-XX");
+        final UILabel addressFormatLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.format")+": XXXX-XXX-XX");
         addressFormatLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).italic(true).shadow(true).scale(0.9F).build());
         addressFormatLabel.setPosition(0, 25, Anchor.CENTER | Anchor.TOP);
 
         // ****************************************************************************************************************************
 
         // Close button
-        final UIButton buttonClose = new UIButtonBuilder(this)
+        final UIButton buttonClose = new UIButtonBuilder()
                 .width(40)
                 .anchor(Anchor.BOTTOM | Anchor.RIGHT)
                 .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.close"))
@@ -105,7 +106,7 @@ public class GateAddressAccessEntryScreen extends BasicScreen {
                 .build("button.close");
 
         // Delete Feature button
-        final UIButton buttonDelete = new UIButtonBuilder(this)
+        final UIButton buttonDelete = new UIButtonBuilder()
                 .width(40)
                 .position(-(buttonClose.getX() + buttonClose.getWidth() + 5), 0)
                 .visible(function == 3)
@@ -119,7 +120,7 @@ public class GateAddressAccessEntryScreen extends BasicScreen {
                 .build("button.delete");
 
         // Save Feature button
-        final UIButton buttonSave = new UIButtonBuilder(this)
+        final UIButton buttonSave = new UIButtonBuilder()
                 .width(40)
                 .position(-(buttonClose.getX() + buttonClose.getWidth() + 5), 0)
                 .visible(!(function == 3))
@@ -134,8 +135,8 @@ public class GateAddressAccessEntryScreen extends BasicScreen {
     }
 
     @Override
-    public void update(int mouseX, int mouseY, float partialTick) {
-        super.update(mouseX, mouseY, partialTick);
+    public void update() {
+        super.update();
         if (unlockMouse && this.lastUpdate == 25) {
             Mouse.setGrabbed(false); // Force the mouse to be visible even though Mouse.isGrabbed() is false.  //#BugsUnited.
             unlockMouse = false; // Only unlock once per session.
@@ -174,8 +175,8 @@ public class GateAddressAccessEntryScreen extends BasicScreen {
     }
 
     @Override
-    protected void mouseClicked(int x, int y, int button) {
-        super.mouseClicked(x, y, button);
+    protected void mousePressed(final UIComponent component, final int button) {
+        super.mousePressed(component, button);
         this.lastUpdate = 0; // Reset the timer when mouse is pressed.
     }
 

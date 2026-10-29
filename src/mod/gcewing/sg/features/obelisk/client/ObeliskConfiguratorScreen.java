@@ -72,20 +72,20 @@ public class ObeliskConfiguratorScreen extends BasicScreen {
 
         // A transporter with power (ring platforms) has a line for it under the owner, and the rest moves down to make room
         final int powerRoom = this.config.hasPower ? 22 : 0;
-        final BasicForm form = new BasicForm(this, 360, 224 + powerRoom, TextFormatting.WHITE + I18n.format(this.config.titleKey));
+        final BasicForm form = new BasicForm(360, 224 + powerRoom, TextFormatting.WHITE + I18n.format(this.config.titleKey));
         form.setMovable(true);
         form.setBackgroundAlpha(255);
 
         // ---- Where it's linked to ----
-        this.linkLabel = new UILabel(this, "");
+        this.linkLabel = new UILabel("");
         this.linkLabel.setPosition(5, 2, Anchor.LEFT | Anchor.TOP);
-        this.ownerLabel = new UILabel(this, "");
+        this.ownerLabel = new UILabel("");
         this.ownerLabel.setPosition(5, 12, Anchor.LEFT | Anchor.TOP);
-        this.powerLabel = new UILabel(this, "");
+        this.powerLabel = new UILabel("");
         this.powerLabel.setPosition(5, 22, Anchor.LEFT | Anchor.TOP);
-        this.naquadahLabel = new UILabel(this, "");
+        this.naquadahLabel = new UILabel("");
         this.naquadahLabel.setPosition(5, 32, Anchor.LEFT | Anchor.TOP);
-        this.unlinkButton = new UIButtonBuilder(this)
+        this.unlinkButton = new UIButtonBuilder()
             .width(50)
             .anchor(Anchor.TOP | Anchor.RIGHT)
             .position(-3, 2)
@@ -95,16 +95,16 @@ public class ObeliskConfiguratorScreen extends BasicScreen {
             .build("button.obelisk.unlink");
 
         // ---- The players ----
-        final BasicContainer players = new BasicContainer(this, 165, 160);
+        final BasicContainer players = new BasicContainer(165, 160);
         players.setPosition(0, 23 + powerRoom, Anchor.LEFT | Anchor.TOP);
         players.setBorder(FontColors.WHITE, 1, 185);
         players.setPadding(0, 3);
         players.setBackgroundAlpha(0);
 
-        final UILabel playersLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.playerList"));
+        final UILabel playersLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.playerList"));
         playersLabel.setPosition(0, 0, Anchor.CENTER | Anchor.TOP);
 
-        this.playerList = new BasicList<>(this, UIComponent.INHERITED, 112);
+        this.playerList = new BasicList<>(UIComponent.INHERITED, 112);
         this.playerList.setPosition(0, 10);
         this.playerList.setItemComponentFactory(PlayerItem::new);
         this.playerList.setItemComponentSpacing(1);
@@ -113,15 +113,15 @@ public class ObeliskConfiguratorScreen extends BasicScreen {
         this.playerList.register(this);
         this.playerList.setBorder(FontColors.WHITE, 1, 185);
 
-        final UILabel nameLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.obelisk.label.typeName"));
+        final UILabel nameLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.obelisk.label.typeName"));
         nameLabel.setPosition(3, -17, Anchor.LEFT | Anchor.BOTTOM);
 
-        this.nameField = new UITextField(this, "", false);
+        this.nameField = new UITextField("");
         this.nameField.setSize(100, 0);
         this.nameField.setPosition(3, -3, Anchor.LEFT | Anchor.BOTTOM);
         this.nameField.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(false).build());
 
-        final UIButton addButton = new UIButtonBuilder(this)
+        final UIButton addButton = new UIButtonBuilder()
             .width(22)
             .anchor(Anchor.BOTTOM | Anchor.RIGHT)
             .position(-30, -2)
@@ -129,7 +129,7 @@ public class ObeliskConfiguratorScreen extends BasicScreen {
             .onClick(this::addPlayer)
             .listener(this)
             .build("button.obelisk.add");
-        this.removeButton = new UIButtonBuilder(this)
+        this.removeButton = new UIButtonBuilder()
             .width(22)
             .anchor(Anchor.BOTTOM | Anchor.RIGHT)
             .position(-4, -2)
@@ -140,20 +140,20 @@ public class ObeliskConfiguratorScreen extends BasicScreen {
         players.add(playersLabel, this.playerList, nameLabel, this.nameField, addButton, this.removeButton);
 
         // ---- The selected player's options, and the default ----
-        final BasicContainer options = new BasicContainer(this, 180, 160);
+        final BasicContainer options = new BasicContainer(180, 160);
         options.setPosition(0, 23 + powerRoom, Anchor.RIGHT | Anchor.TOP);
         options.setBorder(FontColors.WHITE, 1, 185);
         options.setPadding(0, 3);
         options.setBackgroundAlpha(0);
 
-        final UILabel optionsLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.options"));
+        final UILabel optionsLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.options"));
         optionsLabel.setPosition(0, 0, Anchor.CENTER | Anchor.TOP);
         // A line under the heading, the panel's full width, drawn as the player list's outline is (a separator draws thicker)
-        final BasicContainer optionsLine = new BasicContainer(this, options.getWidth(), 1);
+        final BasicContainer optionsLine = new BasicContainer(options.getWidth(), 1);
         optionsLine.setBorders(FontColors.WHITE, 185, 0, 1, 0, 0);
         optionsLine.setBackgroundAlpha(0);
         optionsLine.setPosition(0, 10, Anchor.TOP | Anchor.CENTER);
-        this.selectedLabel = new UILabel(this, "");
+        this.selectedLabel = new UILabel("");
         this.selectedLabel.setPosition(5, 14, Anchor.LEFT | Anchor.TOP);
 
         final UILabel useLabel = label("access", 32);
@@ -165,15 +165,15 @@ public class ObeliskConfiguratorScreen extends BasicScreen {
         this.adminAllowRadio = radio(adminGroup, "sgcraft.gui.configurator.label.allow", 70, 48);
         this.adminDenyRadio = radio(adminGroup, "sgcraft.gui.configurator.label.deny", 120, 48);
 
-        final UISeparator defaultSeparator = new UISeparator(this);
+        final UISeparator defaultSeparator = new UISeparator(false);
         defaultSeparator.setSize(160, 1);
         defaultSeparator.setPosition(0, 72, Anchor.TOP | Anchor.CENTER);
-        final UILabel defaultLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.defaultAccess") + ":");
+        final UILabel defaultLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.defaultAccess") + ":");
         defaultLabel.setPosition(5, 80, Anchor.LEFT | Anchor.TOP);
         final String defaultGroup = group("default");
         this.everyoneRadio = radio(defaultGroup, "sgcraft.gui.obelisk.label.everyone", 10, 96);
         this.listedOnlyRadio = radio(defaultGroup, "sgcraft.gui.obelisk.label.listedOnly", 10, 112);
-        final UILabel defaultHint = new UILabel(this, TextFormatting.GRAY + I18n.format("sgcraft.gui.obelisk.label.defaultHint"));
+        final UILabel defaultHint = new UILabel(TextFormatting.GRAY + I18n.format("sgcraft.gui.obelisk.label.defaultHint"));
         defaultHint.setFontOptions(FontOptions.builder().from(FontColors.GRAY_FO).scale(0.8F).build());
         defaultHint.setPosition(5, 130, Anchor.LEFT | Anchor.TOP);
 
@@ -181,7 +181,7 @@ public class ObeliskConfiguratorScreen extends BasicScreen {
             this.adminAllowRadio, this.adminDenyRadio, defaultSeparator, defaultLabel, this.everyoneRadio, this.listedOnlyRadio, defaultHint);
 
         // ---- Saving ----
-        final UIButton saveButton = new UIButtonBuilder(this)
+        final UIButton saveButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.RIGHT)
             .position(-45, 0)
@@ -189,7 +189,7 @@ public class ObeliskConfiguratorScreen extends BasicScreen {
             .onClick(() -> ObeliskNetworkHandler.sendConfigToServer(this.config.pos, this.everyoneRadio.isSelected(), this.access))
             .listener(this)
             .build("button.obelisk.save");
-        final UIButton closeButton = new UIButtonBuilder(this)
+        final UIButton closeButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.RIGHT)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.close"))
@@ -208,14 +208,14 @@ public class ObeliskConfiguratorScreen extends BasicScreen {
     }
 
     private UIRadioButton radio(String group, String langKey, int x, int y) {
-        final UIRadioButton radio = new UIRadioButton(this, group, TextFormatting.WHITE + I18n.format(langKey));
+        final UIRadioButton radio = new UIRadioButton(group, TextFormatting.WHITE + I18n.format(langKey));
         radio.setPosition(x, y, Anchor.LEFT | Anchor.TOP);
         radio.register(this);
         return radio;
     }
 
     private UILabel label(String langKey, int y) {
-        final UILabel label = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label." + langKey) + ":");
+        final UILabel label = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label." + langKey) + ":");
         label.setPosition(5, y, Anchor.LEFT | Anchor.TOP);
         return label;
     }
@@ -321,8 +321,8 @@ public class ObeliskConfiguratorScreen extends BasicScreen {
     }
 
     @Override
-    public void update(int mouseX, int mouseY, float partialTick) {
-        super.update(mouseX, mouseY, partialTick);
+    public void update() {
+        super.update();
         if (this.unlockMouse && this.lastUpdate == 25) {
             Mouse.setGrabbed(false); // Force the mouse to be visible even though Mouse.isGrabbed() is false.  //#BugsUnited.
             this.unlockMouse = false;
@@ -349,10 +349,10 @@ public class ObeliskConfiguratorScreen extends BasicScreen {
             super.construct(gui);
             this.setHeight(15);
             this.setPadding(1);
-            final UILabel name = new UILabel(this.getGui(), TextFormatting.WHITE + this.item.name);
+            final UILabel name = new UILabel(TextFormatting.WHITE + this.item.name);
             name.setAnchor(Anchor.LEFT | Anchor.MIDDLE);
             name.setPosition(5, 0);
-            final UILabel tags = new UILabel(this.getGui(), (this.item.use ? TextFormatting.GREEN + I18n.format("sgcraft.gui.obelisk.label.tagUse")
+            final UILabel tags = new UILabel((this.item.use ? TextFormatting.GREEN + I18n.format("sgcraft.gui.obelisk.label.tagUse")
                 : TextFormatting.RED + I18n.format("sgcraft.gui.obelisk.label.tagDenied"))
                 + (this.item.admin ? TextFormatting.GOLD + " " + I18n.format("sgcraft.gui.obelisk.label.tagAdmin") : ""));
             tags.setAnchor(Anchor.RIGHT | Anchor.MIDDLE);

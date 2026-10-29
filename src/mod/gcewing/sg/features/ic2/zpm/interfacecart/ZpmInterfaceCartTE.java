@@ -3,8 +3,12 @@ package gcewing.sg.features.ic2.zpm.interfacecart;
 import static gcewing.sg.BaseUtils.min;
 import static gcewing.sg.features.ic2.zpm.interfacecart.ZpmInterfaceCart.ZPM_LOADED;
 
+import gcewing.sg.BaseMod;
 import gcewing.sg.BaseTileInventory;
+import gcewing.sg.features.ic2.zpm.Ic2ZpmSources;
 import gcewing.sg.features.zpm.ZPMItem;
+import gcewing.sg.features.zpm.ZpmBuffer;
+import gcewing.sg.features.zpm.ZpmSource;
 import gcewing.sg.interfaces.ISGEnergySource;
 import gcewing.sg.SGCraft;
 import gcewing.sg.features.zpm.link.ILinkableZpm;
@@ -12,7 +16,6 @@ import gcewing.sg.features.zpm.link.ZpmLink;
 import gcewing.sg.tileentity.DHDTE;
 import gcewing.sg.tileentity.SGBaseTE;
 import gcewing.sg.util.GateUtil;
-import ic2.api.energy.prefab.BasicSource;
 import ic2.api.energy.tile.IEnergyAcceptor;
 import ic2.api.energy.tile.IEnergySource;
 import net.minecraft.block.state.IBlockState;
@@ -37,10 +40,14 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+// Works without IC2 (stargates and Forge Energy machines draw on it); with IC2 it is on the IC2 energy network too. Forge
+// strips IEnergySource and the method naming IC2's types when IC2 isn't installed.
+@Optional.Interface(iface = "ic2.api.energy.tile.IEnergySource", modid = "ic2")
 public final class ZpmInterfaceCartTE extends BaseTileInventory implements ISGEnergySource, ILinkableZpm, IEnergySource, IInventory, ITickable, gcewing.sg.BaseContainer.ChangesSlotItems {
 
     // Changes made to items going into or out of its slots, for open screens to send (see BaseContainer.ChangesSlotItems)
@@ -51,7 +58,9 @@ public final class ZpmInterfaceCartTE extends BaseTileInventory implements ISGEn
         return slotItemChanges;
     }
     private NonNullList<ItemStack> items = NonNullList.withSize(1, ItemStack.EMPTY);
-    public final BasicSource source;
+    public final ZpmSource source;
+    // The ZPM's energy, saved by the cart itself so a world opens with or without IC2 (IC2's source saved it before)
+    private static final String ENERGY_TAG = "zpmEnergy";
     public static final int firstZpmSlot = 0;
     public static final int numZpmSlots = 1;
     public static final int numSlots = numZpmSlots; // future usage > 1
@@ -63,7 +72,16 @@ public final class ZpmInterfaceCartTE extends BaseTileInventory implements ISGEn
     private final IEnergyStorage forgeEnergy = new ForgeEnergyAdapter();
 
     public ZpmInterfaceCartTE() {
-        this.source = new ZpmInterfaceCartBasicSource(this, Integer.MAX_VALUE, 3);
+        this.source = BaseMod.isModLoaded("ic2") ? Ic2ZpmSources.cart(this, Integer.MAX_VALUE, 3)
+            : new ZpmBuffer(Integer.MAX_VALUE, 3, this::afterDraw);
+    }
+
+    // After something drew on the ZPM: save it, and a tainted ZPM blows up
+    void afterDraw(double amount) {
+        markChanged();
+        if (isTainted(getStackInSlot(0))) {
+            world.newExplosion(null, pos.getX(), pos.getY(), pos.getZ(), (float) 250, true, true);
+        }
     }
 
     /* TileEntity */
@@ -95,18 +113,22 @@ public final class ZpmInterfaceCartTE extends BaseTileInventory implements ISGEn
             reading = false;
         }
         this.zpmLink.readFromNBT(compound);
-        this.source.readFromNBT(compound); // the energy of the ZPM put back in its slot
-
+        // The energy of the ZPM put back in its slot
+        if (compound.hasKey(ENERGY_TAG, 99 /* number */)) {
+            this.source.setEnergyStored(Math.max(0, compound.getDouble(ENERGY_TAG)));
+        } else if (BaseMod.isModLoaded("ic2")) {
+            Ic2ZpmSources.readLegacy(this.source, compound);
+        }
     }
 
-    // Reading saved data, which puts the ZPM back in its slot; its energy is the source's own (see readFromNBT)
+    // Reading saved data, which puts the ZPM back in its slot; its energy is saved by the cart (see readFromNBT)
     private boolean reading = false;
 
     @Override
     public NBTTagCompound writeToNBT(final NBTTagCompound compound) {
         super.writeToNBT(compound);
         this.zpmLink.writeToNBT(compound);
-        this.source.writeToNBT(compound);
+        compound.setDouble(ENERGY_TAG, this.source.getEnergyStored());
 
         return compound;
     }
@@ -121,7 +143,7 @@ public final class ZpmInterfaceCartTE extends BaseTileInventory implements ISGEn
         pushForgeEnergy();
     }
 
-    // Feed neighbouring Forge Energy acceptors (EnderIO conduits, RF/FE machines) alongside the IC2 network.
+    // Feed neighbouring Forge Energy acceptors (EnderIO conduits, RF/FE machines), alongside the IC2 network when installed.
     private void pushForgeEnergy() {
         if (this.source.getEnergyStored() <= 0) {
             return;
@@ -158,7 +180,7 @@ public final class ZpmInterfaceCartTE extends BaseTileInventory implements ISGEn
     }
 
     /**
-     * Extract-only Forge Energy view of the IC2 buffer, converting at {@link SGCraft#Ic2FEPerEU}.
+     * Extract-only Forge Energy view of the cart's source, converting at {@link SGCraft#Ic2FEPerEU}.
      */
     private class ForgeEnergyAdapter implements IEnergyStorage {
         @Override
@@ -286,13 +308,14 @@ public final class ZpmInterfaceCartTE extends BaseTileInventory implements ISGEn
     }
 
     @Override
+    @Optional.Method(modid = "ic2")
     public boolean emitsEnergyTo(IEnergyAcceptor iEnergyAcceptor, EnumFacing enumFacing) {
         if (isTainted(this.getStackInSlot(0))) {
             world.newExplosion(null, this.pos.getX(), this.pos.getY(), this.pos.getZ(), (float)250, true, true);
         }
 
         markChanged();
-        return this.source.emitsEnergyTo(iEnergyAcceptor, enumFacing);
+        return Ic2ZpmSources.emitsEnergyTo(this.source, iEnergyAcceptor, enumFacing);
     }
 
     /* Inventory */
