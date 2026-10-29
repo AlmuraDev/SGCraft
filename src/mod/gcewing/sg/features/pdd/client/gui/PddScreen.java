@@ -496,7 +496,10 @@ public class PddScreen extends BasicScreen {
                 this.lastUpdate = 0;
                 if (localGate.chevronsLockOnDial) {
                     if (!isAdmin) {
-                        dialSelectedAddressLockEachChevronIndividually(); // Progressive Dial Sequence
+                        // Progressive dial: the gate enters each symbol itself (SGBaseTE.startLockDial), so this closes as for
+                        // a turning dial rather than staying open to send them
+                        dialSelectedAddress(5);
+                        this.close();
                     } else {
                         // Todo: the below is a very stupid way to implement this...
                         dialSelectedAddress(); // Immediate dial address and lock all chevrons at one
@@ -685,6 +688,12 @@ public class PddScreen extends BasicScreen {
     }
 
     private void dialSelectedAddress() {
+        dialSelectedAddress(1);
+    }
+
+    // Sends the selected address to the server to dial: setting 1 dials it all at once (see PddNetworkHandler), 5 a symbol at
+    // a time
+    private void dialSelectedAddress(int setting) {
         TileEntity localGateTE = this.world.getTileEntity(this.gatePos);
         if (localGateTE instanceof SGBaseTE) {
             localGate = (SGBaseTE) localGateTE;
@@ -699,7 +708,7 @@ public class PddScreen extends BasicScreen {
                 } else {
                     this.enteredAddress = destination.substring(0,9);
                 }
-                PddNetworkHandler.sendPddInputToServer(localGate, 1, localGate.homeAddress ,destination); // Dials specified address based on Gates configuration, rotation vs. immediate dial.
+                PddNetworkHandler.sendPddInputToServer(localGate, setting, localGate.homeAddress, destination); // Dials specified address based on Gates configuration, rotation vs. immediate dial.
             }
         }
     }

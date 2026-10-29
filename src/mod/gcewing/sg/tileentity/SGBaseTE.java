@@ -1285,6 +1285,7 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
             clientUpdate();
         } else {
             lockIncomingChevrons();
+            tickLockDial();
             serverUpdate();
             checkForEntitiesInPortal();
             clearKawooshBlocks();
@@ -2323,6 +2324,48 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
     // (world time) it locks the next, or 0 (server only)
     static final int incomingLockGap = 4;
     private long incomingLockAt = 0;
+
+    // A dial whose symbols the server enters one at a time, for a gate whose chevrons lock as they're entered
+    // (chevronsLockOnDial), started from a PDD or EDD, which closes rather than staying open to send each one: the address,
+    // who dialled, how many symbols are in, and when (world time) the next goes in (server only)
+    private String lockDialAddress;
+    private java.util.UUID lockDialPlayer;
+    private int lockDialDigit;
+    private long lockDialNextAt;
+    // Ticks between symbols, as the PDD and EDD screens sent them
+    static final int lockDialTicks = 15;
+
+    public void startLockDial(String address, EntityPlayer player) {
+        if (state != SGState.Idle || address == null || address.isEmpty()) {
+            return;
+        }
+        lockDialAddress = address;
+        lockDialPlayer = player.getUniqueID();
+        lockDialDigit = 0;
+        lockDialNextAt = world.getTotalWorldTime();
+    }
+
+    // The next symbol of a lock dial, when it's due; it stops once the address is in, a symbol is refused (see
+    // immediateDialSymbol), the gate is busy, or its player has gone
+    private void tickLockDial() {
+        if (lockDialAddress == null || world.getTotalWorldTime() < lockDialNextAt) {
+            return;
+        }
+        EntityPlayer player = world.getMinecraftServer() == null ? null
+            : world.getMinecraftServer().getPlayerList().getPlayerByUUID(lockDialPlayer);
+        if (player == null || state != SGState.Idle) {
+            lockDialAddress = null;
+            return;
+        }
+        String address = lockDialAddress;
+        int digit = lockDialDigit++;
+        immediateDialSymbol(address, player, digit);
+        if (lockDialDigit >= address.length() || enteredAddress == null || enteredAddress.length() != lockDialDigit) {
+            lockDialAddress = null; // done, or that symbol didn't go in
+        } else {
+            lockDialNextAt += lockDialTicks;
+        }
+    }
 
     private void lockIncomingChevrons() {
         if (incomingLockAt <= 0) {

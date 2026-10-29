@@ -135,6 +135,13 @@ public class PddNetworkHandler extends SGChannel {
                 }
             }
         }
+        if (setting == 5) { // Dial a gate whose chevrons lock as they're entered: the gate enters each symbol in turn
+            if (!localGate.isConnected() && localGate.chevronsLockOnDial) {
+                if (localGate.allowGateAccess(player) || isPermissionsAdmin) {
+                    localGate.startLockDial(destination, player);
+                }
+            }
+        }
         if (setting == 2) {
             if (localGate.isConnected()) {
                 if (localGate.allowGateAccess(player) || isPermissionsAdmin) {
