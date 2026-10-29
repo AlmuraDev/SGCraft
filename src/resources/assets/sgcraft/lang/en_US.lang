@@ -333,3 +333,39 @@ message.sgcraft:invalidAccessListAddress=%s is not a full gate address (XXXX-XXX
 message.sgcraft:duplicateAccessListAddress=%s is already in the list
 message.sgcraft:invalidAccessListPlayer=%s is not a valid player name
 message.sgcraft:duplicateAccessListPlayer=%s is already in the list
+
+message.sgcraft.command:GateNotFound=Failed to find stargate where player was looking or near the player
+message.sgcraft.command.gate.place:StargateBuilt=Stargate built at: %s %s
+message.sgcraft.command.gate.place:TENull=SGCraft: FeatureGeneration is done and Stargate TE was null! That's bad. Pos %s and Direction %s
+message.sgcraft.command.gate.place:HomeAddressError=Placed Stargate Failed to set home address
+
+message.sgcraft.command.gate:InvalidGateType=Invalid Gate Type %s
+message.sgcraft.command.gate:Dial=Dialing Stargate: %s
+
+
+message.sgcraft.command.gate.info:ChunkPos=Chunk: d:%d x:%d z:%d
+message.sgcraft.command.gate.info:BlockPos=Block: x:%d y:%d z:%d
+message.sgcraft.command.gate.info:HomeAddress=Home Address: %s
+message.sgcraft.command.gate.info:State=State: %s
+message.sgcraft.command.gate.info:Type=Type: %s
+message.sgcraft.command.gate.info:IrisState=Iris State: %s
+message.sgcraft.command.gate.info:Iris=No Iris
+message.sgcraft.command.gate.info:NumChevron=Chevron Number %d
+message.sgcraft.command.gate.info:ChevronUpgrade=Has Chevron Upgrade
+message.sgcraft.command.gate.info:IrisUpgrade=Has Iris Upgrade
+message.sgcraft.command.gate.info:Merged=Is Merged
+message.sgcraft.command.gate.info:DialedAddress="Dialed Address: %s
+message.sgcraft.command.gate.info:Generated=Was Generated
+message.sgcraft.command.gate.info:Initiator=Is Initiator
+message.sgcraft.command.gate.info:LinkedToController=Controller
+message.sgcraft.command.gate.info:Pending=Pending
+message.sgcraft.command.gate.info:CloseFromEitherEnd=Allows Close from Either End
+message.sgcraft.command.gate.info:OneWayTravel=One Way Travel Only
+message.sgcraft.command.gate.info:AllowIncomingConnections=Allows Incoming Connections
+message.sgcraft.command.gate.info:AllowOutgoingConnections=Allows Outgoing Connections
+message.sgcraft.command.gate.info:AllowRedstoneInput=Allows Redstone Input
+message.sgcraft.command.gate.info:AllowRedstoneOutput=Allows Redstone Output
+
+
+
+message.sgcraft.command.gate:Usage=Interact with a Stargate via commands: %s
