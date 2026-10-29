@@ -90,14 +90,14 @@ public class LinkedZpmsScreen extends BasicScreen {
         int lines = rows.isEmpty() ? 3 : shown + (rows.size() > maxRows ? 1 : 0);
 
         // The lines first, so the window can be as wide as the widest of them (a label is as wide as its text)
-        List<UIComponent<?>> content = new ArrayList<>();
+        List<UIComponent> content = new ArrayList<>();
         int widest = 0;
         if (rows.isEmpty()) {
             UILabel none = label(TextFormatting.GRAY + I18n.format("sgcraft.gui.linkedZpms.label.none"), 5, 2);
             content.add(none);
             content.add(hint("sgcraft.gui.zpmLink.label.hint1", 16));
             content.add(hint("sgcraft.gui.zpmLink.label.hint2", 25));
-            for (UIComponent<?> c : content) {
+            for (UIComponent c : content) {
                 widest = Math.max(widest, 5 + c.getWidth());
             }
         } else {
@@ -105,7 +105,7 @@ public class LinkedZpmsScreen extends BasicScreen {
                 Row row = rows.get(i);
                 int y = 3 + i * rowHeight;
                 // An X on its left unlinks it
-                content.add(new UIButtonBuilder(this)
+                content.add(new UIButtonBuilder()
                     .size(12, 12)
                     .anchor(Anchor.TOP | Anchor.LEFT)
                     .position(3, y - 2)
@@ -128,14 +128,14 @@ public class LinkedZpmsScreen extends BasicScreen {
         // A little room either side of the widest line, and never narrower than its title and Close button need
         final String title = I18n.format("sgcraft.gui.linkedZpms.label.title", rows.size());
         int width = Math.max(Math.max(widest + 10, minWidth), Minecraft.getMinecraft().fontRenderer.getStringWidth(title) + 60);
-        final BasicForm form = new BasicForm(this, width, 40 + lines * rowHeight, TextFormatting.WHITE + title);
+        final BasicForm form = new BasicForm(width, 40 + lines * rowHeight, TextFormatting.WHITE + title);
         form.setMovable(true);
         form.setBackgroundAlpha(255);
-        for (UIComponent<?> c : content) {
+        for (UIComponent c : content) {
             form.add(c);
         }
 
-        final UIButton closeButton = new UIButtonBuilder(this)
+        final UIButton closeButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.RIGHT)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.close"))
@@ -154,13 +154,13 @@ public class LinkedZpmsScreen extends BasicScreen {
     }
 
     private UILabel label(String text, int x, int y) {
-        final UILabel label = new UILabel(this, text);
+        final UILabel label = new UILabel(text);
         label.setPosition(x, y, Anchor.LEFT | Anchor.TOP);
         return label;
     }
 
     private UILabel hint(String key, int y) {
-        final UILabel label = new UILabel(this, TextFormatting.GRAY + I18n.format(key));
+        final UILabel label = new UILabel(TextFormatting.GRAY + I18n.format(key));
         label.setFontOptions(FontOptions.builder().from(FontColors.GRAY_FO).scale(0.8F).build());
         label.setPosition(5, y, Anchor.LEFT | Anchor.TOP);
         return label;

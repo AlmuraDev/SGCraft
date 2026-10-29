@@ -9,6 +9,7 @@ import gcewing.sg.util.GateUtil;
 import gcewing.sg.util.SGAddressing;
 import net.malisis.core.client.gui.Anchor;
 import net.malisis.core.client.gui.BasicScreen;
+import net.malisis.core.client.gui.component.UIComponent;
 import net.malisis.core.client.gui.component.container.BasicForm;
 import net.malisis.core.client.gui.component.decoration.UILabel;
 import net.malisis.core.client.gui.component.decoration.UISeparator;
@@ -122,7 +123,7 @@ public class ConfiguratorScreen extends BasicScreen {
         SGBaseTE localGate = (SGBaseTE) localGateTE;
 
         // Master Panel
-        this.form = new BasicForm(this, 500, 350, "");
+        this.form = new BasicForm(500, 350, "");
         this.form.setAnchor(Anchor.CENTER | Anchor.MIDDLE);
         this.form.setMovable(true);
         this.form.setClosable(true);
@@ -133,13 +134,13 @@ public class ConfiguratorScreen extends BasicScreen {
         this.form.setTopPadding(20);
         this.form.setLeftPadding(3);
 
-        final UILabel titleLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.configurator"));
+        final UILabel titleLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.configurator"));
         titleLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         titleLabel.setPosition(0, -15, Anchor.CENTER | Anchor.TOP);
 
         // ****************************************************************************************************************************
 
-        this.numericOptionsArea = new BasicForm(this, 245, 310, "");
+        this.numericOptionsArea = new BasicForm(245, 310, "");
         this.numericOptionsArea.setPosition(0, 0, Anchor.LEFT | Anchor.MIDDLE);
         this.numericOptionsArea.setMovable(false);
         this.numericOptionsArea.setClosable(false);
@@ -152,19 +153,19 @@ public class ConfiguratorScreen extends BasicScreen {
 
         int padding = 15;
 
-        final UILabel numericValuesLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.numericValues"));
+        final UILabel numericValuesLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.numericValues"));
         numericValuesLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         numericValuesLabel.setPosition(0, 0, Anchor.CENTER | Anchor.TOP);
 
-        final UISeparator valuesSeparator = new UISeparator(this);
+        final UISeparator valuesSeparator = new UISeparator(false);
         valuesSeparator.setSize(this.numericOptionsArea.getWidth() - 15, 1);
         valuesSeparator.setPosition(0, 10, Anchor.TOP | Anchor.CENTER);
 
-        final UILabel secondsToStayOpenLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.secondsToStayOpen") + ":");
+        final UILabel secondsToStayOpenLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.secondsToStayOpen") + ":");
         secondsToStayOpenLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         secondsToStayOpenLabel.setPosition(10, numericValuesLabel.getY() + padding + 5, Anchor.LEFT | Anchor.TOP);
 
-        this.secondsToStayOpen = new UITextField(this, "", false);
+        this.secondsToStayOpen = new UITextField("");
         this.secondsToStayOpen.setSize(45, 0);
         this.secondsToStayOpen.setPosition(-10, secondsToStayOpenLabel.getY(), Anchor.RIGHT | Anchor.TOP);
         this.secondsToStayOpen.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(false).build());
@@ -178,11 +179,11 @@ public class ConfiguratorScreen extends BasicScreen {
         });
         this.secondsToStayOpen.register(this);
 
-        final UILabel gateRotationSpeedLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.gateRotationSpeed") + ":");
+        final UILabel gateRotationSpeedLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.gateRotationSpeed") + ":");
         gateRotationSpeedLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         gateRotationSpeedLabel.setPosition(10, secondsToStayOpenLabel.getY() + padding, Anchor.LEFT | Anchor.TOP);
 
-        this.gateRotationSpeed = new UITextField(this, "", false);
+        this.gateRotationSpeed = new UITextField("");
         this.gateRotationSpeed.setSize(45, 0);
         this.gateRotationSpeed.setPosition(-10, gateRotationSpeedLabel.getY(), Anchor.RIGHT | Anchor.TOP);
         this.gateRotationSpeed.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(false).build());
@@ -196,11 +197,11 @@ public class ConfiguratorScreen extends BasicScreen {
         });
         this.gateRotationSpeed.register(this);
 
-        final UILabel energyBufferMaxSizeLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.energyBufferSize") + ":");
+        final UILabel energyBufferMaxSizeLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.energyBufferSize") + ":");
         energyBufferMaxSizeLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         energyBufferMaxSizeLabel.setPosition(10, gateRotationSpeedLabel.getY() + padding, Anchor.LEFT | Anchor.TOP);
 
-        this.energyBufferSize = new UITextField(this, "", false);
+        this.energyBufferSize = new UITextField("");
         this.energyBufferSize.setSize(45, 0);
         this.energyBufferSize.setPosition(-10, energyBufferMaxSizeLabel.getY(), Anchor.RIGHT | Anchor.TOP);
         this.energyBufferSize.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(false).build());
@@ -214,11 +215,11 @@ public class ConfiguratorScreen extends BasicScreen {
         });
         this.energyBufferSize.register(this);
 
-        final UILabel energyPerItemLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.energyPerNaquadah") + ":");
+        final UILabel energyPerItemLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.energyPerNaquadah") + ":");
         energyPerItemLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         energyPerItemLabel.setPosition(10, energyBufferMaxSizeLabel.getY() + padding, Anchor.LEFT | Anchor.TOP);
 
-        this.energyPerNaquadah = new UITextField(this, "", false);
+        this.energyPerNaquadah = new UITextField("");
         this.energyPerNaquadah.setSize(45, 0);
         this.energyPerNaquadah.setPosition(-10, energyPerItemLabel.getY(), Anchor.RIGHT | Anchor.TOP);
         this.energyPerNaquadah.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(false).build());
@@ -232,11 +233,11 @@ public class ConfiguratorScreen extends BasicScreen {
         });
         this.energyPerNaquadah.register(this);
 
-        final UILabel energyPerOpeningLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.openingsPerNaquadah") + ":");
+        final UILabel energyPerOpeningLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.openingsPerNaquadah") + ":");
         energyPerOpeningLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         energyPerOpeningLabel.setPosition(10, energyPerItemLabel.getY() + padding, Anchor.LEFT | Anchor.TOP);
 
-        this.gateOpeningsPerNaquadah = new UITextField(this, "", false);
+        this.gateOpeningsPerNaquadah = new UITextField("");
         this.gateOpeningsPerNaquadah.setSize(45, 0);
         this.gateOpeningsPerNaquadah.setPosition(-10, energyPerOpeningLabel.getY(), Anchor.RIGHT | Anchor.TOP);
         this.gateOpeningsPerNaquadah.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(false).build());
@@ -250,11 +251,11 @@ public class ConfiguratorScreen extends BasicScreen {
         });
         this.gateOpeningsPerNaquadah.register(this);
 
-        final UILabel distanceFactorMultiplierLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.distanceFactorMultiplier") + ":");
+        final UILabel distanceFactorMultiplierLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.distanceFactorMultiplier") + ":");
         distanceFactorMultiplierLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         distanceFactorMultiplierLabel.setPosition(10, energyPerOpeningLabel.getY() + padding, Anchor.LEFT | Anchor.TOP);
 
-        this.distanceMultiplier = new UITextField(this, "", false);
+        this.distanceMultiplier = new UITextField("");
         this.distanceMultiplier.setSize(45, 0);
         this.distanceMultiplier.setPosition(-10, distanceFactorMultiplierLabel.getY(), Anchor.RIGHT | Anchor.TOP);
         this.distanceMultiplier.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(false).build());
@@ -268,11 +269,11 @@ public class ConfiguratorScreen extends BasicScreen {
         });
         this.distanceMultiplier.register(this);
 
-        final UILabel interDimensionalMultiplierLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.interDimensionalMultiplier") + ":");
+        final UILabel interDimensionalMultiplierLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.interDimensionalMultiplier") + ":");
         interDimensionalMultiplierLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         interDimensionalMultiplierLabel.setPosition(10, distanceFactorMultiplierLabel.getY() + padding, Anchor.LEFT | Anchor.TOP);
 
-        this.dimensionalMultiplier = new UITextField(this, "", false);
+        this.dimensionalMultiplier = new UITextField("");
         this.dimensionalMultiplier.setSize(45, 0);
         this.dimensionalMultiplier.setPosition(-10, interDimensionalMultiplierLabel.getY(), Anchor.RIGHT | Anchor.TOP);
         this.dimensionalMultiplier.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(false).build());
@@ -291,16 +292,16 @@ public class ConfiguratorScreen extends BasicScreen {
         // A gate is exactly one type, so the types are radio buttons, kept apart from the true/false options on the right
         // A supergate's section says so, and its type is just "Type"
         final boolean supergate = localGate.isSupergate();
-        final UILabel gateStyleLabel = new UILabel(this, TextFormatting.WHITE + I18n.format(supergate
+        final UILabel gateStyleLabel = new UILabel(TextFormatting.WHITE + I18n.format(supergate
             ? "sgcraft.gui.configurator.label.supergateType" : "sgcraft.gui.configurator.label.gateStyle"));
         gateStyleLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         gateStyleLabel.setPosition(0, this.dimensionalMultiplier.getY() + 35, Anchor.CENTER | Anchor.TOP);
 
-        final UISeparator gateStyleSeparator = new UISeparator(this);
+        final UISeparator gateStyleSeparator = new UISeparator(false);
         gateStyleSeparator.setSize(this.numericOptionsArea.getWidth() - 15, 1);
         gateStyleSeparator.setPosition(0, gateStyleLabel.getY() + 10, Anchor.TOP | Anchor.CENTER);
 
-        final UILabel gateTypeLabel = new UILabel(this, TextFormatting.WHITE + I18n.format(supergate
+        final UILabel gateTypeLabel = new UILabel(TextFormatting.WHITE + I18n.format(supergate
             ? "sgcraft.gui.configurator.label.type" : "sgcraft.gui.configurator.label.gateType") + ":");
         gateTypeLabel.setPosition(10, gateStyleLabel.getY() + 20, Anchor.LEFT | Anchor.TOP);
 
@@ -314,7 +315,7 @@ public class ConfiguratorScreen extends BasicScreen {
 
         // ****************************************************************************************************************************
 
-        this.gateAddressAccessListButton = new UIButtonBuilder(this)
+        this.gateAddressAccessListButton = new UIButtonBuilder()
                 .width(160)
                 .anchor(Anchor.TOP | Anchor.CENTER)
                 .position(0, gateTypeY + 45)
@@ -326,7 +327,7 @@ public class ConfiguratorScreen extends BasicScreen {
                 .listener(this)
                 .build("button.gateaddressaccesslist");
 
-        this.playerAccessListButton = new UIButtonBuilder(this)
+        this.playerAccessListButton = new UIButtonBuilder()
                 .width(160)
                 .anchor(Anchor.TOP | Anchor.CENTER)
                 .position(0, this.gateAddressAccessListButton.getY() + 20)
@@ -341,7 +342,7 @@ public class ConfiguratorScreen extends BasicScreen {
         // The ZPM devices linked to the gate, wherever they are (see ZpmLinks)
         this.linkedZpmsGate = localGate;
         this.linkedZpmsShown = localGate.linkedZpmPositions().size();
-        this.linkedZpmsButton = new UIButtonBuilder(this)
+        this.linkedZpmsButton = new UIButtonBuilder()
                 .width(160)
                 .anchor(Anchor.TOP | Anchor.CENTER)
                 .position(0, this.playerAccessListButton.getY() + 20)
@@ -350,11 +351,11 @@ public class ConfiguratorScreen extends BasicScreen {
                 .listener(this)
                 .build("button.linkedzpms");
 
-        final UILabel accessControlSystemsLabel =new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.accessControlSystems") + ":");
+        final UILabel accessControlSystemsLabel =new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.accessControlSystems") + ":");
         accessControlSystemsLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         accessControlSystemsLabel.setPosition(0, this.gateAddressAccessListButton.getY() - 20, Anchor.CENTER | Anchor.TOP);
 
-        final UISeparator accSeparator = new UISeparator(this);
+        final UISeparator accSeparator = new UISeparator(false);
         accSeparator.setSize(this.numericOptionsArea.getWidth() - 15, 1);
         accSeparator.setPosition(0, accessControlSystemsLabel.getY() + 10, Anchor.TOP | Anchor.CENTER);
 
@@ -367,7 +368,7 @@ public class ConfiguratorScreen extends BasicScreen {
 
         // ****************************************************************************************************************************
 
-        this.checkboxOptionsArea = new BasicForm(this, 245, 310, "");
+        this.checkboxOptionsArea = new BasicForm(245, 310, "");
         this.checkboxOptionsArea.setPosition(0, 0, Anchor.RIGHT | Anchor.MIDDLE);
         this.checkboxOptionsArea.setMovable(false);
         this.checkboxOptionsArea.setClosable(false);
@@ -381,15 +382,15 @@ public class ConfiguratorScreen extends BasicScreen {
         int checkboxIndentPadding = 10;
         padding = 12;
 
-        final UILabel booleanValuesLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.booleanValue"));
+        final UILabel booleanValuesLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.booleanValue"));
         booleanValuesLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         booleanValuesLabel.setPosition(0, 0, Anchor.CENTER | Anchor.TOP);
 
-        final UISeparator checkboxSeparator = new UISeparator(this);
+        final UISeparator checkboxSeparator = new UISeparator(false);
         checkboxSeparator.setSize(this.checkboxOptionsArea.getWidth() - 15, 1);
         checkboxSeparator.setPosition(0, 10, Anchor.TOP | Anchor.CENTER);
 
-        this.oneWayTravelCheckbox = new UICheckBox(this);
+        this.oneWayTravelCheckbox = new UICheckBox();
         this.oneWayTravelCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.oneWayTravelOnly"));
         this.oneWayTravelCheckbox.setPosition(checkboxIndentPadding, 20, Anchor.LEFT | Anchor.TOP);
         this.oneWayTravelCheckbox.setName("checkbox.onewaytravel");
@@ -401,106 +402,106 @@ public class ConfiguratorScreen extends BasicScreen {
         this.irisRadio = radio(barrierGroup, "titaniumIris", checkboxIndentPadding + 45, barrierY);
         this.shieldRadio = radio(barrierGroup, "shield", checkboxIndentPadding + 135, barrierY);
 
-        this.chevronUpgradeCheckbox = new UICheckBox(this);
+        this.chevronUpgradeCheckbox = new UICheckBox();
         this.chevronUpgradeCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.chevronUpgrade"));
         this.chevronUpgradeCheckbox.setPosition(checkboxIndentPadding, barrierY + padding, Anchor.LEFT | Anchor.TOP);
         this.chevronUpgradeCheckbox.setName("checkbox.chevronupgrade");
         this.chevronUpgradeCheckbox.register(this);
 
-        this.reverseWormholeKillsCheckbox = new UICheckBox(this);
+        this.reverseWormholeKillsCheckbox = new UICheckBox();
         this.reverseWormholeKillsCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.reverseWormholeKills"));
         this.reverseWormholeKillsCheckbox.setPosition(checkboxIndentPadding, this.chevronUpgradeCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.reverseWormholeKillsCheckbox.setName("checkbox.reversekills");
         this.reverseWormholeKillsCheckbox.register(this);
 
-        this.closeFromEitherEndCheckbox = new UICheckBox(this);
+        this.closeFromEitherEndCheckbox = new UICheckBox();
         this.closeFromEitherEndCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.closeFromEitherEnd"));
         this.closeFromEitherEndCheckbox.setPosition(checkboxIndentPadding, this.reverseWormholeKillsCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.closeFromEitherEndCheckbox.setName("checkbox.canbedialedto");
         this.closeFromEitherEndCheckbox.register(this);
 
-        this.preserveInventoryCheckbox = new UICheckBox(this);
+        this.preserveInventoryCheckbox = new UICheckBox();
         this.preserveInventoryCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.preserveInventoryOnDeath"));
         this.preserveInventoryCheckbox.setPosition(checkboxIndentPadding, this.closeFromEitherEndCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.preserveInventoryCheckbox.setName("checkbox.canbedialedto");
         this.preserveInventoryCheckbox.register(this);
 
-        this.noPowerRequiredCheckbox = new UICheckBox(this);
+        this.noPowerRequiredCheckbox = new UICheckBox();
         this.noPowerRequiredCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.noInputPowerRequired"));
         this.noPowerRequiredCheckbox.setPosition(checkboxIndentPadding, this.preserveInventoryCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.noPowerRequiredCheckbox.setName("checkbox.nopowerrequired");
         this.noPowerRequiredCheckbox.register(this);
 
-        this.chevronsLockOnDialCheckbox = new UICheckBox(this);
+        this.chevronsLockOnDialCheckbox = new UICheckBox();
         this.chevronsLockOnDialCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.chevronsLockOnDial"));
         this.chevronsLockOnDialCheckbox.setPosition(checkboxIndentPadding, this.noPowerRequiredCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.chevronsLockOnDialCheckbox.setEnabled(true);
         this.chevronsLockOnDialCheckbox.setName("checkbox.chevronlockondial");
         this.chevronsLockOnDialCheckbox.register(this);
 
-        this.returnIrisToPreviousStateCheckbox = new UICheckBox(this);
+        this.returnIrisToPreviousStateCheckbox = new UICheckBox();
         this.returnIrisToPreviousStateCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.returnToPreviousIrisState"));
         this.returnIrisToPreviousStateCheckbox.setPosition(checkboxIndentPadding, this.chevronsLockOnDialCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.returnIrisToPreviousStateCheckbox.setEnabled(true);
         this.returnIrisToPreviousStateCheckbox.setName("checkbox.returntopreviousirisstate");
         this.returnIrisToPreviousStateCheckbox.register(this);
 
-        this.transientDamageCheckbox = new UICheckBox(this);
+        this.transientDamageCheckbox = new UICheckBox();
         this.transientDamageCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.transientDamage"));
         this.transientDamageCheckbox.setPosition(checkboxIndentPadding, this.returnIrisToPreviousStateCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.transientDamageCheckbox.setName("checkbox.transientDamage");
         this.transientDamageCheckbox.register(this);
 
-        this.transparencyCheckbox = new UICheckBox(this);
+        this.transparencyCheckbox = new UICheckBox();
         this.transparencyCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.eventHorizonTransparency"));
         this.transparencyCheckbox.setPosition(checkboxIndentPadding, this.transientDamageCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.transparencyCheckbox.setEnabled(true);
         this.transparencyCheckbox.setName("checkbox.eventhorizontransparent");
         this.transparencyCheckbox.register(this);
 
-        this.useDHDFuelSourceCheckbox = new UICheckBox(this);
+        this.useDHDFuelSourceCheckbox = new UICheckBox();
         this.useDHDFuelSourceCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.dhdAsFuelSource"));
         this.useDHDFuelSourceCheckbox.setPosition(checkboxIndentPadding, this.transparencyCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.useDHDFuelSourceCheckbox.setEnabled(true);
         this.useDHDFuelSourceCheckbox.setName("checkbox.dhdfuelsource");
         this.useDHDFuelSourceCheckbox.register(this);
 
-        this.allowRedstoneOutputCheckbox = new UICheckBox(this);
+        this.allowRedstoneOutputCheckbox = new UICheckBox();
         this.allowRedstoneOutputCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.allowRedstoneOutput"));
         this.allowRedstoneOutputCheckbox.setPosition(checkboxIndentPadding, this.useDHDFuelSourceCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.allowRedstoneOutputCheckbox.setEnabled(true);
         this.allowRedstoneOutputCheckbox.setName("checkbox.redstoneoutput");
         this.allowRedstoneOutputCheckbox.register(this);
 
-        this.allowRedstoneInputCheckbox = new UICheckBox(this);
+        this.allowRedstoneInputCheckbox = new UICheckBox();
         this.allowRedstoneInputCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.allowRedstoneInput"));
         this.allowRedstoneInputCheckbox.setPosition(checkboxIndentPadding, this.allowRedstoneOutputCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.allowRedstoneInputCheckbox.setEnabled(true);
         this.allowRedstoneInputCheckbox.setName("checkbox.redstoneinput");
         this.allowRedstoneInputCheckbox.register(this);
 
-        this.playerCanDestroyPlayerGateCheckbox = new UICheckBox(this);
+        this.playerCanDestroyPlayerGateCheckbox = new UICheckBox();
         this.playerCanDestroyPlayerGateCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.playerCanDestroyPlayerGate"));
         this.playerCanDestroyPlayerGateCheckbox.setPosition(checkboxIndentPadding, this.allowRedstoneInputCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.playerCanDestroyPlayerGateCheckbox.setEnabled(true);
         this.playerCanDestroyPlayerGateCheckbox.setName("checkbox.playercandestroyplayergate");
         this.playerCanDestroyPlayerGateCheckbox.register(this);
 
-        this.playerCanDestroyGeneratedGateCheckbox = new UICheckBox(this);
+        this.playerCanDestroyGeneratedGateCheckbox = new UICheckBox();
         this.playerCanDestroyGeneratedGateCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.playerCanDestroyGeneratedGate"));
         this.playerCanDestroyGeneratedGateCheckbox.setPosition(checkboxIndentPadding, this.playerCanDestroyPlayerGateCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.playerCanDestroyGeneratedGateCheckbox.setEnabled(true);
         this.playerCanDestroyGeneratedGateCheckbox.setName("checkbox.playercandestroygeneratedgate");
         this.playerCanDestroyGeneratedGateCheckbox.register(this);
 
-        this.displayGateAddressCheckbox = new UICheckBox(this);
+        this.displayGateAddressCheckbox = new UICheckBox();
         this.displayGateAddressCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.displayGateAddress"));
         this.displayGateAddressCheckbox.setPosition(checkboxIndentPadding, this.playerCanDestroyGeneratedGateCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.displayGateAddressCheckbox.setEnabled(true);
         this.displayGateAddressCheckbox.setName("checkbox.displaygateaddress");
         this.displayGateAddressCheckbox.register(this);
 
-        this.isGeneratedCheckbox = new UICheckBox(this);
+        this.isGeneratedCheckbox = new UICheckBox();
         this.isGeneratedCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.isGenerated"));
         this.isGeneratedCheckbox.setPosition(checkboxIndentPadding, this.displayGateAddressCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.isGeneratedCheckbox.setEnabled(true);
@@ -509,7 +510,7 @@ public class ConfiguratorScreen extends BasicScreen {
         this.isGeneratedCheckbox.register(this);
 
         // Only a player in creative can break it (see SGBlock)
-        this.invulnerableCheckbox = new UICheckBox(this);
+        this.invulnerableCheckbox = new UICheckBox();
         this.invulnerableCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.invulnerable"));
         this.invulnerableCheckbox.setPosition(checkboxIndentPadding, this.isGeneratedCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
         this.invulnerableCheckbox.setEnabled(this.invulnerablePerm);
@@ -523,7 +524,7 @@ public class ConfiguratorScreen extends BasicScreen {
         this.checkboxOptionsArea.add(this.allowRedstoneOutputCheckbox, this.allowRedstoneInputCheckbox, this.playerCanDestroyPlayerGateCheckbox, this.playerCanDestroyGeneratedGateCheckbox, this.displayGateAddressCheckbox, this.isGeneratedCheckbox, this.invulnerableCheckbox);
 
         // Load Defaults button
-        final UIButton buttonDefaults = new UIButtonBuilder(this)
+        final UIButton buttonDefaults = new UIButtonBuilder()
                 .width(40)
                 .anchor(Anchor.BOTTOM | Anchor.LEFT)
                 .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.loadDefaults"))
@@ -558,7 +559,7 @@ public class ConfiguratorScreen extends BasicScreen {
                 .build("button.defaults");
 
         // Close button
-        final UIButton buttonClose = new UIButtonBuilder(this)
+        final UIButton buttonClose = new UIButtonBuilder()
                 .width(40)
                 .anchor(Anchor.BOTTOM | Anchor.RIGHT)
                 .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.close"))
@@ -569,7 +570,7 @@ public class ConfiguratorScreen extends BasicScreen {
                 .build("button.close");
 
         // Save button
-        final UIButton buttonSave = new UIButtonBuilder(this)
+        final UIButton buttonSave = new UIButtonBuilder()
                 .width(40)
                 .anchor(Anchor.BOTTOM | Anchor.RIGHT)
                 .position(-(buttonClose.getX() + buttonClose.getWidth() + 5), 0)
@@ -590,11 +591,11 @@ public class ConfiguratorScreen extends BasicScreen {
                 .listener(this)
                 .build("button.save");
 
-        final UILabel addressLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.gateAddress") + ":");
+        final UILabel addressLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.gateAddress") + ":");
         addressLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         addressLabel.setPosition(-40, -3, Anchor.CENTER | Anchor.BOTTOM);
 
-        this.gateAddressLabel = new UILabel(this, "");
+        this.gateAddressLabel = new UILabel("");
         this.gateAddressLabel.setFontOptions(FontOptions.builder().from(FontColors.BLUE_FO).shadow(true).scale(1.1F).build());
         this.gateAddressLabel.setPosition(40, -2, Anchor.CENTER | Anchor.BOTTOM);
 
@@ -627,7 +628,7 @@ public class ConfiguratorScreen extends BasicScreen {
     }
 
     private UIRadioButton radio(String group, String langKey, int x, int y) {
-        final UIRadioButton radio = new UIRadioButton(this, group, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label." + langKey));
+        final UIRadioButton radio = new UIRadioButton(group, TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label." + langKey));
         radio.setPosition(x, y, Anchor.LEFT | Anchor.TOP);
         radio.register(this);
         return radio;
@@ -807,8 +808,8 @@ public class ConfiguratorScreen extends BasicScreen {
     }
 
     @Override
-    public void update(int mouseX, int mouseY, float partialTick) {
-        super.update(mouseX, mouseY, partialTick);
+    public void update() {
+        super.update();
         if (this.unlockMouse && this.lastUpdate == 25) {
             Mouse.setGrabbed(false); // Force the mouse to be visible even though Mouse.isGrabbed() is false.  //#BugsUnited.
             this.unlockMouse = false; // Only unlock once per session.
@@ -865,8 +866,8 @@ public class ConfiguratorScreen extends BasicScreen {
     }
 
     @Override
-    protected void mouseClicked(int x, int y, int button) {
-        super.mouseClicked(x, y, button);
+    protected void mousePressed(final UIComponent component, final int button) {
+        super.mousePressed(component, button);
         this.lastUpdate = 0; // Reset the timer when mouse is pressed.
     }
 
