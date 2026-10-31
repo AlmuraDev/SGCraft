@@ -2,10 +2,13 @@ package gcewing.sg.tileentity.data;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import com.mojang.authlib.GameProfile;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraftforge.common.util.Constants;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,6 +37,9 @@ public class PlayerAccessData {
     private boolean iris;
     private boolean admin;
 
+    public PlayerAccessData(final @NonNull EntityPlayer player, final boolean access, boolean iris, boolean admin) {
+        this(player.getName(), player.getUniqueID(), access, iris, admin);
+    }
     public PlayerAccessData(final String playerName, @Nullable final UUID uuid, final boolean access, boolean iris, boolean admin) {
         this.playerName = playerName;
         this.uuid = uuid;

@@ -8,8 +8,9 @@ package gcewing.sg.command;
 
 import gcewing.sg.SGCraft;
 import gcewing.sg.features.configurator.network.ConfiguratorNetworkHandler;
-import gcewing.sg.tileentity.DHDTE;
 import gcewing.sg.tileentity.SGBaseTE;
+import gcewing.sg.tileentity.data.GateAccessData;
+import gcewing.sg.tileentity.data.PlayerAccessData;
 import gcewing.sg.util.GateType;
 import gcewing.sg.util.GateUtil;
 import gcewing.sg.util.IrisState;
@@ -28,15 +29,23 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 
 public class StargateCommands extends CommandBase {
-    private static final String PREFIX = "message.sgcraft.command.gate.info:";
+    private static final String PREFIX = "message.sgcraft.command.gate";
     private static final Map<String, Field> CONFIG_MAP;
+    private static final Map<String, Field> STATIC_CONFIG_MAP;
+    private static final List<String> BOOLEAN_TAB = Arrays.asList("true", "false");
     static {
         final Field[] fields = SGBaseTE.class.getFields();
-        CONFIG_MAP = new HashMap<>(fields.length);
+        CONFIG_MAP = new HashMap<>();
+        STATIC_CONFIG_MAP = new HashMap<>();
         for (Field f: fields) {
-            if ((f.getModifiers() & (Modifier.STATIC | Modifier.FINAL))==0) {
-                CONFIG_MAP.put(f.getName(), f);
+            if (!Modifier.isFinal(f.getModifiers())) {
+                if (Modifier.isStatic(f.getModifiers())) {
+                    CONFIG_MAP.put(f.getName(), f);
+                } else {
+                    STATIC_CONFIG_MAP.put(f.getName(), f);
+                }
             }
+
         }
     }
 
@@ -65,11 +74,12 @@ public class StargateCommands extends CommandBase {
         subcommands.add("address");
         subcommands.add("reset");
         subcommands.add("config");
+        subcommands.add("default");
         subcommands.add("state");
         subcommands.add("dial");
         subcommands.add("disconnect");
         subcommands.add("type");
-
+        subcommands.add("access");
         if (SGCraft.isModLoaded("malisiscore")) {
             subcommands.add("configurator");
         }
@@ -80,25 +90,26 @@ public class StargateCommands extends CommandBase {
     public List<String> getTabCompletions(@NonNull MinecraftServer server, @NonNull ICommandSender sender, String @NonNull [] args, @Nullable BlockPos targetPos) {
         List<String> result = Collections.emptyList();
         int offset=0;
-        if (args.length==0) {
-            return subcommands;
-        }
         try {
             //TODO @Tharow getTabCompletions to auto complete block coords when selected and available
             parseBlockPos(sender, args, 0, true);
-            offset+=2;
-        } catch (Exception ignored) {}
-
+            offset+=3;
+        } catch (ArrayIndexOutOfBoundsException | NumberInvalidException ignored) {}
+        if (args.length==offset) {
+            return subcommands;
+        }
         switch (args[offset]) {
             case "type": {
                 result = new ArrayList<>(GateType.values().length);
                 for (GateType e: GateType.values()) {
                     result.add(e.name().toLowerCase());
                 } break; }
-            case "info": result = Collections.singletonList("remote"); break;
-            case "config": result = configTabCompletions(targetPos, offset+1, args); break;
+//            case "info": result = Collections.singletonList("remote"); break; TODO @Tharow add /stargate info command.
+            case "config": result = configTabCompletions(sender, targetPos, CONFIG_MAP, offset+1, args); break;
+            case "default": result = configTabCompletions(sender, targetPos, STATIC_CONFIG_MAP, offset+1, args); break;
+            case "access": result = accessTabCompletions(server, sender, targetPos, offset+1, args); break;
         }
-        return result;
+        return getListOfStringsMatchingLastWord(args, result);
     }
 
     public void execute(@NonNull MinecraftServer server, @NonNull ICommandSender sender, String @NonNull [] args) throws CommandException {
@@ -107,22 +118,23 @@ public class StargateCommands extends CommandBase {
         try {
             pos = parseBlockPos(sender, args, offset, true);
             offset += 3;
-        } catch (NumberInvalidException ignored) {}
+        } catch (ArrayIndexOutOfBoundsException | NumberInvalidException ignored) {}
         SGBaseTE te = getStargate(sender, pos);
-        if (args.length==offset) {sendMessage(sender,"message.sgcraft.command.gate:Usage", String.join(", ", subcommands)); return;}
+        if (args.length==offset) {sendMessage(sender,":Usage", true, String.join(", ", subcommands)); return;}
         switch (args[offset].toLowerCase()) {
             case "configurator": if (SGCraft.isModLoaded("malisiscore")) { openConfiguratorScreen(sender, te); }
-                           else { throw new CommandNotFoundException("Malisiscore not loaded, unable to open menu"); }
+                           else { throw new CommandException("fml.messages.mod.missing.dependencies.requires", "malisiscore"); }
             case "address":
-            case "add": sendMessage(sender, "message.sgcraft.command.gate.info:HomeAddress", getHomeAddress(te)); break;
+            case "add": sendMessage(sender, PREFIX+":HomeAddress", true, getHomeAddress(te)); break;
             case "dis":
-            case "disconnect": sendMessage(sender, "sgcraft.gui.pdd.label.disconnecting"); te.disconnect(); break;
+            case "disconnect": sendMessage(sender, "sgcraft.gui.pdd.label.disconnecting", false); te.disconnect(); break;
             case "reset": {
                 te.clearConnection();
                 te.clearIdleConnection();
                 te.resetStargate();
+                sendMessage(sender, ":Reset", true);
             } break;
-            case "state": sendMessage(sender, "message.sgcraft.command.gate.info:State", te.sgStateDescription()); break;
+            case "state": sendMessage(sender, ":State", true, te.sgStateDescription()); break;
             case "connect":
             case "dial": {
                 if (args.length!=offset+2) throw new CommandException("message.sgcraft:malformedAddress");
@@ -131,32 +143,100 @@ public class StargateCommands extends CommandBase {
                     throw new CommandException(e.getMessage()); }
                 try { te.connect(destination, getCommandSenderAsPlayer(sender), false, false); }
                 catch (PlayerNotFoundException ex) { te.connect(destination, null, false, false); }
+                sendMessage(sender, "sgcraft.gui.pdd.label.connecting", false);
             } break;
             case "type": if (args.length==offset+1) {
-                    sendMessage(sender, "message.sgcraft.command.gate.info:GateType", te.getGateType().name());
+                    sendMessage(sender, ":GateType", true, te.getGateType().name());
                 } else try {te.setGateType(GateType.valueOf(args[1].toUpperCase()));} catch (IllegalArgumentException e) {
-                        throw new CommandException("message.sgcraft.command.gate:InvalidGateType", args[offset+1]);} break;
-            case "info": {
-                if (args.length==offset+2) {
-                    info(sender, te.getConnectedStargateTE());
-                } else info(sender, te); break;
+                        throw new CommandException(PREFIX+":InvalidGateType", args[offset+1]);} break;
+            case "config": config(sender, te, CONFIG_MAP, offset+1, args); break;
+            case "default": config(sender, te, STATIC_CONFIG_MAP, offset+1, args); break;
+            case "access": access(server, sender, te, offset+1, args); break;
+            default: sendMessage(sender,":Usage", true, String.join(", ", subcommands));
+        }
+    }
+    private List<String> accessTabCompletions(@NonNull MinecraftServer server, @NonNull ICommandSender sender, BlockPos pos, int offset, @NonNull String @NonNull ... args) {
+        final int l = args.length;
+        if (l==offset) return Arrays.asList("add", "remove", "", "defaults");
+        switch (args[offset]) {
+            case "add":
+            case "remove": {
+                if (l==offset+1) return Arrays.asList("player", "address");
+                if (args[offset+1].equalsIgnoreCase("player")) {
+                    return Arrays.asList(server.getOnlinePlayerNames());
+                }
+                if ((offset+2)<l||l<(offset+4)) {
+                    return BOOLEAN_TAB;
+                }
             }
-            case "config": config(sender, te, offset+1, args); break;
-            case "access": access(sender, te, offset+1, args); break;
-            default: sendMessage(sender,"message.sgcraft.command.gate:Usage", String.join(", ", subcommands));
+            case "defaults": sendMessage(sender, ".access.defaults:Usage", true); return BOOLEAN_TAB;
+            default: return Collections.emptyList();
         }
     }
 
-    private void access(@NonNull ICommandSender s, SGBaseTE g, int o, String[] args) {
-
+    //Stargate access allow player {USERNAME} true true true
+    @Override
+    public boolean isUsernameIndex(String[] args, int index) {
+        return (index==3&&args.length==4&& Objects.equals(args[0], "access"));
     }
 
-    private @NonNull List<String> configTabCompletions(BlockPos pos, int offset, String @NonNull ... args) {
+    private void access(@NonNull MinecraftServer server, @NonNull ICommandSender s, @NonNull SGBaseTE g, int o, String @NonNull [] args) throws CommandException {
+        final int l = args.length;
+        if (l<=o+1) {sendMessage(s, ".access:Usage", true);}
+        final List<GateAccessData> gate = new ArrayList<>(g.getGateAccessData());
+        final List<PlayerAccessData> players = new ArrayList<>(g.getPlayerAccessData());
+        boolean isPlayer = Objects.equals(args[o + 1], "player");
+        if (!(isPlayer || Objects.equals(args[o + 1], "address"))) {
+            sendMessage(s, ".access:Usage", true); return;
+        }
+        boolean isDefault = args[o].equalsIgnoreCase("defaults");
+        final EntityPlayerMP player;
+        EntityPlayerMP player1 = null;
+        final String address = !isPlayer?SGAddressing.normalizeAddress(args[o + 2]):null;
+        try {
+            player1 = isPlayer?getPlayer(server, s, args[o + 2]):null;
+            if (!isPlayer) SGAddressing.validateAddress(address);
+        } catch (ArrayIndexOutOfBoundsException | SGAddressing.AddressingError e) {
+            if (!isDefault) {
+                throw new SyntaxErrorException();
+            }
+        } finally {
+            player = player1;
+        }
+        try {
+
+            switch (args[o].toLowerCase()) {
+                case "add": if (isPlayer) players.add(new PlayerAccessData(player, parseBoolean(args[o+3]), parseBoolean(args[o+4]), parseBoolean(args[o+5])));
+                            else gate.add(new GateAccessData(address, parseBoolean(args[o+3]), parseBoolean(args[o+4])));
+                            break;
+                case "remove": if (isPlayer) players.removeIf(i -> i.isFor(player));
+                               else gate.removeIf(i -> i.matches(address));
+                               break;
+                case "defaults": {
+                    g.defaultAllowIncoming = parseBoolean(args[o + 1]);
+                    g.defaultAllowOutgoing = parseBoolean(args[o + 2]);
+                    g.defaultAllowGateAccess = parseBoolean(args[o + 3]);
+                    g.defaultAllowIrisAccess = parseBoolean(args[o + 4]);
+                    g.defaultAllowAdminAccess = parseBoolean(args[o + 5]);
+                }
+            }
+        } catch (ArrayIndexOutOfBoundsException ignored) {
+            if (isDefault) {
+                throw new WrongUsageException(PREFIX+".access.default:Usage");
+            }
+            throw new WrongUsageException(PREFIX+".access."+args[o]+(isPlayer?"player:Usage":"gate:Usage"));
+        }
+        g.setClientAccessLists(gate, players);
+    }
+
+    private @NonNull List<String> configTabCompletions(@NonNull ICommandSender sender, BlockPos pos, Map<String, Field> settings, int offset, String @NonNull ... args) {
         if (args.length==offset) return Collections.emptyList();
-        if (args.length==offset+1) return getListOfStringsMatchingLastWord(args, CONFIG_MAP.keySet());
-        final Field field = CONFIG_MAP.get(args[offset]);
+        if (args.length==offset+1) return Arrays.asList(settings.keySet().toArray(new String[]{}));
+
+        final Field field = settings.get(args[offset]);
+        sendMessage(sender, ".config:CompletionType", true, field.getType().getSimpleName());
         switch (field.getType().getSimpleName()) {
-            case "boolean": return Arrays.asList("true", "false");
+            case "boolean": return BOOLEAN_TAB;
             case "double": return Collections.singletonList("0.0");
             case "long":
             case "int": return Collections.singletonList("0");
@@ -166,67 +246,36 @@ public class StargateCommands extends CommandBase {
         }
     }
 
-    private void config(@NonNull ICommandSender s, @NonNull SGBaseTE g, int o, String @NonNull ... args) throws CommandException {
+    private void config(@NonNull ICommandSender s, @NonNull SGBaseTE gate, Map<String, Field> settings, int offset, String @NonNull ... args) throws CommandException {
         final int l = args.length;
-        if (l==o) { sendMessage(s, "message.sgcraft.command.config:Usage"); return; }
-        if (Objects.equals(args[o], "all")) {
-            for (Field field: CONFIG_MAP.values()) { cSendValue(s, field, g); }
+        if (l==offset) { sendMessage(s, ".config:Usage", true); return; }
+        if (Objects.equals(args[offset], "all")) {
+            for (Field field: settings.values()) { cSendValue(s, field, gate); }
             return;
         }
-        final Field f = CONFIG_MAP.get(args[o]);
-        if (f==null) { sendMessage(s, "message.sgcraft.command.config:NoField"); return; }
-        if (l==o+1) {cSendValue(s, f, g); return;}
+        final Field f = settings.get(args[offset]);
+        if (f==null) { sendMessage(s, ".config:NoField", true, (Object[]) null); return; }
+        if (l==offset+1) {cSendValue(s, f, gate); return;}
         try {
-            final String value = args[o+1];
+            final String value = args[offset+1];
             switch (f.getType().getSimpleName()) {
-                case "boolean": f.setBoolean(g, parseBoolean(value)); break;
-                case "int": f.setInt(g, parseInt(value)); break;
-                case "double": f.setDouble(g, parseDouble(value)); break;
-                case "long": f.setLong(g, parseLong(value)); break;
-                case "IrisState": f.set(g, IrisState.valueOf(value)); break;
-                case "String": f.set(g, removeQuotes(value)); break;
-                case "BlockPos": f.set(g, parseBlockPos(s, args, o+1, true)); break;
-                default: throw new CommandException("message.sgcraft.command.config:UnsportedFieldType", f.getName(), f.getType().getCanonicalName());
+                case "boolean": f.setBoolean(gate, parseBoolean(value)); break;
+                case "int": f.setInt(gate, parseInt(value)); break;
+                case "double": f.setDouble(gate, parseDouble(value)); break;
+                case "long": f.setLong(gate, parseLong(value)); break;
+                case "IrisState": f.set(gate, IrisState.valueOf(value)); break;
+                case "String": f.set(gate, removeQuotes(value)); break;
+                case "BlockPos": f.set(gate, parseBlockPos(s, args, offset+1, true)); break;
+                default: throw new CommandException(PREFIX+".config:UnsportedFieldType", f.getName(), f.getType().getCanonicalName());
             }
-            g.markChanged();
-            cSendValue(s, f, g);
-        } catch (IllegalAccessException e) { throw  new CommandException("message.sgcraft.command.config:IllegalAccessException", e.getMessage()); }
+            gate.markChanged();
+            cSendValue(s, f, gate);
+        } catch (IllegalAccessException e) { throw  new CommandException(PREFIX+".config:IllegalAccessException", e.getMessage()); }
     }
 
     private void cSendValue(@NonNull ICommandSender sender, @NonNull Field field, @NonNull SGBaseTE te) throws CommandException {
-        try {sendMessage(sender, "message.sgcraft.command.config:GetValue", field.getName(), field.getType().getSimpleName(), String.valueOf(field.get(te)));}
-        catch (IllegalAccessException e) {throw new CommandException("message.sgcraft.command.config:IllegalAccessException", e.getMessage());}
-    }
-
-    private void info(ICommandSender s, @NonNull SGBaseTE g) {
-        sendMessage(s,PREFIX+"ChunkPos", g.getWorld().provider.getDimension(), g.getX()>>4, g.getZ()>>4);
-        sendMessage(s, PREFIX+"BlockPos", g.getX(), g.getY(), g.getZ());
-        sendMessage(s,PREFIX+"HomeAddress", getHomeAddress(g));
-        sendMessage(s,PREFIX+"State", g.sgStateDescription());
-        sendMessage(s, PREFIX+"Type", g.getGateType().name().toLowerCase());
-        if (g.hasIrisUpgrade) {
-            sendMessage(s,PREFIX+"IrisState", g.irisStateDescription());
-        } else {
-            sendMessage(s,PREFIX+"Iris");
-        }
-        sendMessage(s,PREFIX+"NumChevron", g.getNumChevrons());
-        if (g.hasChevronUpgrade) sendMessage(s,PREFIX+"ChevronUpgrade");
-        if (g.hasIrisUpgrade) sendMessage(s,PREFIX+"IrisUpgrade");
-        if (g.isGenerated) sendMessage(s,PREFIX+"Generated");
-        if (g.isMerged) sendMessage(s,PREFIX+"Merged");
-        if (g.isInitiator) sendMessage(s,PREFIX+"Initiator");
-        if (g.isLinkedToController) info(s, g.getLinkedControllerTE());
-        if (g.isPending) sendMessage(s, PREFIX+"Pending");
-        if (g.closeFromEitherEnd) sendMessage(s, PREFIX+"CloseFromEitherEnd");
-        if (g.oneWayTravel) sendMessage(s, PREFIX+"OneWayTravel");
-        if (g.allowIncomingConnections) sendMessage(s, PREFIX+"AllowIncomingConnections");
-        if (g.allowOutgoingConnections) sendMessage(s, PREFIX+"AllowOutgoingConnections");
-        if (g.allowRedstoneInput) sendMessage(s, PREFIX+"AllowRedstoneInput");
-        if (g.allowRedstoneOutput) sendMessage(s, PREFIX+"AllowRedstoneOutput");
-        sendMessage(s,PREFIX+"DialedAddress", g.dialledAddress);
-    }
-    private void info(ICommandSender s, DHDTE d) {
-
+        try {sendMessage(sender, ".config:GetValue", true, field.getName(), field.getType().getSimpleName(), String.valueOf(field.get(te)));}
+        catch (IllegalAccessException e) {throw new CommandException(PREFIX+".config:IllegalAccessException", e.getMessage());}
     }
 
     public static @NonNull SGBaseTE getStargate(@NonNull ICommandSender sender, BlockPos pos) throws CommandException {
@@ -240,29 +289,32 @@ public class StargateCommands extends CommandBase {
         }
         if (gate==null){gate = (SGBaseTE) GateUtil.locateLocalGate(sender.getEntityWorld(), sender.getPosition(), 16, false);}
         if (gate!=null) {return gate;}
-        throw new CommandException("message.sgcraft.command:GateNotFound", String.valueOf(pos));
+        throw new CommandException(PREFIX+":GateNotFound", String.valueOf(pos));
     }
 
-    private static void sendMessage(@NonNull ICommandSender sender, String key, Object ... args) {sender.sendMessage(new TextComponentTranslation(key, args));}
-    private static void sendMessage(@NonNull ICommandSender sender, String key) {sender.sendMessage(new TextComponentTranslation(key));}
+
+    private static void sendMessage(@NonNull ICommandSender sender, String key, boolean usePrefix, Object... args) {
+        if (args==null) sender.sendMessage(new TextComponentTranslation(usePrefix?PREFIX+key:key));
+        else sender.sendMessage(new TextComponentTranslation(usePrefix?PREFIX+key:key, args));
+
+    }
     private static String getHomeAddress(@NonNull SGBaseTE te) {
         try { return te.getHomeAddress(); }
         catch (SGAddressing.AddressingError e) { return e.getMessage(); }
     }
     private void openConfiguratorScreen(ICommandSender sender, SGBaseTE localGate) throws CommandException {
-        try {
-            EntityPlayerMP player = getCommandSenderAsPlayer(sender);
-            ConfiguratorNetworkHandler.sendAccessListsToClient(player, localGate);
-            ConfiguratorNetworkHandler.openGuiAtClient(localGate, player, 1, true,
-                    true, true, true, true,
-                    true, true, true,
-                    true, true, true, true,
-                    true, true, true,
-                    true, true, true,
-                    true, true, true, true,
-                    true, true, true, true,
-                    true, true, true, true);
-        } catch (PlayerNotFoundException e) { throw new CommandException(e.getMessage()); }
+        EntityPlayerMP player = getCommandSenderAsPlayer(sender);
+        ConfiguratorNetworkHandler.sendAccessListsToClient(player, localGate);
+        ConfiguratorNetworkHandler.openGuiAtClient(localGate, player, 1, true,
+                true, true, true, true,
+                true, true, true,
+                true, true, true, true,
+                true, true, true,
+                true, true, true,
+                true, true, true, true,
+                true, true, true, true,
+                true, true, true, true);
+
     }
 
     private @NonNull String removeQuotes(@NonNull String str) {
