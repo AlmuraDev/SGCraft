@@ -333,3 +333,23 @@ message.sgcraft:invalidAccessListAddress=%s is not a full gate address (XXXX-XXX
 message.sgcraft:duplicateAccessListAddress=%s is already in the list
 message.sgcraft:invalidAccessListPlayer=%s is not a valid player name
 message.sgcraft:duplicateAccessListPlayer=%s is already in the list
+
+message.sgcraft.command.gate:Usage=Interact with a Stargate via commands: %s
+message.sgcraft.command.gate:GateNotFound=Failed to find Stargate at where player was looking, with provided coords (%s), or near player
+message.sgcraft.command.gate:InvalidGateType=Invalid Gate Type %s
+message.sgcraft.command.gate:Dial=Dialing Stargate: %s
+message.sgcraft.command.gate:HomeAddress=Home Address: %s
+message.sgcraft.command.gate:State=State: %s
+message.sgcraft.command.gate:Type=Type: %s
+message.sgcraft.command.gate:Reset=Target Stargate was reset.
+
+message.sgcraft.command.gate.config:Usage=Allows direct configuration of a target stargate WARNING: NO SAFETY CHECKS, values directly written to fields
+message.sgcraft.command.gate.config:NoField=Field %s doesn't exist
+message.sgcraft.command.gate.config:GetValue=Field: (Name: %s | Type: %s | Value: %s)
+message.sgcraft.command.gate.config:IllegalAccessException=Unable to Access field %s
+message.sgcraft.command.gate.config:UnsportedFieldType=Unsupported Config Type,  Field Name: %s Type Canonical Name: %s
+message.sgcraft.command.gate.config:CompletionType=Field Type is %s
+
+message.sgcraft.command.gate.access.default:Usage=Update Default Access Values: (Incoming, Outgoing, Gate, Iris, Admin) (true, true, true, true, true)
+message.sgcraft.command.gate.access.add.player:Usage=Add Player to access control: player name, access, iris, admin (Name, true, true, true);
+message.sgcraft.command.gate.access.add.gate:Usage=Add Gate to access control: Stargate Address, Allow incoming Allow Outgoing, (Address, true, true)
