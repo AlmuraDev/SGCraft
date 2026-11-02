@@ -78,6 +78,8 @@ compile 'org.spongepowered:configurate-yaml:3.7'
     deobfProvided ('com.almuradev:malisiscore:1.12.2-6.6.0-SNAPSHOT-dev') {
         transitive = false
     }
+    // Compile-only: Dynmap's API, for the gates' map markers; Dynmap itself is optional (see DynmapMarkers)
+    compileOnly files('lib/Dynmap-3.2.1-forge-1.12.2.jar')
 }
 
 task copyDevMods(type: Copy) {

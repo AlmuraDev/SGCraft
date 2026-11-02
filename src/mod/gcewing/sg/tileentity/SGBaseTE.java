@@ -20,6 +20,7 @@ import gcewing.sg.event.SGMergeEvent;
 import gcewing.sg.features.ic2.zpm.modulehub.ZpmHubTE;
 import gcewing.sg.features.zpm.console.ZpmConsoleTE;
 import gcewing.sg.features.edd.ExplorerData;
+import gcewing.sg.features.dynmap.DynmapMarkers;
 import gcewing.sg.generator.GeneratorAddressRegistry;
 import gcewing.sg.tileentity.data.GateAccessData;
 import gcewing.sg.tileentity.data.PlayerAccessData;
@@ -356,6 +357,9 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
     public boolean invulnerable = false;
     public boolean displayGateAddress = true;
     public boolean isGenerated = false;
+    // A marker for the gate on the server's Dynmap, labelled with its address or not (see DynmapMarkers)
+    public boolean showOnDynmap = false;
+    public boolean showAddressOnDynmap = false;
 
     // Access Control Lists
     private List<PlayerAccessData> playerAccessData;
@@ -563,6 +567,7 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         System.out.print("SGBaseTE.onAddedToWorld\n");
         }
         updateChunkLoadingStatus();
+        DynmapMarkers.update(this); // catches up with any change made while Dynmap was off
     }
 
     // The space taken up by the gate's ring and the region just in front of and behind it
@@ -928,6 +933,9 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
             this.displayGateAddress = cfg.getBoolean("stargate", "displayGateAddress", this.displayGateAddress);
         }
 
+        this.showOnDynmap = nbt.getBoolean("showOnDynmap");
+        this.showAddressOnDynmap = nbt.getBoolean("showAddressOnDynmap");
+
         if (nbt.hasKey("isGenerated")) {
             this.isGenerated = nbt.getBoolean("isGenerated");
         } else {
@@ -1042,6 +1050,8 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         nbt.setBoolean("invulnerable", this.invulnerable);
         nbt.setBoolean("displayGateAddress", this.displayGateAddress);
         nbt.setBoolean("isGenerated", isGenerated);
+        nbt.setBoolean("showOnDynmap", this.showOnDynmap);
+        nbt.setBoolean("showAddressOnDynmap", this.showAddressOnDynmap);
 
         return nbt;
     }
@@ -1276,6 +1286,7 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
             }
 
             updateIrisEntity();
+            DynmapMarkers.update(this); // on the map once merged, off it once broken
         }
     }
 

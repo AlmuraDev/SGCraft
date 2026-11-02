@@ -43,6 +43,7 @@ public class ConfiguratorScreen extends BasicScreen {
     private UIRadioButton milkyWayGateTypeRadio, pegasusGateTypeRadio, universeGateTypeRadio, oriGateTypeRadio;
     private UICheckBox closeFromEitherEndCheckbox, preserveInventoryCheckbox, noPowerRequiredCheckbox, chevronsLockOnDialCheckbox, returnIrisToPreviousStateCheckbox;
     private UICheckBox transientDamageCheckbox, transparencyCheckbox, useDHDFuelSourceCheckbox, allowRedstoneOutputCheckbox, allowRedstoneInputCheckbox, playerCanDestroyPlayerGateCheckbox, playerCanDestroyGeneratedGateCheckbox, displayGateAddressCheckbox, isGeneratedCheckbox, invulnerableCheckbox;
+    private UICheckBox showOnDynmapCheckbox, showAddressOnDynmapCheckbox;
     private UITextField secondsToStayOpen, gateRotationSpeed, energyBufferSize, energyPerNaquadah, gateOpeningsPerNaquadah, distanceMultiplier, dimensionalMultiplier;
     private UIButton gateAddressAccessListButton, playerAccessListButton;
     // The button to the gate's linked ZPMs, its count kept up as they're unlinked (see update), and the gate
@@ -56,7 +57,7 @@ public class ConfiguratorScreen extends BasicScreen {
     private boolean secondsToStayOpenPerm, gateRotationSpeedPerm, energyBufferSizePerm, energyPerNaquadahPerm, openingsPerNaquadahPerm, distanceFactorMultiplierPerm, interDimensionalMultiplierPerm;
     private boolean oneWayTravelOnlyPerm, irisUpgradePerm, chevronUpgradePerm, pegasusGateTypePerm, reverseWormholeKillsPerm, closeFromEitherEndPerm, preserveInventoryOnIrisDeathPerm, noInputPowerRequiredPerm;
     private boolean chevronsLockOnDialPerm, returnToPreviousIrisStatePerm, transientDamagePerm, transparencyPerm, dhdAsFuelSourcePerm, allowRedstoneOutputPerm, allowRedstoneInputPerm, gateAccessPerm, playerAccessPerm;
-    private boolean playerCanDestroyPlayerGatePerm, playerCanDestroyGeneratedGatePerm, displayGateAddressPerm, isGeneratedPerm, invulnerablePerm;
+    private boolean playerCanDestroyPlayerGatePerm, playerCanDestroyGeneratedGatePerm, displayGateAddressPerm, isGeneratedPerm, invulnerablePerm, dynmapPerm;
 
     //public ConfiguratorScreen(EntityPlayer player, World worldIn,  boolean isAdmin) {
     //    this.player = player;
@@ -69,7 +70,7 @@ public class ConfiguratorScreen extends BasicScreen {
             boolean distanceFactorMultiplierPerm, boolean interDimensionalMultiplierPerm, boolean oneWayTravelOnlyPerm, boolean irisUpgradePerm, boolean chevronUpgradePerm, boolean pegasusGateTypePerm, boolean reverseWormholeKillsPerm,
             boolean closeFromEitherEndPerm, boolean preserveInventoryOnIrisDeathPerm, boolean noInputPowerRequiredPerm, boolean chevronsLockOnDialPerm, boolean returnToPreviousIrisStatePerm, boolean transientDamagePerm, boolean transparencyPerm,
             boolean dhdAsFuelSourcePerm, boolean allowRedstoneOutputPerm, boolean allowRedstoneInputPerm, boolean playerCanDestroyPlayerGatePerm, boolean playerCanDestroyGeneratedGatePerm, boolean displayGateAddressPerm, boolean isGeneratedPerm,
-            boolean gateAccessPerm, boolean playerAccessPerm, boolean invulnerablePerm) {
+            boolean gateAccessPerm, boolean playerAccessPerm, boolean invulnerablePerm, boolean dynmapPerm) {
 
         this.player = player;
         this.world = worldIn;
@@ -104,6 +105,7 @@ public class ConfiguratorScreen extends BasicScreen {
         this.gateAccessPerm = gateAccessPerm;
         this.playerAccessPerm = playerAccessPerm;
         this.invulnerablePerm = invulnerablePerm;
+        this.dynmapPerm = dynmapPerm;
         this.location = new BlockPos(player.posX, player.posY, player.posZ);
     }
 
@@ -518,10 +520,24 @@ public class ConfiguratorScreen extends BasicScreen {
         this.invulnerableCheckbox.setName("checkbox.invulnerable");
         this.invulnerableCheckbox.register(this);
 
+        // A marker for the gate on the server's Dynmap, and, under it, whether its label gives the address
+        this.showOnDynmapCheckbox = new UICheckBox();
+        this.showOnDynmapCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.showOnDynmap"));
+        this.showOnDynmapCheckbox.setPosition(checkboxIndentPadding, this.invulnerableCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
+        this.showOnDynmapCheckbox.setName("checkbox.showondynmap");
+        this.showOnDynmapCheckbox.register(this);
+
+        this.showAddressOnDynmapCheckbox = new UICheckBox();
+        this.showAddressOnDynmapCheckbox.setText(TextFormatting.WHITE + I18n.format("sgcraft.gui.configurator.label.showAddressOnDynmap"));
+        this.showAddressOnDynmapCheckbox.setPosition(checkboxIndentPadding + 10, this.showOnDynmapCheckbox.getY() + padding, Anchor.LEFT | Anchor.TOP);
+        this.showAddressOnDynmapCheckbox.setName("checkbox.showaddressondynmap");
+        this.showAddressOnDynmapCheckbox.register(this);
+
         this.checkboxOptionsArea.add(booleanValuesLabel, checkboxSeparator, this.oneWayTravelCheckbox, this.noBarrierRadio, this.irisRadio, this.shieldRadio, this.chevronUpgradeCheckbox);
         this.checkboxOptionsArea.add(this.reverseWormholeKillsCheckbox, this.closeFromEitherEndCheckbox, this.preserveInventoryCheckbox, this.noPowerRequiredCheckbox);
         this.checkboxOptionsArea.add(this.chevronsLockOnDialCheckbox, this.returnIrisToPreviousStateCheckbox, this.transientDamageCheckbox, this.transparencyCheckbox, this.useDHDFuelSourceCheckbox);
         this.checkboxOptionsArea.add(this.allowRedstoneOutputCheckbox, this.allowRedstoneInputCheckbox, this.playerCanDestroyPlayerGateCheckbox, this.playerCanDestroyGeneratedGateCheckbox, this.displayGateAddressCheckbox, this.isGeneratedCheckbox, this.invulnerableCheckbox);
+        this.checkboxOptionsArea.add(this.showOnDynmapCheckbox, this.showAddressOnDynmapCheckbox);
 
         // Load Defaults button
         final UIButton buttonDefaults = new UIButtonBuilder()
@@ -584,7 +600,8 @@ public class ConfiguratorScreen extends BasicScreen {
                             this.oneWayTravelCheckbox.isChecked(), !this.noBarrierRadio.isSelected(), this.chevronUpgradeCheckbox.isChecked(), gateType, this.reverseWormholeKillsCheckbox.isChecked(), this.closeFromEitherEndCheckbox.isChecked(),
                             this.preserveInventoryCheckbox.isChecked(), this.noPowerRequiredCheckbox.isChecked(), this.chevronsLockOnDialCheckbox.isChecked(), this.returnIrisToPreviousStateCheckbox.isChecked(), this.transientDamageCheckbox.isChecked(),
                             this.transparencyCheckbox.isChecked(), orientation, this.useDHDFuelSourceCheckbox.isChecked(), this.allowRedstoneOutputCheckbox.isChecked(), this.allowRedstoneInputCheckbox.isChecked(), this.playerCanDestroyPlayerGateCheckbox.isChecked(),
-                            this.playerCanDestroyGeneratedGateCheckbox.isChecked(), this.displayGateAddressCheckbox.isChecked(), this.isGeneratedCheckbox.isChecked(), this.shieldRadio.isSelected(), this.invulnerableCheckbox.isChecked());
+                            this.playerCanDestroyGeneratedGateCheckbox.isChecked(), this.displayGateAddressCheckbox.isChecked(), this.isGeneratedCheckbox.isChecked(), this.shieldRadio.isSelected(), this.invulnerableCheckbox.isChecked(),
+                            this.showOnDynmapCheckbox.isChecked(), this.showAddressOnDynmapCheckbox.isChecked());
 
                     this.close();
                 })
@@ -619,6 +636,18 @@ public class ConfiguratorScreen extends BasicScreen {
             this.gateRotationSpeed.setText("6.0");
         }
         lockOriSettings(clicked == this.oriGateTypeRadio);
+    }
+
+    // The address only goes on the map with the marker: unticking Show on Dynmap unticks and greys it out.
+    // Fired before the box's new state is applied
+    @Subscribe
+    public void onCheck(UICheckBox.CheckEvent event) {
+        if (event.getComponent() == this.showOnDynmapCheckbox) {
+            this.showAddressOnDynmapCheckbox.setEnabled(this.dynmapPerm && event.isChecked());
+            if (!event.isChecked()) {
+                this.showAddressOnDynmapCheckbox.setChecked(false);
+            }
+        }
     }
 
     // MalisisCore groups radio buttons by name in a static map that is never cleared, so each screen
@@ -784,6 +813,11 @@ public class ConfiguratorScreen extends BasicScreen {
 
             this.invulnerableCheckbox.setChecked(localGate.invulnerable);
             this.invulnerableCheckbox.setEnabled(this.invulnerablePerm);
+
+            this.showOnDynmapCheckbox.setChecked(localGate.showOnDynmap);
+            this.showOnDynmapCheckbox.setEnabled(this.dynmapPerm);
+            this.showAddressOnDynmapCheckbox.setChecked(localGate.showAddressOnDynmap);
+            this.showAddressOnDynmapCheckbox.setEnabled(this.dynmapPerm && localGate.showOnDynmap);
 
             lockOriSettings(selectedGateType() == GateType.ORI);
         }
