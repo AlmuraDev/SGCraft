@@ -54,6 +54,7 @@ import gcewing.sg.util.OriGate;
 import gcewing.sg.interfaces.LoopingSoundSource;
 import gcewing.sg.util.FakeTeleporter;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockRailBase;
 import net.minecraft.block.BlockSlab;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
@@ -297,6 +298,9 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
     public boolean debugCCInterface = false;
     public int dialedDigit = 0;
     public String enteredAddress = "";
+    // The whole address of a PDD/EDD dial whose chevrons lock as entered, set on the server and sent to clients: until
+    // the last symbol is in, dialledAddress is only those entered so far, too short to tell a nine-symbol address (lit
+    // in the nine-chevron order) from a seven (see GateRenderer.chevronSequenceRow)
     public String immediateDialAddress = "";
     public boolean errorState = false;
     public boolean checkForMalfunction = false;
@@ -685,6 +689,7 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         this.targetRingAngle = nbt.getDouble("targetRingAngle");
         this.numEngagedChevrons = nbt.getInteger("numEngagedChevrons");
         this.dialledAddress = nbt.getString("dialledAddress");
+        this.immediateDialAddress = nbt.getString("immediateDialAddress");
         this.pegasusFillStart = nbt.getLong("pegasusFillStart");
         this.pegasusFillEnd = nbt.getLong("pegasusFillEnd");
         this.isLinkedToController = nbt.getBoolean("isLinkedToController");
@@ -973,6 +978,7 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         nbt.setDouble("targetRingAngle", targetRingAngle);
         nbt.setInteger("numEngagedChevrons", numEngagedChevrons);
         nbt.setString("dialledAddress", dialledAddress);
+        nbt.setString("immediateDialAddress", immediateDialAddress);
         nbt.setLong("pegasusFillStart", pegasusFillStart);
         nbt.setLong("pegasusFillEnd", pegasusFillEnd);
         nbt.setBoolean("isLinkedToController", isLinkedToController);
@@ -2253,6 +2259,7 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         }
 
         if (address.length() <= this.getNumChevrons()) {
+            immediateDialAddress = address;
             enteredAddress += currentSymbol;
             this.dialedDigit = enteredAddress.length();
             boolean last = address.length() == this.dialedDigit;
@@ -3006,8 +3013,8 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         for (int i = 0; i < KAWOOSH_BLOCKS_PER_TICK && !kawooshBlocks.isEmpty(); i++) {
             BlockPos p = kawooshBlocks.poll();
             IBlockState s = world.getBlockState(p);
-            // Never a gate or DHD, of this gate or any other
-            if (s.getBlock() == Blocks.AIR || isGateBlock(s.getBlock())) {
+            // Never a gate or DHD, of this gate or any other, nor a railway line running through the gate
+            if (s.getBlock() == Blocks.AIR || isGateBlock(s.getBlock()) || isTrack(s.getBlock())) {
                 continue;
             }
             if (SGCraft.wormholeCanDestroyUnbreakableBlocks || s.getBlockHardness(world, p) >= 0) {
@@ -3018,6 +3025,13 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
 
     static boolean isGateBlock(Block block) {
         return block instanceof SGBaseBlock || block instanceof SGRingBlock || block instanceof DHDBlock;
+    }
+
+    // Rails: vanilla's and every Railcraft track, which are all BlockRailBase but for the elevator track (named, so as
+    // not to need Railcraft)
+    static boolean isTrack(Block block) {
+        return block instanceof BlockRailBase
+            || block.getClass().getName().equals("mods.railcraft.common.blocks.tracks.elevator.BlockTrackElevator");
     }
 
     // *********************************************************************************************
