@@ -85,6 +85,7 @@ import net.minecraft.util.ITickable;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.ITextComponent;
@@ -3028,10 +3029,15 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
     }
 
     // Rails: vanilla's and every Railcraft track, which are all BlockRailBase but for the elevator track (named, so as
-    // not to need Railcraft)
+    // not to need Railcraft), and Immersive Railroading's track, its gag blocks (the rest of a long piece of track)
+    // and its placement preview, all block_rail*; those are UniversalModCore blocks, so known only by name
     static boolean isTrack(Block block) {
-        return block instanceof BlockRailBase
-            || block.getClass().getName().equals("mods.railcraft.common.blocks.tracks.elevator.BlockTrackElevator");
+        if (block instanceof BlockRailBase
+                || block.getClass().getName().equals("mods.railcraft.common.blocks.tracks.elevator.BlockTrackElevator")) {
+            return true;
+        }
+        ResourceLocation name = block.getRegistryName();
+        return name != null && name.getNamespace().equals("immersiverailroading") && name.getPath().startsWith("block_rail");
     }
 
     // *********************************************************************************************
