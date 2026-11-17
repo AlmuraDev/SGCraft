@@ -42,11 +42,22 @@ import java.util.function.Consumer;
 public final class ToolItem extends Item implements GateItem {
 
     private final Consumer<ServerPlayer> open;
+    private final Consumer<ServerPlayer> sneakOnBlock;
 
     /** @param open what the server does when a player uses the tool */
     public ToolItem(final Properties properties, final Consumer<ServerPlayer> open) {
+        this(properties, open, open);
+    }
+
+    /**
+     * @param open what the server does when a player uses the tool
+     * @param sneakOnBlock what it does instead when the player sneaks and uses it on a block
+     */
+    public ToolItem(final Properties properties, final Consumer<ServerPlayer> open,
+            final Consumer<ServerPlayer> sneakOnBlock) {
         super(properties);
         this.open = open;
+        this.sneakOnBlock = sneakOnBlock;
     }
 
     @Override
@@ -59,9 +70,16 @@ public final class ToolItem extends Item implements GateItem {
 
     @Override
     public InteractionResult useOn(final UseOnContext context) {
-        if (context.getPlayer() == null) {
+        final Player player = context.getPlayer();
+        if (player == null) {
             return InteractionResult.PASS;
         }
-        return this.use(context.getLevel(), context.getPlayer(), context.getHand());
+        if (player.isShiftKeyDown()) {
+            if (player instanceof ServerPlayer serverPlayer) {
+                this.sneakOnBlock.accept(serverPlayer);
+            }
+            return InteractionResult.SUCCESS;
+        }
+        return this.use(context.getLevel(), player, context.getHand());
     }
 }

@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.shield.CityShieldBlockEntity;
 import com.almuradev.sgcraft.mod.shield.ShieldSettings;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -68,7 +69,7 @@ final class SGShieldCommands {
     }
 
     static ArgumentBuilder<CommandSourceStack, ?> shields() {
-        return Commands.literal("shields").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+        return Commands.literal("shields").requires(SGPermissions.commandCheck("shields"))
                 .executes(context -> SGShieldCommands.show(context.getSource()))
                 .then(Commands.literal("gate_energy_per_tick")
                         .then(Commands.argument("energy", DoubleArgumentType.doubleArg(0))

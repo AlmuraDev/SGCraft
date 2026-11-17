@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.command;
 
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.block.entity.PowerUnitBlockEntity;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -59,7 +60,7 @@ final class SGPowerCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> power() {
         return Commands.literal("power")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("power"))
                 .executes(context -> SGPowerCommands.show(context.getSource(),
                         SGPowerCommands.lookedAt(context.getSource())))
                 .then(SGPowerCommands.set(context -> SGPowerCommands.lookedAt(context.getSource())))

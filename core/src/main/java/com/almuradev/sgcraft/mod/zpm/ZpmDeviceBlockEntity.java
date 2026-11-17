@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.zpm;
 
 import com.almuradev.sgcraft.mod.access.SGGateAccess;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.energy.GeStore;
 import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
 import net.minecraft.core.BlockPos;
@@ -232,7 +233,7 @@ public final class ZpmDeviceBlockEntity extends BlockEntity implements GeStore {
 
     /** @return whether a player may link it to a gate, or unlink it: its owner or an operator, or anyone if unowned */
     public boolean mayLink(final Player player) {
-        return this.owner == null || this.owner.equals(player.getUUID()) || SGGateAccess.isOperator(player);
+        return this.owner == null || this.owner.equals(player.getUUID()) || SGPermissions.isAdmin(player);
     }
 
     @Override

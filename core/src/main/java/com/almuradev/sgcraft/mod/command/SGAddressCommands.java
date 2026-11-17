@@ -28,6 +28,7 @@ package com.almuradev.sgcraft.mod.command;
 import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.address.AddressChanges.Change;
 import com.almuradev.sgcraft.mod.address.AddressChanges.Kind;
 import com.almuradev.sgcraft.mod.address.AddressChanges.Outcome;
@@ -93,7 +94,7 @@ final class SGAddressCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> addresses() {
         return Commands.literal("addresses")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("addresses"))
                 .executes(context -> SGAddressCommands.show(context.getSource()))
                 .then(Commands.literal("cell_chunks")
                         .then(Commands.argument("chunks", IntegerArgumentType.integer(1, AddressLayout.MAX_CELL_CHUNKS))

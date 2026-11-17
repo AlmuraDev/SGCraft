@@ -93,6 +93,15 @@ public record DialView(DialPhase phase, boolean initiator, String address, int e
         return symbols;
     }
 
+    /**
+     * @return whether the gate is locking its chevrons a symbol at a time, as a DHD's keys or a PDD enter them (see
+     *     SGStargate.engage): it is dialing out, but no ring turns, no light runs, and the top chevron doesn't move
+     *     for each, until the symbols are dialed
+     */
+    public boolean engaging() {
+        return this.phase == DialPhase.DIALING && this.initiator && this.expected > 0;
+    }
+
     /** @return whether the gate is dialing, being dialed or open, but not idle or shutting down */
     public boolean active() {
         return this.phase != DialPhase.IDLE && this.phase != DialPhase.DISCONNECTING;

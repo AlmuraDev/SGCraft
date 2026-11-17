@@ -122,6 +122,14 @@ public final class DhdBlockEntity extends BlockEntity {
                         final double piece = DhdBlockEntity.this.energyPerPiece();
                         yield piece <= 0 ? 0 : (int) Math.min(100, 100 * DhdBlockEntity.this.buffer / piece);
                     }
+                    case DhdFuelMenu.FUEL_ENERGY, DhdFuelMenu.FUEL_ENERGY + 1 ->
+                            DhdFuelMenu.half(DhdBlockEntity.this.available(), index != DhdFuelMenu.FUEL_ENERGY);
+                    case DhdFuelMenu.GATE_ENERGY, DhdFuelMenu.GATE_ENERGY + 1 -> DhdFuelMenu.half(
+                            DhdBlockEntity.this.gate().map(gate -> (long) gate.energy().stored()).orElse(0L),
+                            index != DhdFuelMenu.GATE_ENERGY);
+                    case DhdFuelMenu.GATE_CAPACITY, DhdFuelMenu.GATE_CAPACITY + 1 -> DhdFuelMenu.half(
+                            DhdBlockEntity.this.gate().map(gate -> (long) gate.energy().capacity()).orElse(0L),
+                            index != DhdFuelMenu.GATE_CAPACITY);
                     default -> 0;
                 };
             }
@@ -132,7 +140,7 @@ public final class DhdBlockEntity extends BlockEntity {
 
             @Override
             public int getCount() {
-                return 2;
+                return DhdFuelMenu.DATA;
             }
         };
         player.openMenu(new SimpleMenuProvider((id, inventory, p) -> new DhdFuelMenu(id, inventory, this.fuel, data),

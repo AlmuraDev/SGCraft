@@ -63,9 +63,10 @@ import java.util.Optional;
  * <p>Symbols pressed light up, and a right click takes back the last. The keyboard works too: a letter, digit,
  * {@code @}, {@code +} or {@code .} presses its symbol, whatever the case, Backspace takes one back and Enter presses
  * the dome. A key with no symbol shows in red. The dome then dials them: the gate turns its ring for each symbol, as
- * the original's did, or locks every chevron at once when its {@code chevrons_lock_on_dial} property is on. While the
- * gate is active the buttons show the address it dialed, and the dome shuts it down. A button pressed sinks into the
- * face for a moment.</p>
+ * the original's did, or locks every chevron at once when its {@code chevrons_lock_on_dial} property is on. With its
+ * {@code chevrons_lock_as_dialed} property on instead, each symbol locks its chevron as it is pressed, and the dome
+ * dials them. While the gate is active the buttons show the address it dialed, and the dome shuts it down. A button
+ * pressed sinks into the face for a moment.</p>
  */
 public final class DhdScreen extends Screen {
 
@@ -361,9 +362,19 @@ public final class DhdScreen extends Screen {
             return;
         }
         this.click(false);
-        if (!active && this.entered.size() < this.symbolLimit()) {
+        // A gate locking its chevrons one key at a time is active from the first, and takes the rest too
+        if ((!active || this.engaging()) && this.entered.size() < this.symbolLimit()) {
             this.entered.add(new Symbol(button));
+            // The server locks the symbol's chevron at once if the gate's chevrons lock as dialed, and otherwise
+            // ignores it
+            ClientPlatform.get().sendToServer(new DhdPress(this.pos, button));
         }
+    }
+
+    // Whether the gate is locking chevrons a key at a time: dialing, from here, with no ring turning, as the gate shows
+    // while it does (see SGStargate.engage)
+    private boolean engaging() {
+        return this.gateView().engaging();
     }
 
     // Takes back the last symbol entered

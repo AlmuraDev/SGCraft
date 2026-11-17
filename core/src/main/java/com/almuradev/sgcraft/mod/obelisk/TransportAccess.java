@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.obelisk;
 
 import com.almuradev.sgcraft.mod.access.SGGateAccess;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import net.minecraft.core.UUIDUtil;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.storage.ValueInput;
@@ -84,7 +85,7 @@ public final class TransportAccess {
 
     /** @return whether a player may use it: its owner, an operator, or anyone the list or the default lets */
     public boolean mayUse(final Player player) {
-        if (this.isOwner(player) || SGGateAccess.isOperator(player)) {
+        if (this.isOwner(player) || SGPermissions.isAdmin(player)) {
             return true;
         }
         final ObeliskAccess entry = this.access.get(player.getUUID());
@@ -96,7 +97,7 @@ public final class TransportAccess {
      *     admin. One with no owner only operators may, or anyone could take it over
      */
     public boolean mayConfigure(final Player player) {
-        if (this.isOwner(player) || SGGateAccess.isOperator(player)) {
+        if (this.isOwner(player) || SGPermissions.isAdmin(player)) {
             return true;
         }
         final ObeliskAccess entry = this.access.get(player.getUUID());

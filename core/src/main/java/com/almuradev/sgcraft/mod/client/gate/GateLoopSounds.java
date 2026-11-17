@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.client.gate;
 
+import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
 import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.mod.gate.DialPhase;
@@ -33,6 +34,8 @@ import com.almuradev.sgcraft.mod.gate.DialView;
 import com.almuradev.sgcraft.mod.sound.SGSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
+import net.minecraft.client.sounds.SoundEngine;
+import net.minecraft.client.sounds.SoundManager;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -65,7 +68,8 @@ public final class GateLoopSounds {
 
     // The dialing gate rolls while a symbol is being dialed
     private static boolean rolling(final DialView view) {
-        return view.initiator() && view.phase() == DialPhase.DIALING;
+        // Not while its chevrons lock a symbol at a time: only each chevron's own sound plays then
+        return view.initiator() && view.phase() == DialPhase.DIALING && !view.engaging();
     }
 
     // An Ori supergate's ring doesn't turn, so it doesn't roll
@@ -78,13 +82,21 @@ public final class GateLoopSounds {
         if (!wanted.test(base.dialView())) {
             return;
         }
+        final SoundManager sounds = Minecraft.getInstance().getSoundManager();
         final Loop loop = playing.get(base);
-        if (loop != null && !loop.isStopped()) {
+        // Playing already; a sound the engine didn't start (it wasn't ready, or had no channel free) is never
+        // ticked, so never stops, and would otherwise keep the gate silent for good
+        if (loop != null && !loop.isStopped() && sounds.isActive(loop)) {
             return;
         }
+        final boolean retrying = loop != null && !loop.isStopped();
         final Loop started = new Loop(sound, base, wanted);
         playing.put(base, started);
-        Minecraft.getInstance().getSoundManager().play(started);
+        final SoundEngine.PlayResult result = sounds.play(started);
+        if (result == SoundEngine.PlayResult.NOT_STARTED && !retrying) {
+            SGCraft.LOG.debug("Gate sound {} at {} didn't start; trying again next tick", sound.location(),
+                    base.getBlockPos());
+        }
     }
 
     private static final class Loop extends AbstractTickableSoundInstance {

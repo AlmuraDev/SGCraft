@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.block.ComputerDeskBlock;
 import com.almuradev.sgcraft.mod.block.MalpConsoleBlock;
 import com.almuradev.sgcraft.mod.entity.MalpEntity;
@@ -115,7 +116,7 @@ final class SGMalpCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> malp() {
         return Commands.literal("malp")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("malp"))
                 .then(Commands.literal("list").executes(context -> SGMalpCommands.list(context.getSource())))
                 .then(Commands.literal("pair").then(SGMalpCommands.malpArgument()
                         .then(Commands.argument("pos", BlockPosArgument.blockPos())
@@ -287,7 +288,7 @@ final class SGMalpCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> battery() {
         return Commands.literal("battery")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("battery"))
                 .executes(context -> SGMalpCommands.showBattery(context.getSource()))
                 .then(Commands.literal("set").then(Commands.argument("ge", DoubleArgumentType.doubleArg(0))
                         .executes(context -> SGMalpCommands.setBattery(context.getSource(),

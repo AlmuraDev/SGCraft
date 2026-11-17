@@ -32,6 +32,9 @@ import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.ContainerData;
+
+import java.util.Locale;
 
 /**
  * A DHD's fuel, laid out as a hopper is: five slots of naquadah over the player's inventory, with how full the gate's
@@ -54,14 +57,30 @@ public final class DhdFuelScreen extends AbstractContainerScreen<DhdFuelMenu> {
                 this.imageWidth, this.imageHeight, 256, 256);
     }
 
+    // Light, with a shadow, so it reads on a resource pack's dark container as on the vanilla light one
+    private static final int TEXT = 0xFFF0F0F0;
+
     @Override
     protected void extractLabels(final GuiGraphicsExtractor graphics, final int xm, final int ym) {
-        super.extractLabels(graphics, xm, ym);
-        final int gate = this.menu.data().get(DhdFuelMenu.GATE_PERCENT);
-        final Component status = gate < 0
+        graphics.text(this.font, this.title, this.titleLabelX, this.titleLabelY, DhdFuelScreen.TEXT, true);
+        graphics.text(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY,
+                DhdFuelScreen.TEXT, true);
+        // Beside the title, the gate's own store; beside the inventory's, what the DHD's naquadah holds
+        final ContainerData data = this.menu.data();
+        final Component gate = data.get(DhdFuelMenu.GATE_PERCENT) < 0
                 ? Component.translatableWithFallback("container.sgcraft.dhd_fuel.no_gate", "No gate")
-                : Component.translatableWithFallback("container.sgcraft.dhd_fuel.gate", "Gate %s%%", gate);
-        graphics.text(this.font, status, this.imageWidth - 8 - this.font.width(status), this.titleLabelY, 0xFF404040,
-                false);
+                : Component.translatableWithFallback("container.sgcraft.dhd_fuel.gate_energy", "Gate: %s / %s GE",
+                        DhdFuelScreen.amount(DhdFuelMenu.wide(data, DhdFuelMenu.GATE_ENERGY)),
+                        DhdFuelScreen.amount(DhdFuelMenu.wide(data, DhdFuelMenu.GATE_CAPACITY)));
+        graphics.text(this.font, gate, this.imageWidth - 8 - this.font.width(gate), this.titleLabelY,
+                DhdFuelScreen.TEXT, true);
+        final Component fuel = Component.translatableWithFallback("container.sgcraft.dhd_fuel.fuel_energy",
+                "Fuel: %s GE", DhdFuelScreen.amount(DhdFuelMenu.wide(data, DhdFuelMenu.FUEL_ENERGY)));
+        graphics.text(this.font, fuel, this.imageWidth - 8 - this.font.width(fuel), this.inventoryLabelY,
+                DhdFuelScreen.TEXT, true);
+    }
+
+    private static String amount(final int value) {
+        return String.format(Locale.ROOT, "%,d", value);
     }
 }

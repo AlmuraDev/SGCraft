@@ -25,14 +25,17 @@
 
 package com.almuradev.sgcraft.mod.dhd;
 
+import com.almuradev.sgcraft.api.ActionResult;
 import com.almuradev.sgcraft.api.Cause;
 import com.almuradev.sgcraft.api.address.Address;
+import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.api.gate.DialMode;
 import com.almuradev.sgcraft.api.gate.DialResult;
 import com.almuradev.sgcraft.api.gate.GateProperties;
 import com.almuradev.sgcraft.api.gate.GateState;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.block.entity.DhdBlockEntity;
+import com.almuradev.sgcraft.mod.gate.LockDials;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -55,14 +58,35 @@ public final class DhdActions {
     private DhdActions() {
     }
 
-    /** A button pressed while the gate is active: the center shuts the gate down, and the symbols do nothing. */
+    /**
+     * A button pressed. On a gate whose chevrons lock as dialed, each symbol locks its chevron at once and the center
+     * dials those locked; otherwise the symbols are only entered on the screen, and the center shuts an active gate
+     * down.
+     */
     public static void press(final ServerPlayer player, final DhdPress press) {
+        final Cause cause = Cause.of(player.level().getBlockEntity(press.dhd()), player);
         if (press.button() != DhdPress.CENTER) {
+            // Quietly for a DHD without a gate, as every key is sent, not just those that lock a chevron
+            if (!press.dhd().closerToCenterThan(player.position(), DhdActions.REACH)
+                    || !(player.level().getBlockEntity(press.dhd()) instanceof DhdBlockEntity dhd)) {
+                return;
+            }
+            final Optional<Stargate> gate = dhd.gate().filter(LockDials::wanted);
+            final Optional<Symbol> symbol = DhdActions.symbol(press.button());
+            if (gate.isPresent() && symbol.isPresent()) {
+                final ActionResult result = gate.get().engage(symbol.get(), cause);
+                if (result == ActionResult.DENIED) {
+                    DhdActions.tell(player, "message.sgcraft.dial_failed.denied", "Dialing failed: denied");
+                }
+            }
             return;
         }
         final Optional<Stargate> gate = DhdActions.gate(player, press.dhd());
-        if (gate.isPresent() && gate.get().state() != GateState.IDLE) {
-            gate.get().disconnect(Cause.of(player.level().getBlockEntity(press.dhd()), player));
+        if (gate.isPresent() && !gate.get().engaged().isEmpty()) {
+            // The chevrons locked one key at a time: the dome dials them
+            DhdActions.report(player, gate.get().dialEngaged(cause));
+        } else if (gate.isPresent() && gate.get().state() != GateState.IDLE) {
+            gate.get().disconnect(cause);
         }
     }
 
@@ -77,8 +101,22 @@ public final class DhdActions {
             return;
         }
         final Cause cause = Cause.of(player.level().getBlockEntity(dial.dhd()), player);
+        if (!gate.get().engaged().isEmpty()) {
+            // Its chevrons locked as the keys were pressed: those are what it dials
+            DhdActions.report(player, gate.get().dialEngaged(cause));
+            return;
+        }
         DhdActions.report(player, gate.get().dial(address.get(), gate.get().get(GateProperties.CHEVRONS_LOCK_ON_DIAL)
                 .orElse(false) ? DialMode.QUICK : DialMode.STANDARD, cause));
+    }
+
+    // The symbol a DHD button stands for, if it is one
+    private static Optional<Symbol> symbol(final int button) {
+        return button >= 0 && button < Symbol.COUNT ? Optional.of(new Symbol(button)) : Optional.empty();
+    }
+
+    private static void tell(final ServerPlayer player, final String key, final String fallback) {
+        player.sendOverlayMessage(Component.translatableWithFallback(key, fallback).withStyle(ChatFormatting.RED));
     }
 
     private static Optional<Stargate> gate(final ServerPlayer player, final BlockPos pos) {

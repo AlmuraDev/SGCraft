@@ -37,6 +37,7 @@ import com.almuradev.sgcraft.api.gate.DialResult;
 import com.almuradev.sgcraft.api.gate.GateType;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.gate.DialStyle;
 import com.almuradev.sgcraft.mod.gate.GateTargeting;
 import com.almuradev.sgcraft.mod.gate.GlyphText;
@@ -150,23 +151,23 @@ public final class SGCommands {
                         .executes(context -> SGCommands.select(context.getSource(),
                                 SGCommands.lookedAt(context.getSource())))
                         .then(Commands.argument("pos", BlockPosArgument.blockPos())
-                                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                                .requires(SGPermissions.commandCheck("select.pos"))
                                 .executes(context -> SGCommands.select(context.getSource(),
                                         SGCommands.inCell(context)))))
                 .then(Commands.literal("deselect")
                         .executes(context -> SGCommands.deselect(context.getSource())))
                 .then(Commands.literal("list")
-                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .requires(SGPermissions.commandCheck("list"))
                         .executes(context -> SGCommands.list(context.getSource(),
                                 context.getSource().getLevel().dimension()))
                         .then(Commands.argument("world", DimensionArgument.dimension())
                                 .executes(context -> SGCommands.list(context.getSource(),
                                         DimensionArgument.getDimension(context, "world").dimension()))))
                 .then(Commands.literal("chevrons")
-                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .requires(SGPermissions.commandCheck("chevrons"))
                         .then(SGCommands.chevrons(SGCommands::chosen)))
                 .then(Commands.literal("type")
-                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .requires(SGPermissions.commandCheck("type"))
                         .then(SGCommands.type(SGCommands::chosen)))
                 .then(SGGateCommands.place())
                 .then(SGGateCommands.book())
@@ -207,7 +208,7 @@ public final class SGCommands {
                 .then(Commands.literal("type").then(SGCommands.type(SGCommands::at)));
         SGGateCommands.gateCommands(root, SGCommands::chosen);
         SGGateCommands.gateCommands(gate, SGCommands::at);
-        root.then(Commands.literal("gate").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)).then(gate));
+        root.then(Commands.literal("gate").requires(SGPermissions.commandCheck("gate")).then(gate));
         dispatcher.register(root);
     }
 

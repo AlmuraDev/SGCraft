@@ -205,21 +205,24 @@ public final class ToolPayloads {
      * The PDD's state: the gate it dials from, if one is near, and the player's address book.
      *
      * @param open whether to open the screen, rather than only update it if it is still open
+     * @param fillAddress whether the screen opens with the gate's address in its address box, as when the player
+     *     sneaks and uses the PDD on the gate
      * @param message something to tell the player, or empty
      */
-    public record PddState(boolean open, Optional<GateInfo> gate, List<BookEntry> entries, boolean editable,
-            String message) implements SGPacket {
+    public record PddState(boolean open, boolean fillAddress, Optional<GateInfo> gate, List<BookEntry> entries,
+            boolean editable, String message) implements SGPacket {
 
         public static final Type<PddState> TYPE = new Type<>(SGCraft.id("pdd_state"));
 
         public PddState(final FriendlyByteBuf buf) {
-            this(buf.readBoolean(), buf.readOptional(GateInfo::new), SGPacket.readList(buf, BookEntry::new),
-                    buf.readBoolean(), buf.readUtf());
+            this(buf.readBoolean(), buf.readBoolean(), buf.readOptional(GateInfo::new),
+                    SGPacket.readList(buf, BookEntry::new), buf.readBoolean(), buf.readUtf());
         }
 
         @Override
         public void write(final FriendlyByteBuf buf) {
             buf.writeBoolean(this.open);
+            buf.writeBoolean(this.fillAddress);
             buf.writeOptional(this.gate, (out, gate) -> gate.write(out));
             SGPacket.writeList(buf, this.entries, (out, entry) -> entry.write(out));
             buf.writeBoolean(this.editable);

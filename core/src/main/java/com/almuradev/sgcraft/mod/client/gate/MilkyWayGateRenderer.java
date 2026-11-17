@@ -191,7 +191,8 @@ public final class MilkyWayGateRenderer implements GateTypeRenderer {
     private static @Nullable Lock lock(final StargateBaseRenderState state) {
         final DialView view = state.view;
         final int symbols = view.length();
-        if (!view.initiator() || view.engaged() <= 0 || symbols == 0) {
+        // Nor while its chevrons lock a symbol at a time, as a DHD's keys enter them: each simply lights
+        if (!view.initiator() || view.engaged() <= 0 || symbols == 0 || view.engaging()) {
             return null;
         }
         switch (view.phase()) {

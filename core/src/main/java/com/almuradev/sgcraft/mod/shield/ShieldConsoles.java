@@ -29,6 +29,7 @@ import com.almuradev.sgcraft.api.Cause;
 import com.almuradev.sgcraft.api.access.GateRight;
 import com.almuradev.sgcraft.api.gate.GateProperties;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.gate.GateShape;
 import com.almuradev.sgcraft.mod.gate.GateStore;
 import com.almuradev.sgcraft.mod.gate.SGIris;
@@ -57,11 +58,17 @@ public final class ShieldConsoles {
 
     /** A player used a console: its screen opens. */
     public static void open(final ServerPlayer player, final BlockPos console) {
+        if (!SGPermissions.check(player, SGPermissions.SHIELD_CONSOLE)) {
+            return;
+        }
         ShieldConsoles.send(player, console, true, "");
     }
 
     /** Something was done on a console's screen. */
     public static void action(final ServerPlayer player, final ShieldPayloads.ConsoleAction action) {
+        if (!SGPermissions.check(player, SGPermissions.SHIELD_CONSOLE)) {
+            return;
+        }
         // Reach first: looking up a far position would load or generate its chunk
         if (!action.console().closerToCenterThan(player.position(), ShieldConsoles.USE_RANGE)
                 || !(player.level().getBlockState(action.console()).getBlock() instanceof ShieldConsoleBlock)) {

@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.malp;
 
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.entity.MalpEntity;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.ConfigApply;
 import com.almuradev.sgcraft.mod.malp.MalpPayloads.ConfigState;
@@ -34,7 +35,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.permissions.Permissions;
 import net.minecraft.server.players.NameAndId;
 import net.minecraft.world.entity.player.Player;
 import org.jspecify.annotations.Nullable;
@@ -56,9 +56,9 @@ public final class MalpConfigurator {
     private MalpConfigurator() {
     }
 
-    /** @return whether a player may change a MALP's settings: they own it, or they are an operator */
+    /** @return whether a player may change a MALP's settings: they own it, or they are an SGCraft admin */
     public static boolean mayConfigure(final Player player, final MalpEntity malp) {
-        return player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER)
+        return SGPermissions.isAdmin(player)
                 || player.getUUID().equals(malp.owner());
     }
 

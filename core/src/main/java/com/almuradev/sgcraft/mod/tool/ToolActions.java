@@ -44,6 +44,7 @@ import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.access.SGGateAccess;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.addressbook.DefaultAddresses;
 import com.almuradev.sgcraft.mod.addressbook.ItemAddressBook;
 import com.almuradev.sgcraft.mod.addressbook.ListAddressBook;
@@ -52,6 +53,7 @@ import com.almuradev.sgcraft.mod.energy.DialCosts;
 import com.almuradev.sgcraft.mod.gate.DialStyle;
 import com.almuradev.sgcraft.mod.gate.GateOrientation;
 import com.almuradev.sgcraft.mod.gate.GateTargeting;
+import com.almuradev.sgcraft.mod.gate.LockDials;
 import com.almuradev.sgcraft.mod.gate.SGIris;
 import com.almuradev.sgcraft.mod.gate.SGStargate;
 import com.almuradev.sgcraft.mod.item.IrisUpgradeItem;
@@ -159,6 +161,13 @@ public final class ToolActions {
                 pos))).map(Stargate.class::cast);
     }
 
+    // Something to tell the player over their hotbar, in red; nothing when it's empty
+    private static void overlay(final ServerPlayer player, final String message) {
+        if (!message.isEmpty()) {
+            player.sendOverlayMessage(Component.literal(message).withStyle(ChatFormatting.RED));
+        }
+    }
+
     private static void tell(final ServerPlayer player, final String key, final String fallback) {
         player.sendOverlayMessage(Component.translatableWithFallback(key, fallback).withStyle(ChatFormatting.RED));
     }
@@ -186,6 +195,14 @@ public final class ToolActions {
         return ToolActions.explain(result);
     }
 
+    /** @return why a gate's dial failed, with how much energy it needed when it hadn't enough */
+    public static String explain(final Stargate gate, final DialResult result) {
+        if (result == DialResult.NOT_ENOUGH_ENERGY && gate instanceof final SGStargate sg) {
+            return String.format(Locale.ROOT, "Insufficient energy to dial, requires: %,d GE", sg.energyNeeded());
+        }
+        return ToolActions.explain(result);
+    }
+
     static String explain(final DialResult result) {
         return switch (result) {
             case CONNECTED -> "";
@@ -209,18 +226,40 @@ public final class ToolActions {
 
     /** A player used a PDD: its screen opens, with the gate near them, if any, and the addresses the PDD holds. */
     public static void openPdd(final ServerPlayer player) {
+        if (!SGPermissions.check(player, SGPermissions.PDD)) {
+            return;
+        }
         ToolActions.fillDefaults(player, SGItems.PDD);
-        ToolActions.sendPdd(player, true, "");
+        ToolActions.sendPdd(player, true, false, "");
+    }
+
+    /**
+     * A player sneaked and used a PDD on a block: as {@link #openPdd}, and if the block is part of a gate, the screen
+     * opens with that gate's address in its address box.
+     */
+    public static void openPddOnGate(final ServerPlayer player) {
+        if (!SGPermissions.check(player, SGPermissions.PDD)) {
+            return;
+        }
+        ToolActions.fillDefaults(player, SGItems.PDD);
+        // The gate it finds is the one looked at, so this one, when there is one
+        final boolean onGate = GateTargeting.lookedAt(player, Math.max(ToolActions.range(), 6)).isPresent();
+        ToolActions.sendPdd(player, true, onGate, "");
     }
 
     private static void sendPdd(final ServerPlayer player, final boolean open, final String message) {
+        ToolActions.sendPdd(player, open, false, message);
+    }
+
+    private static void sendPdd(final ServerPlayer player, final boolean open, final boolean fillAddress,
+            final String message) {
         final Optional<Stargate> gate = GateTargeting.find(player, ToolActions.range());
         final Optional<AddressBook> book = ToolActions.pddBook(player);
         // Each address as the gate it would be dialed from sees it, or as the holder's world does
         final ResourceKey<Level> from = gate.map(g -> g.position().dimension()).orElse(player.level().dimension());
         final Optional<GlobalPos> dialer = gate.map(Stargate::position);
         final List<BookEntry> entries = book.map(b -> ToolActions.entries(b, from, dialer)).orElse(List.of());
-        SGNetwork.send(player, new PddState(open, gate.map(g -> ToolActions.info(player, g)), entries,
+        SGNetwork.send(player, new PddState(open, fillAddress, gate.map(g -> ToolActions.info(player, g)), entries,
                 book.isPresent(), book.isPresent() || !message.isEmpty() ? message : "You aren't holding a PDD"));
     }
 
@@ -236,6 +275,9 @@ public final class ToolActions {
     }
 
     public static void pdd(final ServerPlayer player, final PddAction action) {
+        if (!SGPermissions.check(player, SGPermissions.PDD)) {
+            return;
+        }
         if (!ToolActions.PDD_THROTTLE.allows(player, action.kind() == PddAction.Kind.REFRESH)) {
             return;
         }
@@ -247,6 +289,15 @@ public final class ToolActions {
         final AddressBook book = held.get();
         final Optional<Address> address = ToolActions.address(action.address());
         final String name = action.name().strip();
+        final boolean edits = switch (action.kind()) {
+            case ADD, RENAME, REMOVE, MOVE -> true;
+            default -> false;
+        };
+        if (edits && !SGPermissions.has(player, SGPermissions.PDD_EDIT)) {
+            ToolActions.sendPdd(player, false, "You don't have permission to change a PDD's addresses ("
+                    + SGPermissions.PDD_EDIT.name() + ")");
+            return;
+        }
         String message = "";
         switch (action.kind()) {
             case REFRESH -> {
@@ -257,16 +308,35 @@ public final class ToolActions {
                     message = "There is no gate near you";
                 } else if (address.isEmpty()) {
                     message = "That isn't an address";
+                } else if (LockDials.wanted(gate.get())) {
+                    // A symbol at a time, each chevron locking as it goes in, as someone pressing the DHD's keys
+                    LockDials.start(gate.get(), ToolActions.toDial(book, address.get(), gate.get()),
+                            ToolActions.cause(player), result -> {
+                                if (player.connection != null) {
+                                    ToolActions.overlay(player, ToolActions.explain(gate.get(), result));
+                                }
+                            });
                 } else {
-                    gate.get().dial(ToolActions.toDial(book, address.get(), gate.get()),
-                            gate.get().get(GateProperties.CHEVRONS_LOCK_ON_DIAL)
+                    final CompletableFuture<DialResult> dial = gate.get().dial(ToolActions.toDial(book,
+                            address.get(), gate.get()), gate.get().get(GateProperties.CHEVRONS_LOCK_ON_DIAL)
                             .orElse(false) ? DialMode.QUICK : DialMode.STANDARD, ToolActions.cause(player))
-                            .thenAccept(result -> {
-                        if (result != DialResult.CONNECTED && player.connection != null) {
-                            ToolActions.sendPdd(player, false, ToolActions.explain(result));
-                        }
-                    });
+                            .toCompletableFuture();
+                    // A dial the gate turns down at once (no energy, say) is answered with the state sent below; sent
+                    // from here, that state would follow it with no message and the player would never see why
+                    final DialResult now = dial.getNow(null);
+                    if (now != null) {
+                        message = now == DialResult.CONNECTED ? "" : ToolActions.explain(gate.get(), now);
+                    } else {
+                        dial.thenAccept(result -> {
+                            if (result != DialResult.CONNECTED && player.connection != null) {
+                                ToolActions.sendPdd(player, false, ToolActions.explain(gate.get(), result));
+                                ToolActions.overlay(player, ToolActions.explain(gate.get(), result));
+                            }
+                        });
+                    }
                 }
+                // The screen closes as Dial is clicked, so why a dial failed goes over the hotbar, as the DHD's does
+                ToolActions.overlay(player, message);
             }
             case DISCONNECT -> message = GateTargeting.find(player, ToolActions.range())
                     .map(gate -> ToolActions.explain(gate.disconnect(ToolActions.cause(player))))
@@ -351,6 +421,9 @@ public final class ToolActions {
 
     /** A player used a gate control tablet: its screen opens, on the first gate of its list. */
     public static void openTablet(final ServerPlayer player) {
+        if (!SGPermissions.check(player, SGPermissions.TABLET)) {
+            return;
+        }
         ToolActions.fillDefaults(player, SGItems.GATE_CONTROL_TABLET);
         ToolActions.sendTablet(player, true, 0, "");
     }
@@ -430,6 +503,9 @@ public final class ToolActions {
     }
 
     public static void tablet(final ServerPlayer player, final TabletAction action) {
+        if (!SGPermissions.check(player, SGPermissions.TABLET)) {
+            return;
+        }
         if (!ToolActions.TABLET_THROTTLE.allows(player, action.kind() == TabletAction.Kind.REFRESH)) {
             return;
         }
@@ -616,6 +692,9 @@ public final class ToolActions {
 
     /** A player used a GDO: its screen opens on the gate near them. */
     public static void openGdo(final ServerPlayer player) {
+        if (!SGPermissions.check(player, SGPermissions.GDO)) {
+            return;
+        }
         final Optional<Stargate> gate = GateTargeting.find(player, ToolActions.range());
         if (gate.isEmpty()) {
             ToolActions.tell(player, "message.sgcraft.no_gate_near", "There is no gate near you");
@@ -649,6 +728,9 @@ public final class ToolActions {
     }
 
     public static void gdo(final ServerPlayer player, final GdoAction action) {
+        if (!SGPermissions.check(player, SGPermissions.GDO)) {
+            return;
+        }
         final Optional<Stargate> gate = ToolActions.near(player, action.gate());
         if (gate.isEmpty()) {
             ToolActions.tell(player, "message.sgcraft.no_gate_near", "There is no gate near you");
@@ -690,6 +772,9 @@ public final class ToolActions {
 
     /** A player used a configurator: its screen opens on the gate near them, if they may configure it. */
     public static void openConfigurator(final ServerPlayer player) {
+        if (!SGPermissions.check(player, SGPermissions.CONFIGURATOR)) {
+            return;
+        }
         final Optional<Stargate> gate = GateTargeting.find(player, ToolActions.range());
         if (gate.isEmpty()) {
             ToolActions.tell(player, "message.sgcraft.no_gate_near", "There is no gate near you");
@@ -751,7 +836,7 @@ public final class ToolActions {
                 values, players, message,
                 1 / SGCraftApi.get().energy().rate(PowerUnitBlockEntity.FORGE_ENERGY),
                 GateOrientation.of(gate.orientation()).getSerializedName(), owner,
-                manage, ToolActions.fitsFreely(player), SGGateAccess.isOperator(player),
+                manage, ToolActions.fitsFreely(player), SGPermissions.isAdmin(player),
                 ToolActions.zpmLinks(player, gate)));
     }
 
@@ -775,7 +860,7 @@ public final class ToolActions {
     // Operators and players in creative mode change a gate's type, chevrons and iris with the configurator; anyone
     // else fits upgrade items, as in 1.12
     private static boolean fitsFreely(final ServerPlayer player) {
-        return player.isCreative() || SGGateAccess.isOperator(player);
+        return player.isCreative() || SGPermissions.isAdmin(player);
     }
 
     // A player's name when last seen, or their UUID if they never were
@@ -849,6 +934,9 @@ public final class ToolActions {
     }
 
     public static void configurator(final ServerPlayer player, final ConfiguratorApply apply) {
+        if (!SGPermissions.check(player, ToolActions.holding(player, SGItems.CONFIGURATOR) ? SGPermissions.CONFIGURATOR : SGPermissions.TABLET)) {
+            return;
+        }
         final Optional<Stargate> found = ToolActions.configured(player, apply.world(), apply.gate());
         if (found.isEmpty()) {
             ToolActions.tell(player, "message.sgcraft.no_gate_near", "There is no gate near you");

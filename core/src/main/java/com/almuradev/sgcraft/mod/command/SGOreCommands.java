@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.command;
 
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.worldgen.NaquadahOre;
 import com.almuradev.sgcraft.mod.worldgen.NaquadahOreSettings;
 import com.almuradev.sgcraft.mod.worldgen.OreChunks;
@@ -83,7 +84,7 @@ final class SGOreCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> ore() {
         final LiteralArgumentBuilder<CommandSourceStack> ore = Commands.literal("ore")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("ore"))
                 .executes(context -> SGOreCommands.show(context.getSource()));
         ore.then(SGOreCommands.flag("enable_naquadah_ore", NaquadahOreSettings::withEnableNaquadahOre));
         ore.then(SGOreCommands.flag("add_ores_to_existing_worlds",

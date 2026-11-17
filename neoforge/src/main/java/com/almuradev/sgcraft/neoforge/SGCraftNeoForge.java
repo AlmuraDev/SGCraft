@@ -89,6 +89,8 @@ public final class SGCraftNeoForge {
         NeoForge.EVENT_BUS.addListener((final ServerAboutToStartEvent event) ->
                 StructureGates.prepare(event.getServer()));
         NeoForge.EVENT_BUS.addListener((final ServerStartingEvent event) -> SGServer.starting(event.getServer()));
+        // SGCraft's permission nodes, for LuckPerms or whichever permission handler the server has
+        NeoForge.EVENT_BUS.addListener(PermissionsNeoForge::gather);
         NeoForge.EVENT_BUS.addListener((final ServerTickEvent.Post event) -> SGServer.tick(event.getServer()));
         // Naquadah ore takes its settings before the worlds are made, and is added to old chunks as they load
         NeoForge.EVENT_BUS.addListener((final ServerAboutToStartEvent event) ->

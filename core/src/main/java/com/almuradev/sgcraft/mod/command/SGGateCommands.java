@@ -43,6 +43,7 @@ import com.almuradev.sgcraft.api.gate.IrisTypes;
 import com.almuradev.sgcraft.api.gate.PlacementResult;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.block.GateSpawnerBlock;
 import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.mod.command.SGCommands.GateFinder;
@@ -131,7 +132,7 @@ final class SGGateCommands {
                 .executes(context -> SGGateCommands.showOrientation(context.getSource(), finder.find(context)));
         for (final GateOrientation flat : new GateOrientation[] {GateOrientation.FACE_UP, GateOrientation.FACE_DOWN}) {
             orientation.then(Commands.literal(flat.getSerializedName())
-                    .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                    .requires(SGPermissions.commandCheck("orientation"))
                     .executes(context -> SGGateCommands.turn(context.getSource(), finder.find(context), flat)));
         }
         return orientation;
@@ -170,7 +171,7 @@ final class SGGateCommands {
 
     // tokra; a Tok'ra in front of the gate, as one stands at a gate a structure left
     private static ArgumentBuilder<CommandSourceStack, ?> tokra(final GateFinder finder) {
-        return Commands.literal("tokra").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+        return Commands.literal("tokra").requires(SGPermissions.commandCheck("tokra"))
                 .executes(context -> SGGateCommands.tokra(context.getSource(), finder.find(context)));
     }
 
@@ -199,7 +200,7 @@ final class SGGateCommands {
         final int last = StargateBaseBlockEntity.CAMOUFLAGE_SLOTS - 1;
         return Commands.literal("camouflage")
                 .executes(context -> SGGateCommands.showCamouflage(context.getSource(), finder.find(context)))
-                .then(Commands.literal("set").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.literal("set").requires(SGPermissions.commandCheck("camouflage.set"))
                         .then(Commands.argument("slot", IntegerArgumentType.integer(0, last))
                                 .then(Commands.argument("block", IdentifierArgument.id())
                                         .suggests((context, builder) -> SharedSuggestionProvider.suggestResource(
@@ -207,7 +208,7 @@ final class SGGateCommands {
                                         .executes(context -> SGGateCommands.setCamouflage(context,
                                                 finder.find(context), IntegerArgumentType.getInteger(context, "slot"),
                                                 IdentifierArgument.getId(context, "block"))))))
-                .then(Commands.literal("clear").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.literal("clear").requires(SGPermissions.commandCheck("camouflage.clear"))
                         .executes(context -> SGGateCommands.clearCamouflage(context.getSource(), finder.find(context),
                                 -1))
                         .then(Commands.argument("slot", IntegerArgumentType.integer(0, last))
@@ -276,13 +277,13 @@ final class SGGateCommands {
                 .executes(context -> SGGateCommands.showIris(context.getSource(), finder.find(context)))
                 .then(Commands.literal("open").executes(context -> SGGateCommands.moveIris(context, finder, true)))
                 .then(Commands.literal("close").executes(context -> SGGateCommands.moveIris(context, finder, false)))
-                .then(Commands.literal("fit").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.literal("fit").requires(SGPermissions.commandCheck("iris.fit"))
                         .executes(context -> SGGateCommands.fitIris(context, finder, IrisTypes.METAL))
                         .then(Commands.literal("metal")
                                 .executes(context -> SGGateCommands.fitIris(context, finder, IrisTypes.METAL)))
                         .then(Commands.literal("shield")
                                 .executes(context -> SGGateCommands.fitIris(context, finder, IrisTypes.SHIELD))))
-                .then(Commands.literal("remove").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.literal("remove").requires(SGPermissions.commandCheck("iris.remove"))
                         .executes(context -> {
                             final Stargate gate = finder.find(context);
                             return SGCommands.report(context.getSource(), gate.remove(GateProperties.IRIS,
@@ -350,7 +351,7 @@ final class SGGateCommands {
                             needs ? "" : SGCommands.text("energy.free", ", and dials without it")), false);
                     return 1;
                 })
-                .then(Commands.literal("add").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.literal("add").requires(SGPermissions.commandCheck("energy.add"))
                         .then(Commands.argument("amount", LongArgumentType.longArg(0))
                                 .executes(context -> {
                                     final Stargate gate = finder.find(context);
@@ -361,7 +362,7 @@ final class SGGateCommands {
                                             true);
                                     return 1;
                                 })))
-                .then(Commands.literal("set").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.literal("set").requires(SGPermissions.commandCheck("energy.set"))
                         .then(Commands.argument("amount", LongArgumentType.longArg(0))
                                 .executes(context -> {
                                     final Stargate gate = finder.find(context);
@@ -382,12 +383,12 @@ final class SGGateCommands {
                                 SGGateCommands.properties(context.getSource()).keySet(), builder))
                         .executes(context -> SGGateCommands.showProperty(context.getSource(), finder.find(context),
                                 SGGateCommands.property(context)))
-                        .then(Commands.literal("set").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .then(Commands.literal("set").requires(SGPermissions.commandCheck("property.set"))
                                 .then(Commands.argument("value", StringArgumentType.greedyString())
                                         .executes(context -> SGGateCommands.setProperty(context.getSource(),
                                                 finder.find(context), SGGateCommands.property(context),
                                                 StringArgumentType.getString(context, "value")))))
-                        .then(Commands.literal("reset").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .then(Commands.literal("reset").requires(SGPermissions.commandCheck("property.reset"))
                                 .executes(context -> {
                                     final Stargate gate = finder.find(context);
                                     return SGCommands.report(context.getSource(), gate.remove(
@@ -580,7 +581,7 @@ final class SGGateCommands {
 
     // rule [set <incoming> <outgoing> <address> | remove <address>]
     private static ArgumentBuilder<CommandSourceStack, ?> rule(final GateFinder finder) {
-        return Commands.literal("rule").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+        return Commands.literal("rule").requires(SGPermissions.commandCheck("rule"))
                 .executes(context -> {
                     final Stargate gate = finder.find(context);
                     final CommandSourceStack source = context.getSource();
@@ -632,7 +633,7 @@ final class SGGateCommands {
                             IntegerArgumentType.getInteger(context, "chevrons"),
                             IntegerArgumentType.getInteger(context, "radius"), lying)));
         }
-        return Commands.literal("place").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+        return Commands.literal("place").requires(SGPermissions.commandCheck("place"))
                 .then(Commands.argument("type", IdentifierArgument.id())
                         .suggests((context, builder) -> SharedSuggestionProvider.suggestResource(
                                 context.getSource().getServer().registryAccess()

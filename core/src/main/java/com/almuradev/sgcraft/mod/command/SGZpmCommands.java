@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.zpm.ZpmItem;
 import com.almuradev.sgcraft.mod.zpm.ZpmSettings;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
@@ -65,7 +66,7 @@ final class SGZpmCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> zpm() {
         final ArgumentBuilder<CommandSourceStack, ?> zpm = Commands.literal("zpm")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("zpm"))
                 .executes(context -> SGZpmCommands.show(context.getSource()))
                 .then(Commands.literal("give")
                         .executes(context -> SGZpmCommands.give(context.getSource(), false))

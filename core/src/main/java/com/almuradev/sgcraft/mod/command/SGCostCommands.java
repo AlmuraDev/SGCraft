@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.energy.DialCosts;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
@@ -55,7 +56,7 @@ final class SGCostCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> costs() {
         final LiteralArgumentBuilder<CommandSourceStack> costs = Commands.literal("costs")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("costs"))
                 .executes(context -> SGCostCommands.show(context.getSource()));
         for (final DialCosts.Kind kind : DialCosts.Kind.values()) {
             costs.then(Commands.literal(kind.id())

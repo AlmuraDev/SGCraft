@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.command;
 
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.entity.JumperSettings;
 import com.almuradev.sgcraft.mod.entity.PuddleJumperEntity;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -69,7 +70,7 @@ final class SGJumperCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> jumper() {
         return Commands.literal("jumper")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("jumper"))
                 .then(Commands.literal("status").then(SGJumperCommands.jumpers()
                         .executes(SGJumperCommands::status)))
                 .then(Commands.literal("shield").then(SGJumperCommands.jumpers()

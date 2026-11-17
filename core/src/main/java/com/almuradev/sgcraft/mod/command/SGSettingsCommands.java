@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.gate.SGStargates;
 import com.almuradev.sgcraft.mod.settings.SettingsActions;
 import com.google.gson.JsonElement;
@@ -79,7 +80,7 @@ final class SGSettingsCommands {
     }
 
     static ArgumentBuilder<CommandSourceStack, ?> settings() {
-        return Commands.literal("settings").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+        return Commands.literal("settings").requires(SGPermissions.commandCheck("settings"))
                 .executes(context -> SGSettingsCommands.show(context.getSource()))
                 .then(SGSettingsCommands.setting(SGSettingsCommands.KAWOOSH_BREAKS_UNBREAKABLE))
                 .then(SGSettingsCommands.setting(SGSettingsCommands.OWNERS_BREAK_GATES))
@@ -133,7 +134,7 @@ final class SGSettingsCommands {
     }
 
     static ArgumentBuilder<CommandSourceStack, ?> gateDefaults() {
-        return Commands.literal("gate_defaults").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+        return Commands.literal("gate_defaults").requires(SGPermissions.commandCheck("gate_defaults"))
                 .executes(context -> SGSettingsCommands.listDefaults(context.getSource()))
                 .then(Commands.argument("property", IdentifierArgument.id())
                         .suggests((context, builder) -> SharedSuggestionProvider.suggestResource(

@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -46,7 +47,7 @@ final class SGOptionCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> chunkLoadingRange() {
         return Commands.literal("chunk_loading_range")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("chunk_loading_range"))
                 .executes(context -> SGOptionCommands.showRange(context.getSource()))
                 .then(Commands.argument("chunks", IntegerArgumentType.integer(0, SGConfig.MAX_CHUNK_LOADING_RANGE))
                         .executes(context -> SGOptionCommands.setRange(context.getSource(),
@@ -55,7 +56,7 @@ final class SGOptionCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> eventHorizonLight() {
         return Commands.literal("event_horizon_light")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("event_horizon_light"))
                 .executes(context -> SGOptionCommands.showLight(context.getSource()))
                 .then(Commands.argument("level", IntegerArgumentType.integer(0, SGConfig.MAX_LIGHT))
                         .executes(context -> SGOptionCommands.setLight(context.getSource(),
@@ -64,7 +65,7 @@ final class SGOptionCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> logEvents() {
         return Commands.literal("log_events")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("log_events"))
                 .executes(context -> SGOptionCommands.showLog(context.getSource()))
                 .then(Commands.argument("enabled", BoolArgumentType.bool())
                         .executes(context -> SGOptionCommands.setLog(context.getSource(),

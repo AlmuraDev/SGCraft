@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.command;
 
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.tool.ExplorerData;
 import com.almuradev.sgcraft.mod.tool.ExplorerDialer;
 import com.almuradev.sgcraft.mod.tool.ExplorerPayloads;
@@ -58,10 +59,10 @@ final class SGExplorerCommands {
                 .executes(context -> SGExplorerCommands.list(context.getSource(),
                         context.getSource().getPlayerOrException()))
                 .then(Commands.argument("player", EntityArgument.player())
-                        .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                        .requires(SGPermissions.commandCheck("explorer.others"))
                         .executes(context -> SGExplorerCommands.list(context.getSource(),
                                 EntityArgument.getPlayer(context, "player"))))
-                .then(Commands.literal("forget").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .then(Commands.literal("forget").requires(SGPermissions.commandCheck("explorer.forget"))
                         .then(Commands.argument("player", EntityArgument.player())
                                 .executes(context -> {
                                     final ServerPlayer player = EntityArgument.getPlayer(context, "player");

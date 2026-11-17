@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.computer.ComputerSettings;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.DoubleArgumentType;
@@ -61,7 +62,7 @@ final class SGComputerCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> computers() {
         return Commands.literal("computers")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("computers"))
                 .executes(context -> SGComputerCommands.show(context.getSource()))
                 .then(Commands.literal("link_range").then(Commands.argument("blocks",
                         IntegerArgumentType.integer(1, ComputerSettings.MAX_LINK_RANGE))

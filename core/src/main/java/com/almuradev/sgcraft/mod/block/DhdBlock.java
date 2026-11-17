@@ -35,8 +35,10 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -125,16 +127,50 @@ public final class DhdBlock extends HorizontalDirectionalBlock implements Simple
         return DhdBlock.SHAPE;
     }
 
+    // The little blue door low on the front of the pedestal, below its symbols (the model's detail panel: 0.25 across,
+    // from 0.10 to 0.35 up), with some slack round it, as distances from the middle of the front face and up from the
+    // ground
+    private static final double DOOR_HALF_WIDTH = 0.2;
+    private static final double DOOR_BOTTOM = 0.05;
+    private static final double DOOR_TOP = 0.42;
+
+    // Whether the click was on the fuel door
+    private static boolean onDoor(final BlockState state, final BlockPos pos, final BlockHitResult hit) {
+        final Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
+        if (hit.getDirection() != facing) {
+            return false;
+        }
+        final Direction across = facing.getClockWise();
+        final double sideways = (hit.getLocation().x - pos.getX() - 0.5) * across.getStepX()
+                + (hit.getLocation().z - pos.getZ() - 0.5) * across.getStepZ();
+        final double up = hit.getLocation().y - pos.getY();
+        return Math.abs(sideways) <= DhdBlock.DOOR_HALF_WIDTH && up >= DhdBlock.DOOR_BOTTOM && up <= DhdBlock.DOOR_TOP;
+    }
+
+    private static InteractionResult openFuel(final Level level, final BlockPos pos, final Player player) {
+        if (player instanceof ServerPlayer serverPlayer && level.getBlockEntity(pos) instanceof DhdBlockEntity dhd) {
+            dhd.openFuel(serverPlayer);
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    protected InteractionResult useItemOn(final ItemStack stack, final BlockState state, final Level level,
+            final BlockPos pos, final Player player, final InteractionHand hand, final BlockHitResult hit) {
+        // The fuel door opens whatever is in the hand, naquadah most of all
+        if (DhdBlock.onDoor(state, pos, hit)) {
+            return DhdBlock.openFuel(level, pos, player);
+        }
+        return super.useItemOn(stack, state, level, pos, player, hand, hit);
+    }
+
     @Override
     protected InteractionResult useWithoutItem(final BlockState state, final Level level, final BlockPos pos,
             final Player player, final BlockHitResult hit) {
-        // Crouching opens its fuel, as the lower half of the original's did; otherwise its symbols
-        if (player.isSecondaryUseActive()) {
-            if (player instanceof ServerPlayer serverPlayer
-                    && level.getBlockEntity(pos) instanceof DhdBlockEntity dhd) {
-                dhd.openFuel(serverPlayer);
-            }
-            return InteractionResult.SUCCESS;
+        // Its door, or anywhere while crouching, opens its fuel, as the lower half of the original's did; otherwise
+        // its symbols
+        if (DhdBlock.onDoor(state, pos, hit) || player.isSecondaryUseActive()) {
+            return DhdBlock.openFuel(level, pos, player);
         }
         if (level.isClientSide()) {
             DhdHooks.openScreen(pos);

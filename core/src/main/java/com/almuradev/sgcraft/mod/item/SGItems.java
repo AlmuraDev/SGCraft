@@ -172,7 +172,9 @@ public final class SGItems {
         // Held in either hand, it takes its holder through a shut iris; as in the original, it has no recipe
         SGItems.TOLLAN_PHASE_SHIFT_DEVICE = SGItems.register(sink, "tollan_phase_shift_device", Item::new,
                 properties -> properties.stacksTo(1));
-        SGItems.PDD = SGItems.register(sink, "pdd", properties -> new ToolItem(properties, ToolActions::openPdd),
+        // Sneaking and using it on a gate opens it with that gate's address filled in
+        SGItems.PDD = SGItems.register(sink, "pdd",
+                properties -> new ToolItem(properties, ToolActions::openPdd, ToolActions::openPddOnGate),
                 properties -> properties.stacksTo(1));
         // Like a PDD, but for a list of gates, wherever they are
         SGItems.GATE_CONTROL_TABLET = SGItems.register(sink, "gate_control_tablet",

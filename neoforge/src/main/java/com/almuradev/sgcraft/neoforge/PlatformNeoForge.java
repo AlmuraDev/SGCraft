@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.neoforge;
 
 import com.almuradev.sgcraft.mod.Platform;
 import com.almuradev.sgcraft.mod.SGCraft;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -74,6 +75,11 @@ public final class PlatformNeoForge implements Platform {
     @Override
     public boolean isPart(final Entity entity) {
         return entity instanceof PartEntity<?>;
+    }
+
+    @Override
+    public boolean hasPermission(final ServerPlayer player, final SGPermissions.Node node) {
+        return PermissionsNeoForge.has(player, node);
     }
 
     @Override

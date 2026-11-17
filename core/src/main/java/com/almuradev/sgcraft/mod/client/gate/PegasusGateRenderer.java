@@ -239,7 +239,8 @@ public final class PegasusGateRenderer implements GateTypeRenderer {
             for (int i = 0; i < Math.min(view.engaged(), positions.length); i++) {
                 lit[PegasusGateRenderer.nearest(screens, ChevronOrder.angle(positions[i]))] = true;
             }
-            if (view.phase() == DialPhase.DIALING && view.engaged() < positions.length) {
+            // No light runs while its chevrons lock a symbol at a time
+            if (view.phase() == DialPhase.DIALING && !view.engaging() && view.engaged() < positions.length) {
                 final int from = view.engaged() == 0 ? ChevronOrder.TOP : positions[view.engaged() - 1];
                 final double angle = ChevronOrder.angle(from) + view.ringAngle(state.time) - view.ringFrom();
                 lit[PegasusGateRenderer.nearest(screens, angle)] = true;

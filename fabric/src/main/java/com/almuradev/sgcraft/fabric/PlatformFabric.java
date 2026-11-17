@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.fabric;
 
 import com.almuradev.sgcraft.mod.Platform;
 import com.almuradev.sgcraft.mod.SGCraft;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.fabricmc.loader.api.FabricLoader;
@@ -41,8 +42,10 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
+import org.jspecify.annotations.Nullable;
 import team.reborn.energy.api.EnergyStorage;
 
+import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.function.BiFunction;
 
@@ -72,6 +75,32 @@ public final class PlatformFabric implements Platform {
     @Override
     public boolean isPart(final Entity entity) {
         return entity instanceof EnderDragonPart;
+    }
+
+    // The Fabric permissions API's check(Entity, String, boolean), which LuckPerms answers, when a mod has it; found
+    // by name, so SGCraft doesn't need it
+    private static final @Nullable Method PERMISSIONS_CHECK = PlatformFabric.permissionsCheck();
+
+    private static @Nullable Method permissionsCheck() {
+        try {
+            return Class.forName("me.lucko.fabric.api.permissions.v0.Permissions")
+                    .getMethod("check", Entity.class, String.class, boolean.class);
+        } catch (final ReflectiveOperationException | LinkageError e) {
+            return null;
+        }
+    }
+
+    @Override
+    public boolean hasPermission(final ServerPlayer player, final SGPermissions.Node node) {
+        final boolean fallback = SGPermissions.fallback(player, node);
+        if (PlatformFabric.PERMISSIONS_CHECK == null) {
+            return fallback;
+        }
+        try {
+            return (boolean) PlatformFabric.PERMISSIONS_CHECK.invoke(null, player, node.name(), fallback);
+        } catch (final ReflectiveOperationException | RuntimeException e) {
+            return fallback;
+        }
     }
 
     @Override

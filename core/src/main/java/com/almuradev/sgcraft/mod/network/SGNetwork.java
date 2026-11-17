@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.mod.network;
 
 import com.almuradev.sgcraft.mod.Platform;
 import com.almuradev.sgcraft.mod.SGCraft;
+import com.almuradev.sgcraft.mod.SGServer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
@@ -74,7 +75,27 @@ public final class SGNetwork {
     /** Declares a packet clients send, read back with {@code reader}. */
     public static <T extends SGPacket> void serverbound(final CustomPacketPayload.Type<T> type,
             final Function<FriendlyByteBuf, T> reader, final BiConsumer<ServerPlayer, T> handler) {
-        SGNetwork.SERVERBOUND.add(new Serverbound<>(type, SGNetwork.codec(reader), handler));
+        SGNetwork.SERVERBOUND.add(new Serverbound<>(type, SGNetwork.codec(reader),
+                (player, payload) -> SGNetwork.onServerTick(player, payload, handler)));
+    }
+
+    // A packet is acted on at the start of the next server tick, where the gates tick, not where the loader hands it
+    // over: there SpongeForge tracks no block change, and refuses each one a gate makes (its base's redstone, its
+    // event horizon), leaving a dial or a disconnect half done
+    private static <T> void onServerTick(final ServerPlayer player, final T payload,
+            final BiConsumer<ServerPlayer, T> handler) {
+        final Runnable task = () -> {
+            if (player.hasDisconnected()) {
+                return;
+            }
+            try {
+                handler.accept(player, payload);
+            } catch (final RuntimeException e) {
+                // As the loader would have, rather than stopping the tick
+                SGCraft.LOG.error("Failed to handle a packet from {}", player.getName().getString(), e);
+            }
+        };
+        SGServer.current().ifPresentOrElse(server -> server.nextTick(task), task);
     }
 
     /** Declares a packet the server sends, read back with {@code reader}. */

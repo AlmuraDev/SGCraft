@@ -29,6 +29,7 @@ import com.almuradev.sgcraft.api.address.Symbol;
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.access.SGGateAccess;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.address.AddressChanges.Outcome;
 import com.almuradev.sgcraft.mod.address.AddressChanges;
 import com.almuradev.sgcraft.mod.address.AddressPlan;
@@ -98,7 +99,7 @@ public final class SettingsActions {
      * unless they already have been.
      */
     public static void edits(final ServerPlayer player, final Edits edits) {
-        if (!SGGateAccess.isOperator(player)) {
+        if (!SGPermissions.isAdmin(player)) {
             SettingsActions.send(player, false, List.of(), json -> { }, 0, -1, -1, false, false);
             return;
         }
@@ -185,7 +186,7 @@ public final class SettingsActions {
             SettingsActions.changedOn = -1;
             for (final ServerPlayer player : List.copyOf(server.getPlayerList().getPlayers())) {
                 final Integer sent = SettingsActions.SENT.get(player.getUUID());
-                if (SGGateAccess.isOperator(player) && (sent == null || sent != tick)) {
+                if (SGPermissions.isAdmin(player) && (sent == null || sent != tick)) {
                     SettingsActions.send(player, false, List.of(), json -> { }, 0, -1, -1, false, true);
                 }
             }
@@ -198,7 +199,7 @@ public final class SettingsActions {
             final Consumer<JsonObject> edit, final int reply, final int refused, final int refusedOption,
             final boolean saved, final boolean refresh) {
         SettingsActions.SENT.put(player.getUUID(), player.level().getServer().getTickCount());
-        if (!SGGateAccess.isOperator(player)) {
+        if (!SGPermissions.isAdmin(player)) {
             SGNetwork.send(player, State.refused(open));
             return;
         }

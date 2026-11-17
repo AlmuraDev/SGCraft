@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.mod.SGConfig;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.settings.SettingsCatalog;
 import com.almuradev.sgcraft.mod.settings.SettingsCatalog.Setting;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -57,7 +58,7 @@ final class SGConfigCommands {
     }
 
     static ArgumentBuilder<CommandSourceStack, ?> config() {
-        return Commands.literal("config").requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+        return Commands.literal("config").requires(SGPermissions.commandCheck("config"))
                 .executes(context -> SGConfigCommands.list(context.getSource()))
                 .then(Commands.argument("key", StringArgumentType.word())
                         .suggests((context, builder) -> SharedSuggestionProvider.suggest(SettingsCatalog.all()

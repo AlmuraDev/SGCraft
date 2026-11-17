@@ -156,6 +156,15 @@ public final class GateProperties {
             GateProperties.register("chevrons_lock_on_dial", Codec.BOOL, false);
 
     /**
+     * Whether a chevron locks as each symbol is entered, as when someone presses a DHD's keys, rather than the ring
+     * turning for each once the address is in: a DHD locks one with each key pressed, and a PDD enters one symbol
+     * after another, a little apart. The gate opens once the last is in. {@link #CHEVRONS_LOCK_ON_DIAL}, when on,
+     * comes first.
+     */
+    public static final GateProperty<Boolean> CHEVRONS_LOCK_AS_DIALED =
+            GateProperties.register("chevrons_lock_as_dialed", Codec.BOOL, false);
+
+    /**
      * How fast the gate dials, in degrees a tick: how fast its ring turns, or for a gate whose light runs round its
      * ring instead, how fast the light runs. With no value, the gate's type sets it.
      */

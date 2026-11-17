@@ -30,6 +30,7 @@ import com.almuradev.sgcraft.api.gate.GateProperties;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.access.SGGateAccess;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.block.RingBlock;
 import com.almuradev.sgcraft.mod.block.StargateBaseBlock;
 import com.almuradev.sgcraft.mod.event.SGEventBus;
@@ -78,7 +79,7 @@ public final class GateProtection {
             return false;
         }
         final boolean owner = gate.get().owner().filter(player.getUUID()::equals).isPresent();
-        if (!SGGateAccess.isOperator(player) && !(owner && server.get().config().ownersBreakGates())
+        if (!SGPermissions.isAdmin(player) && !(owner && server.get().config().ownersBreakGates())
                 && !gate.get().get(GateProperties.BREAKABLE).orElse(false)) {
             player.sendOverlayMessage(Component.translatableWithFallback("message.sgcraft.unbreakable",
                     "This gate can't be broken").withStyle(ChatFormatting.RED));

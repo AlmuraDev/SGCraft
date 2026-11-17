@@ -36,7 +36,6 @@ import com.almuradev.sgcraft.mod.event.SGEventBus;
 import com.almuradev.sgcraft.mod.event.SGEvents;
 import com.almuradev.sgcraft.mod.gate.SGStargate;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.server.permissions.Permissions;
 import net.minecraft.world.entity.player.Player;
 
 import java.util.Map;
@@ -93,7 +92,7 @@ public final class SGGateAccess implements GateAccess {
     @Override
     public boolean allows(final UUID player, final GateRight right) {
         final ServerPlayer online = this.gate.server().getPlayerList().getPlayer(player);
-        final boolean allowed = online != null && SGGateAccess.isOperator(online) || this.listed(player, right);
+        final boolean allowed = online != null && SGPermissions.isAdmin(online) || this.listed(player, right);
         return SGEventBus.get().post(new SGEvents.CheckPlayer(Cause.of(this.gate.server()), this.gate,
                 Optional.of(player), right, allowed)).allowed();
     }
@@ -101,7 +100,7 @@ public final class SGGateAccess implements GateAccess {
     @Override
     public boolean allows(final Cause cause, final GateRight right) {
         final Optional<Player> player = cause.first(Player.class);
-        final boolean allowed = player.map(p -> SGGateAccess.isOperator(p) || this.listed(p.getUUID(), right))
+        final boolean allowed = player.map(p -> SGPermissions.isAdmin(p) || this.listed(p.getUUID(), right))
                 .orElse(true);
         return SGEventBus.get().post(new SGEvents.CheckPlayer(cause, this.gate,
                 player.map(Player::getUUID), right, allowed)).allowed();
@@ -111,7 +110,7 @@ public final class SGGateAccess implements GateAccess {
     @Override
     public boolean mayManage(final Cause cause) {
         return cause.first(Player.class)
-                .map(player -> SGGateAccess.isOperator(player) || this.gate.owner().filter(player.getUUID()::equals)
+                .map(player -> SGPermissions.isAdmin(player) || this.gate.owner().filter(player.getUUID()::equals)
                         .isPresent())
                 .orElse(true);
     }
@@ -128,8 +127,4 @@ public final class SGGateAccess implements GateAccess {
         return this.gate.get(GateProperties.DEFAULT_RIGHTS).orElse(Set.of()).contains(right);
     }
 
-    /** @return whether a player is a server operator, who may do anything with any gate */
-    public static boolean isOperator(final Player player) {
-        return player.permissions().hasPermission(Permissions.COMMANDS_GAMEMASTER);
-    }
 }

@@ -76,15 +76,24 @@ public final class PddScreen extends Screen {
     private @Nullable Button disconnect;
     private @Nullable Button addHere;
     private int ticks;
+    private boolean filled;
+
+    // What the server last told the player, kept until they do something else: the state sent each second has none,
+    // and would otherwise clear a failed dial's reason before it could be read
+    private String message;
 
     public PddScreen(final PddState state) {
         super(Component.translatableWithFallback("screen.sgcraft.pdd", "Personal Dialing Device"));
         this.state = state;
+        this.message = state.message();
     }
 
     /** Shows a newer state from the server, keeping what the player has typed. */
     public void update(final PddState state) {
         this.state = state;
+        if (!state.message().isEmpty()) {
+            this.message = state.message();
+        }
         this.refill();
         this.updateButtons();
     }
@@ -119,6 +128,27 @@ public final class PddScreen extends Screen {
         this.address.setMaxLength(11);
         this.address.setHint(Component.translatableWithFallback("screen.sgcraft.pdd.address", "Address"));
         this.address.setResponder(text -> this.updateButtons());
+        // Opened by sneaking and using the PDD on a gate: that gate's address, ready to add (once, not on a resize).
+        // If the PDD already has it, its entry is chosen instead, and the player told so.
+        if (this.state.fillAddress() && !this.filled) {
+            this.filled = true;
+            final String here = this.state.gate().map(GateInfo::address).orElse("");
+            if (!here.isEmpty()) {
+                // The server marks the entry that reaches this gate, whichever form of its address the PDD keeps (one
+                // naming its world, as a rule, where the gate gives its own world's shorter form)
+                final Optional<BookEntry> existing = this.state.entries().stream().filter(BookEntry::own).findFirst();
+                if (existing.isPresent()) {
+                    this.list.select(existing.get().address());
+                    this.choose(existing.get());
+                    // On the screen's message line: chat is hidden while the screen is open
+                    this.message = Component.translatableWithFallback("screen.sgcraft.pdd.already_listed",
+                            "%s is already in this PDD, as %s", existing.get().address(), existing.get().name())
+                            .getString();
+                } else {
+                    this.address.setValue(here);
+                }
+            }
+        }
         final int row1 = bottom + 32;
         final int w = 62;
         this.addRenderableWidget(PddScreen.button("screen.sgcraft.pdd.add", "Add", left, row1, w,
@@ -133,7 +163,7 @@ public final class PddScreen extends Screen {
                 64, () -> this.move(1)));
         final int row2 = bottom + 56;
         this.dial = this.addRenderableWidget(PddScreen.button("screen.sgcraft.pdd.dial", "Dial", left, row2, 78,
-                () -> this.send(PddAction.Kind.DIAL, 0)));
+                this::dial));
         this.disconnect = this.addRenderableWidget(PddScreen.button("screen.sgcraft.pdd.disconnect", "Disconnect",
                 left + 80, row2, 78, () -> this.send(PddAction.Kind.DISCONNECT, 0)));
         this.addHere = this.addRenderableWidget(PddScreen.button("screen.sgcraft.pdd.add_here", "Add this gate",
@@ -183,6 +213,12 @@ public final class PddScreen extends Screen {
         });
     }
 
+    // Dials and closes the screen at once, so the player sees the gate dial; why a dial fails shows over the hotbar
+    private void dial() {
+        this.send(PddAction.Kind.DIAL, 0);
+        this.onClose();
+    }
+
     private void move(final int by) {
         if (this.list == null || this.list.getSelected() == null || this.search.searching()) {
             return;
@@ -196,6 +232,7 @@ public final class PddScreen extends Screen {
     private void send(final PddAction.Kind kind, final int index) {
         final String address = this.address == null ? "" : this.address.getValue();
         final String name = this.name == null ? "" : this.name.getValue();
+        this.message = "";
         ClientPlatform.get().sendToServer(new PddAction(kind, address, name, index));
     }
 
@@ -229,14 +266,14 @@ public final class PddScreen extends Screen {
                 Component.translatableWithFallback("screen.sgcraft.pdd.no_gate",
                         "No gate near you. You can still change its addresses"));
         graphics.centeredText(this.font, gate, this.width / 2, 22, 0xFFAAAAAA);
-        if (!this.state.message().isEmpty()) {
-            graphics.centeredText(this.font, this.state.message(), this.width / 2, this.height - 16, 0xFFFF6060);
+        if (!this.message.isEmpty()) {
+            graphics.centeredText(this.font, this.message, this.width / 2, this.height - 16, 0xFFFF6060);
         }
         if (this.list != null) {
             final Component count = Component.translatableWithFallback("screen.sgcraft.pdd.addresses_count",
                     "Addresses: %s", this.state.entries().size());
             graphics.text(this.font, count, this.list.getX() + 2,
-                    this.height - PddScreen.BOTTOM - PddScreen.COUNT_HEIGHT + 2, 0xFF808080);
+                    this.height - PddScreen.BOTTOM - PddScreen.COUNT_HEIGHT + 5, 0xFF808080); // clear of the list's edge
         }
     }
 
@@ -274,6 +311,17 @@ public final class PddScreen extends Screen {
                 this.addEntry(row);
                 if (entry.address().equals(selected)) {
                     this.setSelected(row);
+                }
+            }
+        }
+
+        // Chooses the shown entry with this address and scrolls to it
+        void select(final String address) {
+            for (final Row row : this.children()) {
+                if (row.entry.address().equals(address)) {
+                    this.setSelected(row);
+                    this.scrollToEntry(row);
+                    return;
                 }
             }
         }
@@ -327,7 +375,7 @@ public final class PddScreen extends Screen {
                 Entries.this.setSelected(this);
                 PddScreen.this.choose(this.entry);
                 if (doubleClick && PddScreen.this.dial != null && PddScreen.this.dial.active) {
-                    PddScreen.this.send(PddAction.Kind.DIAL, 0);
+                    PddScreen.this.dial();
                 }
                 return true;
             }

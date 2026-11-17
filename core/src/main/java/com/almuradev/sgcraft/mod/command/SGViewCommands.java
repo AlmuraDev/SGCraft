@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.command;
 
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.view.RemoteViews;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
@@ -49,7 +50,7 @@ final class SGViewCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> view() {
         return Commands.literal("view")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("view"))
                 .then(Commands.literal("list")
                         .executes(context -> SGViewCommands.list(context.getSource())))
                 .then(Commands.literal("stop")

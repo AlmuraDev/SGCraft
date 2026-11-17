@@ -28,6 +28,7 @@ package com.almuradev.sgcraft.mod.command;
 import com.almuradev.sgcraft.api.address.Address;
 import com.almuradev.sgcraft.api.addressbook.AddressBookEntry;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.addressbook.DefaultAddresses;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
@@ -61,7 +62,7 @@ final class SGDefaultAddressCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> defaultAddresses() {
         return Commands.literal("default_addresses")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("default_addresses"))
                 .executes(context -> SGDefaultAddressCommands.show(context.getSource()))
                 .then(Commands.literal("add")
                         .then(Commands.argument("name", StringArgumentType.string())

@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.shield;
 
 import com.almuradev.sgcraft.mod.access.SGGateAccess;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
@@ -44,6 +45,9 @@ public final class CityShieldActions {
 
     /** A player used a generator: its screen opens, and is sent the shield's state. */
     public static void open(final ServerPlayer player, final BlockPos generator) {
+        if (!SGPermissions.check(player, SGPermissions.CITY_SHIELD)) {
+            return;
+        }
         if (player.level().getBlockEntity(generator) instanceof final CityShieldBlockEntity shield) {
             shield.open(player);
             CityShieldActions.send(player, generator, false, "");
@@ -52,6 +56,9 @@ public final class CityShieldActions {
 
     /** Something was done on a generator's screen. */
     public static void action(final ServerPlayer player, final ShieldPayloads.CityAction action) {
+        if (!SGPermissions.check(player, SGPermissions.CITY_SHIELD)) {
+            return;
+        }
         // Reach first: looking up a far position would load or generate its chunk
         if (!action.generator().closerToCenterThan(player.position(), CityShieldActions.USE_RANGE)
                 || !(player.level().getBlockEntity(action.generator()) instanceof final CityShieldBlockEntity shield)) {
@@ -82,7 +89,7 @@ public final class CityShieldActions {
     /** @return whether a player may work a generator: its owner, an operator, or anyone if it has no owner */
     public static boolean mayWork(final ServerPlayer player, final CityShieldBlockEntity shield) {
         return shield.owner().map(owner -> owner.equals(player.getUUID())).orElse(true)
-                || SGGateAccess.isOperator(player);
+                || SGPermissions.isAdmin(player);
     }
 
     private static void send(final ServerPlayer player, final BlockPos generator, final boolean open,

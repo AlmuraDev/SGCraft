@@ -49,6 +49,30 @@ public final class DhdFuelMenu extends AbstractContainerMenu {
     public static final int GATE_PERCENT = 0;
     /** {@link #data()} index of how much is left of the naquadah the DHD has started on, in percent. */
     public static final int BUFFER_PERCENT = 1;
+    /** {@link #data()} index of the low 16 bits of the gate energy the DHD's naquadah holds; see {@link #wide}. */
+    public static final int FUEL_ENERGY = 2;
+    /** {@link #data()} index of the low 16 bits of the gate energy the gate's own store holds; see {@link #wide}. */
+    public static final int GATE_ENERGY = 4;
+    /** {@link #data()} index of the low 16 bits of how much the gate's own store can hold; see {@link #wide}. */
+    public static final int GATE_CAPACITY = 6;
+    /** How many values {@link #data()} holds. */
+    public static final int DATA = 8;
+
+    /**
+     * Data slots reach the client as 16 bits each, so an amount takes two: its low half at its index and its high half
+     * at the next.
+     *
+     * @return the amount at {@code index} and {@code index + 1}
+     */
+    public static int wide(final ContainerData data, final int index) {
+        return (data.get(index) & 0xFFFF) | (data.get(index + 1) << 16);
+    }
+
+    /** @return the half of a whole amount, at least 0 and at most {@link Integer#MAX_VALUE}, that a data slot holds */
+    public static int half(final long amount, final boolean high) {
+        final int whole = (int) Math.max(0, Math.min(Integer.MAX_VALUE, amount));
+        return high ? whole >>> 16 : whole & 0xFFFF;
+    }
 
     /** The menu's type; set when the loader registers menus. */
     public static MenuType<DhdFuelMenu> TYPE;
@@ -58,7 +82,7 @@ public final class DhdFuelMenu extends AbstractContainerMenu {
 
     /** The client's menu, which the server fills. */
     public DhdFuelMenu(final int id, final Inventory inventory) {
-        this(id, inventory, new SimpleContainer(DhdFuelMenu.SLOTS), new SimpleContainerData(2));
+        this(id, inventory, new SimpleContainer(DhdFuelMenu.SLOTS), new SimpleContainerData(DhdFuelMenu.DATA));
     }
 
     public DhdFuelMenu(final int id, final Inventory inventory, final Container fuel, final ContainerData data) {

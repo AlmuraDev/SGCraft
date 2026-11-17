@@ -49,6 +49,7 @@ import com.almuradev.sgcraft.api.gate.PlacementMode;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.access.AccessChanges;
 import com.almuradev.sgcraft.mod.access.SGGateAccess;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.block.entity.StargateBaseBlockEntity;
 import com.almuradev.sgcraft.mod.energy.DialCosts;
 import com.almuradev.sgcraft.mod.energy.SGGateEnergy;
@@ -109,9 +110,9 @@ public final class SGStargate implements Stargate {
             GateProperties.PLAYER_RIGHTS, GateProperties.BREAKABLE, GateProperties.INVULNERABLE,
             GateProperties.GENERATED);
     /**
-     * The properties that set what the gate pays for dialing and holding a wormhole open, which only operators change,
-     * as a gate an owner made free could hold its wormhole, and both ends' chunks, open for good. Commands and the
-     * server change them too.
+     * The properties that set what the gate pays for dialing and holding a wormhole open, which by default only admins
+     * change (their {@code sgcraft.configurator.<setting>} nodes; see SGPermissions), as a gate an owner made free
+     * could hold its wormhole, and both ends' chunks, open for good. Commands and the server change them too.
      */
     public static final Set<GateProperty<?>> OPERATORS_ONLY = Set.of(GateProperties.REQUIRES_POWER,
             GateProperties.ENERGY_CAPACITY, GateProperties.CHEVRON_COST_ENABLED, GateProperties.CHEVRON_COST,
@@ -129,6 +130,8 @@ public final class SGStargate implements Stargate {
     // Symbols locked one at a time, as a DHD does, and when the last was
     private final List<Symbol> engaged = new ArrayList<>();
     private long lastEngaged;
+    // How long the address being locked a symbol at a time will be, when whoever locks it knows (a PDD does), or 0
+    private int engagingLength;
 
     SGStargate(final SGStargates stargates, final GlobalPos position) {
         this.stargates = stargates;
@@ -349,6 +352,14 @@ public final class SGStargate implements Stargate {
         this.setSaved(state);
     }
 
+    // The gate energy the last dial turned down for want of energy needed: every chevron and the opening
+    private long energyNeeded;
+
+    /** @return the gate energy the last dial refused for want of energy needed, to tell its player */
+    public long energyNeeded() {
+        return this.energyNeeded;
+    }
+
     @Override
     public CompletionStage<DialResult> dial(final Address address, final DialMode mode, final Cause cause) {
         if (!this.exists()) {
@@ -403,6 +414,7 @@ public final class SGStargate implements Stargate {
             final long needed = SGConnection.Costs.add(SGConnection.Costs.times(chevronCost, address.size()),
                     openCost);
             if (this.energy.available() < needed) {
+                this.energyNeeded = needed;
                 return this.refused(address, cause, DialResult.NOT_ENOUGH_ENERGY, gate.get());
             }
         }
@@ -447,12 +459,23 @@ public final class SGStargate implements Stargate {
         this.play(SGSounds.chevron(DialStyle.of(this.typeKey()), true));
         final StringBuilder address = new StringBuilder();
         this.engaged.forEach(engaged -> address.append(engaged.character()));
-        // Until the address is longer, its chevrons light as for the shortest address, the top chevron last
-        final int expected = Math.max(SGStargate.SHORTEST_ADDRESS, this.engaged.size());
+        // Its chevrons light in the order for the address's length, the top chevron last: as given, by a PDD that knows
+        // the whole address, or else as for the longest the gate dials, so the top doesn't light with the seventh
+        // symbol of a longer address
+        final int length = this.engagingLength > 0 ? this.engagingLength : this.chevrons();
+        final int expected = Math.max(Math.max(SGStargate.SHORTEST_ADDRESS, length), this.engaged.size());
         this.show(new DialView(DialPhase.DIALING, true, address.toString(), this.engaged.size(), 0, 0, 0, 0,
                 this.now(), 0, 0, this.now(), expected), cause);
         this.stargates.engaging(this);
         return ActionResult.DONE;
+    }
+
+    /**
+     * Says how long the address about to be locked a symbol at a time will be, so its chevrons light in that address's
+     * order from the first; until the symbols are dialed or released.
+     */
+    public void expectEngaged(final int length) {
+        this.engagingLength = length;
     }
 
     @Override
@@ -474,6 +497,7 @@ public final class SGStargate implements Stargate {
     // Lets go of symbols locked one at a time, without a sound
     private void release(final Cause cause) {
         this.engaged.clear();
+        this.engagingLength = 0;
         if (this.connection == null) {
             this.show(DialView.IDLE, cause);
         }
@@ -549,8 +573,10 @@ public final class SGStargate implements Stargate {
                 : !this.access.allows(cause, GateRight.CONFIGURE)) {
             return ActionResult.DENIED;
         }
-        if (SGStargate.OPERATORS_ONLY.contains(property)
-                && cause.first(Player.class).filter(player -> !SGGateAccess.isOperator(player)).isPresent()) {
+        // A player needs the setting's own node too: sgcraft.configurator.<setting>, which by default the cost
+        // settings give admins only and the rest everyone
+        final SGPermissions.@Nullable Node node = SGPermissions.configurator(property);
+        if (node != null && cause.first(Player.class).filter(player -> !SGPermissions.has(player, node)).isPresent()) {
             return ActionResult.DENIED;
         }
         final Optional<T> own = this.stargates.ownProperty(this.position, property);

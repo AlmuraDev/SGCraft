@@ -32,7 +32,9 @@ import com.almuradev.sgcraft.api.gate.DialResult;
 import com.almuradev.sgcraft.api.gate.GateProperties;
 import com.almuradev.sgcraft.api.gate.Stargate;
 import com.almuradev.sgcraft.mod.SGServer;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.gate.GateTargeting;
+import com.almuradev.sgcraft.mod.gate.LockDials;
 import com.almuradev.sgcraft.mod.gate.SGStargate;
 import com.almuradev.sgcraft.mod.item.SGItems;
 import com.almuradev.sgcraft.mod.network.SGNetwork;
@@ -77,6 +79,9 @@ public final class ExplorerDialer {
 
     /** A player used an explorer dialer: a generated gate near them is visited, and its screen opens. */
     public static void open(final ServerPlayer player) {
+        if (!SGPermissions.check(player, SGPermissions.EDD)) {
+            return;
+        }
         GateTargeting.find(player, ToolActions.range()).ifPresent(gate -> ExplorerData.visit(player,
                 gate.position()));
         ExplorerDialer.send(player, true, "");
@@ -84,6 +89,9 @@ public final class ExplorerDialer {
 
     /** Something was done on the explorer dialer's screen. */
     public static void action(final ServerPlayer player, final ExplorerPayloads.Action action) {
+        if (!SGPermissions.check(player, SGPermissions.EDD)) {
+            return;
+        }
         if (!ExplorerDialer.THROTTLE.allows(player, action.kind() == ExplorerPayloads.Action.Kind.REFRESH)) {
             return;
         }
@@ -103,6 +111,13 @@ public final class ExplorerDialer {
                     message = "There is no gate near you";
                 } else if (address.isEmpty()) {
                     message = "No address reaches that gate from here";
+                } else if (LockDials.wanted(gate.get())) {
+                    // A symbol at a time, each chevron locking as it goes in, as the PDD does
+                    LockDials.start(gate.get(), address.get(), ToolActions.cause(player), result -> {
+                        if (player.connection != null) {
+                            ExplorerDialer.send(player, false, ToolActions.explain(gate.get(), result));
+                        }
+                    });
                 } else {
                     gate.get().dial(address.get(), gate.get().get(GateProperties.CHEVRONS_LOCK_ON_DIAL).orElse(false)
                             ? DialMode.QUICK : DialMode.STANDARD, ToolActions.cause(player)).thenAccept(result -> {

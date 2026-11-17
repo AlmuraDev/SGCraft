@@ -120,7 +120,9 @@ public final class StargateBaseRenderer
         // After the facing, which says which way the bottom row runs, and the orientation, as a flat gate has none
         StargateBaseRenderer.extractCamouflage(gate, state);
         state.chevrons = gate.chevrons();
-        state.spacing = ChevronSpacing.of(gate.chevrons(), gate.camouflage());
+        // Always the standard spacing: camouflage in the bottom row no longer draws the chevrons together (see
+        // ChevronSpacing.of, which the original's variable chevron positions did)
+        state.spacing = ChevronSpacing.STANDARD;
         state.view = gate.dialView();
         state.locked = ChevronOrder.locked(gate.chevrons(), state.view.length(), state.view.engaged());
         state.time = gate.getLevel() != null ? gate.getLevel().getGameTime() + partialTicks : 0;

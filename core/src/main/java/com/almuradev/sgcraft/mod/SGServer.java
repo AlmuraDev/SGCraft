@@ -26,10 +26,12 @@
 package com.almuradev.sgcraft.mod;
 
 import com.almuradev.sgcraft.mod.access.SGGateAccess;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.address.SGAddressing;
 import com.almuradev.sgcraft.mod.addressbook.DefaultAddresses;
 import com.almuradev.sgcraft.mod.addressbook.SGAddressBooks;
 import com.almuradev.sgcraft.mod.computer.DialingComputers;
+import com.almuradev.sgcraft.mod.gate.LockDials;
 import com.almuradev.sgcraft.mod.gate.SGStargates;
 import com.almuradev.sgcraft.mod.malp.MalpLinks;
 import com.almuradev.sgcraft.mod.obelisk.Obelisks;
@@ -134,6 +136,7 @@ public final class SGServer {
             Zat.tick(server);
             RingHolds.tick(server);
             ToolActions.tickGdo(server);
+            LockDials.tick();
             if (server.getTickCount() % SGServer.SWEEP_TICKS == 0) {
                 DialingComputers.sweep(server);
             }
@@ -151,7 +154,7 @@ public final class SGServer {
             return;
         }
         SharedSettings.joined(current, player);
-        if (!SGGateAccess.isOperator(player)) {
+        if (!SGPermissions.isAdmin(player)) {
             return;
         }
         for (final Component notice : current.addressing.notices()) {
@@ -179,6 +182,7 @@ public final class SGServer {
         if (current != null && current.server == server) {
             current.stargates.stop();
             RemoteViews.clear();
+            LockDials.clear();
             MalpLinks.clear();
             SharedSettings.stopped();
             // The next server, in single player, counts its ticks from 0 again

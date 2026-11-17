@@ -26,6 +26,7 @@
 package com.almuradev.sgcraft.mod.command;
 
 import com.almuradev.sgcraft.mod.SGConfig;
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.worldgen.StructureGate;
 import com.almuradev.sgcraft.mod.worldgen.StructureGates;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -55,7 +56,7 @@ final class SGWorldgenCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> worldgen() {
         return Commands.literal("worldgen")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("worldgen"))
                 .executes(context -> {
                     final Map<Identifier, StructureGate> gates = StructureGates.structures();
                     if (gates.isEmpty()) {

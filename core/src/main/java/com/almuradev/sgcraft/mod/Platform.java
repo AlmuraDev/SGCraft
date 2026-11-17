@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod;
 
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -84,6 +85,13 @@ public interface Platform {
      * @return how much it took, from none to {@code amount}
      */
     long offerEnergy(final ServerLevel level, final BlockPos pos, final Direction face, final long amount);
+
+    /**
+     * Asks the server's permissions system whether a player has one of SGCraft's nodes: NeoForge's permission API,
+     * which LuckPerms answers, on NeoForge, the Fabric permissions API on Fabric. A node it says nothing of, or with no
+     * permissions system, has its default ({@link SGPermissions#fallback}).
+     */
+    boolean hasPermission(final ServerPlayer player, final SGPermissions.Node node);
 
     final class Holder {
 

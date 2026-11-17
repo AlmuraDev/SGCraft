@@ -56,6 +56,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentSerialization;
 import org.jspecify.annotations.Nullable;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -132,6 +134,9 @@ public final class ConfiguratorScreen extends Screen {
                     + "apart by this"),
             Map.entry("chevrons_lock_on_dial", "Whether a DHD or PDD locks every chevron at once. Off, the ring "
                     + "turns for each symbol and each chevron is paid for as it locks"),
+            Map.entry("chevrons_lock_as_dialed", "Whether each chevron locks as its symbol is entered, as when "
+                    + "someone presses the DHD's keys: the DHD locks one with each key, and a PDD enters a symbol "
+                    + "every 0.75 seconds. Chevrons lock at once, when on, comes first"),
             Map.entry("horizon_transparent", "Whether the open wormhole lets a little of what is behind it show "
                     + "through. Off, it is solid"),
             Map.entry("ring_speed", "How fast the gate dials, in degrees a tick: its ring's turn, or a Pegasus "
@@ -375,6 +380,8 @@ public final class ConfiguratorScreen extends Screen {
                 && this.state.fitFreely();
         at = this.slot(left, top, i++);
         this.toggle(at, "chevrons_lock_on_dial", "Chevrons lock at once", false);
+        at = this.slot(left, top, i++);
+        this.toggle(at, "chevrons_lock_as_dialed", "Chevrons lock when dialed", false);
         at = this.slot(left, top, i++);
         this.toggle(at, "horizon_transparent", "See-through horizon", true);
         at = this.slot(left, top, i++);
@@ -729,8 +736,10 @@ public final class ConfiguratorScreen extends Screen {
         return box;
     }
 
+    // To 2 decimal places at most, so a long fraction (a Pegasus gate's 7.142857... ring speed) fits its box; shown
+    // only, as the box is filled before it listens for typing, so the value the gate has is kept until it's changed
     private static String amount(final double value) {
-        return value == Math.rint(value) ? String.valueOf((long) value) : String.valueOf(value);
+        return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
     }
 
     // Shows what a setting does when the pointer rests on it

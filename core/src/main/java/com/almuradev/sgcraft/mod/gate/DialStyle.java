@@ -142,13 +142,19 @@ public enum DialStyle {
         if (Math.abs(start) >= 720) {
             start %= 360;
         }
-        double target = this.symbolAngle(symbol);
-        double difference = target - start;
-        if (Math.abs(difference) < 180) {
-            target -= Math.copySign(360, start == 0 ? 1 : start);
-            difference = target - start;
+        // The ring turns one way and then the other, symbol by symbol, as on the show and in 2.3: left (anticlockwise,
+        // facing the gate) for the first, right for the next, and so on, however far round the symbol is that way,
+        // and a whole turn rather than none; never more than a whole turn
+        final boolean left = index % 2 == 0;
+        double ahead = ((this.symbolAngle(symbol) - start) % 360 + 360) % 360;
+        if (ahead < 1e-6) {
+            ahead = 360;
         }
-        return new Move(start, (float) target, (int) Math.abs(difference / speed));
+        double difference = left ? ahead : ahead - 360;
+        if (difference == 0) {
+            difference = -360;
+        }
+        return new Move(start, (float) (start + difference), (int) Math.abs(difference / speed));
     }
 
     /**

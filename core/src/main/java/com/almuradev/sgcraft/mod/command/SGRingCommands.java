@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.command;
 
+import com.almuradev.sgcraft.mod.access.SGPermissions;
 import com.almuradev.sgcraft.mod.rings.RingPlatformBlockEntity;
 import com.almuradev.sgcraft.mod.rings.RingSettings;
 import com.almuradev.sgcraft.mod.rings.Rings;
@@ -64,7 +65,7 @@ final class SGRingCommands {
 
     static ArgumentBuilder<CommandSourceStack, ?> rings() {
         return Commands.literal("rings")
-                .requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+                .requires(SGPermissions.commandCheck("rings"))
                 .then(Commands.argument("pos", BlockPosArgument.blockPos())
                         .executes(context -> SGRingCommands.show(context.getSource(),
                                 SGRingCommands.platform(context, "pos")))
