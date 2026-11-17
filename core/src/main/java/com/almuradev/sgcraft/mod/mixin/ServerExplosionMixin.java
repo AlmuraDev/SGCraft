@@ -27,18 +27,17 @@ package com.almuradev.sgcraft.mod.mixin;
 
 import com.almuradev.sgcraft.mod.gate.GateProtection;
 import com.almuradev.sgcraft.mod.shield.CityShields;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.ServerExplosion;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
@@ -69,12 +68,13 @@ public abstract class ServerExplosionMixin {
         }
     }
 
-    @Redirect(method = "hurtEntities(Ljava/util/List;)V", at = @At(value = "INVOKE",
+    // The entities it reaches, less those a raised city shield covers. It changes what the call found rather than
+    // replacing the call, as SpongeForge redirects that same call, and two redirects of one call can't both apply:
+    // the second then fails, and with it every explosion
+    @ModifyExpressionValue(method = "hurtEntities(Ljava/util/List;)V", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/server/level/ServerLevel;getEntities(Lnet/minecraft/world/entity/Entity;"
                     + "Lnet/minecraft/world/phys/AABB;)Ljava/util/List;"))
-    private List<Entity> sgcraft$spareShieldedEntities(final ServerLevel level, final Entity source,
-            final AABB area) {
-        final List<Entity> entities = level.getEntities(source, area);
+    private List<Entity> sgcraft$spareShieldedEntities(final List<Entity> entities) {
         if (!CityShields.any()) {
             return entities;
         }

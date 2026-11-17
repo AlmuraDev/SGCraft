@@ -35,6 +35,7 @@ import net.minecraft.client.model.geom.builders.CubeListBuilder;
 import net.minecraft.client.model.geom.builders.LayerDefinition;
 import net.minecraft.client.model.geom.builders.MeshDefinition;
 import net.minecraft.client.model.geom.builders.PartDefinition;
+import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 
 import java.io.IOException;
@@ -42,7 +43,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.EnumSet;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Reads an entity's cube model from a JSON file in the mod's assets, so its shape lives in data rather than in code. A
@@ -114,8 +118,19 @@ public final class CubeModels {
                     final float[] from = CubeModels.floats(cube, "from", 3);
                     final float[] size = CubeModels.floats(cube, "size", 3);
                     final float[] grow = CubeModels.floats(cube, "grow", 3);
-                    cubes.texOffs((int) uv[0], (int) uv[1]).addBox(from[0], from[1], from[2], size[0], size[1],
-                            size[2], new CubeDeformation(grow[0], grow[1], grow[2]));
+                    cubes.texOffs((int) uv[0], (int) uv[1]);
+                    if (cube.has("faces")) {
+                        // Only the faces named: a strip of see-through glass shows just its two broad faces, so
+                        // strips stacked into a pane don't show their edges, or overlap, through it
+                        final Set<Direction> faces = EnumSet.noneOf(Direction.class);
+                        for (final JsonElement face : cube.getAsJsonArray("faces")) {
+                            faces.add(Direction.valueOf(face.getAsString().toUpperCase(Locale.ROOT)));
+                        }
+                        cubes.addBox(from[0], from[1], from[2], size[0], size[1], size[2], faces);
+                    } else {
+                        cubes.addBox(from[0], from[1], from[2], size[0], size[1], size[2],
+                                new CubeDeformation(grow[0], grow[1], grow[2]));
+                    }
                 }
             }
             final float[] offset = CubeModels.floats(part, "offset", 3);

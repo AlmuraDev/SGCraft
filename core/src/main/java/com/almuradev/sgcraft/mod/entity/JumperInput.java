@@ -35,10 +35,14 @@ package com.almuradev.sgcraft.mod.entity;
  * @param up climbing
  * @param down descending
  * @param turbo running the drive pods' engines hard, for speed, once the pods are out
+ * @param steer turning towards where the pilot looks, while they hold the use key, from -1 (hard right) to 1 (hard
+ *     left); 0 for none
+ * @param pitch climbing (above 0) or descending (below) towards where the pilot looks, while they hold the use key,
+ *     from -1 to 1; 0 for none
  */
 public record JumperInput(boolean forward, boolean backward, boolean left, boolean right, boolean up, boolean down,
-        boolean turbo) {
+        boolean turbo, float steer, float pitch) {
 
     /** No controls held. */
-    public static final JumperInput NONE = new JumperInput(false, false, false, false, false, false, false);
+    public static final JumperInput NONE = new JumperInput(false, false, false, false, false, false, false, 0, 0);
 }

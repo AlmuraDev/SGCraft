@@ -71,12 +71,15 @@ public final class JumperFoliage {
     /** Each tick: finds the blocks within the jumpers' hulls, and has the world drawn again where they changed. */
     public static void tick(final Minecraft minecraft) {
         final ClientLevel level = minecraft.level;
+        if (level == null || minecraft.player == null) {
+            // Out of the world, whose drawing is gone with it: nothing to draw again, only to forget
+            JumperFoliage.hidden = LongSets.EMPTY_SET;
+            return;
+        }
         final LongSet found = new LongOpenHashSet();
-        if (level != null && minecraft.player != null) {
-            for (final PuddleJumperEntity jumper : JumperIndex.near(level,
-                    minecraft.player.getBoundingBox().inflate(JumperFoliage.SEEN))) {
-                JumperFoliage.find(level, jumper, found);
-            }
+        for (final PuddleJumperEntity jumper : JumperIndex.near(level,
+                minecraft.player.getBoundingBox().inflate(JumperFoliage.SEEN))) {
+            JumperFoliage.find(level, jumper, found);
         }
         final LongSet before = JumperFoliage.hidden;
         if (found.equals(before)) {

@@ -386,7 +386,7 @@
   "screen.sgcraft.configurator.invulnerable.tip": "Whether only a player in creative mode can break the gate. Explosions, withers and the ender dragon can't. Only an operator or a creative player can change it",
   "screen.sgcraft.configurator.chevrons_lock_on_dial": "Chevrons lock at once",
   "screen.sgcraft.configurator.chevrons_lock_on_dial.tip": "Whether a DHD or PDD locks every chevron at once. Off, the ring turns for each symbol and each chevron is paid for as it locks",
-  "screen.sgcraft.configurator.chevrons_lock_as_dialed": "Chevrons lock when dialed",
+  "screen.sgcraft.configurator.chevrons_lock_as_dialed": "Chevrons lock on dial",
   "screen.sgcraft.configurator.chevrons_lock_as_dialed.tip": "Whether each chevron locks as its symbol is entered, as when someone presses the DHD's keys: the DHD locks one with each key, and a PDD enters a symbol every 0.75 seconds. Chevrons lock at once, when on, comes first",
   "screen.sgcraft.configurator.horizon_transparent": "See-through horizon",
   "screen.sgcraft.configurator.horizon_transparent.tip": "Whether the open wormhole lets a little of what is behind it show through. Off, it is solid",

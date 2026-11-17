@@ -1194,7 +1194,8 @@ public final class PuddleJumperEntity extends VehicleEntity {
     // Speed along the way it faces picks up, eases off and brakes at their own rates towards what the pilot's keys ask
     // for; any sideways drift from turning dies away, and climbing and descending ease in and out as well
     private void fly(final JumperInput input) {
-        final float turn = (input.left() ? 1 : 0) - (input.right() ? 1 : 0);
+        // The keys, or the pilot's look while they steer by it, both together no more than a full turn
+        final float turn = Mth.clamp((input.left() ? 1 : 0) - (input.right() ? 1 : 0) + input.steer(), -1, 1);
         // Turning left, from above, is turning anticlockwise, which takes from Minecraft's yaw
         this.turnRate = this.turnRate * PuddleJumperEntity.TURN_DRAG - turn * PuddleJumperEntity.TURN;
         if (Math.abs(this.turnRate) < 0.01F) {
@@ -1227,8 +1228,9 @@ public final class PuddleJumperEntity extends VehicleEntity {
             rate = turbo ? PuddleJumperEntity.TURBO_ACCELERATION : PuddleJumperEntity.ACCELERATION;
         }
         speed = PuddleJumperEntity.approach(speed, wanted, rate);
-        final double climb = input.up() == input.down() ? 0 : input.up() ? PuddleJumperEntity.CLIMB_SPEED
-                : -PuddleJumperEntity.CLIMB_SPEED;
+        // The keys, or else the pilot's look up or down while they steer by it
+        final double climb = input.up() != input.down() ? input.up() ? PuddleJumperEntity.CLIMB_SPEED
+                : -PuddleJumperEntity.CLIMB_SPEED : input.pitch() * PuddleJumperEntity.CLIMB_SPEED;
         final double vertical = PuddleJumperEntity.approach(motion.y, climb, climb == 0
                 ? PuddleJumperEntity.CLIMB_COAST : PuddleJumperEntity.CLIMB_ACCELERATION);
         this.setDeltaMovement(forward.x * speed + drift.x, vertical, forward.z * speed + drift.z);

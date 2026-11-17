@@ -909,8 +909,10 @@ public final class JumperHud {
 
     // A key as the player has it bound, short and in capitals
     private static String keyName(final KeyMapping key) {
-        return key.getTranslatedKeyMessage().getString().toUpperCase(Locale.ROOT).replace("LEFT ", "L")
-                .replace("RIGHT ", "R").replace("CONTROL", "CTRL");
+        // Short enough for a cap: "Keypad 8" is KP8, an arrow key its direction, as a cap cuts off the rest
+        return key.getTranslatedKeyMessage().getString().toUpperCase(Locale.ROOT).replace(" ARROW", "")
+                .replace("KEYPAD ", "KP").replace("ENTER", "ENT").replace("LEFT ", "L").replace("RIGHT ", "R")
+                .replace("CONTROL", "CTRL");
     }
 
     private static String keyLabel(final String name, final String fallback) {

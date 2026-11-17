@@ -68,6 +68,13 @@ public final class JumperControls {
     private static final float WIDE_FOV = 100;
     private static final float WIDEN_STEP = 0.1F;
 
+    // Steering by looking, with the use key held: how far off the nose, in degrees, the view may be with nothing
+    // happening, and how far for a full turn; and the same, up and down, for climbing and descending
+    private static final float STEER_DEAD = 3;
+    private static final float STEER_FULL = 45;
+    private static final float PITCH_DEAD = 5;
+    private static final float PITCH_FULL = 35;
+
     // Whether this client last told the server it wants the drive pods out
     private static boolean podsWanted;
     // The jumper this client flew last, by its entity's id
@@ -280,7 +287,23 @@ public final class JumperControls {
             ClientPlatform.get().sendToServer(new JumperPayloads.Press(PuddleJumperEntity.Button.CLOAK));
         }
 
+        // Holding the use key steers towards where the pilot looks, as a stick would: how far the middle of their
+        // view is off the nose sets how hard it turns, and how far above or below it how fast it climbs or descends.
+        // Their view turns with the jumper, so it turns on until they look back along its nose
+        float steer = 0;
+        float pitch = 0;
+        if (Minecraft.getInstance().options.keyUse.isDown() && Minecraft.getInstance().gui.screen() == null) {
+            final float off = Mth.wrapDegrees(player.getYRot() - jumper.getYRot());
+            steer = JumperControls.axis(-off, JumperControls.STEER_DEAD, JumperControls.STEER_FULL);
+            pitch = JumperControls.axis(-player.getXRot(), JumperControls.PITCH_DEAD, JumperControls.PITCH_FULL);
+        }
         return new JumperInput(keys.forward(), keys.backward(), keys.left(), keys.right(), keys.jump(),
-                JumperKeys.DESCEND.isDown(), turbo);
+                JumperKeys.DESCEND.isDown(), turbo, steer, pitch);
+    }
+
+    // An angle off centre as a stick's deflection: none within the dead zone, full at the full angle, from -1 to 1
+    private static float axis(final float degrees, final float dead, final float full) {
+        final float beyond = Math.abs(degrees) - dead;
+        return beyond <= 0 ? 0 : Math.copySign(Math.min(1, beyond / (full - dead)), degrees);
     }
 }

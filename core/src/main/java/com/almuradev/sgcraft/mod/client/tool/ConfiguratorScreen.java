@@ -381,7 +381,7 @@ public final class ConfiguratorScreen extends Screen {
         at = this.slot(left, top, i++);
         this.toggle(at, "chevrons_lock_on_dial", "Chevrons lock at once", false);
         at = this.slot(left, top, i++);
-        this.toggle(at, "chevrons_lock_as_dialed", "Chevrons lock when dialed", false);
+        this.toggle(at, "chevrons_lock_as_dialed", "Chevrons lock on dial", false);
         at = this.slot(left, top, i++);
         this.toggle(at, "horizon_transparent", "See-through horizon", true);
         at = this.slot(left, top, i++);
