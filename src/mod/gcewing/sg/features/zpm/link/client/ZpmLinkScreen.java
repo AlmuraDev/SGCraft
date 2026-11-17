@@ -56,7 +56,7 @@ public class ZpmLinkScreen extends BasicScreen {
     public void construct() {
         this.guiscreenBackground = false;
 
-        final BasicForm form = new BasicForm(this, 250, 108, TextFormatting.WHITE + I18n.format("sgcraft.gui.zpmLink.label.title"));
+        final BasicForm form = new BasicForm(250, 108, TextFormatting.WHITE + I18n.format("sgcraft.gui.zpmLink.label.title"));
         form.setMovable(true);
         form.setBackgroundAlpha(255);
 
@@ -68,7 +68,7 @@ public class ZpmLinkScreen extends BasicScreen {
         final UILabel hint = hintLine("sgcraft.gui.zpmLink.label.hint1", 52);
         final UILabel hint2 = hintLine("sgcraft.gui.zpmLink.label.hint2", 61);
 
-        this.unlinkButton = new UIButtonBuilder(this)
+        this.unlinkButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.RIGHT)
             .position(-45, 0)
@@ -76,7 +76,7 @@ public class ZpmLinkScreen extends BasicScreen {
             .onClick(this::unlink)
             .listener(this)
             .build("button.zpmLink.unlink");
-        final UIButton closeButton = new UIButtonBuilder(this)
+        final UIButton closeButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.RIGHT)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.close"))
@@ -100,14 +100,14 @@ public class ZpmLinkScreen extends BasicScreen {
     }
 
     private UILabel hintLine(String key, int y) {
-        final UILabel label = new UILabel(this, TextFormatting.GRAY + I18n.format(key));
+        final UILabel label = new UILabel(TextFormatting.GRAY + I18n.format(key));
         label.setFontOptions(FontOptions.builder().from(FontColors.GRAY_FO).scale(0.8F).build());
         label.setPosition(5, y, Anchor.LEFT | Anchor.TOP);
         return label;
     }
 
     private UILabel label(int y) {
-        final UILabel label = new UILabel(this, "");
+        final UILabel label = new UILabel("");
         label.setPosition(5, y, Anchor.LEFT | Anchor.TOP);
         return label;
     }
@@ -141,8 +141,8 @@ public class ZpmLinkScreen extends BasicScreen {
     }
 
     @Override
-    public void update(int mouseX, int mouseY, float partialTick) {
-        super.update(mouseX, mouseY, partialTick);
+    public void update() {
+        super.update();
         if (this.unlockMouse && this.lastUpdate == 25) {
             Mouse.setGrabbed(false); // Force the mouse to be visible even though Mouse.isGrabbed() is false.  //#BugsUnited.
             this.unlockMouse = false;

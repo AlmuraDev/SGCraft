@@ -6,6 +6,7 @@
 
 package gcewing.sg.features.ic2.zpm.modulehub;
 
+import gcewing.sg.BaseMod;
 import gcewing.sg.SGCraft;
 import gcewing.sg.client.gui.SGScreen;
 import net.minecraft.client.resources.I18n;
@@ -47,7 +48,8 @@ public class ZpmHubScreen extends SGScreen {
         setTextColor(0x004c66);
         drawCenteredString(screenTitle, cx, 8);
         drawString("ZPM Slots", 123, 42);
-        if (te.getZpmSlotsloaded() > 0) {
+        // The tier only means anything on the IC2 energy network
+        if (BaseMod.isModLoaded("ic2") && te.getZpmSlotsloaded() > 0) {
             drawString("IC2 Power Tier: " + dFormat.format(te.getZpmSlotsloaded() + 2), 60, 90);
         }
         if (te.getZpmSlotsloaded() > 1) {

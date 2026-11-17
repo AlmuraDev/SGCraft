@@ -18,6 +18,7 @@ import gcewing.sg.block.SupergateBaseBlock;
 import gcewing.sg.block.SupergateRingBlock;
 import gcewing.sg.client.gui.SGGui;
 import gcewing.sg.command.SGPowerCommand;
+import gcewing.sg.features.dynmap.DynmapMarkers;
 import gcewing.sg.command.SGSpawnCommand;
 import gcewing.sg.command.StargateCommands;
 import gcewing.sg.container.DHDFuelContainer;
@@ -313,10 +314,9 @@ public class SGCraft extends BaseMod<SGCraftClient> {
         ccIntegration = (IIntegration) integrateWithMod("computercraft", "gcewing.sg.features.cc.CCIntegration"); //[CC]
         ocIntegration = (OCIntegration)integrateWithMod("opencomputers", "gcewing.sg.features.oc.OCIntegration"); //[OC]
 
-        if (isModLoaded("ic2")) {
-            GameRegistry.registerTileEntity(ZpmInterfaceCartTE.class, new ResourceLocation(this.modID + ":" + "tile_zpminterfacecart"));
-            GameRegistry.registerTileEntity(ZpmHubTE.class, new ResourceLocation(this.modID + ":" + "tile_zpmmodulehub"));
-        }
+        // With or without IC2: without it they power stargates and Forge Energy machines, as the ZPM console does
+        GameRegistry.registerTileEntity(ZpmInterfaceCartTE.class, new ResourceLocation(this.modID + ":" + "tile_zpminterfacecart"));
+        GameRegistry.registerTileEntity(ZpmHubTE.class, new ResourceLocation(this.modID + ":" + "tile_zpmmodulehub"));
 
         GameRegistry.registerTileEntity(ZpmConsoleTE.class, new ResourceLocation(this.modID + ":" + "tile_zpmconsole"));
         GameRegistry.registerTileEntity(AsgardObeliskTE.class, new ResourceLocation(this.modID + ":" + "tile_asgard_obelisk"));
@@ -374,6 +374,7 @@ public class SGCraft extends BaseMod<SGCraftClient> {
         e.registerServerCommand(new SGSpawnCommand());
         e.registerServerCommand(new SGPowerCommand());
         e.registerServerCommand(new StargateCommands());
+        DynmapMarkers.init();
     }
 
     @Mod.EventHandler
@@ -474,10 +475,8 @@ public class SGCraft extends BaseMod<SGCraftClient> {
         naquadahOre = newBlock("naquadahOre", NaquadahOreBlock.class);
         sgPowerUnit = newBlock("sgPowerUnit", SGPowerBlock.class);
 
-        if (isModLoaded("ic2")) {
-            zpm_interface_cart = newBlock("zpm_interface_cart", ZpmInterfaceCart.class);
-            zpm_hub = newBlock("zpm_hub", ZpmHub.class);
-        }
+        zpm_interface_cart = newBlock("zpm_interface_cart", ZpmInterfaceCart.class);
+        zpm_hub = newBlock("zpm_hub", ZpmHub.class);
         zpm_console = newBlock("zpm_console", ZpmConsole.class);
         asgardObelisk = newBlock("asgard_obelisk", AsgardObeliskBlock.class);
         asgardObeliskCeltic = addBlock(new AsgardObeliskBlock(AsgardObeliskBlock.Type.CELTIC), "asgard_obelisk_celtic");
@@ -752,6 +751,19 @@ public class SGCraft extends BaseMod<SGCraftClient> {
 
         if (!isModLoaded("ic2")) {
             addGenericCapacitorRecipe();
+            addZpmBlockRecipes();
+        }
+    }
+
+    // Without IC2 the ZPM interface cart and hub keep IC2's recipe shapes (IC2Integration), the SG Power Unit taking the
+    // IC2 power unit's place: an iron block for the advanced casing, redstone for the cable, a naquadah block for the
+    // machine block and a controller crystal for the circuit
+    protected void addZpmBlockRecipes() {
+        if (config.getBoolean("recipes", "zpmInterfaceCartBlock", true)) {
+            newRecipe("zpm_Interface_Cart", zpm_interface_cart, 1, "eAw", "wBw", "wMe", 'B', sgPowerUnit, 'A', Blocks.IRON_BLOCK, 'w', Items.REDSTONE, 'M', naquadahBlock, 'e', sgControllerCrystal);
+        }
+        if (config.getBoolean("recipes", "zpmHubBlock", true)) {
+            newRecipe("zpm_Hub", zpm_hub, 1, "eAw", "wBw", "BMB", 'B', zpm_console, 'A', Blocks.IRON_BLOCK, 'w', Items.REDSTONE, 'M', naquadahBlock, 'e', sgControllerCrystal);
         }
     }
 

@@ -119,12 +119,12 @@ public class DHDTE extends BaseTileInventory implements ISGEnergySource {
 
     @Override
     public AxisAlignedBB getRenderBoundingBox() {
-        return bounds.expand(getX() + 0.5, getY(), getZ() + 0.5);
-    }
-
-    @Override
-    public double getMaxRenderDistanceSquared() {
-        return 32768.0;
+        // The model's bounds are about its own origin; move them to this block. (expand() here
+        // stretched the box from the model out to the block's world coordinates, so it was in
+        // view from almost anywhere and the DHD drew whenever it was in range.)
+        if (bounds == null)
+            return super.getRenderBoundingBox();
+        return bounds.offset(getX() + 0.5, getY(), getZ() + 0.5);
     }
 
     @Override

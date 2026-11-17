@@ -44,7 +44,7 @@ public class ShieldConsoleScreen extends BasicScreen {
     public void construct() {
         this.guiscreenBackground = false;
 
-        final BasicForm form = new BasicForm(this, 230, 105, "");
+        final BasicForm form = new BasicForm(230, 105, "");
         form.setAnchor(Anchor.CENTER | Anchor.MIDDLE);
         form.setMovable(true);
         form.setClosable(true);
@@ -55,19 +55,19 @@ public class ShieldConsoleScreen extends BasicScreen {
         form.setTopPadding(20);
         form.setLeftPadding(3);
 
-        final UILabel titleLabel = new UILabel(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.shieldconsole.label.title"));
+        final UILabel titleLabel = new UILabel(TextFormatting.WHITE + I18n.format("sgcraft.gui.shieldconsole.label.title"));
         titleLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         titleLabel.setPosition(0, -15, Anchor.CENTER | Anchor.TOP);
 
-        this.addressLabel = new UILabel(this, "");
+        this.addressLabel = new UILabel("");
         this.addressLabel.setFontOptions(FontOptions.builder().from(FontColors.BLUE_FO).shadow(true).scale(1.3F).build());
         this.addressLabel.setPosition(0, 5, Anchor.CENTER | Anchor.TOP);
 
-        this.statusLabel = new UILabel(this, "");
+        this.statusLabel = new UILabel("");
         this.statusLabel.setFontOptions(FontOptions.builder().from(FontColors.WHITE_FO).shadow(true).scale(1.1F).build());
         this.statusLabel.setPosition(0, 30, Anchor.CENTER | Anchor.TOP);
 
-        this.activateButton = new UIButtonBuilder(this)
+        this.activateButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.LEFT)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.activateShield"))
@@ -75,7 +75,7 @@ public class ShieldConsoleScreen extends BasicScreen {
             .listener(this)
             .build("button.shield.activate");
 
-        this.deactivateButton = new UIButtonBuilder(this)
+        this.deactivateButton = new UIButtonBuilder()
             .width(40)
             .anchor(Anchor.BOTTOM | Anchor.RIGHT)
             .text(TextFormatting.WHITE + I18n.format("sgcraft.gui.button.deactivateShield"))
@@ -134,8 +134,8 @@ public class ShieldConsoleScreen extends BasicScreen {
     }
 
     @Override
-    public void update(int mouseX, int mouseY, float partialTick) {
-        super.update(mouseX, mouseY, partialTick);
+    public void update() {
+        super.update();
         if (this.unlockMouse && this.lastUpdate == 25) {
             Mouse.setGrabbed(false); // Force the mouse to be visible even though Mouse.isGrabbed() is false.  //#BugsUnited.
             this.unlockMouse = false;

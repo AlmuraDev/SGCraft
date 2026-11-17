@@ -3,15 +3,18 @@ package gcewing.sg.features.ic2.zpm.modulehub;
 import static gcewing.sg.BaseUtils.min;
 import static gcewing.sg.features.ic2.zpm.modulehub.ZpmHub.ZPMS;
 
+import gcewing.sg.BaseMod;
 import gcewing.sg.BaseTileInventory;
 import gcewing.sg.SGCraft;
+import gcewing.sg.features.ic2.zpm.Ic2ZpmSources;
+import gcewing.sg.features.zpm.ZpmBuffer;
+import gcewing.sg.features.zpm.ZpmSource;
 import gcewing.sg.features.zpm.link.ILinkableZpm;
 import gcewing.sg.features.zpm.link.ZpmLink;
 import gcewing.sg.features.zpm.ZPMItem;
 import gcewing.sg.interfaces.ISGEnergySource;
 import gcewing.sg.tileentity.SGBaseTE;
 import gcewing.sg.util.GateUtil;
-import ic2.api.energy.prefab.BasicSource;
 import ic2.api.energy.tile.IEnergyAcceptor;
 import ic2.api.energy.tile.IEnergySource;
 import net.minecraft.block.state.IBlockState;
@@ -36,10 +39,14 @@ import net.minecraft.world.World;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.energy.CapabilityEnergy;
 import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.fml.common.Optional;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+// Works without IC2 (stargates and Forge Energy machines draw on it); with IC2 it is on the IC2 energy network too. Forge
+// strips IEnergySource and the method naming IC2's types when IC2 isn't installed.
+@Optional.Interface(iface = "ic2.api.energy.tile.IEnergySource", modid = "ic2")
 public final class ZpmHubTE extends BaseTileInventory implements ISGEnergySource, ILinkableZpm, IEnergySource, IInventory, ITickable, gcewing.sg.BaseContainer.ChangesSlotItems {
 
     // Changes made to items going into or out of its slots, for open screens to send (see BaseContainer.ChangesSlotItems)
@@ -50,7 +57,7 @@ public final class ZpmHubTE extends BaseTileInventory implements ISGEnergySource
         return slotItemChanges;
     }
     private NonNullList<ItemStack> items = NonNullList.withSize(3, ItemStack.EMPTY);
-    public final BasicSource hubSource;
+    public final ZpmSource hubSource;
     public static final int firstZpmSlot = 0;
     public static final int numZpmSlots = 3;
     public static final int numSlots = numZpmSlots; // future usage > 1
@@ -67,7 +74,20 @@ public final class ZpmHubTE extends BaseTileInventory implements ISGEnergySource
     private final IEnergyStorage forgeEnergy = new ForgeEnergyAdapter();
 
     public ZpmHubTE() {
-        this.hubSource = new ZpmHubBasicSource(this, Integer.MAX_VALUE, 3);
+        this.hubSource = BaseMod.isModLoaded("ic2") ? Ic2ZpmSources.hub(this, Integer.MAX_VALUE, 3)
+            : new ZpmBuffer(Integer.MAX_VALUE, 3, this::drawShared);
+    }
+
+    // ZPMs in a hub together go further: with n of them, each unit drawn costs them 1/n (the "optimization factor" its
+    // screen shows), shared among them. Their own energies, which they take back as they leave, used to be lowered by
+    // whole units only, so small draws (from a slow cable) took nothing from them at all.
+    void drawShared(double amount) {
+        if (amount <= 0) {
+            return;
+        }
+        int zpmCount = getZpmSlotsloaded();
+        drawFromZpms(zpmCount > 0 ? amount / zpmCount : amount); // sets the source's energy from theirs
+        markChanged();
     }
 
     /* TileEntity */
@@ -99,7 +119,7 @@ public final class ZpmHubTE extends BaseTileInventory implements ISGEnergySource
             reading = false;
         }
         this.zpmLink.readFromNBT(compound);
-        this.hubSource.readFromNBT(compound);
+        // The source's energy is the ZPMs' together, set from them below (syncSource), so it isn't saved itself
         for (int i = 0; i < numZpmSlots; i++) {
             // Saved as whole numbers before; read either way
             slotEnergy[i] = isValidFuelItem(items.get(i)) ? Math.max(0, compound.getDouble("zpmSlot" + i + "Energy")) : 0;
@@ -111,7 +131,6 @@ public final class ZpmHubTE extends BaseTileInventory implements ISGEnergySource
     public NBTTagCompound writeToNBT(final NBTTagCompound compound) {
         super.writeToNBT(compound);
         this.zpmLink.writeToNBT(compound);
-        this.hubSource.writeToNBT(compound);
         for (int i = 0; i < numZpmSlots; i++) {
             compound.setDouble("zpmSlot" + i + "Energy", slotEnergy[i]);
         }
@@ -161,7 +180,7 @@ public final class ZpmHubTE extends BaseTileInventory implements ISGEnergySource
         pushForgeEnergy();
     }
 
-    // Feed neighbouring Forge Energy acceptors (EnderIO conduits, RF/FE machines) alongside the IC2 network.
+    // Feed neighbouring Forge Energy acceptors (EnderIO conduits, RF/FE machines), alongside the IC2 network when installed.
     private void pushForgeEnergy() {
         if (this.hubSource.getEnergyStored() <= 0) {
             return;
@@ -198,8 +217,8 @@ public final class ZpmHubTE extends BaseTileInventory implements ISGEnergySource
     }
 
     /**
-     * Extract-only Forge Energy view of the IC2 buffer, converting at {@link SGCraft#Ic2FEPerEU}. Draws go through
-     * {@link ZpmHubBasicSource#drawEnergy}, so the loaded ZPMs share them exactly as they do IC2 draws.
+     * Extract-only Forge Energy view of the hub's source, converting at {@link SGCraft#Ic2FEPerEU}. Draws go through
+     * {@link #drawShared}, so the loaded ZPMs share them exactly as they do IC2 and stargate draws.
      */
     private class ForgeEnergyAdapter implements IEnergyStorage {
         @Override
@@ -336,7 +355,7 @@ public final class ZpmHubTE extends BaseTileInventory implements ISGEnergySource
 
     @Override
     public void drawEnergy(double v) {
-        // This is a death method in this class, refer to ZpmHubBasicSource
+        // IC2 draws through the source (ZpmHubBasicSource), not this
     }
 
     @Override
@@ -353,13 +372,14 @@ public final class ZpmHubTE extends BaseTileInventory implements ISGEnergySource
     }
 
     @Override
+    @Optional.Method(modid = "ic2")
     public boolean emitsEnergyTo(IEnergyAcceptor iEnergyAcceptor, EnumFacing enumFacing) {
         if (isTainted(this.getStackInSlot(0)) || isTainted(this.getStackInSlot(1))|| isTainted(this.getStackInSlot(2))) {
             world.newExplosion(null, this.pos.getX(), this.pos.getY(), this.pos.getZ(), (float)250, true, true);
         }
 
         markChanged();
-        return this.hubSource.emitsEnergyTo(iEnergyAcceptor, enumFacing);
+        return Ic2ZpmSources.emitsEnergyTo(this.hubSource, iEnergyAcceptor, enumFacing);
     }
 
     /* Inventory */

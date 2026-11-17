@@ -39,7 +39,7 @@ public class RingFuelMalisisScreen extends BasicScreen {
     public void construct() {
         this.guiscreenBackground = false;
 
-        final BasicForm form = new BasicForm(this, 184, 196, TextFormatting.WHITE + I18n.format("sgcraft.gui.rings.label.title"));
+        final BasicForm form = new BasicForm(184, 196, TextFormatting.WHITE + I18n.format("sgcraft.gui.rings.label.title"));
         form.setMovable(true);
         form.setBackgroundAlpha(255);
 
@@ -48,10 +48,10 @@ public class RingFuelMalisisScreen extends BasicScreen {
         this.usesLabel = label(26);
         this.linkLabel = label(38);
 
-        final UIInventory fuelSlots = new UIInventory(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.rings.label.fuel"),
+        final UIInventory fuelSlots = new UIInventory(TextFormatting.WHITE + I18n.format("sgcraft.gui.rings.label.fuel"),
             this.fuel, RingPlatformTE.numFuelSlots);
         fuelSlots.setPosition(0, 52, Anchor.TOP | Anchor.CENTER);
-        final UIPlayerInventory playerInventory = new UIPlayerInventory(this, this.inventoryContainer.getPlayerInventory());
+        final UIPlayerInventory playerInventory = new UIPlayerInventory(this.inventoryContainer.getPlayerInventory());
         playerInventory.setPosition(0, -3, Anchor.BOTTOM | Anchor.CENTER);
 
         form.add(this.energyLabel, this.naquadahLabel, this.usesLabel, this.linkLabel, fuelSlots, playerInventory);
@@ -60,7 +60,7 @@ public class RingFuelMalisisScreen extends BasicScreen {
     }
 
     private UILabel label(int y) {
-        final UILabel label = new UILabel(this, "");
+        final UILabel label = new UILabel("");
         label.setPosition(5, y, Anchor.LEFT | Anchor.TOP);
         return label;
     }
@@ -79,8 +79,8 @@ public class RingFuelMalisisScreen extends BasicScreen {
     }
 
     @Override
-    public void update(int mouseX, int mouseY, float partialTick) {
-        super.update(mouseX, mouseY, partialTick);
+    public void update() {
+        super.update();
         if (this.unlockMouse && this.lastUpdate == 25) {
             Mouse.setGrabbed(false); // Force the mouse to be visible even though Mouse.isGrabbed() is false.  //#BugsUnited.
             this.unlockMouse = false;

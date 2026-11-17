@@ -6,6 +6,7 @@ import static gcewing.sg.tileentity.SGBaseTE.sendErrorMsg;
 import gcewing.sg.BaseDataChannel;
 import gcewing.sg.SGCraft;
 import gcewing.sg.features.configurator.client.gui.ConfiguratorScreen;
+import gcewing.sg.features.dynmap.DynmapMarkers;
 import gcewing.sg.network.SGChannel;
 import gcewing.sg.tileentity.SGBaseTE;
 import gcewing.sg.tileentity.data.GateAccessData;
@@ -63,7 +64,9 @@ public class ConfiguratorNetworkHandler extends SGChannel {
             boolean displayGateAddress,
             boolean isGenerated,
             boolean hasShield,
-            boolean invulnerable) {
+            boolean invulnerable,
+            boolean showOnDynmap,
+            boolean showAddressOnDynmap) {
 
         ChannelOutput data = configuratorChannel.openServer("ConfiguratorInput");
         writeCoords(data, te);
@@ -96,6 +99,8 @@ public class ConfiguratorNetworkHandler extends SGChannel {
         data.writeBoolean(isGenerated);
         data.writeBoolean(hasShield);
         data.writeBoolean(invulnerable);
+        data.writeBoolean(showOnDynmap);
+        data.writeBoolean(showAddressOnDynmap);
         data.close();
     }
 
@@ -133,6 +138,8 @@ public class ConfiguratorNetworkHandler extends SGChannel {
         boolean isGenerated = data.readBoolean();
         boolean hasShield = data.readBoolean();
         boolean invulnerable = data.readBoolean();
+        boolean showOnDynmap = data.readBoolean();
+        boolean showAddressOnDynmap = data.readBoolean();
 
         boolean isPermissionsAdmin = SGCraft.hasPermissionSystem() && SGCraft.hasPermission(player, "sgcraft.admin"); // Fallback for a full permissions system override to the Access System
 
@@ -186,10 +193,15 @@ public class ConfiguratorNetworkHandler extends SGChannel {
             if (SGCraft.hasPermission(player, "sgcraft.configurator.displayGateAddress") || isPermissionsAdmin) te.displayGateAddress = displayGateAddress;
             if (SGCraft.hasPermission(player, "sgcraft.configurator.isGenerated") || isPermissionsAdmin) te.isGenerated = isGenerated;
             if (SGCraft.hasPermission(player, "sgcraft.configurator.invulnerable") || isPermissionsAdmin) te.invulnerable = invulnerable;
+            if (SGCraft.hasPermission(player, "sgcraft.configurator.dynmap") || isPermissionsAdmin) {
+                te.showOnDynmap = showOnDynmap;
+                te.showAddressOnDynmap = showOnDynmap && showAddressOnDynmap;
+            }
             te.enforceOriRules(); // whatever was sent, an Ori gate keeps to its own
             sendBasicMsg(player, "changesSaved");
             te.updateIrisEntity();
             te.markChanged(); // saved with the world, not just sent to players nearby
+            DynmapMarkers.update(te);
         }
     }
 
@@ -497,7 +509,8 @@ public class ConfiguratorNetworkHandler extends SGChannel {
             boolean canPlayerBreakGeneratedGatePerm,
             boolean displayGateAddressPerm,
             boolean isGeneratedPerm,
-            boolean invulnerablePerm) {
+            boolean invulnerablePerm,
+            boolean dynmapPerm) {
 
         ChannelOutput data = configuratorChannel.openPlayer(player,"OpenConfiguratorGUI");
         // Type is always 1 here. *for now*
@@ -533,6 +546,7 @@ public class ConfiguratorNetworkHandler extends SGChannel {
         data.writeBoolean(displayGateAddressPerm);
         data.writeBoolean(isGeneratedPerm);
         data.writeBoolean(invulnerablePerm);
+        data.writeBoolean(dynmapPerm);
         data.close();
     }
 
@@ -571,6 +585,7 @@ public class ConfiguratorNetworkHandler extends SGChannel {
         boolean displayGateAddressPerm = data.readBoolean();
         boolean isGeneratedPerm = data.readBoolean();
         boolean invulnerablePerm = data.readBoolean();
+        boolean dynmapPerm = data.readBoolean();
 
         if (guiType == 1) {
             new ConfiguratorScreen(player,
@@ -605,7 +620,8 @@ public class ConfiguratorNetworkHandler extends SGChannel {
                     isGeneratedPerm,
                     gateAccessPerm,
                     playerAccessPerm,
-                    invulnerablePerm)
+                    invulnerablePerm,
+                    dynmapPerm)
                     .display();
         }
     }

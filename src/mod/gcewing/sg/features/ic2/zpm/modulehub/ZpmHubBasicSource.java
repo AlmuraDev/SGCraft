@@ -1,11 +1,13 @@
 package gcewing.sg.features.ic2.zpm.modulehub;
 
+import gcewing.sg.features.zpm.ZpmSource;
 import ic2.api.energy.prefab.BasicSource;
 import ic2.api.energy.tile.IEnergyAcceptor;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 
-public final class ZpmHubBasicSource extends BasicSource {
+// The hub's source with IC2 installed: on the IC2 energy network as well (made by Ic2ZpmSources, so the hub never names it)
+public final class ZpmHubBasicSource extends BasicSource implements ZpmSource {
 
     private final TileEntity parent;
 
@@ -19,17 +21,8 @@ public final class ZpmHubBasicSource extends BasicSource {
     // whole units only, so small draws (from a slow cable) took nothing from them at all.
     @Override
     public void drawEnergy(double amount) {
-        ZpmHubTE te = ((ZpmHubTE) this.parent);
-        if (te != null && amount > 0) {
-            int zpmCount = te.getZpmSlotsloaded();
-            te.drawFromZpms(zpmCount > 0 ? amount / zpmCount : amount); // sets this source's energy from theirs
-
-            te.markChanged();
-            // Todo: fix this.
-            /*
-            if (((ZpmHubTE)this.parent).isTainted(((ZpmHubTE)this.parent).getStackInSlot(0))) {
-                world.newExplosion(null, this.pos.getX(), this.pos.getY(), this.pos.getZ(), (float)250, true, true);
-            } */
+        if (this.parent instanceof ZpmHubTE) {
+            ((ZpmHubTE) this.parent).drawShared(amount); // sets this source's energy from theirs
         }
     }
 

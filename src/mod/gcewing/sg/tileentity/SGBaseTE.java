@@ -20,6 +20,7 @@ import gcewing.sg.event.SGMergeEvent;
 import gcewing.sg.features.ic2.zpm.modulehub.ZpmHubTE;
 import gcewing.sg.features.zpm.console.ZpmConsoleTE;
 import gcewing.sg.features.edd.ExplorerData;
+import gcewing.sg.features.dynmap.DynmapMarkers;
 import gcewing.sg.generator.GeneratorAddressRegistry;
 import gcewing.sg.tileentity.data.GateAccessData;
 import gcewing.sg.tileentity.data.PlayerAccessData;
@@ -53,6 +54,7 @@ import gcewing.sg.util.OriGate;
 import gcewing.sg.interfaces.LoopingSoundSource;
 import gcewing.sg.util.FakeTeleporter;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockRailBase;
 import net.minecraft.block.BlockSlab;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.Entity;
@@ -83,6 +85,7 @@ import net.minecraft.util.ITickable;
 import net.minecraft.util.SoundCategory;
 import net.minecraft.util.SoundEvent;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.text.ITextComponent;
@@ -296,6 +299,9 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
     public boolean debugCCInterface = false;
     public int dialedDigit = 0;
     public String enteredAddress = "";
+    // The whole address of a PDD/EDD dial whose chevrons lock as entered, set on the server and sent to clients: until
+    // the last symbol is in, dialledAddress is only those entered so far, too short to tell a nine-symbol address (lit
+    // in the nine-chevron order) from a seven (see GateRenderer.chevronSequenceRow)
     public String immediateDialAddress = "";
     public boolean errorState = false;
     public boolean checkForMalfunction = false;
@@ -356,6 +362,9 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
     public boolean invulnerable = false;
     public boolean displayGateAddress = true;
     public boolean isGenerated = false;
+    // A marker for the gate on the server's Dynmap, labelled with its address or not (see DynmapMarkers)
+    public boolean showOnDynmap = false;
+    public boolean showAddressOnDynmap = false;
 
     // Access Control Lists
     private List<PlayerAccessData> playerAccessData;
@@ -563,6 +572,7 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         System.out.print("SGBaseTE.onAddedToWorld\n");
         }
         updateChunkLoadingStatus();
+        DynmapMarkers.update(this); // catches up with any change made while Dynmap was off
     }
 
     // The space taken up by the gate's ring and the region just in front of and behind it
@@ -680,6 +690,7 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         this.targetRingAngle = nbt.getDouble("targetRingAngle");
         this.numEngagedChevrons = nbt.getInteger("numEngagedChevrons");
         this.dialledAddress = nbt.getString("dialledAddress");
+        this.immediateDialAddress = nbt.getString("immediateDialAddress");
         this.pegasusFillStart = nbt.getLong("pegasusFillStart");
         this.pegasusFillEnd = nbt.getLong("pegasusFillEnd");
         this.isLinkedToController = nbt.getBoolean("isLinkedToController");
@@ -928,6 +939,9 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
             this.displayGateAddress = cfg.getBoolean("stargate", "displayGateAddress", this.displayGateAddress);
         }
 
+        this.showOnDynmap = nbt.getBoolean("showOnDynmap");
+        this.showAddressOnDynmap = nbt.getBoolean("showAddressOnDynmap");
+
         if (nbt.hasKey("isGenerated")) {
             this.isGenerated = nbt.getBoolean("isGenerated");
         } else {
@@ -965,6 +979,7 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         nbt.setDouble("targetRingAngle", targetRingAngle);
         nbt.setInteger("numEngagedChevrons", numEngagedChevrons);
         nbt.setString("dialledAddress", dialledAddress);
+        nbt.setString("immediateDialAddress", immediateDialAddress);
         nbt.setLong("pegasusFillStart", pegasusFillStart);
         nbt.setLong("pegasusFillEnd", pegasusFillEnd);
         nbt.setBoolean("isLinkedToController", isLinkedToController);
@@ -1042,6 +1057,8 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         nbt.setBoolean("invulnerable", this.invulnerable);
         nbt.setBoolean("displayGateAddress", this.displayGateAddress);
         nbt.setBoolean("isGenerated", isGenerated);
+        nbt.setBoolean("showOnDynmap", this.showOnDynmap);
+        nbt.setBoolean("showAddressOnDynmap", this.showAddressOnDynmap);
 
         return nbt;
     }
@@ -1276,6 +1293,7 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
             }
 
             updateIrisEntity();
+            DynmapMarkers.update(this); // on the map once merged, off it once broken
         }
     }
 
@@ -1285,6 +1303,7 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
             clientUpdate();
         } else {
             lockIncomingChevrons();
+            tickLockDial();
             serverUpdate();
             checkForEntitiesInPortal();
             clearKawooshBlocks();
@@ -2241,6 +2260,7 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         }
 
         if (address.length() <= this.getNumChevrons()) {
+            immediateDialAddress = address;
             enteredAddress += currentSymbol;
             this.dialedDigit = enteredAddress.length();
             boolean last = address.length() == this.dialedDigit;
@@ -2323,6 +2343,48 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
     // (world time) it locks the next, or 0 (server only)
     static final int incomingLockGap = 4;
     private long incomingLockAt = 0;
+
+    // A dial whose symbols the server enters one at a time, for a gate whose chevrons lock as they're entered
+    // (chevronsLockOnDial), started from a PDD or EDD, which closes rather than staying open to send each one: the address,
+    // who dialled, how many symbols are in, and when (world time) the next goes in (server only)
+    private String lockDialAddress;
+    private java.util.UUID lockDialPlayer;
+    private int lockDialDigit;
+    private long lockDialNextAt;
+    // Ticks between symbols, as the PDD and EDD screens sent them
+    static final int lockDialTicks = 15;
+
+    public void startLockDial(String address, EntityPlayer player) {
+        if (state != SGState.Idle || address == null || address.isEmpty()) {
+            return;
+        }
+        lockDialAddress = address;
+        lockDialPlayer = player.getUniqueID();
+        lockDialDigit = 0;
+        lockDialNextAt = world.getTotalWorldTime();
+    }
+
+    // The next symbol of a lock dial, when it's due; it stops once the address is in, a symbol is refused (see
+    // immediateDialSymbol), the gate is busy, or its player has gone
+    private void tickLockDial() {
+        if (lockDialAddress == null || world.getTotalWorldTime() < lockDialNextAt) {
+            return;
+        }
+        EntityPlayer player = world.getMinecraftServer() == null ? null
+            : world.getMinecraftServer().getPlayerList().getPlayerByUUID(lockDialPlayer);
+        if (player == null || state != SGState.Idle) {
+            lockDialAddress = null;
+            return;
+        }
+        String address = lockDialAddress;
+        int digit = lockDialDigit++;
+        immediateDialSymbol(address, player, digit);
+        if (lockDialDigit >= address.length() || enteredAddress == null || enteredAddress.length() != lockDialDigit) {
+            lockDialAddress = null; // done, or that symbol didn't go in
+        } else {
+            lockDialNextAt += lockDialTicks;
+        }
+    }
 
     private void lockIncomingChevrons() {
         if (incomingLockAt <= 0) {
@@ -2952,8 +3014,8 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
         for (int i = 0; i < KAWOOSH_BLOCKS_PER_TICK && !kawooshBlocks.isEmpty(); i++) {
             BlockPos p = kawooshBlocks.poll();
             IBlockState s = world.getBlockState(p);
-            // Never a gate or DHD, of this gate or any other
-            if (s.getBlock() == Blocks.AIR || isGateBlock(s.getBlock())) {
+            // Never a gate or DHD, of this gate or any other, nor a railway line running through the gate
+            if (s.getBlock() == Blocks.AIR || isGateBlock(s.getBlock()) || isTrack(s.getBlock())) {
                 continue;
             }
             if (SGCraft.wormholeCanDestroyUnbreakableBlocks || s.getBlockHardness(world, p) >= 0) {
@@ -2964,6 +3026,18 @@ public class SGBaseTE extends BaseTileInventory implements ITickable, LoopingSou
 
     static boolean isGateBlock(Block block) {
         return block instanceof SGBaseBlock || block instanceof SGRingBlock || block instanceof DHDBlock;
+    }
+
+    // Rails: vanilla's and every Railcraft track, which are all BlockRailBase but for the elevator track (named, so as
+    // not to need Railcraft), and Immersive Railroading's track, its gag blocks (the rest of a long piece of track)
+    // and its placement preview, all block_rail*; those are UniversalModCore blocks, so known only by name
+    static boolean isTrack(Block block) {
+        if (block instanceof BlockRailBase
+                || block.getClass().getName().equals("mods.railcraft.common.blocks.tracks.elevator.BlockTrackElevator")) {
+            return true;
+        }
+        ResourceLocation name = block.getRegistryName();
+        return name != null && name.getNamespace().equals("immersiverailroading") && name.getPath().startsWith("block_rail");
     }
 
     // *********************************************************************************************

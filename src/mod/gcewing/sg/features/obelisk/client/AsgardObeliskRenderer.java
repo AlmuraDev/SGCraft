@@ -45,11 +45,18 @@ public class AsgardObeliskRenderer extends TileEntitySpecialRenderer<AsgardObeli
         glBlendFunc(GL_SRC_ALPHA, GL_ONE);
         glDepthMask(false);
         glShadeModel(GL_SMOOTH);
+        // The discs fade to nothing at their edges: with the alpha test on (as the world draws tile entities) their faint
+        // outer parts were cut off, leaving a hard edged disc that jumped wider instead of a glow spreading softly
+        boolean alphaTest = glIsEnabled(GL_ALPHA_TEST);
+        glDisable(GL_ALPHA_TEST);
 
         // A wide soft red glow, and a bright core that turns white as it peaks
         disc(0.06 + 0.28 * shine, 1F, 0.15F, 0.1F, 0.55F * shine);
         disc(0.03 + 0.08 * shine, 1F, 0.55F + 0.45F * shine, 0.5F + 0.5F * shine, 0.9F * shine);
 
+        if (alphaTest) {
+            glEnable(GL_ALPHA_TEST);
+        }
         glShadeModel(GL_FLAT);
         glDepthMask(true);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

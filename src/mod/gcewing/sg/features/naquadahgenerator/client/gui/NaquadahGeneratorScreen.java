@@ -59,14 +59,14 @@ public class NaquadahGeneratorScreen extends BasicScreen {
         this.guiscreenBackground = false;
 
         final String title = I18n.format("sgcraft.gui.naquadahGenerator.label.title." + this.generator.mark().key());
-        final BasicForm form = new BasicForm(this, 184, 208, TextFormatting.WHITE + title);
+        final BasicForm form = new BasicForm(184, 208, TextFormatting.WHITE + title);
         form.setMovable(true);
         form.setBackgroundAlpha(255);
 
         // ---- Its state, and the switches ----
-        this.statusLabel = new UILabel(this, "");
+        this.statusLabel = new UILabel("");
         this.statusLabel.setPosition(5, 2, Anchor.LEFT | Anchor.TOP);
-        this.onButton = new UIButtonBuilder(this)
+        this.onButton = new UIButtonBuilder()
             .width(36)
             .anchor(Anchor.TOP | Anchor.RIGHT)
             .position(-41, 0)
@@ -74,7 +74,7 @@ public class NaquadahGeneratorScreen extends BasicScreen {
             .onClick(() -> NaquadahGeneratorNetworkHandler.sendSwitchToServer(this.status.pos, true))
             .listener(this)
             .build("button.generator.on");
-        this.offButton = new UIButtonBuilder(this)
+        this.offButton = new UIButtonBuilder()
             .width(36)
             .anchor(Anchor.TOP | Anchor.RIGHT)
             .position(-3, 0)
@@ -89,10 +89,10 @@ public class NaquadahGeneratorScreen extends BasicScreen {
         this.fuelLabel = infoLabel(48);
 
         // ---- Its fuel, and the player's inventory to fill it from ----
-        final UIInventory fuelSlots = new UIInventory(this, TextFormatting.WHITE + I18n.format("sgcraft.gui.naquadahGenerator.label.fuel"),
+        final UIInventory fuelSlots = new UIInventory(TextFormatting.WHITE + I18n.format("sgcraft.gui.naquadahGenerator.label.fuel"),
             this.fuel, NaquadahGeneratorTE.numFuelSlots);
         fuelSlots.setPosition(0, 62, Anchor.TOP | Anchor.CENTER);
-        final UIPlayerInventory playerInventory = new UIPlayerInventory(this, this.inventoryContainer.getPlayerInventory());
+        final UIPlayerInventory playerInventory = new UIPlayerInventory(this.inventoryContainer.getPlayerInventory());
         playerInventory.setPosition(0, -3, Anchor.BOTTOM | Anchor.CENTER);
 
         form.add(this.statusLabel, this.onButton, this.offButton, this.storedLabel, this.outputLabel, this.fuelLabel, fuelSlots,
@@ -102,7 +102,7 @@ public class NaquadahGeneratorScreen extends BasicScreen {
     }
 
     private UILabel infoLabel(int y) {
-        final UILabel label = new UILabel(this, "");
+        final UILabel label = new UILabel("");
         label.setPosition(5, y, Anchor.LEFT | Anchor.TOP);
         return label;
     }
@@ -139,8 +139,8 @@ public class NaquadahGeneratorScreen extends BasicScreen {
     }
 
     @Override
-    public void update(int mouseX, int mouseY, float partialTick) {
-        super.update(mouseX, mouseY, partialTick);
+    public void update() {
+        super.update();
         if (this.unlockMouse && this.lastUpdate == 25) {
             Mouse.setGrabbed(false); // Force the mouse to be visible even though Mouse.isGrabbed() is false.  //#BugsUnited.
             this.unlockMouse = false;
