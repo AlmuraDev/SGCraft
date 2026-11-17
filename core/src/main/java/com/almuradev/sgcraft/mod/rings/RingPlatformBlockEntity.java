@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.rings;
 
+import com.almuradev.sgcraft.mod.SGClock;
 import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
 import com.almuradev.sgcraft.mod.energy.FeRate;
 import com.almuradev.sgcraft.mod.energy.FeSink;
@@ -159,7 +160,7 @@ public final class RingPlatformBlockEntity extends BlockEntity implements Config
     }
 
     private boolean overdue() {
-        return this.level != null && this.level.getGameTime() - this.startTime
+        return this.level != null && SGClock.now(this.level) - this.startTime
                 > (this.initiator ? Rings.DONE_TICKS : Rings.HALF_TICKS);
     }
 
@@ -181,7 +182,7 @@ public final class RingPlatformBlockEntity extends BlockEntity implements Config
         this.runTicks = 0;
         this.initiator = initiator;
         this.floorY = this.findFloor();
-        this.startTime = (this.level == null ? 0 : this.level.getGameTime()) + (initiator ? 0 : Rings.HALF_TICKS);
+        this.startTime = SGClock.now(this.level) + (initiator ? 0 : Rings.HALF_TICKS);
         if (initiator) {
             this.playSound();
         }

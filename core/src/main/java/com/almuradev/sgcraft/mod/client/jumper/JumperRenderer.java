@@ -182,7 +182,7 @@ public final class JumperRenderer extends EntityRenderer<PuddleJumperEntity, Jum
         state.shimmer = (float) Mth.clamp(Math.sqrt(Mth.square(entity.getX() - entity.xo)
                 + Mth.square(entity.getY() - entity.yo) + Mth.square(entity.getZ() - entity.zo))
                 / JumperRenderer.SHIMMER_SPEED, 0, 1);
-        state.time = entity.level().getGameTime() + partialTick;
+        state.time = entity.level().getGameTime() + (double) partialTick;
         state.hits = JumperShield.of(entity);
         state.shieldAge = entity.shieldChanged() == Long.MIN_VALUE ? Float.MAX_VALUE
                 : entity.level().getGameTime() - entity.shieldChanged() + partialTick;
@@ -297,7 +297,7 @@ public final class JumperRenderer extends EntityRenderer<PuddleJumperEntity, Jum
     // off. Its sounds are left as they are
     private void cloaked(final JumperRenderState state, final PoseStack poseStack,
             final SubmitNodeCollector collector, final float hidden) {
-        final float flicker = 0.75F + 0.25F * Mth.sin(state.time * 0.9F) * Mth.sin(state.time * 0.37F + 1);
+        final float flicker = (float) (0.75 + 0.25 * Math.sin(state.time * 0.9) * Math.sin(state.time * 0.37 + 1));
         float alpha = 1 - hidden;
         if (!state.viewerInside) {
             // Never quite gone, so a jumper left cloaked can still be found by someone who looks hard

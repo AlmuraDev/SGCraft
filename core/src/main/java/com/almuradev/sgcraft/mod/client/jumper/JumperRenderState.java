@@ -65,7 +65,7 @@ public final class JumperRenderState extends EntityRenderState {
     /** How fast it moves, as a share of its top speed without the turbo, which shows its shimmer while cloaked. */
     public float shimmer;
     /** The game time, in ticks, with the part tick. */
-    public float time;
+    public double time;
     /** The blows showing on its shield. */
     public List<JumperShield.Hit> hits = List.of();
     /** How long ago its shield last rose or fell, in ticks, and whether it rose. */

@@ -64,6 +64,7 @@ import com.almuradev.sgcraft.mod.tool.ToolPayloads.BookEntry;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads.Change;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads.ConfiguratorApply;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads.ConfiguratorState;
+import com.almuradev.sgcraft.mod.tool.ToolPayloads.ConfiguratorUnlinkZpm;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads.GateInfo;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads.GdoAction;
 import com.almuradev.sgcraft.mod.tool.ToolPayloads.GdoState;
@@ -1014,6 +1015,39 @@ public final class ToolActions {
             }
         }
         ToolActions.sendConfigurator(player, gate, false, ToolActions.outcome(problems));
+    }
+
+    /**
+     * Unlinks a ZPM device from a gate, from the configurator's list: for a player who may configure the gate and
+     * manage it, as its owner or an operator, and only a device linked to that gate.
+     */
+    public static void unlinkZpm(final ServerPlayer player, final ConfiguratorUnlinkZpm unlink) {
+        if (!SGPermissions.check(player, ToolActions.holding(player, SGItems.CONFIGURATOR) ? SGPermissions.CONFIGURATOR
+                : SGPermissions.TABLET)) {
+            return;
+        }
+        final Optional<Stargate> found = ToolActions.configured(player, unlink.world(), unlink.gate());
+        if (found.isEmpty()) {
+            ToolActions.tell(player, "message.sgcraft.no_gate_near", "There is no gate near you");
+            return;
+        }
+        final Stargate gate = found.get();
+        final Cause cause = ToolActions.cause(player);
+        if (!gate.access().allows(cause, GateRight.CONFIGURE) || !gate.access().mayManage(cause)) {
+            ToolActions.tell(player, "message.sgcraft.zpm_link.not_manager",
+                    "Only the gate's owner or an operator unlinks its ZPM devices");
+            return;
+        }
+        final MinecraftServer server = player.level().getServer();
+        final GlobalPos device = GlobalPos.of(gate.position().dimension(), unlink.device());
+        if (!ZpmLinks.gateOf(server, device).filter(gate.position()::equals).isPresent()) {
+            ToolActions.tell(player, "message.sgcraft.zpm_link.not_linked",
+                    "That ZPM device isn't linked to this gate");
+            return;
+        }
+        ZpmLinks.unlink(server, device);
+        player.sendOverlayMessage(Component.translatableWithFallback("message.sgcraft.zpm_link.unlinked_from_gate",
+                "Unlinked the ZPM device at %s", unlink.device().toShortString()).withStyle(ChatFormatting.GREEN));
     }
 
     private static String outcome(final List<String> problems) {

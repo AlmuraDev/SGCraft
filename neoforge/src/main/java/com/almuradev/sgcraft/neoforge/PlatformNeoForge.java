@@ -78,6 +78,11 @@ public final class PlatformNeoForge implements Platform {
     }
 
     @Override
+    public boolean isModLoaded(final String id) {
+        return ModList.get().isLoaded(id);
+    }
+
+    @Override
     public boolean hasPermission(final ServerPlayer player, final SGPermissions.Node node) {
         return PermissionsNeoForge.has(player, node);
     }

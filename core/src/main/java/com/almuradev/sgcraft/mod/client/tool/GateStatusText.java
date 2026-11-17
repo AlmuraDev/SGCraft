@@ -33,13 +33,13 @@ import net.minecraft.network.chat.Component;
  * What a gate is doing, as the tools' screens show it: a word in a color that says at a glance whether it can be
  * dialed, is busy, or is gone.
  */
-final class GateStatusText {
+public final class GateStatusText {
 
     private GateStatusText() {
     }
 
     /** @param status {@link BookEntry#NO_GATE}, or a gate state's name in lower case */
-    static Component of(final String status) {
+    public static Component of(final String status) {
         final String text;
         final ChatFormatting color;
         switch (status) {

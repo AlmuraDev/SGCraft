@@ -28,3 +28,11 @@ type = "required"
 versionRange = "${minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"
+
+# Strata draws the MalisisCore-style screens a player can turn on in SGCraft's settings; SGCraft runs without it
+[[dependencies.${mod_id}]]
+modId = "strata"
+type = "optional"
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "CLIENT"

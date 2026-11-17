@@ -25,6 +25,7 @@
 
 package com.almuradev.sgcraft.mod.obelisk;
 
+import com.almuradev.sgcraft.mod.SGClock;
 import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
@@ -156,9 +157,8 @@ public final class AsgardObeliskBlockEntity extends BlockEntity implements Confi
     }
 
     void startBeam(final ServerPlayer player) {
-        final long now = this.level == null ? 0 : this.level.getGameTime();
         this.beams.add(new Beam(player, player.position()));
-        this.beamStart = now;
+        this.beamStart = SGClock.now(this.level);
         this.sync();
     }
 
@@ -194,7 +194,9 @@ public final class AsgardObeliskBlockEntity extends BlockEntity implements Confi
         if (this.level == null) {
             return 0;
         }
-        final double ticks = this.level.getGameTime() + partialTicks - this.beamStart;
+        // Subtracted first, in long, then the part tick added in double: a long plus a float is worked out in float, which
+        // on a world billions of ticks old counts in hundreds of ticks, and the gem never lit
+        final double ticks = (SGClock.now(this.level) - this.beamStart) + (double) partialTicks;
         final double t = ticks / Obelisks.BEAM_TICKS;
         if (ticks < 0 || t > 1.6) {
             return 0;

@@ -26,17 +26,16 @@
 package com.almuradev.sgcraft.mod.mixin;
 
 import com.almuradev.sgcraft.mod.worldgen.StargatePiece;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.structure.StructurePiece;
 import net.minecraft.world.level.levelgen.structure.StructureStart;
 import net.minecraft.world.level.levelgen.structure.pieces.PiecesContainer;
 import net.minecraft.world.level.levelgen.structure.pieces.StructurePieceSerializationContext;
-import net.minecraft.world.level.levelgen.structure.structures.OceanMonumentStructure;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
@@ -48,14 +47,15 @@ import java.util.List;
 @Mixin(StructureStart.class)
 abstract class StructureStartMixin {
 
-    @Redirect(method = "loadStaticStart", at = @At(value = "INVOKE",
+    // The monument's pieces as it rebuilt them, with the gate's from the save added back: it changes what the call
+    // returned rather than redirecting it, so it chains with any other mod's hook on the same call
+    @ModifyExpressionValue(method = "loadStaticStart", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/world/level/levelgen/structure/structures/OceanMonumentStructure;"
                     + "regeneratePiecesAfterLoad(Lnet/minecraft/world/level/ChunkPos;J"
                     + "Lnet/minecraft/world/level/levelgen/structure/pieces/PiecesContainer;)"
                     + "Lnet/minecraft/world/level/levelgen/structure/pieces/PiecesContainer;"))
-    private static PiecesContainer sgcraft$keepGate(final ChunkPos chunk, final long seed,
-            final PiecesContainer saved) {
-        final PiecesContainer rebuilt = OceanMonumentStructure.regeneratePiecesAfterLoad(chunk, seed, saved);
+    private static PiecesContainer sgcraft$keepGate(final PiecesContainer rebuilt,
+            @Local final PiecesContainer saved) {
         final List<StructurePiece> pieces = new ArrayList<>(rebuilt.pieces());
         saved.pieces().stream().filter(StargatePiece.class::isInstance).forEach(pieces::add);
         return new PiecesContainer(pieces);

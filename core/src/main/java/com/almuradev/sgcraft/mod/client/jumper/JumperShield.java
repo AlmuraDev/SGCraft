@@ -147,7 +147,7 @@ public final class JumperShield {
      * @param yaw which way the jumper faces, in degrees
      * @param time the game time, in ticks, with the part tick
      */
-    static void submit(final List<Hit> hits, final float yaw, final float time, final PoseStack poseStack,
+    static void submit(final List<Hit> hits, final float yaw, final double time, final PoseStack poseStack,
             final SubmitNodeCollector collector) {
         if (hits.isEmpty()) {
             return;
@@ -155,7 +155,7 @@ public final class JumperShield {
         final double angle = yaw * Mth.DEG_TO_RAD;
         collector.submitCustomGeometry(poseStack, RenderTypes.lightning(), (pose, buffer) -> {
             for (final Hit hit : hits) {
-                final float age = Mth.clamp((time - hit.time()) / hit.life(), 0, 1);
+                final float age = Mth.clamp((float) ((time - hit.time()) / hit.life()), 0, 1);
                 JumperShield.patch(pose, buffer, hit, age, angle);
             }
         });
@@ -230,7 +230,7 @@ public final class JumperShield {
      * @param yaw which way the jumper faces, in degrees
      * @param time the game time, in ticks, with the part tick
      */
-    static void sweep(final float age, final boolean rose, final float yaw, final float time,
+    static void sweep(final float age, final boolean rose, final float yaw, final double time,
             final PoseStack poseStack, final SubmitNodeCollector collector) {
         if (age < 0 || age >= (rose ? JumperShield.RISE_TICKS + JumperShield.RISE_FADE : JumperShield.FALL_TICKS)) {
             return;
@@ -268,10 +268,10 @@ public final class JumperShield {
     // How a point of the shell is lit as the shield rises or falls, so far down from its top and round it: lit within
     // the front spreading from the top and the foot, brightest along it, with a shimmer running round the shell
     private static float sweepBrightness(final float age, final boolean rose, final float down, final float round,
-            final float time) {
+            final double time) {
         // How far the point is from the nearer of the top and the foot, from 0 to a quarter turn round its middle
         final float fromEnd = Math.min(down, Mth.PI - down);
-        final float shimmer = 0.75F + 0.25F * Mth.sin(round * 5 + down * 8 - time * 0.4F);
+        final float shimmer = (float) (0.75 + 0.25 * Math.sin(round * 5 + down * 8 - time * 0.4));
         if (rose) {
             final float spread = Mth.clamp(age / JumperShield.RISE_TICKS, 0, 1) * Mth.HALF_PI;
             final float fading = age <= JumperShield.RISE_TICKS ? 1
@@ -287,12 +287,12 @@ public final class JumperShield {
         if (fromEnd > left * Mth.HALF_PI) {
             return 0;
         }
-        final float flicker = 0.6F + 0.4F * Mth.sin(time * 2.3F);
+        final float flicker = (float) (0.6 + 0.4 * Math.sin(time * 2.3));
         return Mth.clamp(JumperShield.SWEEP_GLOW * 1.5F * shimmer * flicker * left, 0, 1);
     }
 
     private static int sweepLight(final float age, final boolean rose, final float down, final float round,
-            final float time) {
+            final double time) {
         final float brightness = JumperShield.sweepBrightness(age, rose, down, round, time);
         return ARGB.color(Math.round(255 * brightness), ARGB.srgbLerp(brightness, JumperShield.BLUE,
                 JumperShield.CORE) & 0xFFFFFF);

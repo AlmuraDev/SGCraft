@@ -75,7 +75,8 @@ public final class ObeliskMesh {
             final String[] materials = hammer ? ObeliskMesh.HAMMER : ObeliskMesh.KNOTWORK;
             try {
                 ObeliskMesh.MESHES.put(kind, new ObeliskMesh(ObjMesh.load("/assets/sgcraft/models/obelisk/"
-                        + (hammer ? "asgard_obelisk" : "asgard_obelisk_knotwork") + ".obj", materials), materials));
+                        + (hammer ? "asgard_obelisk" : "asgard_obelisk_knotwork") + ".obj", materials, false),
+                        materials));
             } catch (final IOException | RuntimeException e) {
                 ObeliskMesh.failed = true;
                 SGCraft.LOG.error("Couldn't load the Asgard obelisk's model", e);

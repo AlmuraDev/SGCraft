@@ -74,7 +74,7 @@ public final class GeneratorRenderer implements BlockEntityRenderer<NaquadahGene
         public boolean on;
         public boolean running;
         public boolean markTwo;
-        public float time;
+        public double time;
     }
 
     @Override
@@ -91,7 +91,7 @@ public final class GeneratorRenderer implements BlockEntityRenderer<NaquadahGene
         state.on = generator.getBlockState().getValue(NaquadahGeneratorBlock.ON);
         state.running = generator.getBlockState().getValue(NaquadahGeneratorBlock.RUNNING);
         state.markTwo = generator.mark() == GeneratorMark.TWO;
-        state.time = generator.getLevel() == null ? 0 : generator.getLevel().getGameTime() + partialTicks;
+        state.time = generator.getLevel() == null ? 0 : generator.getLevel().getGameTime() + (double) partialTicks;
     }
 
     @Override
@@ -109,7 +109,7 @@ public final class GeneratorRenderer implements BlockEntityRenderer<NaquadahGene
 
     /** Draws a generator in a block's space, facing north, as the block and its item both are. */
     static void submitModel(final PoseStack poseStack, final SubmitNodeCollector collector, final boolean on,
-            final boolean running, final boolean markTwo, final float time, final int light) {
+            final boolean running, final boolean markTwo, final double time, final int light) {
         final GeneratorMesh mesh = GeneratorMesh.get();
         if (mesh == null) {
             return;

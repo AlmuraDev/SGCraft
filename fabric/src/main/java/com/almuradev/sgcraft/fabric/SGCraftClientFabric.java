@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.fabric;
 
 import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
 import com.almuradev.sgcraft.mod.client.SGClient;
+import com.almuradev.sgcraft.mod.client.StrataScreens;
 import com.almuradev.sgcraft.mod.client.computer.DialingComputerRenderer;
 import com.almuradev.sgcraft.mod.client.dhd.DhdFuelScreen;
 import com.almuradev.sgcraft.mod.client.dhd.DhdItemRenderer;
@@ -54,6 +55,7 @@ import com.almuradev.sgcraft.mod.client.power.BatteryChargerScreen;
 import com.almuradev.sgcraft.mod.client.power.PowerUnitScreen;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldRenderer;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldScreen;
+import com.almuradev.sgcraft.mod.client.strata.StrataViews;
 import com.almuradev.sgcraft.mod.client.view.RemoteViewPicture;
 import com.almuradev.sgcraft.mod.client.zpm.ZpmScreen;
 import com.almuradev.sgcraft.mod.dhd.DhdFuelMenu;
@@ -80,6 +82,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.client.renderer.special.SpecialModelRenderers;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
@@ -152,13 +155,25 @@ public final class SGCraftClientFabric implements ClientModInitializer {
         MenuScreens.register(DhdFuelMenu.TYPE, DhdFuelScreen::new);
         MenuScreens.register(GateBaseMenu.TYPE, GateBaseScreen::new);
         MenuScreens.register(PowerUnitMenu.TYPE, PowerUnitScreen::new);
-        MenuScreens.register(NaquadahGeneratorMenu.TYPE, GeneratorScreen::new);
-        MenuScreens.register(RingPlatformMenu.TYPE, RingPlatformScreen::new);
+        MenuScreens.<NaquadahGeneratorMenu, AbstractContainerScreen<NaquadahGeneratorMenu>>register(
+                NaquadahGeneratorMenu.TYPE, (menu, inventory, title) -> StrataScreens.enabled()
+                        ? StrataViews.generator(menu, inventory, title) : new GeneratorScreen(menu, inventory, title));
+        MenuScreens.<RingPlatformMenu, AbstractContainerScreen<RingPlatformMenu>>register(
+                RingPlatformMenu.TYPE, (menu, inventory, title) -> StrataScreens.enabled()
+                        ? StrataViews.ringPlatform(menu, inventory, title)
+                                : new RingPlatformScreen(menu, inventory, title));
         MenuScreens.register(BatteryChargerMenu.TYPE, BatteryChargerScreen::new);
         MenuScreens.register(MalpMenu.TYPE, MalpScreen::new);
-        MenuScreens.register(ZpmMenu.SINGLE, ZpmScreen::new);
-        MenuScreens.register(ZpmMenu.HUB, ZpmScreen::new);
-        MenuScreens.register(CityShieldMenu.TYPE, CityShieldScreen::new);
+        MenuScreens.<ZpmMenu, AbstractContainerScreen<ZpmMenu>>register(
+                ZpmMenu.SINGLE, (menu, inventory, title) -> StrataScreens.enabled()
+                        ? StrataViews.zpm(menu, inventory, title) : new ZpmScreen(menu, inventory, title));
+        MenuScreens.<ZpmMenu, AbstractContainerScreen<ZpmMenu>>register(
+                ZpmMenu.HUB, (menu, inventory, title) -> StrataScreens.enabled()
+                        ? StrataViews.zpm(menu, inventory, title) : new ZpmScreen(menu, inventory, title));
+        MenuScreens.<CityShieldMenu, AbstractContainerScreen<CityShieldMenu>>register(
+                CityShieldMenu.TYPE, (menu, inventory, title) -> StrataScreens.enabled()
+                        ? StrataViews.cityShield(menu, inventory, title)
+                                : new CityShieldScreen(menu, inventory, title));
         SGNetwork.clientbound().forEach(SGCraftClientFabric::receive);
         // Remote views, drawn into screens as pictures in pictures; they, and the settings the server sent, go when
         // the client leaves the server

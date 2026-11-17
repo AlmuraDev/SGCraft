@@ -50,9 +50,10 @@ import java.nio.file.Path;
  * @param soundVolume how loud SGCraft's sounds play, from 0 for silent to 1 for full volume, on top of the game's
  *     own volume settings
  */
-public record SGClientConfig(boolean hdEventHorizon, boolean copyAddressOnOpen, double soundVolume) {
+public record SGClientConfig(boolean hdEventHorizon, boolean copyAddressOnOpen, double soundVolume,
+        boolean strataScreens) {
 
-    public static final SGClientConfig DEFAULTS = new SGClientConfig(true, false, 1.0);
+    public static final SGClientConfig DEFAULTS = new SGClientConfig(true, false, 1.0, false);
 
     private static final String FILE = "sgcraft-client.json";
 
@@ -62,7 +63,9 @@ public record SGClientConfig(boolean hdEventHorizon, boolean copyAddressOnOpen, 
             Codec.BOOL.optionalFieldOf("copy_address_on_open", SGClientConfig.DEFAULTS.copyAddressOnOpen)
                     .forGetter(SGClientConfig::copyAddressOnOpen),
             Codec.doubleRange(0, 1).optionalFieldOf("sound_volume", SGClientConfig.DEFAULTS.soundVolume)
-                    .forGetter(SGClientConfig::soundVolume)
+                    .forGetter(SGClientConfig::soundVolume),
+            Codec.BOOL.optionalFieldOf("strata_screens", SGClientConfig.DEFAULTS.strataScreens)
+                    .forGetter(SGClientConfig::strataScreens)
     ).apply(instance, SGClientConfig::new));
 
     private static SGClientConfig current = SGClientConfig.DEFAULTS;

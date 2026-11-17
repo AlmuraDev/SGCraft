@@ -404,7 +404,7 @@ public final class ConfiguratorScreen extends Screen {
     // Face up or face down for a gate lying flat, as the original's checkboxes; shown but not set for one standing
     private void orientationButton(final int[] at) {
         final Component label = Component.translatableWithFallback("screen.sgcraft.configurator.orientation",
-                "Lies");
+                "Orientation");
         final boolean flat = !ConfiguratorScreen.STANDING.equals(this.state.orientation());
         final List<String> choices = flat ? List.of(ConfiguratorScreen.FACE_UP, ConfiguratorScreen.FACE_DOWN)
                 : List.of(ConfiguratorScreen.STANDING);

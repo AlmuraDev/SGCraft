@@ -46,6 +46,7 @@ import com.almuradev.sgcraft.mod.client.rings.RingHoldInput;
 import com.almuradev.sgcraft.mod.client.settings.SettingsScreen;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldScreen;
 import com.almuradev.sgcraft.mod.client.shield.ShieldConsoleScreen;
+import com.almuradev.sgcraft.mod.client.strata.StrataViews;
 import com.almuradev.sgcraft.mod.client.tool.ConfiguratorScreen;
 import com.almuradev.sgcraft.mod.client.tool.ExplorerScreen;
 import com.almuradev.sgcraft.mod.client.tool.GdoScreen;
@@ -90,14 +91,32 @@ public final class SGClient {
         ClientTicks.set(GateLoopSounds::tick, ComputerAlarms::tick, GeneratorHum::tick);
         JumperHooks.set(JumperControls::input, JumperControls::viewerInside);
         SGNetwork.onClient(GateBaseInfo.TYPE, SGClient::gateBase);
-        SGNetwork.onClient(ToolPayloads.PddState.TYPE, state ->
-                SGClient.show(PddScreen.class, state, state.open(), PddScreen::new, PddScreen::update));
+        // Each of the screens 2.3 drew with MalisisCore is drawn with Strata instead when the player turns that on
+        // (StrataScreens); client.strata, which names Strata's classes, is only reached then
+        SGNetwork.onClient(ToolPayloads.PddState.TYPE, state -> {
+            if (StrataScreens.enabled()) {
+                StrataViews.pdd(state);
+            } else {
+                SGClient.show(PddScreen.class, state, state.open(), PddScreen::new, PddScreen::update);
+            }
+        });
         SGNetwork.onClient(ToolPayloads.TabletState.TYPE, state ->
                 SGClient.show(TabletScreen.class, state, state.open(), TabletScreen::new, TabletScreen::update));
-        SGNetwork.onClient(ToolPayloads.GdoState.TYPE, state ->
-                SGClient.show(GdoScreen.class, state, state.open(), GdoScreen::new, GdoScreen::update));
-        SGNetwork.onClient(ToolPayloads.ConfiguratorState.TYPE, state -> SGClient.show(ConfiguratorScreen.class,
-                state, state.open(), ConfiguratorScreen::new, ConfiguratorScreen::update));
+        SGNetwork.onClient(ToolPayloads.GdoState.TYPE, state -> {
+            if (StrataScreens.enabled()) {
+                StrataViews.gdo(state);
+            } else {
+                SGClient.show(GdoScreen.class, state, state.open(), GdoScreen::new, GdoScreen::update);
+            }
+        });
+        SGNetwork.onClient(ToolPayloads.ConfiguratorState.TYPE, state -> {
+            if (StrataScreens.enabled()) {
+                StrataViews.configurator(state);
+            } else {
+                SGClient.show(ConfiguratorScreen.class, state, state.open(), ConfiguratorScreen::new,
+                        ConfiguratorScreen::update);
+            }
+        });
         RemoteViewClient.init();
         SGNetwork.onClient(MalpPayloads.ConsoleState.TYPE, state -> SGClient.show(MalpConsoleScreen.class, state,
                 state.open(), MalpConsoleScreen::new, MalpConsoleScreen::update));
@@ -105,12 +124,20 @@ public final class SGClient {
                 state.open(), MalpConfigScreen::new, MalpConfigScreen::update));
         SGNetwork.onClient(MalpPayloads.ConsoleUse.TYPE, MalpConsoleUsers::update);
         SGNetwork.onClient(MalpPayloads.MonitorState.TYPE, MalpMonitorDisplays::update);
-        SGNetwork.onClient(ExplorerPayloads.State.TYPE, state -> SGClient.show(ExplorerScreen.class, state,
-                state.open(), ExplorerScreen::new, ExplorerScreen::update));
+        SGNetwork.onClient(ExplorerPayloads.State.TYPE, state -> {
+            if (StrataScreens.enabled()) {
+                StrataViews.explorer(state);
+            } else {
+                SGClient.show(ExplorerScreen.class, state, state.open(), ExplorerScreen::new, ExplorerScreen::update);
+            }
+        });
         // The generator's screen opens with its menu; its state only fills it
         SGNetwork.onClient(ShieldPayloads.CityState.TYPE, state -> {
             if (Minecraft.getInstance().gui.screen() instanceof final CityShieldScreen screen) {
                 screen.update(state);
+            } else if (StrataScreens.installed()) {
+                // The Strata one, if that is what is open
+                StrataViews.cityShieldState(state);
             }
         });
         SGNetwork.onClient(ComputerPayloads.Screen.TYPE, SGClient::dialingComputer);
@@ -121,10 +148,21 @@ public final class SGClient {
         SGNetwork.onClient(JumperPayloads.ShieldHit.TYPE, JumperShield::handle);
         SGNetwork.onClient(ObeliskPayloads.Fade.TYPE, BeamEffects::fade);
         SGNetwork.onClient(RingPayloads.Hold.TYPE, RingHoldInput::handle);
-        SGNetwork.onClient(ObeliskPayloads.State.TYPE, state -> SGClient.show(ObeliskScreen.class, state,
-                state.open(), ObeliskScreen::new, ObeliskScreen::update));
-        SGNetwork.onClient(ShieldPayloads.ConsoleState.TYPE, state -> SGClient.show(ShieldConsoleScreen.class, state,
-                state.open(), ShieldConsoleScreen::new, ShieldConsoleScreen::update));
+        SGNetwork.onClient(ObeliskPayloads.State.TYPE, state -> {
+            if (StrataScreens.enabled()) {
+                StrataViews.obelisk(state);
+            } else {
+                SGClient.show(ObeliskScreen.class, state, state.open(), ObeliskScreen::new, ObeliskScreen::update);
+            }
+        });
+        SGNetwork.onClient(ShieldPayloads.ConsoleState.TYPE, state -> {
+            if (StrataScreens.enabled()) {
+                StrataViews.shieldConsole(state);
+            } else {
+                SGClient.show(ShieldConsoleScreen.class, state, state.open(), ShieldConsoleScreen::new,
+                        ShieldConsoleScreen::update);
+            }
+        });
         SGNetwork.onClient(SettingsPayloads.State.TYPE, state -> SGClient.show(SettingsScreen.class, state,
                 state.open(), SettingsScreen::new, SettingsScreen::update));
         SGNetwork.onClient(SettingsPayloads.Confirm.TYPE, confirm -> {

@@ -125,7 +125,7 @@ public final class StargateBaseRenderer
         state.spacing = ChevronSpacing.STANDARD;
         state.view = gate.dialView();
         state.locked = ChevronOrder.locked(gate.chevrons(), state.view.length(), state.view.engaged());
-        state.time = gate.getLevel() != null ? gate.getLevel().getGameTime() + partialTicks : 0;
+        state.time = gate.getLevel() != null ? gate.getLevel().getGameTime() + (double) partialTicks : 0;
         final IrisView iris = gate.iris();
         state.irisAperture = iris == null ? 1 : SGIris.aperture(iris.type(), iris.state(), iris.since(), state.time);
         state.shield = iris != null && SGIris.isShield(iris.type());

@@ -28,6 +28,7 @@ package com.almuradev.sgcraft.neoforge;
 import com.almuradev.sgcraft.mod.SGCraft;
 import com.almuradev.sgcraft.mod.block.entity.SGBlockEntityTypes;
 import com.almuradev.sgcraft.mod.client.SGClient;
+import com.almuradev.sgcraft.mod.client.StrataScreens;
 import com.almuradev.sgcraft.mod.client.computer.DialingComputerRenderer;
 import com.almuradev.sgcraft.mod.client.dhd.DhdFuelScreen;
 import com.almuradev.sgcraft.mod.client.dhd.DhdItemRenderer;
@@ -55,6 +56,7 @@ import com.almuradev.sgcraft.mod.client.power.BatteryChargerScreen;
 import com.almuradev.sgcraft.mod.client.power.PowerUnitScreen;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldRenderer;
 import com.almuradev.sgcraft.mod.client.shield.CityShieldScreen;
+import com.almuradev.sgcraft.mod.client.strata.StrataViews;
 import com.almuradev.sgcraft.mod.client.view.RemoteViewPicture;
 import com.almuradev.sgcraft.mod.client.zpm.ZpmScreen;
 import com.almuradev.sgcraft.mod.dhd.DhdFuelMenu;
@@ -67,6 +69,7 @@ import com.almuradev.sgcraft.mod.power.PowerUnitMenu;
 import com.almuradev.sgcraft.mod.rings.RingPlatformMenu;
 import com.almuradev.sgcraft.mod.shield.CityShieldMenu;
 import com.almuradev.sgcraft.mod.zpm.ZpmMenu;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.entity.NoopRenderer;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
@@ -172,13 +175,25 @@ public final class SGCraftClientNeoForge {
         event.register(DhdFuelMenu.TYPE, DhdFuelScreen::new);
         event.register(GateBaseMenu.TYPE, GateBaseScreen::new);
         event.register(PowerUnitMenu.TYPE, PowerUnitScreen::new);
-        event.register(NaquadahGeneratorMenu.TYPE, GeneratorScreen::new);
-        event.register(RingPlatformMenu.TYPE, RingPlatformScreen::new);
+        event.<NaquadahGeneratorMenu, AbstractContainerScreen<NaquadahGeneratorMenu>>register(
+                NaquadahGeneratorMenu.TYPE, (menu, inventory, title) -> StrataScreens.enabled()
+                        ? StrataViews.generator(menu, inventory, title) : new GeneratorScreen(menu, inventory, title));
+        event.<RingPlatformMenu, AbstractContainerScreen<RingPlatformMenu>>register(
+                RingPlatformMenu.TYPE, (menu, inventory, title) -> StrataScreens.enabled()
+                        ? StrataViews.ringPlatform(menu, inventory, title)
+                                : new RingPlatformScreen(menu, inventory, title));
         event.register(BatteryChargerMenu.TYPE, BatteryChargerScreen::new);
         event.register(MalpMenu.TYPE, MalpScreen::new);
-        event.register(ZpmMenu.SINGLE, ZpmScreen::new);
-        event.register(ZpmMenu.HUB, ZpmScreen::new);
-        event.register(CityShieldMenu.TYPE, CityShieldScreen::new);
+        event.<ZpmMenu, AbstractContainerScreen<ZpmMenu>>register(
+                ZpmMenu.SINGLE, (menu, inventory, title) -> StrataScreens.enabled()
+                        ? StrataViews.zpm(menu, inventory, title) : new ZpmScreen(menu, inventory, title));
+        event.<ZpmMenu, AbstractContainerScreen<ZpmMenu>>register(
+                ZpmMenu.HUB, (menu, inventory, title) -> StrataScreens.enabled()
+                        ? StrataViews.zpm(menu, inventory, title) : new ZpmScreen(menu, inventory, title));
+        event.<CityShieldMenu, AbstractContainerScreen<CityShieldMenu>>register(
+                CityShieldMenu.TYPE, (menu, inventory, title) -> StrataScreens.enabled()
+                        ? StrataViews.cityShield(menu, inventory, title)
+                                : new CityShieldScreen(menu, inventory, title));
     }
 
     @SubscribeEvent

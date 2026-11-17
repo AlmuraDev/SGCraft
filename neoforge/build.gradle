@@ -71,3 +71,37 @@ sourceSets.configureEach {
         }
     }
 }
+
+repositories {
+    // Strata's snapshots, until Strata 0.1.0 is released
+    maven {
+        name = 'CentralSnapshots'
+        url = uri('https://central.sonatype.com/repository/maven-snapshots/')
+        mavenContent {
+            snapshotsOnly()
+        }
+        content {
+            includeGroup('org.inspirenxe')
+        }
+    }
+}
+
+dependencies {
+    // Strata, for the optional MalisisCore-style screens core draws, bundled with Jar-in-Jar so they work anywhere.
+    // NeoForge loads one copy of a mod id however many it finds (in mods, nested in other jars, or on a dev
+    // client's classpath, as Almura's), the newest, so a client that has Strata already doesn't load it twice
+    jarJar("org.inspirenxe:strata-minecraft-neoforge:${strata_version}") {
+        transitive = false
+    }
+    compileOnly("org.inspirenxe:strata-api:${strata_version}")
+    // Its core and SPI too, which the screen SGCraft hosts Strata screens in extends
+    compileOnly("org.inspirenxe:strata-spi:${strata_version}")
+    compileOnly("org.inspirenxe:strata-core:${strata_version}")
+    compileOnly("org.inspirenxe:strata-minecraft-neoforge:${strata_version}") {
+        transitive = false
+        // Published for NeoForge, but written against vanilla classes alone, so core and Fabric compile against it too
+        attributes {
+            attribute(Attribute.of('io.github.mcgradleconventions.loader', String), 'neoforge')
+        }
+    }
+}

@@ -76,6 +76,9 @@ public interface Platform {
      */
     boolean isPart(final Entity entity);
 
+    /** @return whether a mod (or, on NeoForge, a Sponge plugin) with this id is installed */
+    boolean isModLoaded(final String id);
+
     /**
      * Offers FE to the block at a place, through one of its faces, as a cable would: the loader's energy system on
      * NeoForge, Team Reborn Energy on Fabric.

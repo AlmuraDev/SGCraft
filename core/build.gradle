@@ -9,6 +9,17 @@ neoForge {
 
 repositories {
     mavenCentral()
+    // Strata's snapshots, until Strata 0.1.0 is released
+    maven {
+        name = 'CentralSnapshots'
+        url = uri('https://central.sonatype.com/repository/maven-snapshots/')
+        mavenContent {
+            snapshotsOnly()
+        }
+        content {
+            includeGroup('org.inspirenxe')
+        }
+    }
     exclusiveContent {
         forRepository {
             maven {
@@ -27,4 +38,16 @@ dependencies {
     // Mixin as both loaders ship it, to compile the mixins that add gates to vanilla's structures
     compileOnly('net.fabricmc:sponge-mixin:0.17.4+mixin.0.8.7')
     compileOnly('io.github.llamalad7:mixinextras-common:0.5.5')
+    // Strata, for the optional MalisisCore-style screens; never bundled, and only reached when Strata is installed
+    compileOnly("org.inspirenxe:strata-api:${strata_version}")
+    // Its core and SPI too, which the screen SGCraft hosts Strata screens in extends
+    compileOnly("org.inspirenxe:strata-spi:${strata_version}")
+    compileOnly("org.inspirenxe:strata-core:${strata_version}")
+    compileOnly("org.inspirenxe:strata-minecraft-neoforge:${strata_version}") {
+        transitive = false
+        // Published for NeoForge, but written against vanilla classes alone, so core and Fabric compile against it too
+        attributes {
+            attribute(Attribute.of('io.github.mcgradleconventions.loader', String), 'neoforge')
+        }
+    }
 }

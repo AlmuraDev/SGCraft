@@ -77,6 +77,11 @@ public final class PlatformFabric implements Platform {
         return entity instanceof EnderDragonPart;
     }
 
+    @Override
+    public boolean isModLoaded(final String id) {
+        return FabricLoader.getInstance().isModLoaded(id);
+    }
+
     // The Fabric permissions API's check(Entity, String, boolean), which LuckPerms answers, when a mod has it; found
     // by name, so SGCraft doesn't need it
     private static final @Nullable Method PERMISSIONS_CHECK = PlatformFabric.permissionsCheck();

@@ -116,7 +116,7 @@ final class ComputerDisplay {
 
         /** @return what a computer's screen shows now */
         static View of(final Level level, final DialingTerminal computer, final float partialTick) {
-            final double time = level.getGameTime() + partialTick;
+            final double time = level.getGameTime() + (double) partialTick;
             if (computer.linked().isPresent()
                     && level.getBlockEntity(computer.linked().get()) instanceof final StargateBaseBlockEntity gate
                     && gate.isFormed()) {

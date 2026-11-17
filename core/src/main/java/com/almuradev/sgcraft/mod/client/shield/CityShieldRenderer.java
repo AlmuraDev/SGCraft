@@ -149,7 +149,7 @@ public final class CityShieldRenderer implements BlockEntityRenderer<CityShieldB
         state.width = shield.width();
         state.above = shield.above();
         state.below = shield.below();
-        state.time = shield.getLevel() == null ? 0 : shield.getLevel().getGameTime() + partialTicks;
+        state.time = shield.getLevel() == null ? 0 : shield.getLevel().getGameTime() + (double) partialTicks;
     }
 
     @Override

@@ -27,6 +27,7 @@ package com.almuradev.sgcraft.mod.entity;
 
 import com.almuradev.sgcraft.api.gate.GateState;
 import com.almuradev.sgcraft.api.gate.Stargate;
+import com.almuradev.sgcraft.mod.SGClock;
 import com.almuradev.sgcraft.mod.SGServer;
 import com.almuradev.sgcraft.mod.block.entity.DialingComputerBlockEntity;
 import com.almuradev.sgcraft.mod.computer.ComputerDialMode;
@@ -1006,7 +1007,7 @@ public final class PuddleJumperEntity extends VehicleEntity {
 
     /** @return how many ticks are left before the shield may be raised again after it was knocked down; 0 if none */
     public long shieldDownTicks() {
-        return Math.max(0, this.entityData.get(PuddleJumperEntity.SHIELD_DOWN_UNTIL) - this.level().getGameTime());
+        return Math.max(0, this.entityData.get(PuddleJumperEntity.SHIELD_DOWN_UNTIL) - SGClock.now(this.level()));
     }
 
     /** @return how much gate energy the cloak generator holds now; only on the server */
@@ -1120,7 +1121,7 @@ public final class PuddleJumperEntity extends VehicleEntity {
     // The generator emptied with the shield up: it falls, and stays down a while
     private void knockDownShield(final ServerLevel level) {
         this.entityData.set(PuddleJumperEntity.SHIELD, false);
-        this.entityData.set(PuddleJumperEntity.SHIELD_DOWN_UNTIL, level.getGameTime()
+        this.entityData.set(PuddleJumperEntity.SHIELD_DOWN_UNTIL, SGClock.now(level)
                 + JumperSettings.current().knockdownTicks());
         this.playSound(SoundEvents.BEACON_DEACTIVATE, 1, 0.8F);
         this.playSound(SoundEvents.GENERIC_EXPLODE.value(), 0.4F, 1.8F);

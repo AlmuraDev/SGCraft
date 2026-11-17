@@ -46,6 +46,7 @@ import net.minecraft.network.chat.MutableComponent;
 import org.jspecify.annotations.Nullable;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 /**
@@ -283,14 +284,19 @@ public final class ExplorerScreen extends Screen {
     }
 
     // A world's name as players read it: the vanilla worlds by name, others by their identifier's path
-    static Component worldName(final String world) {
+    public static Component worldName(final String world) {
         return switch (world) {
             case "minecraft:overworld" -> Component.translatableWithFallback("screen.sgcraft.world.overworld",
                     "Overworld");
             case "minecraft:the_nether" -> Component.translatableWithFallback("screen.sgcraft.world.nether",
                     "The Nether");
             case "minecraft:the_end" -> Component.translatableWithFallback("screen.sgcraft.world.end", "The End");
-            default -> Component.literal(world.substring(world.indexOf(':') + 1));
+            default -> Component.literal(ExplorerScreen.capitalized(world.substring(world.indexOf(':') + 1)));
         };
+    }
+
+    // A world's name with its first letter a capital, as the named worlds' are
+    private static String capitalized(final String name) {
+        return name.isEmpty() ? name : name.substring(0, 1).toUpperCase(Locale.ROOT) + name.substring(1);
     }
 }

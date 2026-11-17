@@ -81,6 +81,8 @@ final class SGPayloads {
         SGNetwork.serverbound(ToolPayloads.TabletAction.TYPE, ToolPayloads.TabletAction::new, ToolActions::tablet);
         SGNetwork.serverbound(ToolPayloads.ConfiguratorApply.TYPE, ToolPayloads.ConfiguratorApply::new,
                 ToolActions::configurator);
+        SGNetwork.serverbound(ToolPayloads.ConfiguratorUnlinkZpm.TYPE, ToolPayloads.ConfiguratorUnlinkZpm::new,
+                ToolActions::unlinkZpm);
         // Remote views, streamed to the player watching one
         SGNetwork.clientbound(RemoteViewPackets.Begin.TYPE, RemoteViewPackets.Begin::new);
         SGNetwork.clientbound(RemoteViewPackets.Sections.TYPE, RemoteViewPackets.Sections::new);

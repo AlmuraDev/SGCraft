@@ -30,6 +30,7 @@ import com.almuradev.sgcraft.mod.address.AddressChanges.Kind;
 import com.almuradev.sgcraft.mod.address.AddressSettings;
 import com.almuradev.sgcraft.mod.client.ClientPlatform;
 import com.almuradev.sgcraft.mod.client.SGClientConfig;
+import com.almuradev.sgcraft.mod.client.StrataScreens;
 import com.almuradev.sgcraft.mod.client.settings.SymbolPickerScreen.Extra;
 import com.almuradev.sgcraft.mod.settings.SettingsCatalog;
 import com.almuradev.sgcraft.mod.settings.SettingsPayloads.Change;
@@ -425,6 +426,8 @@ public final class SettingsScreen extends Screen {
                 "screen.sgcraft.settings.client.copy_address_on_open", "Copy address on open");
         final Component volumeName = Component.translatableWithFallback(
                 "screen.sgcraft.settings.client.sound_volume", "Sound volume");
+        final Component strataName = Component.translatableWithFallback(
+                "screen.sgcraft.settings.client.strata_screens", "Strata screens");
         return List.of(
                 SettingsScreen.clientItem(section, hdName, Component.translatableWithFallback(
                         "screen.sgcraft.settings.client.hd_event_horizon.tip", "Whether the event horizon is drawn "
@@ -432,14 +435,14 @@ public final class SettingsScreen extends Screen {
                         SettingsCatalog.Type.BOOL, config.hdEventHorizon(), defaults.hdEventHorizon(),
                         config.hdEventHorizon() != saved.hdEventHorizon(), value ->
                                 this.setClient(hdName, value, text -> new SGClientConfig(Boolean.parseBoolean(text),
-                                        config.copyAddressOnOpen(), config.soundVolume()))),
+                                        config.copyAddressOnOpen(), config.soundVolume(), config.strataScreens()))),
                 SettingsScreen.clientItem(section, copyName, Component.translatableWithFallback(
                         "screen.sgcraft.settings.client.copy_address_on_open.tip", "Whether opening a gate's base "
                                 + "screen copies the gate's address to the clipboard"),
                         SettingsCatalog.Type.BOOL, config.copyAddressOnOpen(), defaults.copyAddressOnOpen(),
                         config.copyAddressOnOpen() != saved.copyAddressOnOpen(), value ->
                                 this.setClient(copyName, value, text -> new SGClientConfig(config.hdEventHorizon(),
-                                        Boolean.parseBoolean(text), config.soundVolume()))),
+                                        Boolean.parseBoolean(text), config.soundVolume(), config.strataScreens()))),
                 SettingsScreen.clientItem(section, volumeName, Component.translatableWithFallback(
                         "screen.sgcraft.settings.client.sound_volume.tip", "How loud SGCraft's sounds play, from 0 "
                                 + "for silent to 1 for full volume, on top of the game's own volume settings"),
@@ -451,8 +454,19 @@ public final class SettingsScreen extends Screen {
                                         throw new NumberFormatException(text);
                                     }
                                     return new SGClientConfig(config.hdEventHorizon(), config.copyAddressOnOpen(),
-                                            volume);
-                                })));
+                                            volume, config.strataScreens());
+                                })),
+                SettingsScreen.clientItem(section, strataName, Component.translatableWithFallback(
+                        "screen.sgcraft.settings.client.strata_screens.tip", StrataScreens.installed()
+                                ? "Whether SGCraft's tools and machines open the screens drawn with Strata, laid out "
+                                        + "as SGCraft 2.3's were, rather than the standard ones"
+                                : "Whether SGCraft's tools and machines open the screens drawn with Strata, laid out "
+                                        + "as SGCraft 2.3's were. Strata isn't installed, so the standard ones open"),
+                        SettingsCatalog.Type.BOOL, config.strataScreens(), defaults.strataScreens(),
+                        config.strataScreens() != saved.strataScreens(), value ->
+                                this.setClient(strataName, value, text -> new SGClientConfig(config.hdEventHorizon(),
+                                        config.copyAddressOnOpen(), config.soundVolume(),
+                                        Boolean.parseBoolean(text)))));
     }
 
     private static OptionList.Item clientItem(final Component section, final Component label, final Component tip,

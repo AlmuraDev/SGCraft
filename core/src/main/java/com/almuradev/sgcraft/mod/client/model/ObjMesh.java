@@ -38,7 +38,8 @@ import java.util.List;
 /**
  * Reads a model from an OBJ file into triangles, one array for each of its materials, laid out as {@link GateGeometry}
  * lays them out. Each face is turned into triangles from its first corner and lit by its own flat normal. Texture
- * coordinates are counted up from the bottom, as OBJ counts them. A face of a material not named is left out.
+ * coordinates are counted up from the bottom, as OBJ counts them, unless a file counts them down. A face of a material
+ * not named is left out.
  */
 public final class ObjMesh {
 
@@ -51,6 +52,19 @@ public final class ObjMesh {
      * @return the triangles of each material
      */
     public static float[][] load(final String path, final String[] materials) throws IOException {
+        return ObjMesh.load(path, materials, true);
+    }
+
+    /**
+     * @param path the file, as a resource path
+     * @param materials the materials to read, in the order the arrays come back in
+     * @param fromBottom whether its texture coordinates count up from the bottom, as OBJ's do; false for a file that
+     *     counts down from the top, as Minecraft's textures do and as 1.12 Forge's OBJ loader read them (2.3's
+     *     obelisks)
+     * @return the triangles of each material
+     */
+    public static float[][] load(final String path, final String[] materials, final boolean fromBottom)
+            throws IOException {
         try (InputStream in = ObjMesh.class.getResourceAsStream(path)) {
             if (in == null) {
                 throw new IOException(path + " is missing");
@@ -70,7 +84,7 @@ public final class ObjMesh {
                     case "v" -> positions.add(new double[] {Double.parseDouble(parts[1]),
                             Double.parseDouble(parts[2]), Double.parseDouble(parts[3])});
                     case "vt" -> uvs.add(new double[] {Double.parseDouble(parts[1]),
-                            1 - Double.parseDouble(parts[2])});
+                            fromBottom ? 1 - Double.parseDouble(parts[2]) : Double.parseDouble(parts[2])});
                     case "usemtl" -> material = ObjMesh.material(materials, parts[1]);
                     case "f" -> {
                         if (material >= 0) {

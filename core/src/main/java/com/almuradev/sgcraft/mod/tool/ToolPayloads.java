@@ -434,6 +434,34 @@ public final class ToolPayloads {
     }
 
     /**
+     * Unlinks a ZPM device from the gate at {@code gate}, from the configurator's list of the gate's linked devices.
+     *
+     * @param world the gate's world
+     * @param gate where the gate's base is
+     * @param device where the device is, in the gate's world
+     */
+    public record ConfiguratorUnlinkZpm(String world, BlockPos gate, BlockPos device) implements SGPacket {
+
+        public static final Type<ConfiguratorUnlinkZpm> TYPE = new Type<>(SGCraft.id("configurator_unlink_zpm"));
+
+        public ConfiguratorUnlinkZpm(final FriendlyByteBuf buf) {
+            this(buf.readUtf(), buf.readBlockPos(), buf.readBlockPos());
+        }
+
+        @Override
+        public void write(final FriendlyByteBuf buf) {
+            buf.writeUtf(this.world);
+            buf.writeBlockPos(this.gate);
+            buf.writeBlockPos(this.device);
+        }
+
+        @Override
+        public Type<ConfiguratorUnlinkZpm> type() {
+            return ConfiguratorUnlinkZpm.TYPE;
+        }
+    }
+
+    /**
      * Changes made on the configurator's screen, to the gate at {@code gate}.
      *
      * @param gateType the gate type to change to, or empty to leave it

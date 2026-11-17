@@ -26,20 +26,24 @@
 package com.almuradev.sgcraft.mod.mixin;
 
 import com.almuradev.sgcraft.mod.gate.GateProtection;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 // The ender dragon flying through blocks leaves an invulnerable gate's blocks whole
 @Mixin(EnderDragon.class)
 abstract class EnderDragonMixin {
 
-    @Redirect(method = "checkWalls", at = @At(value = "INVOKE",
+    // Wrapped rather than redirected, so it chains with any other mod's hook on the same call (SpongeForge's), where
+    // two redirects can't both apply
+    @WrapOperation(method = "checkWalls", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/server/level/ServerLevel;removeBlock(Lnet/minecraft/core/BlockPos;Z)Z"))
-    private boolean sgcraft$spareGate(final ServerLevel level, final BlockPos pos, final boolean moving) {
-        return !GateProtection.invulnerable(level, pos) && level.removeBlock(pos, moving);
+    private boolean sgcraft$spareGate(final ServerLevel level, final BlockPos pos, final boolean moving,
+            final Operation<Boolean> original) {
+        return !GateProtection.invulnerable(level, pos) && original.call(level, pos, moving);
     }
 }

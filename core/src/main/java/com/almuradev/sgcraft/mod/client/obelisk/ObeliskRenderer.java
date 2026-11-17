@@ -32,6 +32,7 @@ import com.almuradev.sgcraft.mod.client.gate.GateMesh;
 import com.almuradev.sgcraft.mod.obelisk.AsgardObeliskBlockEntity;
 import com.almuradev.sgcraft.mod.obelisk.ObeliskKind;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
@@ -137,6 +138,44 @@ public final class ObeliskRenderer implements BlockEntityRenderer<AsgardObeliskB
                     (pose, buffer) -> GateGeometry.emit(pose, buffer, gem,
                             ARGB.colorFromFloat(shine, 1, 0.3F + 0.7F * shine, 0.3F + 0.7F * shine),
                             LightCoordsUtil.FULL_BRIGHT));
+            // As 2.3's: a wide soft red glow in front of the gem, much bigger than it, and a bright core that turns
+            // white as it peaks, each fading to nothing at its edge, added to what is behind them
+            final float x = 0.5F;
+            final float y = (float) (1 + kind.gemY());
+            final float z = (float) (kind.gemZ() - ObeliskRenderer.GLOW_OUT);
+            collector.submitCustomGeometry(poseStack, RenderTypes.lightning(), (pose, buffer) -> {
+                ObeliskRenderer.disc(pose, buffer, x, y, z, 0.06F + 0.28F * shine,
+                        ARGB.colorFromFloat(0.55F * shine, 1, 0.15F, 0.1F));
+                ObeliskRenderer.disc(pose, buffer, x, y, z, 0.03F + 0.08F * shine,
+                        ARGB.colorFromFloat(0.9F * shine, 1, 0.55F + 0.45F * shine, 0.5F + 0.5F * shine));
+            });
+        }
+    }
+
+    // How far in front of the gem's face its glow is drawn, in blocks, and in how many slices round
+    private static final float GLOW_OUT = 0.1F / 16 + 0.01F;
+    private static final int GLOW_SLICES = 24;
+
+    // A disc facing out of the obelisk (north, -z), solid at its middle and fading to nothing at its edge: each slice
+    // a quad from the middle out, drawn both ways round so it shows whichever way it is culled
+    private static void disc(final PoseStack.Pose pose, final VertexConsumer buffer, final float x, final float y,
+            final float z, final float radius, final int color) {
+        final int edge = color & 0x00FFFFFF;
+        for (int i = 0; i < ObeliskRenderer.GLOW_SLICES; i++) {
+            final double from = Math.PI * 2 * i / ObeliskRenderer.GLOW_SLICES;
+            final double to = Math.PI * 2 * (i + 1) / ObeliskRenderer.GLOW_SLICES;
+            final float x1 = x + radius * (float) Math.cos(from);
+            final float y1 = y + radius * (float) Math.sin(from);
+            final float x2 = x + radius * (float) Math.cos(to);
+            final float y2 = y + radius * (float) Math.sin(to);
+            buffer.addVertex(pose, x, y, z).setColor(color);
+            buffer.addVertex(pose, x1, y1, z).setColor(edge);
+            buffer.addVertex(pose, x2, y2, z).setColor(edge);
+            buffer.addVertex(pose, x, y, z).setColor(color);
+            buffer.addVertex(pose, x, y, z).setColor(color);
+            buffer.addVertex(pose, x2, y2, z).setColor(edge);
+            buffer.addVertex(pose, x1, y1, z).setColor(edge);
+            buffer.addVertex(pose, x, y, z).setColor(color);
         }
     }
 }
