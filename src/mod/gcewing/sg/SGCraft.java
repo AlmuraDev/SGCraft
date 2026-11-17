@@ -20,6 +20,7 @@ import gcewing.sg.client.gui.SGGui;
 import gcewing.sg.command.SGPowerCommand;
 import gcewing.sg.features.dynmap.DynmapMarkers;
 import gcewing.sg.command.SGSpawnCommand;
+import gcewing.sg.command.StargateCommands;
 import gcewing.sg.container.DHDFuelContainer;
 import gcewing.sg.container.PowerContainer;
 import gcewing.sg.container.SGBaseContainer;
@@ -369,9 +370,10 @@ public class SGCraft extends BaseMod<SGCraftClient> {
     }
 
     @Mod.EventHandler
-    public void serverStarting(FMLServerStartingEvent e) {
+    public void serverStart(FMLServerStartingEvent e) {
         e.registerServerCommand(new SGSpawnCommand());
         e.registerServerCommand(new SGPowerCommand());
+        e.registerServerCommand(new StargateCommands());
         DynmapMarkers.init();
     }
 
