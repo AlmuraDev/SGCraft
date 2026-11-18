@@ -497,31 +497,17 @@ public final class MalpEntity extends VehicleEntity implements RemoteViewSource 
             }
             return InteractionResult.SUCCESS;
         }
-        // A battery used on it goes in, and the one it had, if any, comes back to the player
-        if (held.is(SGItems.BATTERY)) {
-            if (player instanceof final ServerPlayer serverPlayer) {
-                if (!MalpConfigurator.mayHandle(player, this)) {
-                    MalpConfigurator.refuseHandling(serverPlayer);
-                } else {
-                    final ItemStack old = this.battery().copy();
-                    this.setBattery(held);
-                    held.consume(1, player);
-                    if (!old.isEmpty() && !player.getInventory().add(old)) {
-                        this.spawnAtLocation(serverPlayer.level(), old);
-                    }
-                    this.record();
-                }
-            }
-            return InteractionResult.SUCCESS;
-        }
-        if (!held.isEmpty() || hand != InteractionHand.MAIN_HAND) {
+        // An empty hand, or a battery to put in it, opens its screen, where the battery goes in its slot; only an empty
+        // hand while sneaking packs it up
+        final boolean battery = held.is(SGItems.BATTERY);
+        if (!held.isEmpty() && !battery || hand != InteractionHand.MAIN_HAND) {
             return InteractionResult.PASS;
         }
         // Only its owner, or an operator, packs up or opens a MALP someone owns
         if (player instanceof ServerPlayer serverPlayer) {
             if (!MalpConfigurator.mayHandle(player, this)) {
                 MalpConfigurator.refuseHandling(serverPlayer);
-            } else if (player.isSecondaryUseActive()) {
+            } else if (!battery && player.isSecondaryUseActive()) {
                 this.pickUp(serverPlayer);
             } else {
                 serverPlayer.openMenu(new SimpleMenuProvider((id, inventory, p) -> new MalpMenu(id, inventory, this),
