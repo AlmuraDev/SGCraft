@@ -155,6 +155,7 @@ public final class ZpmDeviceBlockEntity extends BlockEntity implements GeStore {
         final boolean tainted = charged.stream().anyMatch(ZpmItem::tainted);
         Zpms.drain(charged, energy);
         this.zpms.setChanged();
+        Zpms.showViewers(this.level, this.zpms);
         if (tainted && this.level instanceof final ServerLevel level) {
             final float power = ZpmSettings.current().taintedExplosion();
             if (power > 0) {

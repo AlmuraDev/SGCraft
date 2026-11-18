@@ -65,6 +65,7 @@ public final class ZpmSources implements EnergySourceProvider {
                         }
                         final long given = Zpms.drawEnergy(Zpms.charged(base.zpms()), wanted);
                         base.zpms().setChanged();
+                        Zpms.showViewers(base.getLevel(), base.zpms());
                         return given;
                     }
                 }));

@@ -25,8 +25,12 @@
 
 package com.almuradev.sgcraft.mod.zpm;
 
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Container;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +71,27 @@ public final class Zpms {
     /** @return how much whole gate energy some ZPMs could give */
     public static long available(final List<ItemStack> zpms) {
         return (long) Math.floor(Zpms.energy(zpms));
+    }
+
+    /**
+     * Sends the players looking at a container of ZPMs their charge as it is now. A ZPM drawn on by a block's tick
+     * changes after the players' own ticks have sent their screens, so would otherwise be sent on their next packet,
+     * which SpongeForge reports as a slot changed without an event.
+     */
+    public static void showViewers(final @Nullable Level level, final Container zpms) {
+        if (level == null || level.isClientSide()) {
+            return;
+        }
+        for (final var player : level.players()) {
+            if (player instanceof final ServerPlayer viewer && viewer.containerMenu != viewer.inventoryMenu) {
+                for (final Slot slot : viewer.containerMenu.slots) {
+                    if (slot.container == zpms) {
+                        viewer.containerMenu.broadcastChanges();
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     /**

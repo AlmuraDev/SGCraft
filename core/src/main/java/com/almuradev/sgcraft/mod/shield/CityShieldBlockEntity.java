@@ -257,6 +257,7 @@ public final class CityShieldBlockEntity extends BlockEntity {
                     }
                     final long given = Zpms.drawEnergy(Zpms.charged(CityShieldBlockEntity.this.zpms), wanted);
                     CityShieldBlockEntity.this.zpms.setChanged();
+                    Zpms.showViewers(CityShieldBlockEntity.this.level, CityShieldBlockEntity.this.zpms);
                     return given;
                 }
             });
