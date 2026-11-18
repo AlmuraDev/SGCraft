@@ -501,6 +501,7 @@
   "screen.sgcraft.malp_console.help_drive": "W S: drive",
   "screen.sgcraft.malp_console.help_turn": "A D: turn",
   "screen.sgcraft.malp_console.help_camera": "Drag: camera",
+  "screen.sgcraft.malp_console.help_mouse_drive": "Both mouse buttons: drive to cursor",
   "screen.sgcraft.malp_console.help_center": "C: center camera",
   "screen.sgcraft.malp_console.help_lamp": "L: lamp",
   "screen.sgcraft.malp_console.help_snapshot": "P: snapshot",

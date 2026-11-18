@@ -138,8 +138,6 @@ public final class MalpLinks {
     private static final int TICKET_TICKS = 20;
     private static final int SIGNAL_TICKS = 5;
     private static final int STATE_TICKS = 10;
-    // How often a tablet's battery pays for the gate energy its feed used, so the tablet isn't changed every tick
-    private static final int TABLET_PAY_TICKS = 20;
     // How often a console looks for the players near it who see its monitor
     private static final int SPECTATOR_TICKS = 10;
     // How long a MALP whose feed a monitor shows with no one at the console is kept loaded past each look
@@ -738,9 +736,6 @@ public final class MalpLinks {
                 // A battery just run flat ends the feed now, rather than at the next look at the signal
                 refresh |= !link.controller.powered(link.owed);
             }
-            if (now % MalpLinks.TABLET_PAY_TICKS == 0) {
-                MalpLinks.pay(link);
-            }
             if (refresh) {
                 MalpLinks.refresh(link);
             }
@@ -768,7 +763,9 @@ public final class MalpLinks {
         }
     }
 
-    // A tablet's battery pays for the gate energy its feed has used
+    // A tablet's battery pays for the gate energy its feed has used, once, as the feed closes: the tablet is an item
+    // in the player's hand, and changing it while they hold it, outside anything they do, is a change SpongeForge
+    // reports and ignores. Until then what is owed counts against the battery
     private static void pay(final Link link) {
         if (link.owed > 0 && link.controller instanceof MalpController.Tablet tablet) {
             MalpTabletItem.drain(tablet.stack(), link.owed);
@@ -1227,7 +1224,7 @@ public final class MalpLinks {
         final Optional<BlockPos> console = link.controller instanceof MalpController.Console at
                 ? Optional.of(at.pos().pos()) : Optional.empty();
         final int tabletBattery = link.controller instanceof MalpController.Tablet tablet
-                ? MalpTabletItem.percent(tablet.stack()) : -1;
+                ? MalpTabletItem.percent(tablet.stack(), link.owed) : -1;
         SGNetwork.send(link.player, new ConsoleState(open, close, console, malps, Optional.ofNullable(link.selected),
                 link.feed, readout, link.role, tabletBattery));
     }

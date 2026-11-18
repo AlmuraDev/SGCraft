@@ -497,6 +497,23 @@ public final class MalpEntity extends VehicleEntity implements RemoteViewSource 
             }
             return InteractionResult.SUCCESS;
         }
+        // A battery used on it goes in, and the one it had, if any, comes back to the player
+        if (held.is(SGItems.BATTERY)) {
+            if (player instanceof final ServerPlayer serverPlayer) {
+                if (!MalpConfigurator.mayHandle(player, this)) {
+                    MalpConfigurator.refuseHandling(serverPlayer);
+                } else {
+                    final ItemStack old = this.battery().copy();
+                    this.setBattery(held);
+                    held.consume(1, player);
+                    if (!old.isEmpty() && !player.getInventory().add(old)) {
+                        this.spawnAtLocation(serverPlayer.level(), old);
+                    }
+                    this.record();
+                }
+            }
+            return InteractionResult.SUCCESS;
+        }
         if (!held.isEmpty() || hand != InteractionHand.MAIN_HAND) {
             return InteractionResult.PASS;
         }

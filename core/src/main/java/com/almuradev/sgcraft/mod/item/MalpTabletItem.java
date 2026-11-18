@@ -210,6 +210,20 @@ public final class MalpTabletItem extends Item {
         return battery.isEmpty() ? -1 : BatteryItem.percent(battery);
     }
 
+    /**
+     * @return how full a tablet's battery is once what its feed has used and not yet taken from it is, from 0 to 100,
+     *     or -1 if it has none
+     */
+    public static int percent(final ItemStack tablet, final double owed) {
+        final ItemStack battery = MalpTabletItem.battery(tablet);
+        if (battery.isEmpty()) {
+            return -1;
+        }
+        final long capacity = BatteryItem.capacity();
+        return capacity <= 0 ? 0
+                : (int) Math.round(100.0 * Math.max(0, BatteryItem.energy(battery) - owed) / capacity);
+    }
+
     @Override
     public void appendHoverText(final ItemStack stack, final TooltipContext context, final TooltipDisplay display,
             final Consumer<Component> builder, final TooltipFlag flag) {

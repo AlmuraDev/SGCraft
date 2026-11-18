@@ -55,6 +55,7 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.network.chat.ClickEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.Util;
 import org.jspecify.annotations.Nullable;
@@ -106,6 +107,10 @@ public final class MalpConsoleScreen extends Screen {
     private static final String[] POINTS = {"N", "NE", "E", "SE", "S", "SW", "W", "NW"};
     // How far the camera turns for each pixel the mouse is dragged
     private static final float AIM_PER_PIXEL = 0.6F;
+    // Driving with both mouse buttons: how far from the feed's middle, as a share of half its width, the cursor turns
+    // it fully, and how near the middle it goes straight
+    private static final float STEER_REACH = 0.6F;
+    private static final float STEER_DEAD = 0.08F;
     private static final int HOSTILE_RANGE = 32;
     // How long the feed's flash takes to fade, and how long the header says a snapshot was saved
     private static final long FLASH_MILLIS = 300;
@@ -125,6 +130,10 @@ public final class MalpConsoleScreen extends Screen {
     private boolean left;
     private boolean right;
     private boolean dragging;
+    // The mouse buttons held down over the feed, and where the cursor is, for driving with both
+    private boolean leftHeld;
+    private boolean rightHeld;
+    private double mouseX;
     private float pan;
     private float tilt;
     private int feedLeft;
@@ -382,17 +391,38 @@ public final class MalpConsoleScreen extends Screen {
         if (super.mouseClicked(event, doubleClick)) {
             return true;
         }
-        if (!this.state.viewOnly() && event.button() == InputConstants.MOUSE_BUTTON_LEFT
-                && this.inFeed(event.x(), event.y())) {
+        if (this.state.viewOnly() || !this.inFeed(event.x(), event.y())) {
+            return false;
+        }
+        this.mouseX = event.x();
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
+            this.leftHeld = true;
             this.dragging = true;
+            return true;
+        }
+        if (event.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
+            this.rightHeld = true;
             return true;
         }
         return false;
     }
 
     @Override
+    public void mouseMoved(final double x, final double y) {
+        this.mouseX = x;
+        super.mouseMoved(x, y);
+    }
+
+    // Both buttons held over the feed drive it forward, towards the cursor
+    private boolean bothHeld() {
+        return this.leftHeld && this.rightHeld;
+    }
+
+    @Override
     public boolean mouseDragged(final MouseButtonEvent event, final double dx, final double dy) {
-        if (this.dragging) {
+        this.mouseX = event.x();
+        // While driving with both buttons the camera stays as it is
+        if (this.dragging && !this.bothHeld()) {
             this.pan += (float) dx * MalpConsoleScreen.AIM_PER_PIXEL;
             this.tilt += (float) dy * MalpConsoleScreen.AIM_PER_PIXEL;
             return true;
@@ -402,7 +432,12 @@ public final class MalpConsoleScreen extends Screen {
 
     @Override
     public boolean mouseReleased(final MouseButtonEvent event) {
-        this.dragging = false;
+        if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
+            this.leftHeld = false;
+            this.dragging = false;
+        } else if (event.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
+            this.rightHeld = false;
+        }
         return super.mouseReleased(event);
     }
 
@@ -416,13 +451,31 @@ public final class MalpConsoleScreen extends Screen {
         if (this.state.viewOnly()) {
             return;
         }
-        final float drive = (this.forward ? 1 : 0) - (this.back ? 1 : 0);
-        final float turn = (this.right ? 1 : 0) - (this.left ? 1 : 0);
+        float drive = (this.forward ? 1 : 0) - (this.back ? 1 : 0);
+        float turn = (this.right ? 1 : 0) - (this.left ? 1 : 0);
+        if (this.bothHeld()) {
+            drive = 1;
+            turn = this.steer();
+        }
         if (drive != 0 || turn != 0 || this.pan != 0 || this.tilt != 0) {
             ClientPlatform.get().sendToServer(new Drive(drive, turn, this.pan, this.tilt));
             this.pan = 0;
             this.tilt = 0;
         }
+    }
+
+    // Which way, and how hard, the cursor turns the MALP: none near the feed's middle, fully towards a side
+    // STEER_REACH of the way to it
+    private float steer() {
+        final double half = (this.feedRight - this.feedLeft) / 2.0;
+        if (half <= 0) {
+            return 0;
+        }
+        final double off = (this.mouseX - (this.feedLeft + half)) / half;
+        if (Math.abs(off) < MalpConsoleScreen.STEER_DEAD) {
+            return 0;
+        }
+        return (float) Mth.clamp(off / MalpConsoleScreen.STEER_REACH, -1, 1);
     }
 
     @Override
@@ -514,6 +567,8 @@ public final class MalpConsoleScreen extends Screen {
                 Component.translatableWithFallback("screen.sgcraft.malp_console.help_drive", "W S: drive"),
                 Component.translatableWithFallback("screen.sgcraft.malp_console.help_turn", "A D: turn"),
                 Component.translatableWithFallback("screen.sgcraft.malp_console.help_camera", "Drag: camera"),
+                Component.translatableWithFallback("screen.sgcraft.malp_console.help_mouse_drive",
+                        "Both mouse buttons: drive to cursor"),
                 Component.translatableWithFallback("screen.sgcraft.malp_console.help_center", "C: center camera"),
                 Component.translatableWithFallback("screen.sgcraft.malp_console.help_lamp", "L: lamp"),
                 Component.translatableWithFallback("screen.sgcraft.malp_console.help_snapshot", "P: snapshot"));
